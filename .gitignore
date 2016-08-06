@@ -1,0 +1,13 @@
+# ignore the MAC files:
+*.DS_Store
+
+# ignore the ECLIPSE project file:
+.project
+.pydevproject
+.settings
+
+# ignore compilation products:
+*.mod
+*.o
+*.a
+*.pyc
