@@ -11,3 +11,6 @@
 *.o
 *.a
 *.pyc
+
+# ignore the executables:
+eftbenchmark
