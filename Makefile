@@ -9,8 +9,7 @@ ifeq "$(ifortErr)" "0"
 
 #Intel compiler
 F90C     = ifort
-#FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
-FFLAGS = -openmp -O3 -W0 -WB -fpp -qopt-report=0 -mkl=parallel
+FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
 DEBUGFLAGS =-openmp -g -check all -check noarg_temp_created -traceback -fpp -fpe0
 ## This is flag is passed to the Fortran compiler allowing it to link C++ if required (not usually):
 F90CRLINK = -cxxlib
