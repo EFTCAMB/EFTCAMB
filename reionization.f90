@@ -50,7 +50,12 @@
 
     end type ReionizationHistory
 
-    real(dl), parameter :: Reionization_maxz = 50._dl
+    ! EFTCAMB MOD START: increase max reionization redshift
+    real(dl), parameter :: Reionization_maxz = 1000._dl
+    ! Original code:
+    ! real(dl), parameter :: Reionization_maxz = 50._dl
+    ! EFTCAMB MOD END
+
     real(dl), private, parameter :: Reionization_tol = 1d-5
 
     real(dl), private, external :: dtauda, rombint,rombint2
