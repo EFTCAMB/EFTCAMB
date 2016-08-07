@@ -17,5 +17,12 @@
 # Makefile dependencies of EFTCAMB
 #
 
+# for the output folder:
+
 $(OUTPUT_DIR)/1_EFT_def.o :  \
 	$(OUTPUT_DIR)/constants.o
+
+# for the library folder:
+
+$(DLL_DIR)/1_EFT_def.o :  \
+	$(DLL_DIR)/constants.o

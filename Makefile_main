@@ -1,4 +1,3 @@
-
 #Files containing evolution equations initial power spectrum module
 EQUATIONS     ?= equations
 POWERSPECTRUM ?= power_tilt
@@ -28,7 +27,6 @@ DLL_DIR ?= Releaselib
 Release: camb camblib.so
 Debug: camb camblib.so
 
-
 CAMBLIB       = $(OUTPUT_DIR)/libcamb_$(RECOMBINATION).a
 
 F90FLAGS      = $(FFLAGS)
@@ -50,6 +48,15 @@ CAMBSO       =  $(DLL_DIR)/constants.o  $(DLL_DIR)/utils.o $(EXTCAMBFILES)  $(DL
 	$(DLL_DIR)/$(REIONIZATION).o $(DLL_DIR)/modules.o $(DLL_DIR)/bessels.o $(DLL_DIR)/$(EQUATIONS).o \
 	$(DLL_DIR)/$(NONLINEAR).o $(DLL_DIR)/lensing.o $(DLL_DIR)/$(BISPECTRUM).o $(DLL_DIR)/cmbmain.o \
 	$(DLL_DIR)/camb.o $(DLL_DIR)/camb_python.o
+	
+# EFTCAMB MOD START: build system
+
+# get the EFTCAMB directory:
+EFTCAMB_DIR=$(abspath .)/eftcamb
+# include EFTCAMB make file:
+include $(EFTCAMB_DIR)/eftcamb_build.make
+
+# EFTCAMB MOD END.
 
 F90CRLINK ?= -lstdc++
 

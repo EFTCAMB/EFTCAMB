@@ -10,7 +10,10 @@ ifeq "$(ifortErr)" "0"
 #Intel compiler
 # For OSX replace shared by dynamiclib
 F90C     = ifort
-FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
+# EFTCAMB MOD START: flags for the latest ifort
+#FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
+FFLAGS = -qopenmp -O3 -W0 -WB -fpp -qopt-report=0 
+# EFTCAMB MOD END.
 SFFLAGS = -shared -fpic
 DEBUGFLAGS = -openmp -g -check all -check noarg_temp_created -traceback -fpp -fpe0
 ## This is flag is passed to the Fortran compiler allowing it to link C++ if required (not usually):

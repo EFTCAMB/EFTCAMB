@@ -16,5 +16,6 @@
 gmon.out
 
 # ignore the executables:
+camb
 eftbenchmark
 eftprofile
