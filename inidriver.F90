@@ -1,9 +1,9 @@
-!     Code for Anisotropies in the Microwave Background
-!     by Antony Lewis (http://cosmologist.info/) and Anthony Challinor
-!     See readme.html for documentation. This is a sample driver routine that reads
-!     in one set of parameters and produdes the corresponding output.
+    !     Code for Anisotropies in the Microwave Background
+    !     by Antony Lewis (http://cosmologist.info/) and Anthony Challinor
+    !     See readme.html for documentation. This is a sample driver routine that reads
+    !     in one set of parameters and produdes the corresponding output.
 
-program driver
+    program driver
     use IniFile
     use CAMB
     use LambdaGeneral
@@ -17,12 +17,6 @@ program driver
 #ifdef NAGF95
     use F90_UNIX
 #endif
-
-    ! EFTCAMB MOD START
-    use EFTdef
-    use compile_time_eft
-    ! EFTCAMB MOD END
-
     implicit none
 
     Type(CAMBparams) P
@@ -43,10 +37,10 @@ program driver
 
     InputFile = ''
     if (GetParamCount() /= 0)  InputFile = GetParam(1)
-    if (InputFile == '') stop 'No parameter input file'
+    if (InputFile == '') error stop 'No parameter input file'
 
     call Ini_Open(InputFile, 1, bad, .false.)
-    if (bad) stop 'Error opening parameter file'
+    if (bad) error stop 'Error opening parameter file'
 
     Ini_fail_on_not_found = .false.
 
@@ -84,7 +78,7 @@ program driver
                 if (P%DoLensing) lensing_method = Ini_Read_Int('lensing_method',1)
             end if
             if (P%WantVectors) then
-                if (P%WantScalars .or. P%WantTensors) stop 'Must generate vector modes on their own'
+                if (P%WantScalars .or. P%WantTensors) error stop 'Must generate vector modes on their own'
                 i = Ini_Read_Int('vector_mode')
                 if (i==0) then
                     vec_sig0 = 1
@@ -93,7 +87,7 @@ program driver
                     Magnetic = -1
                     vec_sig0 = 0
                 else
-                    stop 'vector_mode must be 0 (regular) or 1 (magnetic)'
+                    error stop 'vector_mode must be 0 (regular) or 1 (magnetic)'
                 end if
             end if
         end if
@@ -123,131 +117,15 @@ program driver
     end if
 
     P%tcmb   = Ini_Read_Double('temp_cmb',COBE_CMBTemp)
-
-    ! EFTCAMB MOD START
-
-    ! 1) Initialization of EFTCAMB flags.
-
-    if ( .not. compile_time_eftcamb ) then
-
-        P%EFTflag = Ini_Read_Int('EFTflag',0)
-
-        P%PureEFTmodelOmega  = Ini_Read_Int('PureEFTmodelOmega',0)
-        P%PureEFTmodelGamma1 = Ini_Read_Int('PureEFTmodelGamma1',0)
-        P%PureEFTmodelGamma2 = Ini_Read_Int('PureEFTmodelGamma2',0)
-        P%PureEFTmodelGamma3 = Ini_Read_Int('PureEFTmodelGamma3',0)
-        P%PureEFTmodelGamma4 = Ini_Read_Int('PureEFTmodelGamma4',0)
-        P%PureEFTmodelGamma5 = Ini_Read_Int('PureEFTmodelGamma5',0)
-        P%PureEFTmodelGamma6 = Ini_Read_Int('PureEFTmodelGamma6',0)
-
-        P%DesignerEFTmodel = Ini_Read_Int('DesignerEFTmodel',1)
-        P%AltParEFTmodel   = Ini_Read_Int('AltParEFTmodel',1)
-        P%FullMappingEFTmodel = Ini_Read_Int('FullMappingEFTmodel',1)
-
-    else if ( compile_time_eftcamb ) then
-
-        P%EFTflag = CT_EFTflag
-
-        P%PureEFTmodelOmega  = CT_PureEFTmodelOmega
-        P%PureEFTmodelGamma1 = CT_PureEFTmodelGamma1
-        P%PureEFTmodelGamma2 = CT_PureEFTmodelGamma2
-        P%PureEFTmodelGamma3 = CT_PureEFTmodelGamma3
-        P%PureEFTmodelGamma4 = CT_PureEFTmodelGamma4
-        P%PureEFTmodelGamma5 = CT_PureEFTmodelGamma5
-        P%PureEFTmodelGamma6 = CT_PureEFTmodelGamma6
-
-        P%DesignerEFTmodel    = CT_DesignerEFTmodel
-        P%AltParEFTmodel      = CT_AltParEFTmodel
-        P%FullMappingEFTmodel = CT_FullMappingEFTmodel
-
-    end if
-
-    ! 2) Initialization of EFTCAMB model properties flags.
-
-    if ( .not. compile_time_eftcamb ) then
-
-        ! read the DE eos model selection flag:
-        P%EFTwDE = Ini_Read_Int('EFTwDE',0)
-        ! read pure EFT Horndeski model selection flag:
-        P%PureEFTHorndeski = Ini_Read_Logical('PureEFTHorndeski',.false.)
-        ! read RPH model selection flags:
-        P%RPHmassPmodel      = Ini_Read_Int('RPHmassPmodel',0)
-        P%RPHkineticitymodel = Ini_Read_Int('RPHkineticitymodel',0)
-        P%RPHbraidingmodel   = Ini_Read_Int('RPHbraidingmodel',0)
-        P%RPHtensormodel     = Ini_Read_Int('RPHtensormodel',0)
-        ! read the Horava Solar System Free flag:
-        P%HoravaSolarSystem  = Ini_Read_Logical('HoravaSolarSystem',.false.)
-
-    else if ( compile_time_eftcamb ) then
-
-        P%EFTwDE             = CT_EFTwDE
-        P%PureEFTHorndeski   = CT_PureEFTHorndeski
-        P%RPHmassPmodel      = CT_RPHmassPmodel
-        P%RPHkineticitymodel = CT_RPHkineticitymodel
-        P%RPHbraidingmodel   = CT_RPHbraidingmodel
-        P%RPHtensormodel     = CT_RPHtensormodel
-        P%HoravaSolarSystem  = CT_HoravaSolarSystem
-
-    end if
-
-    ! 3) Initialization of EFTCAMB stability flags:
-
-    P%EFT_mathematical_stability = Ini_Read_Logical('EFT_mathematical_stability',.true.)
-    P%EFT_physical_stability     = Ini_Read_Logical('EFT_physical_stability',.true.)
-    P%EFTAdditionalPriors        = Ini_Read_Logical('EFTAdditionalPriors',.true.)
-    P%MinkowskyPriors            = Ini_Read_Logical('MinkowskyPriors',.true.)
-
-    ! 4) Initialization of EFTCAMB model parameters.
-
-    ! read the DE eos parameters:
-    P%EFTw0  = Ini_Read_Double('EFTw0',-1._dl)
-    P%EFTwa  = Ini_Read_Double('EFTwa',0._dl)
-    P%EFTwn  = Ini_Read_Double('EFTwn',2._dl)
-    P%EFTwat = Ini_Read_Double('EFTwat',1._dl)
-    P%EFtw2  = Ini_Read_Double('EFtw2',0._dl)
-    P%EFTw3  = Ini_Read_Double('EFTw3',0._dl)
-    ! read pure EFT parameters:
-    P%EFTOmega0    = Ini_Read_Double('EFTOmega0', 0.0_dl)
-    P%EFTOmegaExp  = Ini_Read_Double('EFTOmegaExp', 0.0_dl)
-    P%EFTGamma10   = Ini_Read_Double('EFTGamma10', 0.0_dl)
-    P%EFTGamma1Exp = Ini_Read_Double('EFTGamma1Exp', 0.0_dl)
-    P%EFTGamma20   = Ini_Read_Double('EFTGamma20', 0.0_dl)
-    P%EFTGamma2Exp = Ini_Read_Double('EFTGamma2Exp', 0.0_dl)
-    P%EFTGamma30   = Ini_Read_Double('EFTGamma30', 0.0_dl)
-    P%EFTGamma3Exp = Ini_Read_Double('EFTGamma3Exp', 0.0_dl)
-    P%EFTGamma40   = Ini_Read_Double('EFTGamma40', 0.0_dl)
-    P%EFTGamma4Exp = Ini_Read_Double('EFTGamma4Exp', 0.0_dl)
-    P%EFTGamma50   = Ini_Read_Double('EFTGamma50', 0.0_dl)
-    P%EFTGamma5Exp = Ini_Read_Double('EFTGamma5Exp', 0.0_dl)
-    P%EFTGamma60   = Ini_Read_Double('EFTGamma60', 0.0_dl)
-    P%EFTGamma6Exp = Ini_Read_Double('EFTGamma6Exp', 0.0_dl)
-    ! read f(R) parameters:
-    P%EFTB0 = Ini_Read_Double('EFTB0', 0.0_dl)
-    ! read RPH parameters:
-    P%RPHmassP0        = Ini_Read_Double('RPHmassP0', 0.0_dl)
-    P%RPHmassPexp      = Ini_Read_Double('RPHmassPexp', 0.0_dl)
-    P%RPHkineticity0   = Ini_Read_Double('RPHkineticity0', 0.0_dl)
-    P%RPHkineticityexp = Ini_Read_Double('RPHkineticityexp', 0.0_dl)
-    P%RPHbraiding0     = Ini_Read_Double('RPHbraiding0', 0.0_dl)
-    P%RPHbraidingexp   = Ini_Read_Double('RPHbraidingexp', 0.0_dl)
-    P%RPHtensor0       = Ini_Read_Double('RPHtensor0', 0.0_dl)
-    P%RPHtensorexp     = Ini_Read_Double('RPHtensorexp', 0.0_dl)
-    ! read Horava parameters:
-    P%Horava_xi      = Ini_Read_Double('Horava_xi', 0.0_dl)
-    P%Horava_lambda  = Ini_Read_Double('Horava_lambda', 0.0_dl)
-    P%Horava_eta     = Ini_Read_Double('Horava_eta', 0.0_dl)
-
-    ! EFTCAMB MOD END
-
     P%yhe    = Ini_Read_Double('helium_fraction',0.24_dl)
     P%Num_Nu_massless  = Ini_Read_Double('massless_neutrinos')
 
     P%Nu_mass_eigenstates = Ini_Read_Int('nu_mass_eigenstates',1)
-    if (P%Nu_mass_eigenstates > max_nu) stop 'too many mass eigenstates'
+    if (P%Nu_mass_eigenstates > max_nu) error stop 'too many mass eigenstates'
 
     numstr = Ini_Read_String('massive_neutrinos')
     read(numstr, *) nmassive
-    if (abs(nmassive-nint(nmassive))>1e-6) stop 'massive_neutrinos should now be integer (or integer array)'
+    if (abs(nmassive-nint(nmassive))>1e-6) error stop 'massive_neutrinos should now be integer (or integer array)'
     read(numstr,*, end=100, err=100) P%Nu_Mass_numbers(1:P%Nu_mass_eigenstates)
     P%Num_Nu_massive = sum(P%Nu_Mass_numbers(1:P%Nu_mass_eigenstates))
 
@@ -257,12 +135,12 @@ program driver
         if (P%share_delta_neff) then
             if (numstr/='') write (*,*) 'WARNING: nu_mass_degeneracies ignored when share_delta_neff'
         else
-            if (numstr=='') stop 'must give degeneracies for each eigenstate if share_delta_neff=F'
+            if (numstr=='') error stop 'must give degeneracies for each eigenstate if share_delta_neff=F'
             read(numstr,*) P%Nu_mass_degeneracies(1:P%Nu_mass_eigenstates)
         end if
         numstr = Ini_Read_String('nu_mass_fractions')
         if (numstr=='') then
-            if (P%Nu_mass_eigenstates >1) stop 'must give nu_mass_fractions for the eigenstates'
+            if (P%Nu_mass_eigenstates >1) error stop 'must give nu_mass_fractions for the eigenstates'
             P%Nu_mass_fractions(1)=1
         else
             read(numstr,*) P%Nu_mass_fractions(1:P%Nu_mass_eigenstates)
@@ -274,7 +152,7 @@ program driver
     !in the P%WantTransfer loop.
     if (((P%NonLinear==NonLinear_lens .or. P%NonLinear==NonLinear_both) .and. P%DoLensing) &
         .or. P%PK_WantTransfer) then
-        P%Transfer%high_precision=  Ini_Read_Logical('transfer_high_precision',.false.)
+    P%Transfer%high_precision=  Ini_Read_Logical('transfer_high_precision',.false.)
     else
         P%transfer%high_precision = .false.
     endif
@@ -288,7 +166,7 @@ program driver
 
         transfer_interp_matterpower = Ini_Read_Logical('transfer_interp_matterpower ', transfer_interp_matterpower)
         transfer_power_var = Ini_read_int('transfer_power_var',transfer_power_var)
-        if (P%transfer%PK_num_redshifts > max_transfer_redshifts) stop 'Too many redshifts'
+        if (P%transfer%PK_num_redshifts > max_transfer_redshifts) error stop 'Too many redshifts'
         do i=1, P%transfer%PK_num_redshifts
             P%transfer%PK_redshifts(i)  = Ini_Read_Double_Array('transfer_redshift',i,0._dl)
             transferFileNames(i)     = Ini_Read_String_Array('transfer_filename',i)
@@ -329,7 +207,7 @@ program driver
     call Recombination_ReadParams(P%Recomb, DefIni)
     if (Ini_HasKey('recombination')) then
         i = Ini_Read_Int('recombination',1)
-        if (i/=1) stop 'recombination option deprecated'
+        if (i/=1) error stop 'recombination option deprecated'
     end if
 
     call Bispectrum_ReadParams(BispectrumParams, DefIni, outroot)
@@ -400,7 +278,7 @@ program driver
     !Mess here to fix typo with backwards compatibility
     if (Ini_HasKey('do_late_rad_trunction')) then
         DoLateRadTruncation = Ini_Read_Logical('do_late_rad_trunction',.true.)
-        if (Ini_HasKey('do_late_rad_truncation')) stop 'check do_late_rad_xxxx'
+        if (Ini_HasKey('do_late_rad_truncation')) error stop 'check do_late_rad_xxxx'
     else
         DoLateRadTruncation = Ini_Read_Logical('do_late_rad_truncation',.true.)
     end if
@@ -411,6 +289,8 @@ program driver
         DoTensorNeutrinos = Ini_Read_Logical('do_tensor_neutrinos',DoTensorNeutrinos )
     end if
     FeedbackLevel = Ini_Read_Int('feedback_level',FeedbackLevel)
+
+    output_file_headers = Ini_Read_Logical('output_file_headers',output_file_headers)
 
     P%MassiveNuMethod  = Ini_Read_Int('massive_nu_approx',Nu_best)
 
@@ -432,7 +312,7 @@ program driver
 
     call Ini_Close
 
-    if (.not. CAMB_ValidateParams(P)) stop 'Stopped due to parameter error'
+    if (.not. CAMB_ValidateParams(P)) error stop 'Stopped due to parameter error'
 
 #ifdef RUNIDLE
     call SetIdle
@@ -440,8 +320,8 @@ program driver
 
     if (global_error_flag==0) call CAMB_GetResults(P)
     if (global_error_flag/=0) then
-        write (*,*) 'Error result '//trim(global_error_message)
-        stop
+        write(*,*) 'Error result '//trim(global_error_message)
+        error stop
     endif
 
     if (P%PK_WantTransfer) then
@@ -469,7 +349,7 @@ program driver
     stop
 
 100 stop 'Must give num_massive number of integer physical neutrinos for each eigenstate'
-end program driver
+    end program driver
 
 
 #ifdef RUNIDLE
