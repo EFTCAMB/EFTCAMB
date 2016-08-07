@@ -12,5 +12,9 @@
 *.a
 *.pyc
 
+# ignore the profiler file:
+gmon.out
+
 # ignore the executables:
 eftbenchmark
+eftprofile

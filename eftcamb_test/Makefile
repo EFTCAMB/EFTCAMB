@@ -30,7 +30,9 @@ LEGACY_DIR=$(TEST_DIR)/results_legacy
 
 all: spectra benchmark profile compare_legacy spectra_plot
 
-default: spectra compare_legacy
+test: spectra compare_legacy
+
+default: test
 
 # results creation target:
 

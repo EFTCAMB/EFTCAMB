@@ -1,0 +1,3 @@
+# directory that has to remain empty:
+*
+!.gitignore

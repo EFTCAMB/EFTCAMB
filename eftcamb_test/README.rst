@@ -8,7 +8,7 @@ The purpose of this code is to test wether the EFTCAMB code is correctly compile
 This set of scripts is also used by EFTCAMB developers to make sure that the code is working properly and that changes introduced do not compromise the results of the code or its stability.
 
 1. EFTCAMB test requirements:
-===============================
+=============================
 
 The test suite requires numdiff to properly work and is based on a set of bash scripts.
 
@@ -46,10 +46,10 @@ This will totally overwrite the previous results so this command is dangerous to
 5. Makefile targets:
 ====================
 
-The test suite Makefile has several targets:
+The test suite Makefile has several targets::
 
   all: run all targets
-  default: creates the spectra and tests them
+  test: creates the spectra and tests them
 
   clean: removes all test results
 
