@@ -36,3 +36,4 @@ For this reason we use the following convention for the prefixes:
 
 * ``1_`` compile time utilities
 * ``2_`` pure algorithms
+* ``3_`` general parametrizations of functions

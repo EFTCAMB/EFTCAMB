@@ -36,7 +36,7 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Bracketing subroutine: This subroutine does a outward search for the smallest intervall
-    !> containing a root of the equation func=funcZero
+    !! containing a root of the equation func=funcZero
     subroutine zbrac(func,x1,x2,succes,funcZero)
 
         implicit none
@@ -82,8 +82,8 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Brent root finding algorithm:  This is used to solve numerically the equation
-    !> func=funcZero by means of the Brent method. Notice that the initial interval has to bracket
-    !> the root of the function.
+    !! func=funcZero by means of the Brent method. Notice that the initial interval has to bracket
+    !! the root of the function.
     function zbrent(func,x1,x2,tol,funcZero,succes)
 
         implicit none
@@ -96,7 +96,7 @@ contains
         real(dl) :: funcZero  !< the value desired func = funcZero
         logical  :: succes    !< true if the algorithm succeeds false if not
 
-        real(dl) zbrent
+        real(dl) :: zbrent    !< returns the value of x at which the function satisfies func = funcZero up to numerical accuracy
 
         external func
 
