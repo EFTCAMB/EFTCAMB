@@ -440,7 +440,7 @@ program driver
 
     t2 = (t2 -t1)/10._dl
 
-    write(*,"(a,F9.3,a)") 'Timing: ', t2, ' (sec).'
+    write(*,"(F9.3,a)") t2, ' (sec)'
 
     call CAMB_cleanup
     stop

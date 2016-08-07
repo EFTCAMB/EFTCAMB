@@ -48,22 +48,21 @@ profile:
 spectra_plot:
 	@bash $(SCRIPT_DIR)/test_plot.sh
 	
-legacy_plot:
-	@bash $(SCRIPT_DIR)/legacy_comp_spectra.sh
-
 # legacy target:
 
-compare_legacy: spectra 
+compare_legacy: spectra
+	@bash $(SCRIPT_DIR)/legacy_comp_spectra.sh
 
-create_legacy: spectra compare_legacy
+create_legacy: spectra
+	@rm -rf $(LEGACY_DIR)/*
+	@mv -f  $(RESULTS_DIR)/Spectra_results/* $(LEGACY_DIR)/
+	@rm -rf $(LEGACY_DIR)/*.log
 
 # clean target:
 
 clean:
 	@rm -rf $(RESULTS_DIR)/Spectra_results/*
 	@rm -rf $(RESULTS_DIR)/Spectra_Plots/*
-	@rm -rf $(RESULTS_DIR)/Stability_Results/*
-	@rm -rf $(RESULTS_DIR)/Stability_Plots/*
 	@rm -rf $(RESULTS_DIR)/Profile/*
 	@rm -rf $(RESULTS_DIR)/Legacy_Spectra_Plot/*
 	@rm -rf $(RESULTS_DIR)/Benchmark_Results/*
