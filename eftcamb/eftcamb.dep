@@ -28,6 +28,15 @@ $(OUTPUT_DIR)/2_odepack_add_2.o :  \
 $(OUTPUT_DIR)/2_odepack_main.o :  \
 	$(OUTPUT_DIR)/2_odepack_add_2.o
 
+$(OUTPUT_DIR)/2_interpolation.o :  \
+	$(OUTPUT_DIR)/constants.o
+
+$(OUTPUT_DIR)/2_root_finding.o :  \
+	$(OUTPUT_DIR)/constants.o
+
+$(OUTPUT_DIR)/2_utilities.o :  \
+	$(OUTPUT_DIR)/constants.o
+
 # for the library folder:
 
 $(DLL_DIR)/1_EFT_def.o :  \
@@ -38,4 +47,16 @@ $(DLL_DIR)/2_odepack_add_2.o :  \
 
 $(DLL_DIR)/2_odepack_main.o :  \
 	$(DLL_DIR)/2_odepack_add_2.o
+	
+$(DLL_DIR)/2_interpolation.o :  \
+	$(DLL_DIR)/constants.o
+
+$(DLL_DIR)/2_root_finding.o :  \
+	$(DLL_DIR)/constants.o
+	
+$(DLL_DIR)/2_utilities.o :  \
+	$(DLL_DIR)/constants.o
+
+
+
 
