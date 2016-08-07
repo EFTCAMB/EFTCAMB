@@ -19,3 +19,6 @@ gmon.out
 camb
 eftbenchmark
 eftprofile
+
+# ignore the compilation folder:
+Release

@@ -19,9 +19,11 @@
 
 # get the eftcamb sources:
 EFTCAMB_SOURCES_FILES := $(wildcard $(EFTCAMB_DIR)/*.f90)
+EFTCAMB_SOURCES_FILES +=$(wildcard $(EFTCAMB_DIR)/*.f)
 
 # replace the relevant suffix:
 EFT_TEMP_1 := $(patsubst %.f90,%,$(EFTCAMB_SOURCES_FILES))
+EFT_TEMP_1 := $(patsubst %.f,%,$(EFT_TEMP_1))
 EFT_TEMP_2 := $(notdir $(EFT_TEMP_1))
 EFT_FILES  := $(addsuffix .o, $(EFT_TEMP_2))
 
@@ -38,6 +40,12 @@ $(OUTPUT_DIR)/%.o: $(EFTCAMB_DIR)/%.f90
 
 $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.f90
 	$(F90C) $(SF90FLAGS) -c $(EFTCAMB_DIR)/$*.f90 -o $(DLL_DIR)/$*.o
+
+$(OUTPUT_DIR)/%.o: $(EFTCAMB_DIR)/%.f
+	$(F90C) $(F90FLAGS) -c $(EFTCAMB_DIR)/$*.f -o $(OUTPUT_DIR)/$*.o
+
+$(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.f
+	$(F90C) $(SF90FLAGS) -c $(EFTCAMB_DIR)/$*.f -o $(DLL_DIR)/$*.o
 
 # add the EFTCAMB files to the standard ones:
 CAMBOBJ += $(EFT_OBJ)
