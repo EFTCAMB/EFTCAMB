@@ -28,6 +28,7 @@ module EFTCAMB_main
 
     use precision
     use EFTCAMB_abstract_model
+    use EFTCAMB_pure_EFT_std
     use IniFile
 
     implicit none
@@ -53,7 +54,7 @@ module EFTCAMB_main
         logical   :: MinkowskyPriors
 
         ! EFTCAMB model:
-        type(EFTCAMB_model), allocatable :: model  !< This is the EFTCAMB model in the main class.
+        class(EFTCAMB_model), allocatable :: model !< This is the EFTCAMB model in the main class.
 
         ! EFTCAMB working flags:
         integer   :: EFTCAMB_feedback_level        !< Amount of feedback that is printed to screen.
@@ -95,6 +96,8 @@ contains
         self%EFT_physical_stability     = Ini_Read_Logical_File( Ini, 'EFT_physical_stability'    , .true. )
         self%EFTAdditionalPriors        = Ini_Read_Logical_File( Ini, 'EFTAdditionalPriors'       , .true. )
         self%MinkowskyPriors            = Ini_Read_Logical_File( Ini, 'MinkowskyPriors'           , .true. )
+        ! feedback flag (shared with CAMB):
+        self%EFTCAMB_feedback_level     = Ini_Read_Int_File( Ini, 'feedback_level', 1 )
 
     end subroutine read_EFTCAMB_flags_from_file
 
@@ -142,6 +145,10 @@ contains
         if ( .not. self%EFTCAMB_feedback_level > 0 ) return
         ! if GR return:
         if ( self%EFTflag == 0 ) return
+        ! print feedback flag:
+        write(*,*)
+        write(*,'(a, I3)') ' EFTCAMB feedback level  =', self%EFTCAMB_feedback_level
+
         ! print stability flags:
         write(*,*)
         write(*,*) 'EFTCAMB stability flags:'
@@ -193,9 +200,19 @@ contains
 
             case (0)     ! GR:
 
-                allocate( self%model )
+                allocate( EFTCAMB_model::self%model )
 
             case (1)     ! Pure EFT:
+
+                select case ( self%PureEFTmodel )
+                    case(1)
+                        allocate( EFTCAMB_std_pure_EFT::self%model )
+                    case default
+                        write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
+                        write(*,'(a,I3)') 'and PureEFTmodel =', self%PureEFTmodel
+                        write(*,'(a)') 'Please select an appropriate model.'
+                        stop
+                end select
 
             case (2)     ! Alternative EFT:
 
@@ -205,13 +222,13 @@ contains
 
             case default ! not found:
 
-                write(*,*) 'No model corresponding to EFTFlag=', self%EFTflag
-                write(*,*) 'Please select an appropriate model:'
-                write(*,*) 'EFTFlag=0  GR code'
-                write(*,*) 'EFTFlag=1  Pure EFT'
-                write(*,*) 'EFTFlag=2  EFT alternative parametrizations'
-                write(*,*) 'EFTFlag=3  designer mapping EFT'
-                write(*,*) 'EFTFlag=4  full mapping EFT'
+                write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
+                write(*,'(a)') 'Please select an appropriate model:'
+                write(*,'(a)') 'EFTFlag=0  GR code'
+                write(*,'(a)') 'EFTFlag=1  Pure EFT'
+                write(*,'(a)') 'EFTFlag=2  EFT alternative parametrizations'
+                write(*,'(a)') 'EFTFlag=3  designer mapping EFT'
+                write(*,'(a)') 'EFTFlag=4  full mapping EFT'
                 stop
 
         end select

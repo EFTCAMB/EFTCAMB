@@ -122,10 +122,10 @@
     P%Num_Nu_massless  = Ini_Read_Double('massless_neutrinos')
 
     ! EFTCAMB MOD START: read and allocate EFTCAMB
-    ! print the EFTCAMB header:
-    call P%EFTCAMB%EFTCAMB_print_header()
     ! read the EFTCAMB model selection flags:
     call P%EFTCAMB%EFTCAMB_init_from_file( DefIni )
+    ! print the EFTCAMB header:
+    call P%EFTCAMB%EFTCAMB_print_header()
     ! allocate model:
     call P%EFTCAMB%EFTCAMB_allocate_model()
     ! read the parameters of the model:

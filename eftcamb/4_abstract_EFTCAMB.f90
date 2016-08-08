@@ -68,7 +68,8 @@ contains
 
         ! check that the model name is initialized:
         if ( .not. allocated(self%name) ) then
-            write(*,*) 'ERROR, the model name is not set. Most likely you do not have run properly model initialization.'
+            write(*,*) 'EFTCAMB ERROR, the model name is not set.'
+            write(*,*) 'Most likely you did not run properly model initialization.'
             stop
         end if
         ! return the name:
