@@ -1,5 +1,11 @@
 #Files containing evolution equations initial power spectrum module
-EQUATIONS     ?= equations
+
+# EFTCAMB MOD START: use equations EFT
+EQUATIONS     ?= equations_EFT
+# original code:
+# EQUATIONS     ?= equations
+# EFTCAMB MOD END.
+
 POWERSPECTRUM ?= power_tilt
 REIONIZATION ?= reionization
 RECOMBINATION ?= recfast

@@ -67,7 +67,11 @@ $(OUTPUT_DIR)/9_EFTCAMB_main.o :\
 	$(OUTPUT_DIR)/3_base_parametrizations.o \
 	$(OUTPUT_DIR)/4_abstract_EFTCAMB.o \
 	$(OUTPUT_DIR)/9_EFTCAMB_RGR.o \
-	$(OUTPUT_DIR)/9_EFTCAMB_stability.o
+	$(OUTPUT_DIR)/9_EFTCAMB_stability.o \
+	$(OUTPUT_DIR)/inifile.o
+#
+$(OUTPUT_DIR)/modules.o :\
+	$(OUTPUT_DIR)/9_EFTCAMB_main.o
 #
 
 # for the library folder:
@@ -120,6 +124,11 @@ $(DLL_DIR)/9_EFTCAMB_main.o :\
 	$(DLL_DIR)/3_base_parametrizations.o \
 	$(DLL_DIR)/4_abstract_EFTCAMB.o \
 	$(DLL_DIR)/9_EFTCAMB_RGR.o \
-	$(DLL_DIR)/9_EFTCAMB_stability.o
+	$(DLL_DIR)/9_EFTCAMB_stability.o \
+	$(DLL_DIR)/inifile.o
 #
+$(DLL_DIR)/modules.o :\
+	$(DLL_DIR)/9_EFTCAMB_main.o
+#
+
 	

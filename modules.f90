@@ -32,6 +32,10 @@
     use Recombination
     use Errors
 
+    ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
+    use EFTCAMB_main
+    ! EFTCAMB MOD END.
+
     implicit none
     public
 
@@ -119,6 +123,10 @@
         real(dl)  :: Nu_mass_degeneracies(max_nu)
         real(dl)  :: Nu_mass_fractions(max_nu) !The ratios of the total densities
         integer   :: Nu_mass_numbers(max_nu) !physical number per eigenstate
+
+        ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
+        type(EFTCAMB) :: EFTCAMB
+        ! EFTCAMB MOD END.
 
         integer   :: Scalar_initial_condition
         !must be one of the initial_xxx values defined in GaugeInterface
