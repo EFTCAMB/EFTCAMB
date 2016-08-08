@@ -19,44 +19,40 @@
 
 # for the output folder:
 
-$(OUTPUT_DIR)/1_EFT_def.o :  \
+$(OUTPUT_DIR)/1_EFT_def.o : \
 	$(OUTPUT_DIR)/constants.o
-
-$(OUTPUT_DIR)/2_odepack_add_2.o :  \
+$(OUTPUT_DIR)/2_odepack_add_2.o : \
 	$(OUTPUT_DIR)/2_odepack_add_1.o
-
-$(OUTPUT_DIR)/2_odepack_main.o :  \
+$(OUTPUT_DIR)/2_odepack_main.o : \
 	$(OUTPUT_DIR)/2_odepack_add_2.o
-
-$(OUTPUT_DIR)/2_interpolation.o :  \
+$(OUTPUT_DIR)/2_interpolation.o : \
 	$(OUTPUT_DIR)/constants.o
-
-$(OUTPUT_DIR)/2_root_finding.o :  \
+$(OUTPUT_DIR)/2_root_finding.o : \
 	$(OUTPUT_DIR)/constants.o
-
-$(OUTPUT_DIR)/2_utilities.o :  \
+$(OUTPUT_DIR)/2_utilities.o : \
 	$(OUTPUT_DIR)/constants.o
+$(OUTPUT_DIR)/3_abstract_parametrizations.o : \
+	$(OUTPUT_DIR)/constants.o
+$(OUTPUT_DIR)/3_base_parametrizations.o :\
+	$(OUTPUT_DIR)/constants.o \
+	$(OUTPUT_DIR)/3_abstract_parametrizations.o
 
 # for the library folder:
 
 $(DLL_DIR)/1_EFT_def.o :  \
 	$(DLL_DIR)/constants.o
-	
 $(DLL_DIR)/2_odepack_add_2.o :  \
 	$(DLL_DIR)/2_odepack_add_1.o
-
 $(DLL_DIR)/2_odepack_main.o :  \
 	$(DLL_DIR)/2_odepack_add_2.o
-	
 $(DLL_DIR)/2_interpolation.o :  \
 	$(DLL_DIR)/constants.o
-
 $(DLL_DIR)/2_root_finding.o :  \
 	$(DLL_DIR)/constants.o
-	
 $(DLL_DIR)/2_utilities.o :  \
 	$(DLL_DIR)/constants.o
-
-
-
-
+$(DLL_DIR)/3_abstract_parametrizations.o :  \
+	$(DLL_DIR)/constants.o
+$(DLL_DIR)/3_base_parametrizations.o :  \
+	$(DLL_DIR)/constants.o \
+	$(DLL_DIR)/3_abstract_parametrizations.o

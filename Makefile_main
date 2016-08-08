@@ -55,6 +55,8 @@ CAMBSO       =  $(DLL_DIR)/constants.o  $(DLL_DIR)/utils.o $(EXTCAMBFILES)  $(DL
 EFTCAMB_DIR=$(abspath .)/eftcamb
 # include EFTCAMB make file:
 include $(EFTCAMB_DIR)/eftcamb_build.make
+# include EFTCAMB dependencies:
+include $(EFTCAMB_DIR)/eftcamb.dep
 
 # EFTCAMB MOD END.
 

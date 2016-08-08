@@ -31,9 +31,6 @@ EFT_FILES  := $(addsuffix .o, $(EFT_TEMP_2))
 EFT_OBJ = $(addprefix $(OUTPUT_DIR)/, $(EFT_FILES))
 EFT_SOJ = $(addprefix $(DLL_DIR)/, $(EFT_FILES))
 
-# include EFTCAMB dependencies:
-include $(EFTCAMB_DIR)/eftcamb.dep
-
 # how to build EFTCAMB files:
 $(OUTPUT_DIR)/%.o: $(EFTCAMB_DIR)/%.f90
 	$(F90C) $(F90FLAGS) -c $(EFTCAMB_DIR)/$*.f90 -o $(OUTPUT_DIR)/$*.o
@@ -50,6 +47,8 @@ $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.f
 # add the EFTCAMB files to the standard ones:
 CAMBOBJ += $(EFT_OBJ)
 CAMBSO  += $(EFT_SOJ)
+
+camb: $(EFT_OBJ)
 
 # additional EFTCAMB targets:
 
