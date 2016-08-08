@@ -31,24 +31,24 @@ module EFTDef
     ! EFT compile time flags:
 
     real(dl), parameter :: EFTturnonpiInitial = 1.d-2 !< Turn on pi field flag:
-        !<    Sets the scale factor at which the code starts to evolve the pi field.
-        !<    At times earlier than these the code evolves perturbations as in GR.
-        !<    This number is used as a lower bound and is refined if the teory is very close to GR
-        !<    by the EFTreturntoGR module.
+        !!    Sets the scale factor at which the code starts to evolve the pi field.
+        !!    At times earlier than these the code evolves perturbations as in GR.
+        !!    This number is used as a lower bound and is refined if the teory is very close to GR
+        !!    by the EFTreturntoGR module.
 
     real(dl), parameter :: EFTtoGR = 1.d-8 !< Return to GR flag:
-        !<    This is the threshold at which a theory is considered to be exactly GR.
+        !!    This is the threshold at which a theory is considered to be exactly GR.
 
     logical , parameter :: EarlyTimeStability = .true. !< Early time stability:
-        !<    EFTCAMB checks the stability of the theory at all times making sure that the choosen model
-        !<    is viable during radiation, matter and DE eras.
-        !<    It is possible to enforce stability only at late times (from EFTturnonpiInitial to today)
-        !<    by setting this flag to false.
-        !<    This choice will however make the results dependent on what one calls late time,
-        !<    i.e. the choice of EFTturnonpiInitial, so we advice to state it clearly when reporting results.
+        !!    EFTCAMB checks the stability of the theory at all times making sure that the choosen model
+        !!    is viable during radiation, matter and DE eras.
+        !!    It is possible to enforce stability only at late times (from EFTturnonpiInitial to today)
+        !!    by setting this flag to false.
+        !!    This choice will however make the results dependent on what one calls late time,
+        !!    i.e. the choice of EFTturnonpiInitial, so we advice to state it clearly when reporting results.
 
     logical , parameter :: DebugEFTCAMB = .false. !< EFTCAMB debug flag.This will turn on printing of many
-        !< things to aid debugging the code.
+        !! things to aid debugging the code.
 
 end module EFTDef
 

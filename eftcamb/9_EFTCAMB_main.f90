@@ -32,7 +32,7 @@ module EFTCAMB_main
 
     implicit none
 
-    character(LEN=*), parameter :: EFTCAMB_version = 'Ago16'
+    character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Aug16'
 
     !----------------------------------------------------------------------------------------
     !> This is the main object for EFTCAMB. Get one of these and you can use all the stuff
@@ -61,10 +61,12 @@ module EFTCAMB_main
     contains
 
         ! utility functions:
-        procedure :: EFTCAMB_init_from_file       => read_EFTCAMB_flags_from_file  !< subroutine that initializes EFTCAMB from an INI file.
-        procedure :: EFTCAMB_print_model_feedback => print_EFTCAMB_flags           !< subroutine that prints to screen the model flags and parameters.
+        procedure :: EFTCAMB_init_from_file        => read_EFTCAMB_flags_from_file  !< subroutine that initializes EFTCAMB from an INI file.
+        procedure :: EFTCAMB_print_header          => print_EFTCAMB_header          !< subroutine that prints to screen the EFTCAMB header.
+        procedure :: EFTCAMB_print_model_feedback  => print_EFTCAMB_flags           !< subroutine that prints to screen the model flags and parameters.
         ! model allocation:
-        procedure :: EFTCAMB_allocate_model => allocate_EFTCAMB_model        !< subroutine that, based on the model selection flags allocates the EFTCAMB model.
+        procedure :: EFTCAMB_allocate_model        => allocate_EFTCAMB_model        !< subroutine that, based on the model selection flags allocates the EFTCAMB model.
+        procedure :: EFTCAMB_read_model_parameters => read_EFTCAMB_model_params     !< subroutine that reads the model parameters. Just a wrapper to the model specific subroutine.
 
     end type EFTCAMB
 
@@ -97,43 +99,27 @@ contains
     end subroutine read_EFTCAMB_flags_from_file
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that allocates the EFTCAMB model based on the model selection flags.
-    !! If implementing a new model this is the place to allocate it.
-    subroutine allocate_EFTCAMB_model( self )
+    !> Subroutine that prints to screen the EFTCAMB header.
+    subroutine print_EFTCAMB_header( self )
 
         implicit none
 
-        class(EFTCAMB)      :: self       !< the base class
+        class(EFTCAMB) :: self       !< the base class
 
-        ! check the allocation of the model:
-        if ( allocated(self%model) ) deallocate(self%model)
+        ! check feedback level:
+        if ( .not. self%EFTCAMB_feedback_level > 0 ) return
+        ! if GR return:
+        if ( self%EFTflag == 0 ) return
+        ! print the header:
+        write(*,'(a)') "***************************************************************"
+        write(*,'(a)') "     ______________________   __  ______  "
+        write(*,'(a)') "    / __/ __/_  __/ ___/ _ | /  |/  / _ ) "
+        write(*,'(a)') "   / _// _/  / / / /__/ __ |/ /|_/ / _  | "
+        write(*,'(a)') "  /___/_/   /_/  \___/_/ |_/_/  /_/____/  "//" "//EFTCAMB_version
+        write(*,'(a)') "  "
+        write(*,'(a)') "***************************************************************"
 
-        ! do the allocation:
-        select case ( self%EFTflag )
-            ! GR:
-            case (0)
-                allocate( self%model )
-            ! Pure EFT:
-            case (1)
-            ! Alternative EFT:
-            case (2)
-            ! Designer mapping EFT:
-            case (3)
-            ! Full mapping EFT:
-            case (4)
-            ! not found:
-            case default
-                write(*,*) 'No model corresponding to EFTFlag=', self%EFTflag
-                write(*,*) 'Please select an appropriate model:'
-                write(*,*) 'EFTFlag=0  GR code'
-                write(*,*) 'EFTFlag=1  Pure EFT'
-                write(*,*) 'EFTFlag=2  EFT alternative parametrizations'
-                write(*,*) 'EFTFlag=3  designer mapping EFT'
-                write(*,*) 'EFTFlag=4  full mapping EFT'
-                stop
-        end select
-
-    end subroutine allocate_EFTCAMB_model
+    end subroutine print_EFTCAMB_header
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints to screen informations about the model and the model parameters.
@@ -143,9 +129,13 @@ contains
 
         class(EFTCAMB)      :: self       !< the base class
 
+        character(len=500)  :: temp_name
+        real(dl)            :: temp_value
+        integer             :: i
+
         ! check the allocation of the model:
         if ( .not. allocated(self%model) ) then
-            write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model feedback without allocationg the model'
+            write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model feedback without allocating the model'
             stop
         end if
         ! check feedback level:
@@ -172,8 +162,82 @@ contains
             write(*,"(A24,I3)") '   DesignerEFTmodel    =', self%DesignerEFTmodel
         if ( self%EFTflag == 4 ) &
             write(*,"(A24,I3)") '   FullMappingEFTmodel =', self%DesignerEFTmodel
+        ! print model name:
+        call self%model%model_name( temp_name )
+        write(*,*)
+        write(*,*)              '   Model               =', temp_name
+        ! print model parameters:
+        write(*,*)
+        do i=1, self%model%parameter_number
+            call self%model%parameter_names ( i, temp_name  )
+            call self%model%parameter_values( i, temp_value )
+            write(*,"(A18,A1,F9.6)") temp_name, ' = ', temp_value
+        end do
 
     end subroutine print_EFTCAMB_flags
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that allocates the EFTCAMB model based on the model selection flags.
+    !! If implementing a new model this is the place to allocate it.
+    subroutine allocate_EFTCAMB_model( self )
+
+        implicit none
+
+        class(EFTCAMB)      :: self       !< the base class
+
+        ! check the allocation of the model:
+        if ( allocated(self%model) ) deallocate(self%model)
+
+        ! do the allocation:
+        select case ( self%EFTflag )
+
+            case (0)     ! GR:
+
+                allocate( self%model )
+
+            case (1)     ! Pure EFT:
+
+            case (2)     ! Alternative EFT:
+
+            case (3)     ! Designer mapping EFT:
+
+            case (4)     ! Full mapping EFT:
+
+            case default ! not found:
+
+                write(*,*) 'No model corresponding to EFTFlag=', self%EFTflag
+                write(*,*) 'Please select an appropriate model:'
+                write(*,*) 'EFTFlag=0  GR code'
+                write(*,*) 'EFTFlag=1  Pure EFT'
+                write(*,*) 'EFTFlag=2  EFT alternative parametrizations'
+                write(*,*) 'EFTFlag=3  designer mapping EFT'
+                write(*,*) 'EFTFlag=4  full mapping EFT'
+                stop
+
+        end select
+
+    end subroutine allocate_EFTCAMB_model
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads the model parameters. Just a wrapper to the model specific subroutine.
+    subroutine read_EFTCAMB_model_params( self, Ini )
+
+        implicit none
+
+        class(EFTCAMB)      :: self       !< the base class
+        type(TIniFile)      :: Ini        !< Input ini file
+
+        ! check the allocation of the model:
+        if ( .not. allocated(self%model) ) then
+            write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model read parameters'
+            write(*,*) ' without allocating the model'
+            stop
+        end if
+
+        ! call the model specific read parameters:
+        call self%model%read_parameters_file( Ini )
+
+    end subroutine read_EFTCAMB_model_params
 
     ! ---------------------------------------------------------------------------------------------
 

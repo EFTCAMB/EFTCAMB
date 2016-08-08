@@ -27,6 +27,7 @@
 module EFTCAMB_abstract_model
 
     use precision
+    use IniFile
 
     implicit none
 
@@ -46,6 +47,9 @@ module EFTCAMB_abstract_model
         procedure :: model_name            => EFTCAMBModelName                !< subroutine that returns the name of the EFTCAMB model
         procedure :: parameter_names       => EFTCAMBModelParameterNames      !< subroutine that returns the i-th parameter name of the model
         procedure :: parameter_names_latex => EFTCAMBModelParameterNamesLatex !< subroutine that returns the i-th parameter name of the model
+        procedure :: parameter_values      => EFTCAMBModelParameterValues     !< subroutine that returns the i-th parameter value
+        ! initialization of the model:
+        procedure :: read_parameters_file  => EFTCAMBModelReadParametersFromFile !< subroutine that reads the parameters of the model from file
 
     end type EFTCAMB_model
 
@@ -95,6 +99,29 @@ contains
         character(*), intent(out) :: latexname  !< the output latex name of the i-th parameter
 
     end subroutine EFTCAMBModelParameterNamesLatex
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that returns the i-th parameter name of the model
+    subroutine EFTCAMBModelParameterValues( self, i, value )
+
+        implicit none
+
+        class(EFTCAMB_model)  :: self   !< the base class
+        integer , intent(in)  :: i      !< The index of the parameter
+        real(dl), intent(out) :: value  !< the output value of the i-th parameter
+
+    end subroutine EFTCAMBModelParameterValues
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads the parameters of the model from file.
+    subroutine EFTCAMBModelReadParametersFromFile( self, Ini )
+
+        implicit none
+
+        class(EFTCAMB_model)  :: self   !< the base class
+        type(TIniFile)        :: Ini    !< Input ini file
+
+    end subroutine EFTCAMBModelReadParametersFromFile
 
     ! ---------------------------------------------------------------------------------------------
 

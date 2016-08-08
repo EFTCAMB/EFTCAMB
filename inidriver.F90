@@ -17,6 +17,7 @@
 #ifdef NAGF95
     use F90_UNIX
 #endif
+
     implicit none
 
     Type(CAMBparams) P
@@ -119,6 +120,19 @@
     P%tcmb   = Ini_Read_Double('temp_cmb',COBE_CMBTemp)
     P%yhe    = Ini_Read_Double('helium_fraction',0.24_dl)
     P%Num_Nu_massless  = Ini_Read_Double('massless_neutrinos')
+
+    ! EFTCAMB MOD START: read and allocate EFTCAMB
+    ! print the EFTCAMB header:
+    call P%EFTCAMB%EFTCAMB_print_header()
+    ! read the EFTCAMB model selection flags:
+    call P%EFTCAMB%EFTCAMB_init_from_file( DefIni )
+    ! allocate model:
+    call P%EFTCAMB%EFTCAMB_allocate_model()
+    ! read the parameters of the model:
+    call P%EFTCAMB%EFTCAMB_read_model_parameters( DefIni )
+    ! print feedback:
+    call P%EFTCAMB%EFTCAMB_print_model_feedback()
+    ! EFTCAMB MOD END.
 
     P%Nu_mass_eigenstates = Ini_Read_Int('nu_mass_eigenstates',1)
     if (P%Nu_mass_eigenstates > max_nu) error stop 'too many mass eigenstates'
