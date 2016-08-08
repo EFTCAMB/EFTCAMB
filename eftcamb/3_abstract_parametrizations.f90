@@ -41,7 +41,9 @@ module EFTCAMB_abstract_parametrizations
     !! This guarantees maximum performances as well as maximum flexibility.
     type parametrized_function
 
-        integer :: parameter_number !< Number of parameters defining the parametrizaed function
+        integer                       :: parameter_number !< number of parameters defining the parametrizaed function
+        character(len=:), allocatable :: name             !< name of the function
+        character(len=:), allocatable :: name_latex       !< latex name of the function
 
     contains
 
@@ -63,23 +65,25 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that returns the i-th parameter name
-    subroutine ParametrizedFunctionParameterNames( self, i )
+    subroutine ParametrizedFunctionParameterNames( self, i, name )
 
         implicit none
 
-        class(parametrized_function) :: self  !<the base class
-        integer, intent(in) :: i              !< The index of the parameter
+        class(parametrized_function)  :: self   !< the base class
+        integer     , intent(in)      :: i      !< the index of the parameter
+        character(*), intent(out)     :: name   !< the output name of the i-th parameter
 
     end subroutine ParametrizedFunctionParameterNames
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that returns the latex version of the i-th parameter name
-    subroutine ParametrizedFunctionParameterNamesLatex( self, i )
+    subroutine ParametrizedFunctionParameterNamesLatex( self, i, latexname )
 
         implicit none
 
-        class(parametrized_function) :: self  !<the base class
-        integer, intent(in) :: i              !< The index of the parameter
+        class(parametrized_function) :: self       !<the base class
+        integer     , intent(in)     :: i          !< The index of the parameter
+        character(*), intent(out)    :: latexname  !< the output latex name of the i-th parameter
 
     end subroutine ParametrizedFunctionParameterNamesLatex
 
