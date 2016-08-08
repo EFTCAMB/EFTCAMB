@@ -128,7 +128,7 @@ contains
 
         implicit none
 
-        class(constant_parametrization) :: self        !<the base class
+        class(constant_parametrization) :: self        !< the base class
         integer     , intent(in)        :: i           !< The index of the parameter
         character(*), intent(out)       :: latexname   !< the output latex name of the i-th parameter
 
@@ -149,7 +149,7 @@ contains
 
         implicit none
 
-        class(constant_parametrization) :: self  !<the base class
+        class(constant_parametrization) :: self  !< the base class
         real(dl), intent(in)            :: a     !< the input scale factor
         real(dl) :: ConstantParametrizedValue    !< the output value
 
@@ -163,7 +163,7 @@ contains
 
         implicit none
 
-        class(constant_parametrization) :: self     !<the base class
+        class(constant_parametrization) :: self     !< the base class
         real(dl), intent(in)            :: a        !< the scale factor at which the integral is wanted
         real(dl) :: ConstantParametrizedIntegral    !< the output value
 
@@ -226,7 +226,7 @@ contains
 
         implicit none
 
-        class(linear_parametrization)   :: self        !<the base class
+        class(linear_parametrization)   :: self        !< the base class
         integer     , intent(in)        :: i           !< The index of the parameter
         character(*), intent(out)       :: latexname   !< the output latex name of the i-th parameter
 
@@ -247,7 +247,7 @@ contains
 
         implicit none
 
-        class(linear_parametrization)   :: self  !<the base class
+        class(linear_parametrization)   :: self  !< the base class
         real(dl), intent(in)            :: a     !< the input scale factor
         real(dl) :: LinearParametrizedValue    !< the output value
 

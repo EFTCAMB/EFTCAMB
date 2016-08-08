@@ -90,7 +90,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_model)      :: self       !<the base class
+        class(EFTCAMB_model)      :: self       !< the base class
         integer     , intent(in)  :: i          !< The index of the parameter
         character(*), intent(out) :: latexname  !< the output latex name of the i-th parameter
 

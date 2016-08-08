@@ -30,7 +30,40 @@ module EFTCAMB_main
 
     implicit none
 
+    !----------------------------------------------------------------------------------------
+    !> This is the main object for EFTCAMB. Get one of these and you can use all the stuff
+    !! in EFTCAMB.
+    type EFTCAMB
+
+        ! EFTCAMB model selection flags:
+        logical   :: EFTflag              !< Main EFTCAMB model selection flag. Decides one of the four modes to run EFTCAMB.
+        logical   :: PureEFTmodel         !< Model selection flag for pure EFT models.
+        logical   :: AltParEFTmodel       !< Model selection flag for alternative EFT parametrizations.
+        logical   :: DesignerEFTmodel     !< Model selection flag for designer mapping EFT models.
+        logical   :: FullMappingEFTmodel  !< Model selection flag for full mapping EFT models.
+
+    contains
+
+        ! utility functions:
+        procedure :: EFTCAMB_init_from_file => read_EFTCAMB_flags_from_file  !< subroutine that initializes EFTCAMB from an INI file.
+
+    end type EFTCAMB
+
+    ! ---------------------------------------------------------------------------------------------
+
 contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that returns the i-th parameter name of the model
+    subroutine read_EFTCAMB_flags_from_file( self )
+
+        implicit none
+
+        class(EFTCAMB)      :: self       !< the base class
+
+    end subroutine read_EFTCAMB_flags_from_file
+
+    ! ---------------------------------------------------------------------------------------------
 
 end module EFTCAMB_main
 
