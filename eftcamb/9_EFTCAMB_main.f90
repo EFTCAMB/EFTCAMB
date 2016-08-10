@@ -121,6 +121,8 @@ contains
         call self%EFTCAMB_allocate_model_functions( )
         ! read model parameters from file:
         call self%EFTCAMB_read_model_parameters( Ini )
+        ! compute model number of parameters:
+        call self%model%compute_param_number()
 
     end subroutine init_EFTCAMB_model_from_file
 

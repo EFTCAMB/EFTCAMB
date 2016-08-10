@@ -249,6 +249,16 @@ contains
 
         class(EFTCAMB_std_pure_EFT)  :: self   !< the base class
 
+        self%parameter_number = 0
+        self%parameter_number = self%parameter_number +self%PureEFTOmega%parameter_number
+        self%parameter_number = self%parameter_number +self%PureEFTwDE%parameter_number
+        self%parameter_number = self%parameter_number +self%PureEFTGamma1%parameter_number
+        self%parameter_number = self%parameter_number +self%PureEFTGamma2%parameter_number
+        self%parameter_number = self%parameter_number +self%PureEFTGamma3%parameter_number
+        self%parameter_number = self%parameter_number +self%PureEFTGamma4%parameter_number
+        self%parameter_number = self%parameter_number +self%PureEFTGamma5%parameter_number
+        self%parameter_number = self%parameter_number +self%PureEFTGamma6%parameter_number
+
     end subroutine EFTCAMBPureEFTstdComputeParametersNumber
 
     ! ---------------------------------------------------------------------------------------------
@@ -261,6 +271,7 @@ contains
 
         write(*,*)
         write(*,'(a,a)')    '   Model               =  ', self%name
+        write(*,'(a,I3)')   '   Number of params    ='  , self%parameter_number
         ! print model functions informations:
         write(*,*)
         if ( self%PureEFTmodelOmega  /= 0 ) write(*,'(a,I3)') '   PureEFTmodelOmega   =', self%PureEFTmodelOmega
