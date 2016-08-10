@@ -41,15 +41,17 @@ module EFTCAMB_constant_parametrization
 
     contains
 
+        ! initialization:
+        procedure :: init                  => ConstantParametrizedInitialize          !< subroutine that initializes the constant parametrization
+        procedure :: init_from_file        => ConstantParametrizedInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
+        procedure :: init_parameters       => ConstantParametrizedInit                !< subroutine that initializes the function parameters based on the values found in an input array.
+
+
         ! utility functions:
         procedure :: feedback              => ConstantParametrizedFeedback            !< subroutine that prints to screen the informations about the function.
         procedure :: parameter_names       => ConstantParametrizedParameterNames      !< subroutine that returns the i-th parameter name of the function
         procedure :: parameter_names_latex => ConstantParametrizedParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format
         procedure :: parameter_value       => ConstantParametrizedParameterValues     !< subroutine that returns the value of the function i-th parameter.
-        ! initialization:
-        procedure :: init                  => ConstantParametrizedInitialize          !< subroutine that initializes the constant parametrization
-        procedure :: init_from_file        => ConstantParametrizedInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
-        procedure :: init_parameters       => ConstantParametrizedInit                !< subroutine that initializes the function parameters based on the values found in an input array.
         ! evaluation procedures:
         procedure :: value                 => ConstantParametrizedValue               !< function that returns the value of the function
         procedure :: integral              => ConstantParametrizedIntegral            !< function that returns the strange integral that we need for w_DE
@@ -61,6 +63,55 @@ contains
     ! ---------------------------------------------------------------------------------------------
     ! Implementation of the constant function.
     ! ---------------------------------------------------------------------------------------------
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the constant parametrization
+    subroutine ConstantParametrizedInitialize( self, name, latexname )
+
+        implicit none
+
+        class(constant_parametrization) :: self       !< the base class
+        character(*), intent(in)        :: name       !< the name of the function
+        character(*), intent(in)        :: latexname  !< the latex name of the function
+
+        ! store the name of the function:
+        self%name             = TRIM( name )
+        ! store the latex name of the function:
+        self%name_latex       = TRIM( latexname )
+        ! initialize the number of parameters:
+        self%parameter_number = 1
+
+    end subroutine ConstantParametrizedInitialize
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads a Ini file looking for the parameters of the function.
+    subroutine ConstantParametrizedInitFromFile( self, Ini )
+
+        implicit none
+
+        class(constant_parametrization) :: self   !< the base class
+        type(TIniFile)                  :: Ini    !< Input ini file
+
+        character(len=EFT_names_max_length) :: param_name
+
+        call self%parameter_names( 1, param_name )
+
+        self%constant_value = Ini_Read_Double_File( Ini, TRIM(param_name), 0._dl )
+
+    end subroutine ConstantParametrizedInitFromFile
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the function parameters based on the values found in an input array.
+    subroutine ConstantParametrizedInit( self, array )
+
+        implicit none
+
+        class(constant_parametrization)                         :: self   !< the base class.
+        real(dl), dimension(self%parameter_number), intent(in)  :: array  !< input array with the values of the parameters.
+
+        self%constant_value = array(1)
+
+    end subroutine ConstantParametrizedInit
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints to screen the informations about the function.
@@ -78,7 +129,7 @@ contains
         do i=1, self%parameter_number
             call self%parameter_names( i, param_name  )
             call self%parameter_value( i, param_value )
-            write(*,*) param_name, '=', param_value
+            write(*,'(a23,a,F12.6)') param_name, '=', param_value
         end do
 
     end subroutine ConstantParametrizedFeedback
@@ -95,7 +146,7 @@ contains
 
         select case (i)
             case(1)
-                name = TRIM(self%name)//'_0'
+                name = TRIM(self%name)//'0'
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
@@ -146,52 +197,6 @@ contains
         end select
 
     end subroutine ConstantParametrizedParameterValues
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that initializes the constant parametrization
-    subroutine ConstantParametrizedInitialize( self, name, latexname )
-
-        implicit none
-
-        class(constant_parametrization) :: self       !< the base class
-        character(*), intent(in)        :: name       !< the name of the function
-        character(*), intent(in)        :: latexname  !< the latex name of the function
-
-        ! store the name of the function:
-        self%name             = TRIM( name )
-        ! store the latex name of the function:
-        self%name_latex       = TRIM( latexname )
-        ! initialize the number of parameters:
-        self%parameter_number = 1
-
-    end subroutine ConstantParametrizedInitialize
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that reads a Ini file looking for the parameters of the function.
-    subroutine ConstantParametrizedInitFromFile( self, Ini )
-
-        implicit none
-
-        class(constant_parametrization) :: self   !< the base class
-        type(TIniFile)                  :: Ini    !< Input ini file
-
-        self%constant_value = Ini_Read_Double_File( Ini, TRIM(self%name)//'_0', 0._dl )
-
-    end subroutine ConstantParametrizedInitFromFile
-
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that initializes the function parameters based on the values found in an input array.
-    subroutine ConstantParametrizedInit( self, array )
-
-        implicit none
-
-        class(constant_parametrization)                         :: self   !< the base class.
-        real(dl), dimension(self%parameter_number), intent(in)  :: array  !< input array with the values of the parameters.
-
-        self%constant_value = array(1)
-
-    end subroutine ConstantParametrizedInit
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the constant function.

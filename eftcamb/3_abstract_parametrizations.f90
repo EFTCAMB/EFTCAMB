@@ -48,14 +48,15 @@ module EFTCAMB_abstract_parametrizations
 
     contains
 
+        ! initialization procedures:
+        procedure :: init                  => ParametrizedFunctionInitialize          !< subroutine that initializes the name and latex name of the function.
+        procedure :: init_from_file        => ParametrizedFunctionInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
+        procedure :: init_parameters       => ParametrizedFunctionInit                !< subroutine that initializes the function parameters based on the values found in an input array.
         ! utility functions:
         procedure :: feedback              => ParametrizedFunctionFeedback            !< subroutine that prints to screen the informations about the function.
         procedure :: parameter_names       => ParametrizedFunctionParameterNames      !< subroutine that returns the i-th parameter name of the function.
         procedure :: parameter_names_latex => ParametrizedFunctionParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format.
         procedure :: parameter_value       => ParametrizedFunctionParameterValues     !< subroutine that returns the value of the function i-th parameter.
-        ! initialization procedures:
-        procedure :: init_from_file        => ParametrizedFunctionInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
-        procedure :: init_parameters       => ParametrizedFunctionInit                !< subroutine that initializes the function parameters based on the values found in an input array.
         ! evaluation procedures:
         procedure :: value                 => ParametrizedFunctionValue               !< function that returns the value of the function.
         procedure :: first_derivative      => ParametrizedFunctionFirstDerivative     !< function that returns the first derivative of the function.
@@ -68,6 +69,40 @@ module EFTCAMB_abstract_parametrizations
     ! ---------------------------------------------------------------------------------------------
 
 contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the name and latex name of the parametrization.
+    subroutine ParametrizedFunctionInitialize( self, name, latexname )
+
+        implicit none
+
+        class(parametrized_function)    :: self       !< the base class
+        character(*), intent(in)        :: name       !< the name of the function
+        character(*), intent(in)        :: latexname  !< the latex name of the function
+
+    end subroutine ParametrizedFunctionInitialize
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads a Ini file looking for the parameters of the function.
+    subroutine ParametrizedFunctionInitFromFile( self, Ini )
+
+        implicit none
+
+        class(parametrized_function) :: self   !< the base class
+        type(TIniFile)               :: Ini    !< Input ini file
+
+    end subroutine ParametrizedFunctionInitFromFile
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads a Ini file looking for the parameters of the function.
+    subroutine ParametrizedFunctionInit( self, array )
+
+        implicit none
+
+        class(parametrized_function)                           :: self   !< the base class.
+        real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
+
+    end subroutine ParametrizedFunctionInit
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints to screen the informations about the function
@@ -114,28 +149,6 @@ contains
         real(dl) , intent(out)       :: value      !< the output value of the i-th parameter
 
     end subroutine ParametrizedFunctionParameterValues
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that reads a Ini file looking for the parameters of the function.
-    subroutine ParametrizedFunctionInitFromFile( self, Ini )
-
-        implicit none
-
-        class(parametrized_function) :: self   !< the base class
-        type(TIniFile)               :: Ini    !< Input ini file
-
-    end subroutine ParametrizedFunctionInitFromFile
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that reads a Ini file looking for the parameters of the function.
-    subroutine ParametrizedFunctionInit( self, array )
-
-        implicit none
-
-        class(parametrized_function)                           :: self   !< the base class.
-        real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
-
-    end subroutine ParametrizedFunctionInit
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the function.

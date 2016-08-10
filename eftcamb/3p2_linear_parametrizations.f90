@@ -41,14 +41,14 @@ module EFTCAMB_linear_parametrizations
 
     contains
 
-        ! utility functions:
-        procedure :: feedback              => LinearParametrizedFeedback            !< subroutine that prints to screen the informations about the function.
-        procedure :: parameter_names       => LinearParametrizedParameterNames      !< subroutine that returns the i-th parameter name of the function
-        procedure :: parameter_names_latex => LinearParametrizedParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format
         ! initialization:
         procedure :: init                  => LinearParametrizedInitialize          !< subroutine that initializes the constant parametrization
         procedure :: init_from_file        => LinearParametrizedInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
         procedure :: init_parameters       => LinearParametrizedInit                !< subroutine that initializes the function parameters based on the values found in an input array.
+        ! utility functions:
+        procedure :: feedback              => LinearParametrizedFeedback            !< subroutine that prints to screen the informations about the function.
+        procedure :: parameter_names       => LinearParametrizedParameterNames      !< subroutine that returns the i-th parameter name of the function
+        procedure :: parameter_names_latex => LinearParametrizedParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format
         ! evaluation procedures:
         procedure :: value                 => LinearParametrizedValue               !< function that returns the value of the function
         procedure :: first_derivative      => LinearParametrizedFirstDerivative     !< function that returns the first derivative of the function
@@ -61,27 +61,6 @@ contains
     ! ---------------------------------------------------------------------------------------------
     ! Implementation of the linear function.
     ! ---------------------------------------------------------------------------------------------
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that prints to screen the informations about the function.
-    subroutine LinearParametrizedFeedback( self )
-
-        implicit none
-
-        class(linear_parametrization)   :: self         !< the base class
-
-        integer                             :: i
-        real(dl)                            :: param_value
-        character(len=EFT_names_max_length) :: param_name
-
-        write(*,*)     'Linear function: ', self%name
-        do i=1, self%parameter_number
-            call self%parameter_names( i, param_name  )
-            call self%parameter_value( i, param_value )
-            write(*,*) param_name, '=', param_value
-        end do
-
-    end subroutine LinearParametrizedFeedback
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the linear parametrization
@@ -129,6 +108,27 @@ contains
     end subroutine LinearParametrizedInit
 
     ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that prints to screen the informations about the function.
+    subroutine LinearParametrizedFeedback( self )
+
+        implicit none
+
+        class(linear_parametrization)   :: self         !< the base class
+
+        integer                             :: i
+        real(dl)                            :: param_value
+        character(len=EFT_names_max_length) :: param_name
+
+        write(*,*)     'Linear function: ', self%name
+        do i=1, self%parameter_number
+            call self%parameter_names( i, param_name  )
+            call self%parameter_value( i, param_value )
+            write(*,*) param_name, '=', param_value
+        end do
+
+    end subroutine LinearParametrizedFeedback
+
+    ! ---------------------------------------------------------------------------------------------
     !> Subroutine that returns the i-th parameter name
     subroutine LinearParametrizedParameterNames( self, i, name )
 
@@ -140,7 +140,7 @@ contains
 
         select case (i)
             case(1)
-                name = TRIM(self%name)//'_0'
+                name = TRIM(self%name)//'0'
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number

@@ -12,10 +12,11 @@ ifeq "$(ifortErr)" "0"
 F90C     = ifort
 # EFTCAMB MOD START: flags for the latest ifort
 #FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
-FFLAGS = -qopenmp -O3 -W0 -WB -fpp -qopt-report=0 
+#DEBUGFLAGS = -openmp -g -check all -check noarg_temp_created -traceback -fpp -fpe0
+FFLAGS = -qopenmp -O3 -W0 -WB -fpp -qopt-report=0
+DEBUGFLAGS = -qopenmp -g -check all -check noarg_temp_created -traceback -fpp -fpe0
 # EFTCAMB MOD END.
 SFFLAGS = -shared -fpic
-DEBUGFLAGS = -openmp -g -check all -check noarg_temp_created -traceback -fpp -fpe0
 ## This is flag is passed to the Fortran compiler allowing it to link C++ if required (not usually):
 F90CRLINK = -cxxlib
 MODOUT = -module $(OUTPUT_DIR)

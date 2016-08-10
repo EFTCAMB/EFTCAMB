@@ -214,17 +214,20 @@ contains
 
             case (0)     ! GR:
 
-                allocate( EFTCAMB_model::self%model )
+                ! cannot allocate an abstract type. Create a GR model.
+                !allocate( EFTCAMB_model::self%model )
+                !call self%model%init( 'GR', 'GR' )
 
             case (1)     ! Pure EFT:
 
                 select case ( self%PureEFTmodel )
                     case(1)
                         allocate( EFTCAMB_std_pure_EFT::self%model )
+                        call self%model%init( 'Standard Pure EFT', 'Standard Pure EFT' )
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and PureEFTmodel =', self%PureEFTmodel
-                        write(*,'(a)') 'Please select an appropriate model.'
+                        write(*,'(a)')    'Please select an appropriate model.'
                         stop
                 end select
 
@@ -308,7 +311,7 @@ contains
         end if
 
         ! call the model specific read parameters:
-        call self%model%read_model_parameters_from_file( Ini )
+        call self%model%init_model_parameters_from_file( Ini )
 
     end subroutine read_EFTCAMB_model_parameters
 
