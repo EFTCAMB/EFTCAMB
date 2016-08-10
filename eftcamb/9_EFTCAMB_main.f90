@@ -63,11 +63,14 @@ module EFTCAMB_main
 
         ! utility functions:
         procedure :: EFTCAMB_init_from_file        => read_EFTCAMB_flags_from_file  !< subroutine that initializes EFTCAMB from an INI file.
+        procedure :: EFTCAMB_init_model_from_file  => init_EFTCAMB_model_from_file  !< subroutine that initializes the selected model from file.
         procedure :: EFTCAMB_print_header          => print_EFTCAMB_header          !< subroutine that prints to screen the EFTCAMB header.
         procedure :: EFTCAMB_print_model_feedback  => print_EFTCAMB_flags           !< subroutine that prints to screen the model flags and parameters.
         ! model allocation:
-        procedure :: EFTCAMB_allocate_model        => allocate_EFTCAMB_model        !< subroutine that, based on the model selection flags allocates the EFTCAMB model.
-        procedure :: EFTCAMB_read_model_parameters => read_EFTCAMB_model_params     !< subroutine that reads the model parameters. Just a wrapper to the model specific subroutine.
+        procedure :: EFTCAMB_allocate_model            => allocate_EFTCAMB_model            !< subroutine that, based on the model selection flags allocates the EFTCAMB model.
+        procedure :: EFTCAMB_read_model_selection      => read_EFTCAMB_model_selection      !< subroutine that reads the model selection parameters. Just a wrapper to the model specific subroutine.
+        procedure :: EFTCAMB_allocate_model_functions  => allocate_EFTCAMB_model_functions  !< subroutine that, based on the model specific selection flags allocates the EFTCAMB model functions.
+        procedure :: EFTCAMB_read_model_parameters     => read_EFTCAMB_model_parameters     !< subroutine that reads the model parameters. Just a wrapper to the model specific subroutine.
 
     end type EFTCAMB
 
@@ -100,6 +103,26 @@ contains
         self%EFTCAMB_feedback_level     = Ini_Read_Int_File( Ini, 'feedback_level', 1 )
 
     end subroutine read_EFTCAMB_flags_from_file
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the selected model from file.
+    subroutine init_EFTCAMB_model_from_file( self, Ini )
+
+        implicit none
+
+        class(EFTCAMB)      :: self       !< the base class
+        type(TIniFile)      :: Ini        !< Input ini file
+
+        ! allocate model:
+        call self%EFTCAMB_allocate_model()
+        ! read the parameters defining the model from file:
+        call self%EFTCAMB_read_model_selection( Ini )
+        ! allocate model functions and parameters:
+        call self%EFTCAMB_allocate_model_functions( )
+        ! read model parameters from file:
+        call self%EFTCAMB_read_model_parameters( Ini )
+
+    end subroutine init_EFTCAMB_model_from_file
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints to screen the EFTCAMB header.
@@ -169,17 +192,8 @@ contains
             write(*,"(A24,I3)") '   DesignerEFTmodel    =', self%DesignerEFTmodel
         if ( self%EFTflag == 4 ) &
             write(*,"(A24,I3)") '   FullMappingEFTmodel =', self%DesignerEFTmodel
-        ! print model name:
-        call self%model%model_name( temp_name )
-        write(*,*)
-        write(*,*)              '   Model               =', temp_name
-        ! print model parameters:
-        write(*,*)
-        do i=1, self%model%parameter_number
-            call self%model%parameter_names ( i, temp_name  )
-            call self%model%parameter_values( i, temp_value )
-            write(*,"(A18,A1,F9.6)") temp_name, ' = ', temp_value
-        end do
+        ! print model informations:
+        call self%model%feedback( )
 
     end subroutine print_EFTCAMB_flags
 
@@ -236,8 +250,8 @@ contains
     end subroutine allocate_EFTCAMB_model
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that reads the model parameters. Just a wrapper to the model specific subroutine.
-    subroutine read_EFTCAMB_model_params( self, Ini )
+    !> Subroutine that reads the model selection parameters. Just a wrapper to the model specific subroutine.
+    subroutine read_EFTCAMB_model_selection( self, Ini )
 
         implicit none
 
@@ -246,15 +260,57 @@ contains
 
         ! check the allocation of the model:
         if ( .not. allocated(self%model) ) then
-            write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model read parameters'
+            write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model read_model_selection'
             write(*,*) ' without allocating the model'
             stop
         end if
 
         ! call the model specific read parameters:
-        call self%model%read_parameters_file( Ini )
+        call self%model%read_model_selection( Ini )
 
-    end subroutine read_EFTCAMB_model_params
+    end subroutine read_EFTCAMB_model_selection
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that, based on the model specific selection flags allocates the EFTCAMB model functions.
+    !! Just a wrapper to the model specific subroutine.
+    subroutine allocate_EFTCAMB_model_functions( self )
+
+        implicit none
+
+        class(EFTCAMB)      :: self       !< the base class
+
+        ! check the allocation of the model:
+        if ( .not. allocated(self%model) ) then
+            write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model allocate_model_selection'
+            write(*,*) ' without allocating the model'
+            stop
+        end if
+
+        ! call the model specific read parameters:
+        call self%model%allocate_model_selection( )
+
+    end subroutine allocate_EFTCAMB_model_functions
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads the model parameters. Just a wrapper to the model specific subroutine.
+    subroutine read_EFTCAMB_model_parameters( self, Ini )
+
+        implicit none
+
+        class(EFTCAMB)      :: self       !< the base class
+        type(TIniFile)      :: Ini        !< Input ini file
+
+        ! check the allocation of the model:
+        if ( .not. allocated(self%model) ) then
+            write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model read_model_parameters_from_file'
+            write(*,*) ' without allocating the model'
+            stop
+        end if
+
+        ! call the model specific read parameters:
+        call self%model%read_model_parameters_from_file( Ini )
+
+    end subroutine read_EFTCAMB_model_parameters
 
     ! ---------------------------------------------------------------------------------------------
 

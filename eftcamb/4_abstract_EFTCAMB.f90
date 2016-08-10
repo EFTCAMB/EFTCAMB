@@ -44,18 +44,31 @@ module EFTCAMB_abstract_model
     contains
 
         ! utility functions:
+        procedure :: feedback              => EFTCAMBModelFeedback            !< subroutine that prints on the screen feedback information about the model.
         procedure :: model_name            => EFTCAMBModelName                !< subroutine that returns the name of the EFTCAMB model
         procedure :: parameter_names       => EFTCAMBModelParameterNames      !< subroutine that returns the i-th parameter name of the model
         procedure :: parameter_names_latex => EFTCAMBModelParameterNamesLatex !< subroutine that returns the i-th parameter name of the model
         procedure :: parameter_values      => EFTCAMBModelParameterValues     !< subroutine that returns the i-th parameter value
         ! initialization of the model:
-        procedure :: read_parameters_file  => EFTCAMBModelReadParametersFromFile !< subroutine that reads the parameters of the model from file
+        procedure :: read_model_selection            => EFTCAMBModelReadModelSelectionFromFile  !< subroutine that reads the parameters to select the model from file
+        procedure :: allocate_model_selection        => EFTCAMBModelAllocateModelSelection      !< subroutine that allocates the model selection
+        procedure :: read_model_parameters_from_file => EFTCAMBModelReadModelParametersFromFile !< subroutine that reads the parameters of the model from file
 
     end type EFTCAMB_model
 
     ! ---------------------------------------------------------------------------------------------
 
 contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that prints on the screen feedback information about the model.
+    subroutine EFTCAMBModelFeedback( self )
+
+        implicit none
+
+        class(EFTCAMB_model)       :: self   !< the base class
+
+    end subroutine EFTCAMBModelFeedback
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that returns the name of the EFTCAMB model
@@ -115,14 +128,35 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that reads the parameters of the model from file.
-    subroutine EFTCAMBModelReadParametersFromFile( self, Ini )
+    subroutine EFTCAMBModelReadModelSelectionFromFile( self, Ini )
 
         implicit none
 
         class(EFTCAMB_model)  :: self   !< the base class
         type(TIniFile)        :: Ini    !< Input ini file
 
-    end subroutine EFTCAMBModelReadParametersFromFile
+    end subroutine EFTCAMBModelReadModelSelectionFromFile
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads the parameters of the model from file.
+    subroutine EFTCAMBModelAllocateModelSelection( self )
+
+        implicit none
+
+        class(EFTCAMB_model)  :: self   !< the base class
+
+    end subroutine EFTCAMBModelAllocateModelSelection
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads the parameters of the model from file.
+    subroutine EFTCAMBModelReadModelParametersFromFile( self, Ini )
+
+        implicit none
+
+        class(EFTCAMB_model)  :: self   !< the base class
+        type(TIniFile)        :: Ini    !< Input ini file
+
+    end subroutine EFTCAMBModelReadModelParametersFromFile
 
     ! ---------------------------------------------------------------------------------------------
 

@@ -50,6 +50,13 @@ CAMBSO  += $(EFT_SOJ)
 
 camb: $(EFT_OBJ)
 
+# EFTCAMB dependencies:
+eftcamb_dep: $(EFTCAMB_SOURCES_FILES)
+	@python $(EFTCAMB_DIR)/depend_gen.py -o $(EFTCAMB_DIR)
+
+# include EFTCAMB dependencies:
+include $(EFTCAMB_DIR)/eftcamb.dep
+
 # additional EFTCAMB targets:
 
 .PHONY: eftcamb

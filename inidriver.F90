@@ -126,10 +126,8 @@
     call P%EFTCAMB%EFTCAMB_init_from_file( DefIni )
     ! print the EFTCAMB header:
     call P%EFTCAMB%EFTCAMB_print_header()
-    ! allocate model:
-    call P%EFTCAMB%EFTCAMB_allocate_model()
-    ! read the parameters of the model:
-    call P%EFTCAMB%EFTCAMB_read_model_parameters( DefIni )
+    ! initialize the model from file:
+    call P%EFTCAMB%EFTCAMB_init_model_from_file( DefIni )
     ! print feedback:
     call P%EFTCAMB%EFTCAMB_print_model_feedback()
     ! EFTCAMB MOD END.

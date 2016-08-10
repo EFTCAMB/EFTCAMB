@@ -30,6 +30,7 @@
 module EFTCAMB_abstract_parametrizations
 
     use precision
+    use IniFile
 
     implicit none
 
@@ -41,27 +42,42 @@ module EFTCAMB_abstract_parametrizations
     !! This guarantees maximum performances as well as maximum flexibility.
     type parametrized_function
 
-        integer                       :: parameter_number !< number of parameters defining the parametrizaed function
+        integer                       :: parameter_number !< number of parameters defining the parametrized function
         character(len=:), allocatable :: name             !< name of the function
         character(len=:), allocatable :: name_latex       !< latex name of the function
 
     contains
 
         ! utility functions:
-        procedure :: parameter_names       => ParametrizedFunctionParameterNames      !< subroutine that returns the i-th parameter name of the function
-        procedure :: parameter_names_latex => ParametrizedFunctionParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format
+        procedure :: feedback              => ParametrizedFunctionFeedback            !< subroutine that prints to screen the informations about the function.
+        procedure :: parameter_names       => ParametrizedFunctionParameterNames      !< subroutine that returns the i-th parameter name of the function.
+        procedure :: parameter_names_latex => ParametrizedFunctionParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format.
+        procedure :: parameter_value       => ParametrizedFunctionParameterValues     !< subroutine that returns the value of the function i-th parameter.
+        ! initialization procedures:
+        procedure :: init_from_file        => ParametrizedFunctionInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
+        procedure :: init_parameters       => ParametrizedFunctionInit                !< subroutine that initializes the function parameters based on the values found in an input array.
         ! evaluation procedures:
-        procedure :: value             => ParametrizedFunctionValue             !< function that returns the value of the function
-        procedure :: first_derivative  => ParametrizedFunctionFirstDerivative   !< function that returns the first derivative of the function
-        procedure :: second_derivative => ParametrizedFunctionSecondDerivative  !< function that returns the second derivative of the function
-        procedure :: third_derivative  => ParametrizedFunctionThirdDerivative   !< function that returns the third derivative of the function
-        procedure :: integral          => ParametrizedFunctionIntegral          !< function that returns the strange integral that we need for w_DE
+        procedure :: value                 => ParametrizedFunctionValue               !< function that returns the value of the function.
+        procedure :: first_derivative      => ParametrizedFunctionFirstDerivative     !< function that returns the first derivative of the function.
+        procedure :: second_derivative     => ParametrizedFunctionSecondDerivative    !< function that returns the second derivative of the function.
+        procedure :: third_derivative      => ParametrizedFunctionThirdDerivative     !< function that returns the third derivative of the function.
+        procedure :: integral              => ParametrizedFunctionIntegral            !< function that returns the strange integral that we need for w_DE.
 
     end type parametrized_function
 
     ! ---------------------------------------------------------------------------------------------
 
 contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that prints to screen the informations about the function
+    subroutine ParametrizedFunctionFeedback( self )
+
+        implicit none
+
+        class(parametrized_function)  :: self   !< the base class
+
+    end subroutine ParametrizedFunctionFeedback
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that returns the i-th parameter name
@@ -82,10 +98,44 @@ contains
         implicit none
 
         class(parametrized_function) :: self       !< the base class
-        integer     , intent(in)     :: i          !< The index of the parameter
+        integer     , intent(in)     :: i          !< the index of the parameter
         character(*), intent(out)    :: latexname  !< the output latex name of the i-th parameter
 
     end subroutine ParametrizedFunctionParameterNamesLatex
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the value of the function i-th parameter.
+    subroutine ParametrizedFunctionParameterValues( self, i, value )
+
+        implicit none
+
+        class(parametrized_function) :: self       !< the base class
+        integer  , intent(in)        :: i          !< the index of the parameter
+        real(dl) , intent(out)       :: value      !< the output value of the i-th parameter
+
+    end subroutine ParametrizedFunctionParameterValues
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads a Ini file looking for the parameters of the function.
+    subroutine ParametrizedFunctionInitFromFile( self, Ini )
+
+        implicit none
+
+        class(parametrized_function) :: self   !< the base class
+        type(TIniFile)               :: Ini    !< Input ini file
+
+    end subroutine ParametrizedFunctionInitFromFile
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads a Ini file looking for the parameters of the function.
+    subroutine ParametrizedFunctionInit( self, array )
+
+        implicit none
+
+        class(parametrized_function)                           :: self   !< the base class.
+        real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
+
+    end subroutine ParametrizedFunctionInit
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the function.

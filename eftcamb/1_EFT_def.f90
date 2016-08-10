@@ -50,6 +50,8 @@ module EFTDef
     logical , parameter :: DebugEFTCAMB = .false. !< EFTCAMB debug flag.This will turn on printing of many
         !! things to aid debugging the code.
 
+    integer , parameter :: EFT_names_max_length = 20   !< maximum length of names for EFT functions and parameters.
+
 end module EFTDef
 
 !----------------------------------------------------------------------------------------
