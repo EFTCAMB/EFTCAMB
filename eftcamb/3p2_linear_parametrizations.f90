@@ -47,8 +47,8 @@ module EFTCAMB_linear_parametrizations
         procedure :: parameter_names_latex => LinearParametrizedParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format
         ! initialization:
         procedure :: init                  => LinearParametrizedInitialize          !< subroutine that initializes the constant parametrization
-        !procedure :: init_from_file        => LinearParametrizedInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
-        !procedure :: init_parameters       => LinearParametrizedInit                !< subroutine that initializes the function parameters based on the values found in an input array.
+        procedure :: init_from_file        => LinearParametrizedInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
+        procedure :: init_parameters       => LinearParametrizedInit                !< subroutine that initializes the function parameters based on the values found in an input array.
         ! evaluation procedures:
         procedure :: value                 => LinearParametrizedValue               !< function that returns the value of the function
         procedure :: first_derivative      => LinearParametrizedFirstDerivative     !< function that returns the first derivative of the function
@@ -85,17 +85,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the linear parametrization
-    subroutine LinearParametrizedInitialize( self, linear_value, name, latexname )
+    subroutine LinearParametrizedInitialize( self, name, latexname )
 
         implicit none
 
         class(linear_parametrization)   :: self         !< the base class
-        real(dl)    , intent(in)        :: linear_value !< the value of the linear coefficient
         character(*), intent(in)        :: name         !< the name of the function
         character(*), intent(in)        :: latexname    !< the latex name of the function
 
-        ! store the values of the constant function:
-        self%linear_value   = linear_value
         ! store the name of the function:
         self%name             = TRIM( name )
         ! store the latex name of the function:
@@ -104,6 +101,32 @@ contains
         self%parameter_number = 1
 
     end subroutine LinearParametrizedInitialize
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads a Ini file looking for the parameters of the function.
+    subroutine LinearParametrizedInitFromFile( self, Ini )
+
+        implicit none
+
+        class(linear_parametrization)   :: self   !< the base class
+        type(TIniFile)                  :: Ini    !< Input ini file
+
+        self%linear_value = Ini_Read_Double_File( Ini, TRIM(self%name)//'_0', 0._dl )
+
+    end subroutine LinearParametrizedInitFromFile
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the function parameters based on the values found in an input array.
+    subroutine LinearParametrizedInit( self, array )
+
+        implicit none
+
+        class(linear_parametrization)                           :: self   !< the base class.
+        real(dl), dimension(self%parameter_number), intent(in)  :: array  !< input array with the values of the parameters.
+
+        self%linear_value = array(1)
+
+    end subroutine LinearParametrizedInit
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that returns the i-th parameter name
@@ -155,7 +178,7 @@ contains
 
         class(linear_parametrization)   :: self  !< the base class
         real(dl), intent(in)            :: a     !< the input scale factor
-        real(dl) :: LinearParametrizedValue    !< the output value
+        real(dl) :: LinearParametrizedValue      !< the output value
 
         LinearParametrizedValue = self%linear_value*a
 

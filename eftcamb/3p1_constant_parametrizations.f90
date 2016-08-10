@@ -134,7 +134,7 @@ contains
 
         class(constant_parametrization) :: self        !< the base class
         integer     , intent(in)        :: i           !< The index of the parameter
-        real(dl)    , intent(out)       :: value   !< the output value of the i-th parameter
+        real(dl)    , intent(out)       :: value       !< the output value of the i-th parameter
 
         select case (i)
             case(1)
@@ -172,7 +172,7 @@ contains
 
         implicit none
 
-        class(constant_parametrization) :: self       !< the base class
+        class(constant_parametrization) :: self   !< the base class
         type(TIniFile)                  :: Ini    !< Input ini file
 
         self%constant_value = Ini_Read_Double_File( Ini, TRIM(self%name)//'_0', 0._dl )
