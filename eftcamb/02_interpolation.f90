@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 2_interpolation.f90
+!> @file 02_interpolation.f90
 !! This file contains the EFTCAMB interpolation algorithms.
 
 

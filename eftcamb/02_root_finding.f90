@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 2_root_finding.f90
+!> @file 02_root_finding.f90
 !! This file contains the EFTCAMB root finding algorithms.
 
 

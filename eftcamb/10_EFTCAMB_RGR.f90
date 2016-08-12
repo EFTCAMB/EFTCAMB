@@ -13,24 +13,24 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 4p1_EFTCAMB_GR.f90
-!! This file contains the definition of the GR limit of EFTCAMB.
+!> @file 10_EFTCAMB_RGR.f90
+!! This file contains the RGR algorithm. This operates on general EFT models.
 
 
 !----------------------------------------------------------------------------------------
-!> This module contains the definition of the GR limit of EFTCAMB.
+!> This module contains the RGR algorithm. This operates on general EFT models.
 
 !> @author Bin Hu, Marco Raveri
 
-module EFTCAMB_GR_model
+module EFTCAMB_ReturnToGR
 
     use precision
-    use IniFile
+    use EFTCAMB_abstract_model
 
     implicit none
 
 contains
 
-end module EFTCAMB_GR_model
+end module EFTCAMB_ReturnToGR
 
 !----------------------------------------------------------------------------------------

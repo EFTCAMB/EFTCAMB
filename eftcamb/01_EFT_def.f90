@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 1_EFT_def.f90
+!> @file 01_EFT_def.f90
 !! This file contains the EFTCAMB compile time options.
 
 

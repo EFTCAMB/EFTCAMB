@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 4_abstract_EFTCAMB.f90
+!> @file 05_abstract_EFTCAMB.f90
 !! This file contains the abstract definition of all the places where EFTCAMB interacts
 !! with CAMB. All EFTCAMB models should inherit from this class.
 

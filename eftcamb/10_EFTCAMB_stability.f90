@@ -13,16 +13,18 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 9_EFTCAMB_RGR.f90
-!! This file contains the RGR algorithm. This operates on general EFT models.
+!> @file 10_EFTCAMB_stability.f90
+!! This file contains the stability detection algorithm of EFTCAMB.
+!! This operates on general EFT models.
 
 
 !----------------------------------------------------------------------------------------
-!> This module contains the RGR algorithm. This operates on general EFT models.
+!> This module contains the stability detection algorithm of EFTCAMB.
+!! This operates on general EFT models.
 
 !> @author Bin Hu, Marco Raveri
 
-module EFTCAMB_ReturnToGR
+module EFTCAMB_stability
 
     use precision
     use EFTCAMB_abstract_model
@@ -31,6 +33,6 @@ module EFTCAMB_ReturnToGR
 
 contains
 
-end module EFTCAMB_ReturnToGR
+end module EFTCAMB_stability
 
 !----------------------------------------------------------------------------------------

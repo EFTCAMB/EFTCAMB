@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 5_Pure_EFT_std.f90
+!> @file 06_Pure_EFT_std.f90
 !! This file contains the definition of the Pure EFT model in which the EFT is described
 !! by six functions of time and w_DE. Please refer to the numerical notes for details.
 
@@ -28,9 +28,9 @@ module EFTCAMB_pure_EFT_std
 
     use precision
     use IniFile
-    use EFTCAMB_abstract_parametrizations
-    use EFTCAMB_constant_parametrization
-    use EFTCAMB_linear_parametrizations
+    use EFTCAMB_abstract_parametrizations_1D
+    use EFTCAMB_constant_parametrization_1D
+    use EFTCAMB_linear_parametrizations_1D
     use EFTCAMB_abstract_model
 
     implicit none
@@ -50,14 +50,14 @@ module EFTCAMB_pure_EFT_std
         integer  :: PureEFTmodelGamma6  !< Model selection flag for Pure EFT Gamma6.
 
         ! the pure EFT functions:
-        class( parametrized_function ), allocatable :: PureEFTOmega    !< The pure EFT function Omega.
-        class( parametrized_function ), allocatable :: PureEFTwDE      !< The pure EFT function w_DE.
-        class( parametrized_function ), allocatable :: PureEFTGamma1   !< The pure EFT function Gamma1.
-        class( parametrized_function ), allocatable :: PureEFTGamma2   !< The pure EFT function Gamma2.
-        class( parametrized_function ), allocatable :: PureEFTGamma3   !< The pure EFT function Gamma3.
-        class( parametrized_function ), allocatable :: PureEFTGamma4   !< The pure EFT function Gamma4.
-        class( parametrized_function ), allocatable :: PureEFTGamma5   !< The pure EFT function Gamma5.
-        class( parametrized_function ), allocatable :: PureEFTGamma6   !< The pure EFT function Gamma6.
+        class( parametrized_function_1D ), allocatable :: PureEFTOmega    !< The pure EFT function Omega.
+        class( parametrized_function_1D ), allocatable :: PureEFTwDE      !< The pure EFT function w_DE.
+        class( parametrized_function_1D ), allocatable :: PureEFTGamma1   !< The pure EFT function Gamma1.
+        class( parametrized_function_1D ), allocatable :: PureEFTGamma2   !< The pure EFT function Gamma2.
+        class( parametrized_function_1D ), allocatable :: PureEFTGamma3   !< The pure EFT function Gamma3.
+        class( parametrized_function_1D ), allocatable :: PureEFTGamma4   !< The pure EFT function Gamma4.
+        class( parametrized_function_1D ), allocatable :: PureEFTGamma5   !< The pure EFT function Gamma5.
+        class( parametrized_function_1D ), allocatable :: PureEFTGamma6   !< The pure EFT function Gamma6.
 
     contains
 
@@ -111,11 +111,11 @@ contains
         if ( allocated(self%PureEFTOmega) ) deallocate(self%PureEFTOmega)
         select case ( self%PureEFTmodelOmega )
             case(0)
-                allocate( parametrized_function::self%PureEFTOmega )
+                allocate( parametrized_function_1D::self%PureEFTOmega )
             case(1)
-                allocate( constant_parametrization::self%PureEFTOmega )
+                allocate( constant_parametrization_1D::self%PureEFTOmega )
             case(2)
-                allocate( linear_parametrization::self%PureEFTOmega )
+                allocate( linear_parametrization_1D::self%PureEFTOmega )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelOmega =', self%PureEFTmodelOmega
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -124,9 +124,9 @@ contains
         if ( allocated(self%PureEFTwDE) ) deallocate(self%PureEFTwDE)
         select case ( self%EFTwDE )
             case(0)
-                allocate( parametrized_function::self%PureEFTwDE )
+                allocate( parametrized_function_1D::self%PureEFTwDE )
             case(1)
-                allocate( constant_parametrization::self%PureEFTwDE )
+                allocate( constant_parametrization_1D::self%PureEFTwDE )
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -135,9 +135,9 @@ contains
         if ( allocated(self%PureEFTGamma1) ) deallocate(self%PureEFTGamma1)
         select case ( self%PureEFTmodelGamma1 )
             case(0)
-                allocate( parametrized_function::self%PureEFTGamma1 )
+                allocate( parametrized_function_1D::self%PureEFTGamma1 )
             case(1)
-                allocate( constant_parametrization::self%PureEFTGamma1 )
+                allocate( constant_parametrization_1D::self%PureEFTGamma1 )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma1 =', self%PureEFTmodelGamma1
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -146,9 +146,9 @@ contains
         if ( allocated(self%PureEFTGamma2) ) deallocate(self%PureEFTGamma2)
         select case ( self%PureEFTmodelGamma2 )
             case(0)
-                allocate( parametrized_function::self%PureEFTGamma2 )
+                allocate( parametrized_function_1D::self%PureEFTGamma2 )
             case(1)
-                allocate( constant_parametrization::self%PureEFTGamma2 )
+                allocate( constant_parametrization_1D::self%PureEFTGamma2 )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma2 =', self%PureEFTmodelGamma2
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -157,9 +157,9 @@ contains
         if ( allocated(self%PureEFTGamma3) ) deallocate(self%PureEFTGamma3)
         select case ( self%PureEFTmodelGamma3 )
             case(0)
-                allocate( parametrized_function::self%PureEFTGamma3 )
+                allocate( parametrized_function_1D::self%PureEFTGamma3 )
             case(1)
-                allocate( constant_parametrization::self%PureEFTGamma3 )
+                allocate( constant_parametrization_1D::self%PureEFTGamma3 )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma3 =', self%PureEFTmodelGamma3
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -168,9 +168,9 @@ contains
         if ( allocated(self%PureEFTGamma4) ) deallocate(self%PureEFTGamma4)
         select case ( self%PureEFTmodelGamma4 )
             case(0)
-                allocate( parametrized_function::self%PureEFTGamma4 )
+                allocate( parametrized_function_1D::self%PureEFTGamma4 )
             case(1)
-                allocate( constant_parametrization::self%PureEFTGamma4 )
+                allocate( constant_parametrization_1D::self%PureEFTGamma4 )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma4 =', self%PureEFTmodelGamma4
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -179,9 +179,9 @@ contains
         if ( allocated(self%PureEFTGamma5) ) deallocate(self%PureEFTGamma5)
         select case ( self%PureEFTmodelGamma5 )
             case(0)
-                allocate( parametrized_function::self%PureEFTGamma5 )
+                allocate( parametrized_function_1D::self%PureEFTGamma5 )
             case(1)
-                allocate( constant_parametrization::self%PureEFTGamma5 )
+                allocate( constant_parametrization_1D::self%PureEFTGamma5 )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma5 =', self%PureEFTmodelGamma5
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -190,9 +190,9 @@ contains
         if ( allocated(self%PureEFTGamma6) ) deallocate(self%PureEFTGamma6)
         select case ( self%PureEFTmodelGamma6 )
             case(0)
-                allocate( parametrized_function::self%PureEFTGamma6 )
+                allocate( parametrized_function_1D::self%PureEFTGamma6 )
             case(1)
-                allocate( constant_parametrization::self%PureEFTGamma6 )
+                allocate( constant_parametrization_1D::self%PureEFTGamma6 )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma6 =', self%PureEFTmodelGamma6
                 write(*,'(a)')    'Please select an appropriate model.'

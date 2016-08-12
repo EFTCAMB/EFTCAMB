@@ -13,26 +13,24 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 9_EFTCAMB_stability.f90
-!! This file contains the stability detection algorithm of EFTCAMB.
-!! This operates on general EFT models.
+!> @file 05p1_EFTCAMB_GR.f90
+!! This file contains the definition of the GR limit of EFTCAMB.
 
 
 !----------------------------------------------------------------------------------------
-!> This module contains the stability detection algorithm of EFTCAMB.
-!! This operates on general EFT models.
+!> This module contains the definition of the GR limit of EFTCAMB.
 
 !> @author Bin Hu, Marco Raveri
 
-module EFTCAMB_stability
+module EFTCAMB_GR_model
 
     use precision
-    use EFTCAMB_abstract_model
+    use IniFile
 
     implicit none
 
 contains
 
-end module EFTCAMB_stability
+end module EFTCAMB_GR_model
 
 !----------------------------------------------------------------------------------------
