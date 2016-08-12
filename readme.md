@@ -34,12 +34,13 @@ intuition of the hierarchy of the code from alphabetical order of files.
 
 For this reason we use the following convention for the prefixes:
 
-* ``1_`` compile time utilities
-* ``2_`` pure algorithms
-* ``3_`` general parametrizations of functions
-* ``4_`` abstract implementation of EFT models
-* ``5_`` implementation of pure EFT models
-* ``6_`` implementation of alternative EFT parametrizations
-* ``7_`` implementation of designer mapping EFT models
-* ``8_`` implementation of full mapping EFT models
-* ``9_`` general EFT algorithms (RGR, stability, init)
+* ``01_`` compile time utilities
+* ``02_`` pure algorithms
+* ``03_`` general parametrizations for 1D functions
+* ``04_`` general parametrizations for 2D functions
+* ``05_`` abstract implementation of EFT models
+* ``06_`` implementation of pure EFT models
+* ``07_`` implementation of alternative EFT parametrizations
+* ``08_`` implementation of designer mapping EFT models
+* ``09_`` implementation of full mapping EFT models
+* ``10_`` general EFT algorithms (RGR, stability, init)
