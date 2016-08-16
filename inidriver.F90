@@ -130,7 +130,6 @@
     call P%EFTCAMB%EFTCAMB_init_model_from_file( DefIni )
     ! print feedback:
     call P%EFTCAMB%EFTCAMB_print_model_feedback()
-    stop 'ciao Marco'
     ! EFTCAMB MOD END.
 
     P%Nu_mass_eigenstates = Ini_Read_Int('nu_mass_eigenstates',1)

@@ -196,6 +196,8 @@ contains
             write(*,"(A24,I3)") '   FullMappingEFTmodel =', self%DesignerEFTmodel
         ! print model informations:
         call self%model%feedback( )
+        ! leave one white line:
+        write(*,*)
 
     end subroutine print_EFTCAMB_flags
 

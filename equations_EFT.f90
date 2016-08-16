@@ -62,6 +62,12 @@
     !This is only called once per model, and is a good point to do any extra initialization.
     !It is called before first call to dtauda, but after
     !massive neutrinos are initialized and after GetOmegak
+
+    ! EFTCAMB MOD START: call EFTCAMB model background initialization
+    use ModelParams
+    call CP%EFTCAMB%model%initialize_background()
+    ! EFTCAMB MOD END.
+
     end  subroutine init_background
 
 
@@ -82,11 +88,17 @@
 
     !  8*pi*G*rho*a**4.
     grhoa2=grhok*a2+(grhoc+grhob)*a+grhog+grhornomass
-    if (w_lam == -1._dl) then
-        grhoa2=grhoa2+grhov*a2**2
-    else
-        grhoa2=grhoa2+grhov*a**(1-3*w_lam)
+
+    ! EFTCAMB MOD START: if EFTCAMB is active replace the standard DE EoS
+    if (CP%EFTCAMB%EFTFlag == 0) then
+        if (w_lam == -1._dl) then
+            grhoa2=grhoa2+grhov*a2**2
+        else
+            grhoa2=grhoa2+grhov*a**(1-3*w_lam)
+        end if
     end if
+    ! EFTCAMB MOD END.
+
     if (CP%Num_Nu_massive /= 0) then
         !Get massive neutrino density relative to massless
         do nu_i = 1, CP%nu_mass_eigenstates
@@ -95,7 +107,16 @@
         end do
     end if
 
-    dtauda=sqrt(3/grhoa2)
+    ! EFTCAMB MOD START: compute dtauda
+    if (CP%EFTCAMB%EFTFlag == 0) then
+        dtauda=sqrt(3/grhoa2)
+    else
+        dtauda = CP%EFTCAMB%model%compute_dtauda( a, grhoa2, &
+            & grhok, grhov, &
+            & grhoc, grhob, &
+            & grhog, grhornomass)
+    end if
+    ! EFTCAMB MOD END.
 
     end function dtauda
 

@@ -58,7 +58,10 @@ module EFTCAMB_abstract_model
         procedure(EFTCAMBModelParameterValues        ), deferred :: parameter_values       !< subroutine that returns the i-th parameter value.
         ! background initialization functions:
         procedure :: initialize_background => EFTCAMBModelInitBackground                   !< subroutine that initializes the background of the model, if needed.
-        ! EFT functions procedures:
+        ! CAMB related procedures:
+        procedure(EFTCAMBModelBackgroundEFTFunctions ), deferred :: compute_background_EFT_functions  !< subroutine that computes the value of the background EFT functions at a given time.
+        procedure(EFTCAMBModelSecondOrderEFTFunctions), deferred :: compute_secondorder_EFT_functions !< subroutine that computes the value of the second order EFT functions at a given time.
+        procedure :: compute_dtauda => EFTCAMBModelComputeDtauda                                      !< function that computes dtauda = 1/sqrt(a^2H^2)
 
     end type EFTCAMB_model
 
@@ -124,7 +127,7 @@ module EFTCAMB_abstract_model
         end subroutine EFTCAMBModelFeedback
 
         ! ---------------------------------------------------------------------------------------------
-        !> Subroutine that returns the i-th parameter name of the model
+        !> Subroutine that returns the i-th parameter name of the model.
         subroutine EFTCAMBModelParameterNames( self, i, name )
             import EFTCAMB_model
             implicit none
@@ -134,7 +137,7 @@ module EFTCAMB_abstract_model
         end subroutine EFTCAMBModelParameterNames
 
         ! ---------------------------------------------------------------------------------------------
-        !> Subroutine that returns the i-th parameter name of the model
+        !> Subroutine that returns the i-th parameter name of the model.
         subroutine EFTCAMBModelParameterNamesLatex( self, i, latexname )
             import EFTCAMB_model
             implicit none
@@ -144,7 +147,7 @@ module EFTCAMB_abstract_model
         end subroutine EFTCAMBModelParameterNamesLatex
 
         ! ---------------------------------------------------------------------------------------------
-        !> Subroutine that returns the i-th parameter name of the model
+        !> Subroutine that returns the i-th parameter name of the model.
         subroutine EFTCAMBModelParameterValues( self, i, value )
             use precision
             import EFTCAMB_model
@@ -153,6 +156,60 @@ module EFTCAMB_abstract_model
             integer , intent(in)  :: i      !< The index of the parameter
             real(dl), intent(out) :: value  !< the output value of the i-th parameter
         end subroutine EFTCAMBModelParameterValues
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Subroutine that computes the value of the background EFT functions at a given time.
+        !! The interface of the function is slightly complicated for performance reasons.
+        subroutine EFTCAMBModelBackgroundEFTFunctions( self, a, &
+            & EFTOmegaV, EFTOmegaP    , EFTOmegaPP, EFTOmegaPPP, &
+            & EFTc     , EFTcdot      , &
+            & EFTLambda, EFTLambdadot   &
+            & )
+            use precision
+            import EFTCAMB_model
+            implicit none
+            class(EFTCAMB_model)  :: self   !< the base class
+            real(dl), intent(in)  :: a      !< the input scale factor
+            real(dl), intent(out) :: EFTOmegaV     !< the value of Omega
+            real(dl), intent(out) :: EFTOmegaP     !< the value of the derivative wrt scale factor of Omega
+            real(dl), intent(out) :: EFTOmegaPP    !< the value of the second derivative wrt scale factor of Omega
+            real(dl), intent(out) :: EFTOmegaPPP   !< the value of the third derivative wrt scale factor of Omega
+            real(dl), intent(out) :: EFTc          !< the value of c*a^2/m_0^2
+            real(dl), intent(out) :: EFTcdot       !< the value of \dot{c}*a^2/m_0^2. Derivative of c wrt conformal time
+            real(dl), intent(out) :: EFTLambda     !< the value of \Lambda*a^2/m_0^2
+            real(dl), intent(out) :: EFTLambdadot  !< the value of \dot{\Lambda}*a^2/m_0^2. Derivative of \Lambda wrt conformal time
+        end subroutine EFTCAMBModelBackgroundEFTFunctions
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Subroutine that computes the value of the second order EFT functions at a given time.
+        !! The interface of the function is slightly complicated for performance reasons.
+        subroutine EFTCAMBModelSecondOrderEFTFunctions( self, a, &
+            & EFTGamma1V, EFTGamma1P, &
+            & EFTGamma2V, EFTGamma2P, &
+            & EFTGamma3V, EFTGamma3P, &
+            & EFTGamma4V, EFTGamma4P, EFTGamma4PP, &
+            & EFTGamma5V, EFTGamma5P, &
+            & EFTGamma6V, EFTGamma6P  &
+            & )
+            use precision
+            import EFTCAMB_model
+            implicit none
+            class(EFTCAMB_model)  :: self          !< the base class
+            real(dl), intent(in)  :: a             !< the input scale factor
+            real(dl), intent(out) :: EFTGamma1V    !< the value of Gamma 1
+            real(dl), intent(out) :: EFTGamma1P    !< the value of the derivative wrt scale factor of Gamma 1
+            real(dl), intent(out) :: EFTGamma2V    !< the value of Gamma 2
+            real(dl), intent(out) :: EFTGamma2P    !< the value of the derivative wrt scale factor of Gamma 2
+            real(dl), intent(out) :: EFTGamma3V    !< the value of Gamma 3
+            real(dl), intent(out) :: EFTGamma3P    !< the value of the derivative wrt scale factor of Gamma 3
+            real(dl), intent(out) :: EFTGamma4V    !< the value of Gamma 4
+            real(dl), intent(out) :: EFTGamma4P    !< the value of the derivative wrt scale factor of Gamma 4
+            real(dl), intent(out) :: EFTGamma4PP   !< the value of the second derivative wrt scale factor of Gamma 4
+            real(dl), intent(out) :: EFTGamma5V    !< the value of Gamma 5
+            real(dl), intent(out) :: EFTGamma5P    !< the value of the derivative wrt scale factor of Gamma 5
+            real(dl), intent(out) :: EFTGamma6V    !< the value of Gamma 6
+            real(dl), intent(out) :: EFTGamma6P    !< the value of the derivative wrt scale factor of Gamma 6
+        end subroutine EFTCAMBModelSecondOrderEFTFunctions
 
     ! ---------------------------------------------------------------------------------------------
 
@@ -189,6 +246,41 @@ contains
         class(EFTCAMB_model)  :: self   !< the base class
 
     end subroutine EFTCAMBModelInitBackground
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that computes dtauda = 1/sqrt(a^2H^2).
+    !! Again the interface is slightly complicated for performance reasons.
+    function EFTCAMBModelComputeDtauda( self, a, grhoa2, &
+        & grhok, grhov, &
+        & grhoc, grhob, &
+        & grhog, grhornomass )
+
+        implicit none
+
+        class(EFTCAMB_model)  :: self                      !< the base class
+        real(dl), intent(in)  :: a                         !< the input scale factor
+        real(dl), intent(in)  :: grhoa2                    !< the input value of 8 \piG \rho_tot a^2
+        real(dl), intent(in)  :: grhok                     !< the input value of curvature density
+        real(dl), intent(in)  :: grhov                     !< the input value of DE density
+        real(dl), intent(in)  :: grhoc                     !< the input value of CDM density
+        real(dl), intent(in)  :: grhob                     !< the input value of Baryon density
+        real(dl), intent(in)  :: grhog                     !< the input value of Radiation density
+        real(dl), intent(in)  :: grhornomass               !< the input value of massless neutrinos density
+
+        real(dl)              :: EFTCAMBModelComputeDtauda !< the output dtauda
+
+        real(dl) :: EFTOmegaV, EFTOmegaP, EFTOmegaPP, EFTOmegaPPP
+        real(dl) :: EFTc     , EFTcdot
+        real(dl) :: EFTLambda, EFTLambdadot
+
+        call self%compute_background_EFT_functions( a, &
+            & EFTOmegaV, EFTOmegaP    , EFTOmegaPP, EFTOmegaPPP, &
+            & EFTc     , EFTcdot      , &
+            & EFTLambda, EFTLambdadot )
+
+        EFTCAMBModelComputeDtauda = 0._dl
+
+    end function EFTCAMBModelComputeDtauda
 
     ! ---------------------------------------------------------------------------------------------
 
