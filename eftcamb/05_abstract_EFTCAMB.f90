@@ -15,12 +15,14 @@
 
 !> @file 05_abstract_EFTCAMB.f90
 !! This file contains the abstract definition of all the places where EFTCAMB interacts
-!! with CAMB. All EFTCAMB models should inherit from this class.
+!! with CAMB. All EFTCAMB models should inherit from this class or the two derived
+!! classes contained in 05p2_abstract_EFTCAMB_full.f90 or 05p3_abstract_EFTCAMB_designer.f90
 
 
 !----------------------------------------------------------------------------------------
 !> This module contains the abstract definition of all the places where EFTCAMB interacts
-!! with CAMB. All EFTCAMB models should inherit from this class.
+!! with CAMB. All EFTCAMB models should inherit from this class or the two derived
+!! classes contained in 05p2_abstract_EFTCAMB_full.f90 or 05p3_abstract_EFTCAMB_designer.f90
 
 !> @author Bin Hu, Marco Raveri
 
@@ -61,9 +63,10 @@ module EFTCAMB_abstract_model
         ! CAMB related procedures:
         procedure(EFTCAMBModelBackgroundEFTFunctions ), deferred :: compute_background_EFT_functions  !< subroutine that computes the value of the background EFT functions at a given time.
         procedure(EFTCAMBModelSecondOrderEFTFunctions), deferred :: compute_secondorder_EFT_functions !< subroutine that computes the value of the second order EFT functions at a given time.
-        procedure :: compute_dtauda => EFTCAMBModelComputeDtauda                                      !< function that computes dtauda = 1/sqrt(a^2H^2).
-        procedure :: compute_adotoa => EFTCAMBModelComputeAdotoa                                      !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
+        procedure(EFTCAMBModelComputeDtauda          ), deferred :: compute_dtauda                    !< function that computes dtauda = 1/sqrt(a^2H^2).
+        procedure(EFTCAMBModelComputeAdotoa          ), deferred :: compute_adotoa                    !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
         procedure :: compute_rhoQPQ => EFTCAMBModelComputeRhoQPQ                                      !< subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
+
     end type EFTCAMB_model
 
     ! ---------------------------------------------------------------------------------------------
@@ -212,6 +215,42 @@ module EFTCAMB_abstract_model
             real(dl), intent(out) :: EFTGamma6P    !< the value of the derivative wrt scale factor of Gamma 6
         end subroutine EFTCAMBModelSecondOrderEFTFunctions
 
+        ! ---------------------------------------------------------------------------------------------
+        !> Function that computes dtauda = 1/sqrt(a^2H^2).
+        !! Again the interface is slightly complicated for performance reasons.
+        function EFTCAMBModelComputeDtauda( self, a, grhoa2, &
+            & grhok, grhov, &
+            & grhoc, grhob, &
+            & grhog, grhornomass )
+            use precision
+            import EFTCAMB_model
+            implicit none
+            class(EFTCAMB_model)  :: self                      !< the base class
+            real(dl), intent(in)  :: a                         !< the input scale factor
+            real(dl), intent(in)  :: grhoa2                    !< the input value of 8 \piG \rho_tot a^2
+            real(dl), intent(in)  :: grhok                     !< the input value of curvature density
+            real(dl), intent(in)  :: grhov                     !< the input value of DE density
+            real(dl), intent(in)  :: grhoc                     !< the input value of CDM density
+            real(dl), intent(in)  :: grhob                     !< the input value of Baryon density
+            real(dl), intent(in)  :: grhog                     !< the input value of Radiation density
+            real(dl), intent(in)  :: grhornomass               !< the input value of massless neutrinos density
+            real(dl)              :: EFTCAMBModelComputeDtauda !< the output dtauda
+        end function EFTCAMBModelComputeDtauda
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Subroutine that computes adotoa = H and its two derivatives wrt conformal time.
+        !! Again the interface is slightly complicated for performance reasons.
+        subroutine EFTCAMBModelComputeAdotoa( self, a, adotoa, Hdot, Hdotdot )
+            use precision
+            import EFTCAMB_model
+            implicit none
+            class(EFTCAMB_model)  :: self                      !< the base class
+            real(dl), intent(in)  :: a                         !< the input scale factor
+            real(dl), intent(out) :: adotoa                    !< the output value of H at the given scale factor
+            real(dl), intent(out) :: Hdot                      !< the output value of dH/dtau at the given scale factor
+            real(dl), intent(out) :: Hdotdot                   !< the output value of d^2H/dtau^2 at the given scale factor
+        end subroutine EFTCAMBModelComputeAdotoa
+
     ! ---------------------------------------------------------------------------------------------
 
     end interface
@@ -247,56 +286,6 @@ contains
         class(EFTCAMB_model)  :: self   !< the base class
 
     end subroutine EFTCAMBModelInitBackground
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Function that computes dtauda = 1/sqrt(a^2H^2).
-    !! Again the interface is slightly complicated for performance reasons.
-    function EFTCAMBModelComputeDtauda( self, a, grhoa2, &
-        & grhok, grhov, &
-        & grhoc, grhob, &
-        & grhog, grhornomass )
-
-        implicit none
-
-        class(EFTCAMB_model)  :: self                      !< the base class
-        real(dl), intent(in)  :: a                         !< the input scale factor
-        real(dl), intent(in)  :: grhoa2                    !< the input value of 8 \piG \rho_tot a^2
-        real(dl), intent(in)  :: grhok                     !< the input value of curvature density
-        real(dl), intent(in)  :: grhov                     !< the input value of DE density
-        real(dl), intent(in)  :: grhoc                     !< the input value of CDM density
-        real(dl), intent(in)  :: grhob                     !< the input value of Baryon density
-        real(dl), intent(in)  :: grhog                     !< the input value of Radiation density
-        real(dl), intent(in)  :: grhornomass               !< the input value of massless neutrinos density
-
-        real(dl)              :: EFTCAMBModelComputeDtauda !< the output dtauda
-
-        real(dl) :: EFTOmegaV, EFTOmegaP, EFTOmegaPP, EFTOmegaPPP
-        real(dl) :: EFTc     , EFTcdot
-        real(dl) :: EFTLambda, EFTLambdadot
-
-        call self%compute_background_EFT_functions( a, &
-            & EFTOmegaV, EFTOmegaP    , EFTOmegaPP, EFTOmegaPPP, &
-            & EFTc     , EFTcdot      , &
-            & EFTLambda, EFTLambdadot )
-
-        EFTCAMBModelComputeDtauda = 0._dl
-
-    end function EFTCAMBModelComputeDtauda
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes adotoa = H and its two derivatives wrt conformal time.
-    !! Again the interface is slightly complicated for performance reasons.
-    subroutine EFTCAMBModelComputeAdotoa( self, a, adotoa, Hdot, Hdotdot )
-
-        implicit none
-
-        class(EFTCAMB_model)  :: self                      !< the base class
-        real(dl), intent(in)  :: a                         !< the input scale factor
-        real(dl), intent(out) :: adotoa                    !< the output value of H at the given scale factor
-        real(dl), intent(out) :: Hdot                      !< the output value of dH/dtau at the given scale factor
-        real(dl), intent(out) :: Hdotdot                   !< the output value of d^2H/dtau^2 at the given scale factor
-
-    end subroutine EFTCAMBModelComputeAdotoa
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.

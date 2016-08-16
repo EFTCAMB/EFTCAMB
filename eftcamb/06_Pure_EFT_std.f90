@@ -31,13 +31,13 @@ module EFTCAMB_pure_EFT_std
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_constant_parametrization_1D
     use EFTCAMB_linear_parametrizations_1D
-    use EFTCAMB_abstract_model
+    use EFTCAMB_abstract_model_designer
 
     implicit none
 
     !----------------------------------------------------------------------------------------
     !> This is the pure EFT model with the six functions of time and w_DE.
-    type, extends ( EFTCAMB_model ) :: EFTCAMB_std_pure_EFT
+    type, extends ( EFTCAMB_designer_model ) :: EFTCAMB_std_pure_EFT
 
         ! the pure EFT functions model selection flags:
         integer  :: PureEFTmodelOmega   !< Model selection flag for Pure EFT Omega.
@@ -75,7 +75,8 @@ module EFTCAMB_pure_EFT_std
         ! CAMB related procedures:
         procedure :: compute_background_EFT_functions  => EFTCAMBPureEFTstdBackgroundEFTFunctions   !< subroutine that computes the value of the background EFT functions at a given time.
         procedure :: compute_secondorder_EFT_functions => EFTCAMBPureEFTstdSecondOrderEFTFunctions  !< subroutine that computes the value of the second order EFT functions at a given time.
-        procedure :: compute_dtauda                    => EFTCAMBPureEFTstdComputeDtauda            !< function that computes dtauda = 1/sqrt(a^2H^2)
+        procedure :: compute_dtauda                    => EFTCAMBPureEFTstdComputeDtauda            !< function that computes dtauda = 1/sqrt(a^2H^2).
+        procedure :: compute_adotoa                    => EFTCAMBPureEFTstdComputeAdotoa            !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
 
     end type EFTCAMB_std_pure_EFT
 
@@ -440,6 +441,20 @@ contains
         EFTCAMBPureEFTstdComputeDtauda = sqrt(3/temp)
 
     end function EFTCAMBPureEFTstdComputeDtauda
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes adotoa = H and its two derivatives wrt conformal time.
+    subroutine EFTCAMBPureEFTstdComputeAdotoa( self, a, adotoa, Hdot, Hdotdot )
+
+        implicit none
+
+        class(EFTCAMB_std_pure_EFT) :: self                !< the base class
+        real(dl), intent(in)  :: a                         !< the input scale factor
+        real(dl), intent(out) :: adotoa                    !< the output value of H at the given scale factor
+        real(dl), intent(out) :: Hdot                      !< the output value of dH/dtau at the given scale factor
+        real(dl), intent(out) :: Hdotdot                   !< the output value of d^2H/dtau^2 at the given scale factor
+
+    end subroutine EFTCAMBPureEFTstdComputeAdotoa
 
     ! ---------------------------------------------------------------------------------------------
 
