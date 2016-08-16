@@ -30,6 +30,7 @@ module EFTCAMB_main
     use EFTCAMB_abstract_model
     use EFTCAMB_pure_EFT_std
     use IniFile
+    use EFTDef
 
     implicit none
 
@@ -48,16 +49,17 @@ module EFTCAMB_main
         integer   :: FullMappingEFTmodel  !< Model selection flag for full mapping EFT models.
 
         ! EFTCAMB stability flags:
-        logical   :: EFT_mathematical_stability
-        logical   :: EFT_physical_stability
-        logical   :: EFTAdditionalPriors
-        logical   :: MinkowskyPriors
+        logical   :: EFT_mathematical_stability  !< Flag that extablishes wether to use mathematical stability.
+        logical   :: EFT_physical_stability      !< Flag that extablishes wether to use physical stability.
+        logical   :: EFTAdditionalPriors         !< Flag that extablishes wether to use some additional parameters prior.
+        logical   :: MinkowskyPriors             !< Flag that extablishes wether to use physical stability.
 
         ! EFTCAMB model:
         class(EFTCAMB_model), allocatable :: model !< This is the EFTCAMB model in the main class.
 
         ! EFTCAMB working flags:
-        integer   :: EFTCAMB_feedback_level        !< Amount of feedback that is printed to screen.
+        integer   :: EFTCAMB_feedback_level                    !< Amount of feedback that is printed to screen.
+        real(dl)  :: EFTCAMB_turn_on_time = EFTturnonpiInitial !< Scale factor at which EFTCAMB becomes active. Default set to EFTturnonpiInitial in EFTDef.f90.
 
     contains
 

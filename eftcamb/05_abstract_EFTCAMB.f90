@@ -61,8 +61,9 @@ module EFTCAMB_abstract_model
         ! CAMB related procedures:
         procedure(EFTCAMBModelBackgroundEFTFunctions ), deferred :: compute_background_EFT_functions  !< subroutine that computes the value of the background EFT functions at a given time.
         procedure(EFTCAMBModelSecondOrderEFTFunctions), deferred :: compute_secondorder_EFT_functions !< subroutine that computes the value of the second order EFT functions at a given time.
-        procedure :: compute_dtauda => EFTCAMBModelComputeDtauda                                      !< function that computes dtauda = 1/sqrt(a^2H^2)
-
+        procedure :: compute_dtauda => EFTCAMBModelComputeDtauda                                      !< function that computes dtauda = 1/sqrt(a^2H^2).
+        procedure :: compute_adotoa => EFTCAMBModelComputeAdotoa                                      !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
+        procedure :: compute_rhoQPQ => EFTCAMBModelComputeRhoQPQ                                      !< subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
     end type EFTCAMB_model
 
     ! ---------------------------------------------------------------------------------------------
@@ -281,6 +282,33 @@ contains
         EFTCAMBModelComputeDtauda = 0._dl
 
     end function EFTCAMBModelComputeDtauda
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes adotoa = H and its two derivatives wrt conformal time.
+    !! Again the interface is slightly complicated for performance reasons.
+    subroutine EFTCAMBModelComputeAdotoa( self, a, adotoa, Hdot, Hdotdot )
+
+        implicit none
+
+        class(EFTCAMB_model)  :: self                      !< the base class
+        real(dl), intent(in)  :: a                         !< the input scale factor
+        real(dl), intent(out) :: adotoa                    !< the output value of H at the given scale factor
+        real(dl), intent(out) :: Hdot                      !< the output value of dH/dtau at the given scale factor
+        real(dl), intent(out) :: Hdotdot                   !< the output value of d^2H/dtau^2 at the given scale factor
+
+    end subroutine EFTCAMBModelComputeAdotoa
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
+    !! Again the interface is slightly complicated for performance reasons.
+    subroutine EFTCAMBModelComputeRhoQPQ( self, a )
+
+        implicit none
+
+        class(EFTCAMB_model)  :: self                      !< the base class
+        real(dl), intent(in)  :: a                         !< the input scale factor
+
+    end subroutine EFTCAMBModelComputeRhoQPQ
 
     ! ---------------------------------------------------------------------------------------------
 

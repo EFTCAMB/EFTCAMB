@@ -66,7 +66,7 @@ subroutine init_background
     ! EFTCAMB MOD START: call EFTCAMB model background initialization
     use ModelParams
     call CP%EFTCAMB%model%initialize_background()
-! EFTCAMB MOD END.
+    ! EFTCAMB MOD END.
 
 end  subroutine init_background
 
@@ -116,7 +116,7 @@ function dtauda(a)
             & grhoc, grhob, &
             & grhog, grhornomass)
     end if
-! EFTCAMB MOD END.
+    ! EFTCAMB MOD END.
 
 end function dtauda
 
@@ -224,6 +224,12 @@ module GaugeInterface
         integer E_ix, B_ix !tensor polarization indices
         real(dl) denlkt(4,max_l_evolve),Kft(max_l_evolve)
         real, pointer :: OutputTransfer(:) => null()
+
+        ! EFTCAMB MOD START: add the EFTCAMB switch to evolutionary variables. In this way we are sure of thread safety of the scalar equations evolution.
+        logical  :: EFTCAMBactive  ! Tells wether EFTCAMB perturbations are active or not
+        real(dl) :: EFTturnOnTime  ! EFTCAMB switch for the time at which EFT kicks in.
+        ! EFTCAMB MOD END
+
     end type EvolutionVars
 
     !precalculated arrays
@@ -291,6 +297,10 @@ contains
         tau_switch_nu_nonrel = noSwitch
         tau_switch_nu_massive= noSwitch
 
+        ! EFTCAMB MOD START: add the EFT switch.
+        if (CP%EFTCAMB%EFTFlag == 0) EV%EFTturnOnTime = noSwitch
+        ! EFTCAMB MOD END
+
         !Evolve equations from tau to tauend, performing switches in equations if necessary.
 
         if (.not. EV%high_ktau_neutrino_approx .and. .not. EV%no_nu_multpoles ) then
@@ -317,8 +327,13 @@ contains
                 tau_switch_no_phot_multpoles =max(15/EV%k_buf,taurend)*AccuracyBoost
         end if
 
+        ! EFTCAMB MOD START: add the dark energy switch.
         next_switch = min(tau_switch_ktau, tau_switch_nu_massless,EV%TightSwitchoffTime, tau_switch_nu_massive, &
-            tau_switch_no_nu_multpoles, tau_switch_no_phot_multpoles, tau_switch_nu_nonrel,noSwitch)
+            & tau_switch_no_nu_multpoles, tau_switch_no_phot_multpoles, tau_switch_nu_nonrel,noSwitch, EV%EFTturnOnTime)
+        ! Original code:
+        ! next_switch = min(tau_switch_ktau, tau_switch_nu_massless,EV%TightSwitchoffTime, tau_switch_nu_massive, &
+        ! tau_switch_no_nu_multpoles, tau_switch_no_phot_multpoles, tau_switch_nu_nonrel,noSwitch)
+        ! EFTCAMB MOD END
 
         if (next_switch < tauend) then
             if (next_switch > tau+smallTime) then
@@ -416,6 +431,17 @@ contains
                 call CopyScalarVariableArray(y,yout, EV, EVout)
                 y=yout
                 EV=EVout
+            ! EFTCAMB MOD START: effect of the DE switch.
+            else if (next_switch==EV%EFTturnOnTime) then
+                ind=1
+                EVout%EFTCAMBactive = .true.
+                EVout%EFTturnOnTime = noSwitch
+                call SetupScalarArrayIndices(EVout)
+                call CopyScalarVariableArray(y,yout, EV, EVout)
+                y=yout
+                EV=EVout
+                !call EFTpiInitialConditions(y,EV,tau) !IW implement initial conditions.
+            ! EFTCAMB MOD STOP
             end if
 
             call GaugeInterface_EvolveScal(EV,tau,y,tauend,tol1,ind,c,w)
@@ -543,14 +569,24 @@ contains
         end if
         maxeq = maxeq +  (EV%lmaxg+1)+(EV%lmaxnr+1)+EV%lmaxgpol-1
 
-        !Dark energy
-        if (w_lam /= -1 .and. w_Perturb) then
+        ! EFTCAMB MOD START
+        if ((w_lam /= -1 .and. w_Perturb).or.CP%EFTCAMB%EFTFlag/=0) then
             EV%w_ix = neq+1
             neq=neq+2
             maxeq=maxeq+2
         else
             EV%w_ix=0
         end if
+        ! Original code:
+        ! !Dark energy
+        ! if (w_lam /= -1 .and. w_Perturb) then
+        !  EV%w_ix = neq+1
+        !  neq=neq+2
+        !  maxeq=maxeq+2
+        ! else
+        !  EV%w_ix=0
+        ! end if
+        ! EFTCAMB MOD END
 
         !Massive neutrinos
         if (CP%Num_Nu_massive /= 0) then
@@ -604,10 +640,21 @@ contains
 
         yout=0
         yout(1:basic_num_eqns) = y(1:basic_num_eqns)
-        if (w_lam /= -1 .and. w_Perturb) then
+
+        ! EFTCAMB MOD START
+        if ((w_lam /= -1.and.w_Perturb).or.&
+            &(CP%EFTCAMB%EFTflag/=0.and.EVout%EFTCAMBactive).or.&
+            &(CP%EFTCAMB%EFTflag/=0.and.EV%EFTCAMBactive)) then
+
             yout(EVout%w_ix)=y(EV%w_ix)
             yout(EVout%w_ix+1)=y(EV%w_ix+1)
         end if
+        ! Original code:
+        ! if (w_lam /= -1 .and. w_Perturb) then
+        !  yout(EVout%w_ix)=y(EV%w_ix)
+        !  yout(EVout%w_ix+1)=y(EV%w_ix+1)
+        ! end if
+        ! EFTCAMB MOD END
 
         if (.not. EV%no_phot_multpoles .and. .not. EVout%no_phot_multpoles) then
             if (EV%TightCoupling .or. EVOut%TightCoupling) then
@@ -790,6 +837,10 @@ contains
             EV%no_phot_multpoles =.false.
             EV%no_nu_multpoles =.false.
             EV%MassiveNuApprox=.false.
+
+            ! EFTCAMB MOD START: initialize the EFTCAMB switch
+            EV%EFTCAMBactive = .false.
+            ! EFTCAMB MOD END
 
             if (HighAccuracyDefault .and. CP%AccuratePolarization) then
                 EV%lmaxg  = max(nint(11*lAccuracyBoost),3)
@@ -1152,11 +1203,18 @@ contains
     end subroutine Nu_Intvsq
 
 
-    subroutine MassiveNuVars(EV,y,a,grho,gpres,dgrho,dgq, wnu_arr)
+    ! EFTCAMB MOD START: compatibility with massive neutrinos
+    subroutine MassiveNuVars(EV,y,a,grho,gpres,dgrho,dgq, wnu_arr, dgp)
+        ! Original code:
+        ! subroutine MassiveNuVars(EV,y,a,grho,gpres,dgrho,dgq, wnu_arr)
+        ! EFTCAMB MOD END.
         implicit none
         type(EvolutionVars) EV
         real(dl) :: y(EV%nvar), a, grho,gpres,dgrho,dgq
         real(dl), intent(out), optional :: wnu_arr(max_nu)
+        ! EFTCAMB MOD START: compatibility with massive neutrinos
+        real(dl), intent(out), optional :: dgp
+        ! EFTCAMB MOD END.
         !grho = a^2 kappa rho
         !gpres = a^2 kappa p
         !dgrho = a^2 kappa \delta\rho
@@ -1190,6 +1248,12 @@ contains
             dgrho= dgrho + grhonu_t*clxnu
             dgq  = dgq   + grhonu_t*qnu
 
+            ! EFTCAMB MOD START: compatibility with massive neutrinos
+            if (present(dgp)) then
+                dgp = dgp + gpnu_t*clxnu
+            end if
+            ! EFTCAMB MOD END.
+
             if (present(wnu_arr)) then
                 wnu_arr(nu_i) =pnu/rhonu
             end if
@@ -1221,6 +1285,10 @@ contains
         real(dl) clxq, vq, diff_rhopi, octg, octgprime
         real(dl) sources(CTransScal%NumSources)
         real(dl) ISW
+
+        ! EFTCAMB MOD START: definitions of EFTCAMB quantities
+        real(dl) :: pidotdot, Hdot, Hdotdot
+        ! EFTCAMB MOD END
 
         yprime = 0
         call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
@@ -1270,14 +1338,42 @@ contains
             call MassiveNuVarsOut(EV,y,yprime,a,grho,gpres,dgrho,dgq,dgpi, dgpi_diff,pidot_sum)
         end if
 
-        if (w_lam /= -1 .and. w_Perturb) then
-            clxq=y(EV%w_ix)
-            vq=y(EV%w_ix+1)
-            dgrho=dgrho + clxq*grhov_t
-            dgq = dgq + vq*grhov_t*(1+w_lam)
+        ! EFTCAMB MOD START: initialization of DE perturbations.
+        if (CP%EFTCAMB%EFTflag==0) then
+            if (w_lam /= -1 .and. w_Perturb) then
+                clxq  = y(EV%w_ix)
+                vq    = y(EV%w_ix+1)
+                dgrho = dgrho + clxq*grhov_t
+                dgq   = dgq + vq*grhov_t*(1+w_lam)
+            end if
+        else if (CP%EFTCAMB%EFTflag/=0.and.EV%EFTCAMBactive) then
+            clxq      = y(EV%w_ix)
+            vq        = y(EV%w_ix+1)
+            pidotdot  = yprime(EV%w_ix+1)
         end if
+        ! Original code:
+        ! if (w_lam /= -1 .and. w_Perturb) then
+        !  clxq=y(EV%w_ix)
+        !  vq=y(EV%w_ix+1)
+        !  dgrho=dgrho + clxq*grhov_t
+        !  dgq = dgq + vq*grhov_t*(1+w_lam)
+        ! end if
+        ! EFTCAMB MOD END
 
-        adotoa=sqrt((grho+grhok)/3)
+        ! EFTCAMB MOD START: change the expansion history:
+        if (CP%EFTCAMB%EFTflag==0) then
+            adotoa = sqrt((grho+grhok)/3)
+        else if (CP%EFTCAMB%EFTflag/=0) then
+
+            !call CP%EFTCAMB%model%compute_adotoa(a, adotoa, Hdot, Hdotdot )
+
+            !call CP%EFTCAMB%model%compute_rhoQPQ(a)
+
+            !call CP%EFTCAMB%model%compute_secondorder_EFT_functions()
+
+
+        end if
+        ! EFTCAMB MOD END.
 
         if (EV%no_nu_multpoles) then
             z=(0.5_dl*dgrho/k + etak)/adotoa

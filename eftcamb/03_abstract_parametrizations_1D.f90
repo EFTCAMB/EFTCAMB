@@ -219,7 +219,7 @@ contains
         real(dl), intent(in)            :: x        !< the scale factor at which the integral is wanted
         real(dl) :: ParametrizedFunction1DIntegral  !< the output value
 
-        ParametrizedFunction1DIntegral = 0._dl
+        ParametrizedFunction1DIntegral = x**2
 
     end function ParametrizedFunction1DIntegral
 
