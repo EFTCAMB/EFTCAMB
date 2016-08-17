@@ -21,7 +21,7 @@ module LambdaGeneral
     use precision
     implicit none
 
-    real(dl)  :: w_lam = -1_dl !p/rho for the dark energy (assumed constant)
+    real(dl) :: w_lam = -1_dl !p/rho for the dark energy (assumed constant)
     real(dl) :: cs2_lam = 1_dl
     !comoving sound speed. Always exactly 1 for quintessence
     !(otherwise assumed constant, though this is almost certainly unrealistic)
@@ -73,31 +73,33 @@ end  subroutine init_background
 
 !Background evolution
 function dtauda(a)
+
     !get d tau / d a
     use precision
     use ModelParams
     use MassiveNu
     use LambdaGeneral
+
+    ! EFTCAMB MOD START: use EFTCAMB modules
+    use EFTCAMB_abstract_model_full
+    use EFTCAMB_abstract_model_designer
+    ! EFTCAMB MOD END.
+
     implicit none
+
     real(dl) dtauda
     real(dl), intent(IN) :: a
     real(dl) rhonu,grhoa2, a2
     integer nu_i
 
+    ! EFTCAMB MOD START: EFTCAMB variables
+    type(EFTCAMB_timestep_cache) :: eft_cache
+    ! EFTCAMB MOD END.
+
     a2=a**2
 
     !  8*pi*G*rho*a**4.
     grhoa2=grhok*a2+(grhoc+grhob)*a+grhog+grhornomass
-
-    ! EFTCAMB MOD START: if EFTCAMB is active replace the standard DE EoS
-    if (CP%EFTCAMB%EFTFlag == 0) then
-        if (w_lam == -1._dl) then
-            grhoa2=grhoa2+grhov*a2**2
-        else
-            grhoa2=grhoa2+grhov*a**(1-3*w_lam)
-        end if
-    end if
-    ! EFTCAMB MOD END.
 
     if (CP%Num_Nu_massive /= 0) then
         !Get massive neutrino density relative to massless
@@ -107,14 +109,41 @@ function dtauda(a)
         end do
     end if
 
-    ! EFTCAMB MOD START: compute dtauda
+    ! EFTCAMB MOD START: compute dtauda, if EFTCAMB is active replace the standard DE EoS
     if (CP%EFTCAMB%EFTFlag == 0) then
+        if (w_lam == -1._dl) then
+            grhoa2=grhoa2+grhov*a2**2
+        else
+            grhoa2=grhoa2+grhov*a**(1-3*w_lam)
+        end if
         dtauda=sqrt(3/grhoa2)
     else
-        dtauda = CP%EFTCAMB%model%compute_dtauda( a, grhoa2, &
-            & grhok, grhov, &
-            & grhoc, grhob, &
-            & grhog, grhornomass)
+
+        call eft_cache%initialize()
+        ! compute the background and the background EFT functions.
+        select type ( model => CP%EFTCAMB%model )
+
+            class is (EFTCAMB_full_model)
+            ! background for full models. Here the expansion history is computed from the
+            ! EFT functions. Hence compute them first and then compute the expansion history.
+            call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , eft_cache )
+            dtauda = CP%EFTCAMB%model%compute_dtauda( a, CP%eft_par_cache , eft_cache )
+
+            class is (EFTCAMB_designer_model)
+            ! background for designer models. Here the expansion history is parametrized
+            ! and does not depend on the EFT functions. Hence compute first the expansion history
+            ! and then the EFT functions.
+            dtauda = CP%EFTCAMB%model%compute_dtauda( a, CP%eft_par_cache , eft_cache )
+
+            class default
+            ! default behaviour. Throw an error.
+            write(*,*) 'EFTCAMB ERROR: it seems that the EFTCAMB model is not a known type'
+            write(*,*) 'When implementing a new model remember to write it as an object'
+            write(*,*) 'inheriting from EFTCAMB_full_model or EFTCAMB_designer_model'
+            stop
+
+        end select
+
     end if
     ! EFTCAMB MOD END.
 
@@ -131,6 +160,12 @@ module GaugeInterface
     use LambdaGeneral
     use Errors
     use Transfer
+
+    ! EFTCAMB MOD START: use EFTCAMB modules
+    use EFTCAMB_abstract_model_full
+    use EFTCAMB_abstract_model_designer
+    ! EFTCAMB MOD END.
+
     implicit none
     public
 
@@ -1287,8 +1322,9 @@ contains
         real(dl) ISW
 
         ! EFTCAMB MOD START: definitions of EFTCAMB quantities
-        real(dl) :: pidotdot, Hdot, Hdotdot
-        ! EFTCAMB MOD END
+        real(dl)                     :: pidotdot
+        type(EFTCAMB_timestep_cache) :: eft_cache
+        ! EFTCAMB MOD END.
 
         yprime = 0
         call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
@@ -1320,7 +1356,15 @@ contains
         grhoc_t=grhoc/a
         grhor_t=grhornomass/a2
         grhog_t=grhog/a2
-        grhov_t=grhov*a**(-1-3*w_lam)
+
+        ! EFTCAMB MOD START: remove the standard DE term if not needed.
+        if (CP%EFTCAMB%EFTflag==0) then
+            grhov_t = grhov*a**(-1-3*w_lam)
+        else
+            grhov_t = 0._dl
+        end if
+        ! EFTCAMB MOD END.
+
         grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
         gpres=(grhog_t+grhor_t)/3+grhov_t*w_lam
 
@@ -1337,6 +1381,10 @@ contains
         if (CP%Num_Nu_Massive /= 0) then
             call MassiveNuVarsOut(EV,y,yprime,a,grho,gpres,dgrho,dgq,dgpi, dgpi_diff,pidot_sum)
         end if
+
+        ! EFTCAMB MOD START: initialize the timestep cache
+        call eft_cache%initialize()
+        ! EFTCAMB MOD END.
 
         ! EFTCAMB MOD START: initialization of DE perturbations.
         if (CP%EFTCAMB%EFTflag==0) then
@@ -1360,17 +1408,37 @@ contains
         ! end if
         ! EFTCAMB MOD END
 
-        ! EFTCAMB MOD START: change the expansion history:
+        ! EFTCAMB MOD START: change the expansion history and compute EFT functions and background quantities.
         if (CP%EFTCAMB%EFTflag==0) then
             adotoa = sqrt((grho+grhok)/3)
         else if (CP%EFTCAMB%EFTflag/=0) then
+            ! compute the background and the background EFT functions.
+            select type ( model => CP%EFTCAMB%model )
 
-            !call CP%EFTCAMB%model%compute_adotoa(a, adotoa, Hdot, Hdotdot )
+                class is (EFTCAMB_full_model)
+                ! background for full models. Here the expansion history is computed from the
+                ! EFT functions. Hence compute them first and then compute the expansion history.
+                call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , eft_cache )
+                call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , eft_cache )
 
-            !call CP%EFTCAMB%model%compute_rhoQPQ(a)
+                class is (EFTCAMB_designer_model)
+                ! background for designer models. Here the expansion history is parametrized
+                ! and does not depend on the EFT functions. Hence compute first the expansion history
+                ! and then the EFT functions.
+                call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , eft_cache )
+                call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , eft_cache )
 
-            !call CP%EFTCAMB%model%compute_secondorder_EFT_functions()
+                class default
+                ! default behaviour. Throw an error.
+                write(*,*) 'EFTCAMB ERROR: it seems that the EFTCAMB model is not a known type'
+                write(*,*) 'When implementing a new model remember to write it as an object'
+                write(*,*) 'inheriting from EFTCAMB_full_model or EFTCAMB_designer_model'
+                stop
 
+            end select
+            ! compute the second order EFT functions:
+
+            ! compute the effective DE density and pressure:
 
         end if
         ! EFTCAMB MOD END.

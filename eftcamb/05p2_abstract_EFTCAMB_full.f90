@@ -51,23 +51,16 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes dtauda = 1/sqrt(a^2H^2).
-    function EFTCAMBFullModelComputeDtauda( self , a, grhoa2, &
-        & grhok, grhov, &
-        & grhoc, grhob, &
-        & grhog, grhornomass )
+    function EFTCAMBFullModelComputeDtauda( self, a, eft_par_cache, eft_cache )
 
         implicit none
 
-        class(EFTCAMB_full_model) :: self                      !< the base class
-        real(dl), intent(in)  :: a                             !< the input scale factor
-        real(dl), intent(in)  :: grhoa2                        !< the input value of 8 \piG \rho_tot a^2
-        real(dl), intent(in)  :: grhok                         !< the input value of curvature density
-        real(dl), intent(in)  :: grhov                         !< the input value of DE density
-        real(dl), intent(in)  :: grhoc                         !< the input value of CDM density
-        real(dl), intent(in)  :: grhob                         !< the input value of Baryon density
-        real(dl), intent(in)  :: grhog                         !< the input value of Radiation density
-        real(dl), intent(in)  :: grhornomass                   !< the input value of massless neutrinos density
-        real(dl)              :: EFTCAMBFullModelComputeDtauda !< the output dtauda
+        class(EFTCAMB_full_model)                    :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor.
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        real(dl) :: EFTCAMBFullModelComputeDtauda                     !< the output dtauda
 
         EFTCAMBFullModelComputeDtauda = 0._dl
 
@@ -75,15 +68,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes adotoa = H and its two derivatives wrt conformal time.
-    subroutine EFTCAMBFullModelComputeAdotoa( self, a, adotoa, Hdot, Hdotdot )
+    subroutine EFTCAMBFullModelComputeAdotoa( self, a, eft_par_cache, eft_cache )
 
         implicit none
 
-        class(EFTCAMB_full_model) :: self   !< the base class
-        real(dl), intent(in)  :: a          !< the input scale factor
-        real(dl), intent(out) :: adotoa     !< the output value of H at the given scale factor
-        real(dl), intent(out) :: Hdot       !< the output value of dH/dtau at the given scale factor
-        real(dl), intent(out) :: Hdotdot    !< the output value of d^2H/dtau^2 at the given scale factor
+        class(EFTCAMB_full_model)                    :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
     end subroutine EFTCAMBFullModelComputeAdotoa
 

@@ -34,6 +34,7 @@
 
     ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
     use EFTCAMB_main
+    use EFTCAMB_cache
     ! EFTCAMB MOD END.
 
     implicit none
@@ -125,7 +126,8 @@
         integer   :: Nu_mass_numbers(max_nu) !physical number per eigenstate
 
         ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
-        type(EFTCAMB) :: EFTCAMB
+        type(EFTCAMB)                 :: EFTCAMB
+        type(EFTCAMB_parameter_cache) :: eft_par_cache
         ! EFTCAMB MOD END.
 
         integer   :: Scalar_initial_condition
