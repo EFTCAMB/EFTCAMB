@@ -1,4 +1,0 @@
-mkdir -p fortran
-cp  ../* fortran
-python setup.py sdist upload -r pypi
-rm -Rf fortran
