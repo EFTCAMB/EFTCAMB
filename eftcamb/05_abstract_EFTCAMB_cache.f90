@@ -49,6 +49,9 @@ module EFTCAMB_cache
         real(dl) :: omegav         !< the value of \f$ \Omega_{\Lambda}^0 \f$.
         real(dl) :: omegak         !< the value of \f$ \Omega_{\rm K}^0 \f$.
 
+        real(dl) :: h0             !< reduced Hubble constant \f$ H_0/100 \f$
+        real(dl) :: h0_Mpc         !< the Hubble constant in MegaParsec \f$ 10^3 \cdot H_0/c \f$
+
         real(dl) :: grhog          !< the value of \f$ 8 \pi G_{N} \rho_{\gamma}(t_0) \f$.
         real(dl) :: grhornomass    !< the value of \f$ 8 \pi G_{N} \rho_{\nu}(t_0) \f$.
         real(dl) :: grhormass      !< the value of \f$ 8 \pi G_{N} \rho_{m\nu}(t_0) \f$.
@@ -60,6 +63,7 @@ module EFTCAMB_cache
     contains
 
         procedure :: initialize => EFTCAMBParameterCacheInit  !< subroutine that initializes to zero all the elements of the parameter cache.
+        procedure :: print      => EFTCAMBParameterCachePrint !< subroutine that prints the EFTCAMB parameters cache to screen.
 
     end type EFTCAMB_parameter_cache
 
@@ -161,8 +165,47 @@ contains
         class(EFTCAMB_parameter_cache)  :: self !< the base class.
 
         ! initialize all class members to zero:
+        self%omegac      = 0._dl
+        self%omegab      = 0._dl
+        self%omegav      = 0._dl
+        self%omegak      = 0._dl
+        self%h0          = 0._dl
+        self%h0_Mpc      = 0._dl
+        self%grhog       = 0._dl
+        self%grhornomass = 0._dl
+        self%grhormass   = 0._dl
+        self%grhoc       = 0._dl
+        self%grhob       = 0._dl
+        self%grhov       = 0._dl
+        self%grhok       = 0._dl
 
     end subroutine EFTCAMBParameterCacheInit
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that prints the EFTCAMB parameters cache to screen.
+    subroutine EFTCAMBParameterCachePrint( self )
+
+        implicit none
+
+        class(EFTCAMB_parameter_cache)  :: self !< the base class.
+
+        ! print to screen the parameter cache:
+        write(*,*) 'EFTCAMB parameters cache content:'
+        write(*,*) 'Omega_CDM  :', self%omegac
+        write(*,*) 'Omega_b    :', self%omegab
+        write(*,*) 'Omega_v    :', self%omegav
+        write(*,*) 'Omega_k    :', self%omegak
+        write(*,*) 'h          :', self%h0
+        write(*,*) 'h_Mpc      :', self%h0_Mpc
+        write(*,*) 'grhog      :', self%grhog
+        write(*,*) 'grnonomass :', self%grhornomass
+        write(*,*) 'grhormass  :', self%grhormass
+        write(*,*) 'grhoc      :', self%grhoc
+        write(*,*) 'grhob      :', self%grhob
+        write(*,*) 'grhov      :', self%grhov
+        write(*,*) 'grhok      :', self%grhok
+
+    end subroutine EFTCAMBParameterCachePrint
 
     ! ---------------------------------------------------------------------------------------------
 

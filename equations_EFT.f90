@@ -111,15 +111,19 @@ function dtauda(a)
 
     ! EFTCAMB MOD START: compute dtauda, if EFTCAMB is active replace the standard DE EoS
     if (CP%EFTCAMB%EFTFlag == 0) then
+
         if (w_lam == -1._dl) then
             grhoa2=grhoa2+grhov*a2**2
         else
             grhoa2=grhoa2+grhov*a**(1-3*w_lam)
         end if
         dtauda=sqrt(3/grhoa2)
-    else
 
+    else if (CP%EFTCAMB%EFTFlag /= 0) then
+        ! set up the cache:
         call eft_cache%initialize()
+        eft_cache%a      = a
+        eft_cache%grhoa2 = grhoa2
         ! compute the background and the background EFT functions.
         select type ( model => CP%EFTCAMB%model )
 
@@ -263,6 +267,7 @@ module GaugeInterface
         ! EFTCAMB MOD START: add the EFTCAMB switch to evolutionary variables. In this way we are sure of thread safety of the scalar equations evolution.
         logical  :: EFTCAMBactive  ! Tells wether EFTCAMB perturbations are active or not
         real(dl) :: EFTturnOnTime  ! EFTCAMB switch for the time at which EFT kicks in.
+        type(EFTCAMB_timestep_cache) :: eft_cache ! the EFTCAMB timestep cache.
         ! EFTCAMB MOD END
 
     end type EvolutionVars
@@ -1323,7 +1328,6 @@ contains
 
         ! EFTCAMB MOD START: definitions of EFTCAMB quantities
         real(dl)                     :: pidotdot
-        type(EFTCAMB_timestep_cache) :: eft_cache
         ! EFTCAMB MOD END.
 
         yprime = 0
@@ -1383,7 +1387,7 @@ contains
         end if
 
         ! EFTCAMB MOD START: initialize the timestep cache
-        call eft_cache%initialize()
+        call EV%eft_cache%initialize()
         ! EFTCAMB MOD END.
 
         ! EFTCAMB MOD START: initialization of DE perturbations.
@@ -1418,15 +1422,15 @@ contains
                 class is (EFTCAMB_full_model)
                 ! background for full models. Here the expansion history is computed from the
                 ! EFT functions. Hence compute them first and then compute the expansion history.
-                call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , eft_cache )
-                call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , eft_cache )
+                call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
+                call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , EV%eft_cache )
 
                 class is (EFTCAMB_designer_model)
                 ! background for designer models. Here the expansion history is parametrized
                 ! and does not depend on the EFT functions. Hence compute first the expansion history
                 ! and then the EFT functions.
-                call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , eft_cache )
-                call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , eft_cache )
+                call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , EV%eft_cache )
+                call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
 
                 class default
                 ! default behaviour. Throw an error.
