@@ -1327,7 +1327,7 @@ contains
         real(dl) ISW
 
         ! EFTCAMB MOD START: definitions of EFTCAMB quantities
-        real(dl)                     :: pidotdot
+        real(dl) :: pidotdot
         ! EFTCAMB MOD END.
 
         yprime = 0
@@ -1386,10 +1386,6 @@ contains
             call MassiveNuVarsOut(EV,y,yprime,a,grho,gpres,dgrho,dgq,dgpi, dgpi_diff,pidot_sum)
         end if
 
-        ! EFTCAMB MOD START: initialize the timestep cache
-        call EV%eft_cache%initialize()
-        ! EFTCAMB MOD END.
-
         ! EFTCAMB MOD START: initialization of DE perturbations.
         if (CP%EFTCAMB%EFTflag==0) then
             if (w_lam /= -1 .and. w_Perturb) then
@@ -1416,34 +1412,7 @@ contains
         if (CP%EFTCAMB%EFTflag==0) then
             adotoa = sqrt((grho+grhok)/3)
         else if (CP%EFTCAMB%EFTflag/=0) then
-            ! compute the background and the background EFT functions.
-            select type ( model => CP%EFTCAMB%model )
-
-                class is (EFTCAMB_full_model)
-                ! background for full models. Here the expansion history is computed from the
-                ! EFT functions. Hence compute them first and then compute the expansion history.
-                call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
-                call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , EV%eft_cache )
-
-                class is (EFTCAMB_designer_model)
-                ! background for designer models. Here the expansion history is parametrized
-                ! and does not depend on the EFT functions. Hence compute first the expansion history
-                ! and then the EFT functions.
-                call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , EV%eft_cache )
-                call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
-
-                class default
-                ! default behaviour. Throw an error.
-                write(*,*) 'EFTCAMB ERROR: it seems that the EFTCAMB model is not a known type'
-                write(*,*) 'When implementing a new model remember to write it as an object'
-                write(*,*) 'inheriting from EFTCAMB_full_model or EFTCAMB_designer_model'
-                stop
-
-            end select
-            ! compute the second order EFT functions:
-
-            ! compute the effective DE density and pressure:
-
+            adotoa = EV%eft_cache%adotoa
         end if
         ! EFTCAMB MOD END.
 
@@ -2138,32 +2107,136 @@ contains
         !non-flat vars
         real(dl) cothxor !1/tau in flat case
 
-        k=EV%k_buf
-        k2=EV%k2_buf
+        ! EFTCAMB MOD START: some additional variables:
+        real(dl) dgpnu, EFT_grhonu, EFT_gpinu, EFT_grhonudot, EFT_gpinudot, grhormass_t
+        real(dl) pidotdot, EFTLensing
+        ! EFTCAMB MOD END.
 
-        a=ay(1)
-        a2=a*a
+        k  = EV%k_buf
+        k2 = EV%k2_buf
+        ! copy variables:
+        a    = ay(1) ! scale factor
+        etak = ay(2) ! conformal time
+        clxc = ay(3) ! cdm density perturbations
+        clxb = ay(4) ! baryons density perturbations
+        vb   = ay(5) ! baryons velocity perturbations
+        ! process:
+        a2   = a*a
+        ! compute background densities of different species
+        grhob_t = grhob/a         ! 8\pi G_N \rho_b a^2: baryons background density
+        grhoc_t = grhoc/a         ! 8\pi G_N \rho_{cdm} a^2: cold dark matter background density
+        grhor_t = grhornomass/a2  ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
+        grhog_t = grhog/a2        ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
 
-        etak=ay(2)
-
-        !  CDM variables
-        clxc=ay(3)
-
-        !  Baryon variables
-        clxb=ay(4)
-        vb=ay(5)
-
-        !  Compute expansion rate from: grho 8*pi*rho*a**2
-
-        grhob_t=grhob/a
-        grhoc_t=grhoc/a
-        grhor_t=grhornomass/a2
-        grhog_t=grhog/a2
-        if (w_lam==-1._dl) then
-            grhov_t=grhov*a2
+        ! EFTCAMB MOD START: remove standard DE background density
+        if ( CP%EFTCAMB%EFTFlag == 0 ) then
+            if (w_lam==-1._dl) then
+                grhov_t = grhov*a2
+            else
+                grhov_t = grhov*a**(-1-3*w_lam)
+            end if
         else
-            grhov_t=grhov*a**(-1-3*w_lam)
+            grhov_t = 0._dl
         end if
+        ! EFTCAMB MOD END.
+
+        ! start computing background total pressure and total density:
+        gpres       = 0
+        grho_matter = grhob_t+grhoc_t
+        ! start computing total density and velocity perturbations:
+        dgrho_matter = grhob_t*clxb+grhoc_t*clxc ! 8\pi G_N \sum(rho_i*clx_i) a^2 : total density perturbation
+        dgq          = grhob_t*vb                ! 8\pi G_N \sum(rho_i+p_i)*v_i a^2 : total velocity perturbation
+        ! add massive neutrinos to both background and perturbations:
+
+        ! EFTCAMB MOD START: compatibility with massive neutrinos.
+        dgpnu = 0._dl
+        if (CP%Num_Nu_Massive > 0) then
+            call MassiveNuVars(EV,ay,a,grho_matter,gpres,dgrho_matter,dgq, wnu_arr, dgp=dgpnu)
+        end if
+        ! Original code:
+        !if (CP%Num_Nu_Massive > 0) then
+        !    call MassiveNuVars(EV,ay,a,grho_matter,gpres,dgrho_matter,dgq, wnu_arr)
+        !end if
+        ! EFTCAMB MOD END.
+
+        ! add radiation, massless neutrinos and Lambda to total background density:
+        grho = grho_matter+grhor_t+grhog_t+grhov_t
+
+        ! EFTCAMB MOD START: compute background and fill the background part of the EFTCAMB timestep cache
+        if ( CP%EFTCAMB%EFTFlag == 0 ) then
+            if (CP%flat) then
+                adotoa=sqrt(grho/3)
+                cothxor=1._dl/tau
+            else
+                adotoa=sqrt((grho+grhok)/3._dl)
+                cothxor=1._dl/tanfunc(tau/CP%r)/CP%r
+            end if
+        else if ( CP%EFTCAMB%EFTFlag /= 0 ) then
+            ! compute gpres: add radiation and massless neutrinos to massive neutrinos
+            gpres = gpres + (grhog_t+grhor_t)/3._dl
+            ! initialize the cache:
+            call EV%eft_cache%initialize()
+            ! start to fill the cache:
+            EV%eft_cache%a           = a
+            EV%eft_cache%tau         = tau
+            EV%eft_cache%k           = k
+            EV%eft_cache%grhom_t     = grho
+            EV%eft_cache%gpresm_t    = gpres
+            EV%eft_cache%grhob_t     = grhob_t
+            EV%eft_cache%grhoc_t     = grhoc_t
+            EV%eft_cache%grhor_t     = grhor_t
+            EV%eft_cache%grhog_t     = grhog_t
+            ! compute the other things:
+            select type ( model => CP%EFTCAMB%model )
+                ! compute the background and the background EFT functions.
+                class is (EFTCAMB_full_model)
+                ! background for full models. Here the expansion history is computed from the
+                ! EFT functions. Hence compute them first and then compute the expansion history.
+                call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
+                call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , EV%eft_cache )
+                class is (EFTCAMB_designer_model)
+                ! background for designer models. Here the expansion history is parametrized
+                ! and does not depend on the EFT functions. Hence compute first the expansion history
+                ! and then the EFT functions.
+                call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , EV%eft_cache )
+            end select
+            ! store adotoa:
+            adotoa   = EV%eft_cache%adotoa
+            ! compute massive neutrinos stuff:
+            ! Massive neutrinos mod:
+            if (CP%Num_Nu_Massive /= 0) then
+                do nu_i = 1, CP%Nu_mass_eigenstates
+                    EFT_grhonu    = 0._dl
+                    EFT_gpinu     = 0._dl
+                    EFT_grhonudot = 0._dl
+                    EFT_gpinudot  = 0._dl
+                    grhormass_t=grhormass(nu_i)/a**2
+                    call Nu_background(a*nu_masses(nu_i),EFT_grhonu,EFT_gpinu)
+                    EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
+                    EV%eft_cache%gpinu_tot  = EV%eft_cache%gpinu_tot  + grhormass_t*EFT_gpinu
+                    EV%eft_cache%grhonudot_tot = EV%eft_cache%grhonudot_tot + grhormass_t*(Nu_drho(a*nu_masses(nu_i) ,adotoa, EFT_grhonu)&
+                        & -4._dl*adotoa*EFT_grhonu)
+                    EV%eft_cache%gpinudot_tot  = EV%eft_cache%gpinudot_tot  + grhormass_t*(Nu_pidot(a*nu_masses(nu_i),adotoa, EFT_gpinu )&
+                        & -4._dl*adotoa*EFT_gpinu)
+                end do
+            end if
+            ! compute pressure dot:
+            EV%eft_cache%gpresdotm_t = 0._dl
+            ! compute remaining quantities related to H:
+            call CP%EFTCAMB%model%compute_H_derivs( a, CP%eft_par_cache , EV%eft_cache )
+            ! store:
+            adotdota = EV%eft_cache%Hdot +EV%eft_cache%adotoa**2
+            ! compute backgrond EFT functions if model is designer:
+            select type ( model => CP%EFTCAMB%model )
+                class is (EFTCAMB_designer_model)
+                call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
+            end select
+            ! compute all other background stuff:
+            call CP%EFTCAMB%model%compute_rhoQPQ( a, CP%eft_par_cache , EV%eft_cache )
+            !
+            cothxor=1._dl/tau
+        end if
+        ! EFTCAMB MOD END.
 
         !  Get sound speed and ionisation fraction.
         if (EV%TightCoupling) then
@@ -2172,43 +2245,57 @@ contains
             call thermo(tau,cs2,opacity)
         end if
 
-        gpres=0
-        grho_matter=grhob_t+grhoc_t
-
-        !total perturbations: matter terms first, then add massive nu, de and radiation
-        !  8*pi*a*a*SUM[rho_i*clx_i]
-        dgrho_matter=grhob_t*clxb+grhoc_t*clxc
-        !  8*pi*a*a*SUM[(rho_i+p_i)*v_i]
-        dgq=grhob_t*vb
-
-        if (CP%Num_Nu_Massive > 0) then
-            call MassiveNuVars(EV,ay,a,grho_matter,gpres,dgrho_matter,dgq, wnu_arr)
-        end if
-
-        grho = grho_matter+grhor_t+grhog_t+grhov_t
-
-        if (CP%flat) then
-            adotoa=sqrt(grho/3)
-            cothxor=1._dl/tau
-        else
-            adotoa=sqrt((grho+grhok)/3._dl)
-            cothxor=1._dl/tanfunc(tau/CP%r)/CP%r
-        end if
-
+        ! define total density perturbations:
         dgrho = dgrho_matter
 
-        if (w_lam /= -1 .and. w_Perturb) then
-            clxq=ay(EV%w_ix)
-            vq=ay(EV%w_ix+1)
-            dgrho=dgrho + clxq*grhov_t
-            dgq = dgq + vq*grhov_t*(1+w_lam)
+        ! EFTCAMB MOD START: initialization of DE perturbations.
+        clxq     = 0._dl
+        vq       = 0._dl
+        pidotdot = 0._dl
+        if (CP%EFTCAMB%EFTflag==0) then
+            if (w_lam /= -1 .and. w_Perturb) then
+                clxq  = ay(EV%w_ix)
+                vq    = ay(EV%w_ix+1)
+                dgrho = dgrho + clxq*grhov_t
+                dgq   = dgq + vq*grhov_t*(1+w_lam)
+            end if
+        else if (CP%EFTCAMB%EFTflag/=0.and.EV%EFTCAMBactive) then
+            ! initialize DE perturbations:
+            clxq     = ay(EV%w_ix)
+            vq       = ay(EV%w_ix+1)
+            pidotdot = ayprime(EV%w_ix+1)
+            ! initialize DE perturbations cache:
+            EV%eft_cache%pi       = clxq
+            EV%eft_cache%pidot    = vq
+            EV%eft_cache%pidotdot = pidotdot
+            ! compute Einstein equations factors:
+            call CP%EFTCAMB%model%compute_Einstein_Factors( a, CP%eft_par_cache , EV%eft_cache )
         end if
+        ! Original code:
+        ! if (w_lam /= -1 .and. w_Perturb) then
+        !  clxq=ay(EV%w_ix)
+        !  vq=ay(EV%w_ix+1)
+        !  dgrho=dgrho + clxq*grhov_t
+        !  dgq = dgq + vq*grhov_t*(1+w_lam)
+        ! end if
+        ! EFTCAMB MOD END
+
+        ! EFTCAMB MOD START: compute z,dz before loading radiation and photon
+        if (CP%EFTCAMB%EFTflag==0.or..not.EV%EFTCAMBactive) then
+            z  = +(0.5_dl*dgrho/k + etak)/adotoa
+            dz = -adotoa*z - 0.5_dl*dgrho/k
+        else if (CP%EFTCAMB%EFTflag/=0.and.EV%EFTCAMBactive) then
+            z  = 1._dl/EV%eft_cache%EFTeomG*(etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
+            dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*z*(1._dl+EV%eft_cache%EFTeomY -0.5_dl*EV%eft_cache%EFTeomG) &
+                & - 0.5_dl*dgrho/k/(1._dl+EV%eft_cache%EFTOmegaV) -adotoa*EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc) -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+        end if
+        ! EFTCAMB MOD END.
 
         if (EV%no_nu_multpoles) then
             !RSA approximation of arXiv:1104.2933, dropping opactity terms in the velocity
             !Approximate total density variables with just matter terms
-            z=(0.5_dl*dgrho/k + etak)/adotoa
-            dz= -adotoa*z - 0.5_dl*dgrho/k
+            !z=(0.5_dl*dgrho/k + etak)/adotoa   ! EFTCAMB MOD
+            !dz= -adotoa*z - 0.5_dl*dgrho/k     ! EFTCAMB MOD
             clxr=-4*dz/k
             qr=-4._dl/3*z
             pir=0
@@ -2221,8 +2308,8 @@ contains
 
         if (EV%no_phot_multpoles) then
             if (.not. EV%no_nu_multpoles) then
-                z=(0.5_dl*dgrho/k + etak)/adotoa
-                dz= -adotoa*z - 0.5_dl*dgrho/k
+                !z=(0.5_dl*dgrho/k + etak)/adotoa   ! EFTCAMB MOD
+                !dz= -adotoa*z - 0.5_dl*dgrho/k     ! EFTCAMB MOD
                 clxg=-4*dz/k-4/k*opacity*(vb+z)
                 qg=-4._dl/3*z
             else
@@ -2249,25 +2336,80 @@ contains
 
         ayprime(1)=adotoa*a
 
+        ! EFTCAMB MOD START: equation of motion. Now we use the non-RSA expression for dz.
+        if (CP%EFTCAMB%EFTflag==0 .or. .not. EV%EFTCAMBactive) then
+            !Get sigma (shear) and z from the constraints
+            !have to get z from eta for numerical stability
+            z=(0.5_dl*dgrho/k + etak)/adotoa
+            if (CP%flat) then
+                sigma=(z+1.5_dl*dgq/k2)
+                ayprime(2)=0.5_dl*dgq
+            else
+                sigma=(z+1.5_dl*dgq/k2)/EV%Kf(1)
+                ayprime(2)=0.5_dl*dgq + CP%curv*z
+            end if
+        else if (CP%EFTCAMB%EFTflag/=0.and.CP%flat.and. EV%EFTCAMBactive) then
+            z          = 1._dl/EV%eft_cache%EFTeomG*(etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
+            dz         = 1._dl/EV%eft_cache%EFTeomU*(-2*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z +etak -0.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*(grhog_t*clxg+grhor_t*clxr)&
+                & -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+            sigma      = 1._dl/EV%eft_cache%EFTeomX*(z*EV%eft_cache%EFTeomU +1.5_dl*dgq/(k2*(1._dl+EV%eft_cache%EFTOmegaV)) +EV%eft_cache%EFTeomF/CP%eft_par_cache%h0_Mpc)
+            ayprime(2) = ( 0.5_dl*dgq/(1._dl+EV%eft_cache%EFTOmegaV) + k2/3._dl*EV%eft_cache%EFTeomF/CP%eft_par_cache%h0_Mpc + k2/3._dl*(EV%eft_cache%EFTeomU -EV%eft_cache%EFTeomX)*z )/EV%eft_cache%EFTeomX
+        end if
+        ! Original code:
+        ! z=(0.5_dl*dgrho/k + etak)/adotoa
+        ! if (CP%flat) then
+        !  !eta*k equation
+        !  sigma=(z+1.5_dl*dgq/k2)
+        !  ayprime(2)=0.5_dl*dgq
+        ! else
+        !  sigma=(z+1.5_dl*dgq/k2)/EV%Kf(1)
+        !  ayprime(2)=0.5_dl*dgq + CP%curv*z
+        ! end if
+        ! EFTCAMB MOD END
 
-        !  Get sigma (shear) and z from the constraints
-        ! have to get z from eta for numerical stability
-        z=(0.5_dl*dgrho/k + etak)/adotoa
-        if (CP%flat) then
-            !eta*k equation
-            sigma=(z+1.5_dl*dgq/k2)
-            ayprime(2)=0.5_dl*dgq
+        ! EFTCAMB MOD START: Pi field equation.
+        if (CP%EFTCAMB%EFTflag==0) then
+            if (w_lam /= -1 .and. w_Perturb) then
+                ayprime(EV%w_ix)= -3*adotoa*(cs2_lam-w_lam)*(clxq+3*adotoa*(1+w_lam)*vq/k) &
+                    -(1+w_lam)*k*vq -(1+w_lam)*k*z
+                ayprime(EV%w_ix+1) = -adotoa*(1-3*cs2_lam)*vq + k*cs2_lam*clxq/(1+w_lam)
+            end if
+        else if (CP%EFTCAMB%EFTflag/=0.and.EV%EFTCAMBactive) then
+            ! complete the cache:
+            EV%eft_cache%z     = z
+            EV%eft_cache%clxg  = clxg
+            EV%eft_cache%clxr  = clxr
+            EV%eft_cache%dgpnu = dgpnu
+            EV%eft_cache%dgrho = dgrho
+            EV%eft_cache%dgq   = dgq
+            ! compute pi field equation factors:
+            call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , EV%eft_cache )
+            ! use them:
+
+            ayprime(EV%w_ix)   =  vq
+            ayprime(EV%w_ix+1) = -EV%eft_cache%EFTpiB*vq/EV%eft_cache%EFTpiA &
+                & - (EV%eft_cache%EFTpiC+ k*k*EV%eft_cache%EFTpiD)*clxq/EV%eft_cache%EFTpiA  &
+                & - CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/EV%eft_cache%EFTpiA
+            ! strategies to adopt if the theory does not propagate an additional dof
+            if (EV%eft_cache%EFTpiA==0._dl) then
+                if (EV%eft_cache%EFTpiB==0._dl) then
+                    vq                 = 0._dl
+                    ay(EV%w_ix)        = 0._dl
+                    ay(EV%w_ix+1)      = 0._dl
+                    ayprime(EV%w_ix)   = 0._dl
+                    ayprime(EV%w_ix+1) = 0._dl
+                else
+                    vq                 = -(EV%eft_cache%EFTpiC+ k*k*EV%eft_cache%EFTpiD)*clxq/EV%eft_cache%EFTpiB - CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/EV%eft_cache%EFTpiB
+                    ay(EV%w_ix+1)      = vq
+                    ayprime(EV%w_ix)   = vq
+                    ayprime(EV%w_ix+1) = 0._dl
+                end if
+            end if
         else
-            sigma=(z+1.5_dl*dgq/k2)/EV%Kf(1)
-            ayprime(2)=0.5_dl*dgq + CP%curv*z
+            ayprime(EV%w_ix)   = 0._dl
+            ayprime(EV%w_ix+1) = 0._dl
         end if
-
-        if (w_lam /= -1 .and. w_Perturb) then
-            ayprime(EV%w_ix)= -3*adotoa*(cs2_lam-w_lam)*(clxq+3*adotoa*(1+w_lam)*vq/k) &
-                -(1+w_lam)*k*vq -(1+w_lam)*k*z
-
-            ayprime(EV%w_ix+1) = -adotoa*(1-3*cs2_lam)*vq + k*cs2_lam*clxq/(1+w_lam)
-        end if
+        ! EFTCAMB MOD END.
 
         if (associated(EV%OutputTransfer)) then
             EV%OutputTransfer(Transfer_kh) = k/(CP%h0/100._dl)
@@ -2285,7 +2427,15 @@ contains
             EV%OutputTransfer(Transfer_nonu) = (grhob_t*clxb+grhoc_t*clxc)/(grhob_t + grhoc_t)
             EV%OutputTransfer(Transfer_tot_de) =  dgrho/grho_matter
             !Transfer_Weyl is k^2Phi, where Phi is the Weyl potential
-            EV%OutputTransfer(Transfer_Weyl) = -(dgrho +3*dgq*adotoa/k)/(EV%Kf(1)*2) - dgpi/2
+            ! EFTCAMB MOD START: compute the lensing source:
+            if (CP%EFTCAMB%EFTflag==0 .or. .not. EV%EFTCAMBactive) then
+                EV%OutputTransfer(Transfer_Weyl) = -(dgrho +3*dgq*adotoa/k)/(EV%Kf(1)*2) - dgpi/2
+            else if (CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive) then
+                EFTLensing = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomV)*sigma +(1._dl+EV%eft_cache%EFTeomX)*etak&
+                    & -1._dl/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV) +EV%eft_cache%EFTeomN/CP%eft_par_cache%h0_Mpc)
+                EV%OutputTransfer(Transfer_Weyl) = 0.5_dl*k*EFTLensing
+            end if
+            ! EFTCAMB MOD END.
             EV%OutputTransfer(Transfer_Newt_vel_cdm)=  -k*sigma/adotoa
             EV%OutputTransfer(Transfer_Newt_vel_baryon) = -k*(vb + sigma)/adotoa
             EV%OutputTransfer(Transfer_vel_baryon_cdm) = vb
@@ -2307,9 +2457,17 @@ contains
         !  Use explicit equation for vb if appropriate
 
         if (EV%TightCoupling) then
-            !  ddota/a
-            gpres=gpres+ (grhog_t+grhor_t)/3 +grhov_t*w_lam
-            adotdota=(adotoa*adotoa-gpres)/2
+
+            ! EFTCAMB MOD START:
+            if (CP%EFTCAMB%EFTflag==0) then
+                gpres=gpres+ (grhog_t+grhor_t)/3 +grhov_t*w_lam
+                adotdota=(adotoa*adotoa-gpres)/2
+            ! Original code:
+            ! !  ddota/a
+            ! gpres=gpres+ (grhog_t+grhor_t)/3 +grhov_t*w_lam
+            ! adotdota=(adotoa*adotoa-gpres)/2
+            end if
+            ! EFTCAMB MOD END.
 
             pig = 32._dl/45/opacity*k*(sigma+vb)
 

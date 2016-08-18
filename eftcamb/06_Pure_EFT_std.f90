@@ -77,6 +77,7 @@ module EFTCAMB_pure_EFT_std
         procedure :: compute_secondorder_EFT_functions => EFTCAMBPureEFTstdSecondOrderEFTFunctions  !< subroutine that computes the value of the second order EFT functions at a given time.
         procedure :: compute_dtauda                    => EFTCAMBPureEFTstdComputeDtauda            !< function that computes dtauda = 1/sqrt(a^2H^2).
         procedure :: compute_adotoa                    => EFTCAMBPureEFTstdComputeAdotoa            !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
+        procedure :: compute_H_derivs                  => EFTCAMBPureEFTstdComputeHubbleDer         !< subroutine that computes the two derivatives wrt conformal time of H.
 
     end type EFTCAMB_std_pure_EFT
 
@@ -310,6 +311,8 @@ contains
         integer     , intent(in)    :: i      !< the index of the parameter
         character(*), intent(out)   :: name   !< the output name of the i-th parameter
 
+        stop 'IW: EFTCAMBPureEFTstdParameterNames'
+
     end subroutine EFTCAMBPureEFTstdParameterNames
 
     ! ---------------------------------------------------------------------------------------------
@@ -322,6 +325,8 @@ contains
         integer     , intent(in)    :: i          !< The index of the parameter
         character(*), intent(out)   :: latexname  !< the output latex name of the i-th parameter
 
+        stop 'IW: EFTCAMBPureEFTstdParameterNamesLatex'
+
     end subroutine EFTCAMBPureEFTstdParameterNamesLatex
 
     ! ---------------------------------------------------------------------------------------------
@@ -333,6 +338,8 @@ contains
         class(EFTCAMB_std_pure_EFT) :: self   !< the base class
         integer , intent(in)        :: i      !< The index of the parameter
         real(dl), intent(out)       :: value  !< the output value of the i-th parameter
+
+        stop 'IW: EFTCAMBPureEFTstdParameterValues'
 
     end subroutine EFTCAMBPureEFTstdParameterValues
 
@@ -351,10 +358,23 @@ contains
         eft_cache%EFTOmegaP    = self%PureEFTOmega%first_derivative(a)
         eft_cache%EFTOmegaPP   = self%PureEFTOmega%second_derivative(a)
         eft_cache%EFTOmegaPPP  = self%PureEFTOmega%third_derivative(a)
-        eft_cache%EFTc         = 0._dl
-        eft_cache%EFTcdot      = 0._dl
-        eft_cache%EFTLambda    = 0._dl
-        eft_cache%EFTLambdadot = 0._dl
+        eft_cache%EFTc         = (eft_cache%adotoa**2 - eft_cache%Hdot)*(eft_cache%EFTOmegaV + 0.5_dl*a*eft_cache%EFTOmegaP) &
+            & - 0.5_dl*(a*eft_cache%adotoa)*eft_cache%EFTOmegaPP&
+            & + 0.5_dl*eft_cache%grhov_t*(1._dl+ self%PureEFTwDE%value(a) )
+        eft_cache%EFTLambda    = +self%PureEFTwDE%value(a)*eft_cache%grhov_t &
+            &-eft_cache%EFTOmegaV*(2._dl*eft_cache%Hdot +eft_cache%adotoa**2) &
+            &-a*eft_cache%EFTOmegaP*(2._dl*eft_cache%adotoa**2 + eft_cache%Hdot) &
+            &-(a*eft_cache%adotoa)**2*eft_cache%EFTOmegaPP
+        eft_cache%EFTcdot      = -eft_cache%EFTOmegaV*( eft_cache%Hdotdot -4._dl*eft_cache%adotoa*eft_cache%Hdot +2._dl*eft_cache%adotoa**3 ) &
+            & + 0.5_dl*a*eft_cache%EFTOmegaP*(-eft_cache%Hdotdot +eft_cache%adotoa*eft_cache%Hdot +eft_cache%adotoa**3)&
+            & +0.5_dl*a**2*eft_cache%adotoa*eft_cache%EFTOmegaPP*( eft_cache%adotoa**2 -3._dl*eft_cache%Hdot)&
+            & -0.5_dl*(a*eft_cache%adotoa)**3*eft_cache%EFTOmegaPPP&
+            & +0.5_dl*eft_cache%adotoa*eft_cache%grhov_t*(-3._dl*(1._dl +self%PureEFTwDE%value(a))**2 + a*self%PureEFTwDE%first_derivative(a))
+        eft_cache%EFTLambdadot = -2._dl*eft_cache%EFTOmegaV*( eft_cache%Hdotdot -eft_cache%adotoa*eft_cache%Hdot -eft_cache%adotoa**3 )&
+            & -a*eft_cache%EFTOmegaP*( 4._dl*eft_cache%adotoa*eft_cache%Hdot +eft_cache%Hdotdot)&
+            & -a**2*eft_cache%EFTOmegaPP*eft_cache%adotoa*( 3._dl*eft_cache%Hdot +2._dl*eft_cache%adotoa**2 )&
+            & -(a*eft_cache%adotoa)**3*eft_cache%EFTOmegaPPP&
+            & +eft_cache%grhov_t*eft_cache%adotoa*( a*self%PureEFTwDE%first_derivative(a) -3._dl*self%PureEFTwDE%value(a)*(1._dl +self%PureEFTwDE%value(a) ))
 
     end subroutine EFTCAMBPureEFTstdBackgroundEFTFunctions
 
@@ -417,7 +437,29 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
+        eft_cache%grhov_t = eft_par_cache%grhov*self%PureEFTwDE%integral(a)
+        eft_cache%adotoa  = sqrt( ( eft_cache%grhom_t +eft_cache%grhov_t )/3._dl )
+
     end subroutine EFTCAMBPureEFTstdComputeAdotoa
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the two derivatives wrt conformal time of H.
+    subroutine EFTCAMBPureEFTstdComputeHubbleDer( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_std_pure_EFT)                  :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        eft_cache%gpiv_t  = self%PureEFTwDE%value(a)*eft_cache%grhov_t
+        eft_cache%Hdot    = 0.5_dl*( -eft_cache%adotoa**2 -eft_cache%gpresm_t -eft_cache%gpiv_t )
+        eft_cache%Hdotdot = eft_cache%adotoa*( ( eft_cache%grhob_t +eft_cache%grhoc_t)/6._dl +2._dl*( eft_cache%grhor_t +eft_cache%grhog_t)/3._dl ) &
+            & +eft_cache%adotoa*eft_cache%grhov_t*( 1._dl/6._dl +self%PureEFTwDE%value(a) +1.5_dl*self%PureEFTwDE%value(a)**2 -0.5_dl*a*self%PureEFTwDE%first_derivative(a) ) &
+            & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
+
+    end subroutine EFTCAMBPureEFTstdComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
 

@@ -65,8 +65,12 @@ module EFTCAMB_abstract_model
         procedure(EFTCAMBModelBackgroundEFTFunctions ), deferred :: compute_background_EFT_functions  !< subroutine that computes the value of the background EFT functions at a given time.
         procedure(EFTCAMBModelSecondOrderEFTFunctions), deferred :: compute_secondorder_EFT_functions !< subroutine that computes the value of the second order EFT functions at a given time.
         procedure(EFTCAMBModelComputeDtauda          ), deferred :: compute_dtauda                    !< function that computes dtauda = 1/sqrt(a^2H^2).
-        procedure(EFTCAMBModelComputeAdotoa          ), deferred :: compute_adotoa                    !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
-        procedure :: compute_rhoQPQ => EFTCAMBModelComputeRhoQPQ                                      !< subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
+        procedure(EFTCAMBModelComputeAdotoa          ), deferred :: compute_adotoa                    !< subroutine that computes adotoa = H.
+        procedure(EFTCAMBModelComputeHubbleDer       ), deferred :: compute_H_derivs                  !< subroutine that computes the two derivatives wrt conformal time of H.
+
+        procedure :: compute_rhoQPQ           => EFTCAMBModelComputeRhoQPQ                            !< subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
+        procedure :: compute_Einstein_factors => EFTCAMBModelComputeEinstein                          !< subroutine that computes the Einstein equations factors. For details refer to the numerical notes.
+        procedure :: compute_pi_factors       => EFTCAMBModelComputePi                                !< subroutine that computes the pi field equations factors. For details refer to the numerical notes.
 
     end type EFTCAMB_model
 
@@ -204,7 +208,6 @@ module EFTCAMB_abstract_model
 
         ! ---------------------------------------------------------------------------------------------
         !> Subroutine that computes adotoa = H and its two derivatives wrt conformal time.
-        !! Again the interface is slightly complicated for performance reasons.
         subroutine EFTCAMBModelComputeAdotoa( self, a, eft_par_cache, eft_cache )
             use precision
             use EFTCAMB_cache
@@ -215,6 +218,19 @@ module EFTCAMB_abstract_model
             type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
             type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
         end subroutine EFTCAMBModelComputeAdotoa
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Subroutine that computes the two derivatives wrt conformal time of H.
+        subroutine EFTCAMBModelComputeHubbleDer( self, a, eft_par_cache, eft_cache )
+            use precision
+            use EFTCAMB_cache
+            import EFTCAMB_model
+            implicit none
+            class(EFTCAMB_model)                         :: self          !< the base class.
+            real(dl), intent(in)                         :: a             !< the input scale factor.
+            type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+            type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+        end subroutine EFTCAMBModelComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
 
@@ -248,21 +264,185 @@ contains
 
         implicit none
 
-        class(EFTCAMB_model)  :: self   !< the base class
+        class(EFTCAMB_model)                         :: self          !< the base class
 
     end subroutine EFTCAMBModelInitBackground
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
-    !! Again the interface is slightly complicated for performance reasons.
-    subroutine EFTCAMBModelComputeRhoQPQ( self, a )
+    subroutine EFTCAMBModelComputeRhoQPQ( self, a, eft_par_cache, eft_cache )
 
         implicit none
 
-        class(EFTCAMB_model)  :: self                      !< the base class
-        real(dl), intent(in)  :: a                         !< the input scale factor
+        class(EFTCAMB_model)                         :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor.
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        eft_cache%grhoq     = 2._dl*eft_cache%EFTc -eft_cache%EFTLambda -3._dl*a*eft_cache%adotoa**2*eft_cache%EFTOmegaP
+        eft_cache%gpresq    = eft_cache%EFTLambda + (a*eft_cache%adotoa)**2*eft_cache%EFTOmegaPP&
+            & +a*eft_cache%EFTOmegaP*( eft_cache%Hdot + 2._dl*eft_cache%adotoa**2 )
+        eft_cache%grhodotq  = -3._dl*eft_cache%adotoa*(eft_cache%grhoq +eft_cache%gpresq) + 3._dl*a*eft_cache%adotoa**3._dl*eft_cache%EFTOmegaP
+        eft_cache%gpresdotq = eft_cache%EFTLambdadot + (a*eft_cache%adotoa)**3*eft_cache%EFTOmegaPPP + 3._dl*a**2*eft_cache%adotoa*eft_cache%Hdot*eft_cache%EFTOmegaPP&
+            & +a*eft_cache%EFTOmegaP*eft_cache%Hdotdot +3._dl*a*eft_cache%adotoa*eft_cache%Hdot*eft_cache%EFTOmegaP +2._dl*a**2*eft_cache%adotoa**3*eft_cache%EFTOmegaPP&
+            & -2._dl*a*eft_cache%adotoa**3*eft_cache%EFTOmegaP
 
     end subroutine EFTCAMBModelComputeRhoQPQ
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the Einstein equations factors. For details refer to the numerical notes.
+    subroutine EFTCAMBModelComputeEinstein( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_model)                         :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor.
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        eft_cache%EFTeomF     = 1.5_dl/(eft_cache%k*(1._dl+eft_cache%EFTOmegaV))*((eft_cache%grhoq +eft_cache%gpresq)*eft_cache%pi&                             ! Background operators
+            & +eft_cache%adotoa**2*a*eft_cache%EFTOmegaP*eft_cache%pi +a*eft_cache%adotoa*eft_cache%EFTOmegaP*eft_cache%pidot)&
+            & +1.5_dl*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V*( eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)/(eft_cache%k*(1._dl+eft_cache%EFTOmegaV))&  ! Gamma2
+            & +1.5_dl*eft_cache%EFTGamma3V/(1._dl+eft_cache%EFTOmegaV)*(eft_cache%k-3._dl*( eft_cache%Hdot -eft_cache%adotoa**2)/(eft_cache%k))*eft_cache%pi&   ! Gamma3
+            & +1.5_dl*eft_cache%EFTGamma4V/(1._dl+eft_cache%EFTOmegaV)*eft_cache%k*eft_cache%pi&                                                                ! Gamma4
+            & -1.5_dl*eft_cache%EFTGamma4V/(1._dl+eft_cache%EFTOmegaV)*( eft_cache%Hdot-eft_cache%adotoa**2)/eft_cache%k*eft_cache%pi
+        eft_cache%EFTeomN     = -a*eft_cache%adotoa*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)*eft_cache%k*eft_cache%pi&                       ! Background operators
+            & +2._dl*eft_cache%adotoa/(1._dl+eft_cache%EFTOmegaV)*(eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTGamma4P)*eft_cache%k*eft_cache%pi&   ! Gamma4
+            & +eft_cache%EFTGamma4V/(1._dl+eft_cache%EFTOmegaV)*eft_cache%k*eft_cache%pidot&
+            & +2._dl*eft_cache%EFTGamma5V*eft_cache%k*( eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)/(1._dl+eft_cache%EFTOmegaV)               ! Gamma5
+        eft_cache%EFTeomNdot  = -a*eft_cache%Hdot*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)*eft_cache%k*eft_cache%pi&                                                   ! Background operators
+            & -a*eft_cache%adotoa*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)*eft_cache%k*eft_cache%pidot&
+            & -a*eft_cache%adotoa**2/(1._dl+eft_cache%EFTOmegaV)*(eft_cache%EFTOmegaP+a*eft_cache%EFTOmegaPP&
+            & -a*eft_cache%EFTOmegaP**2/(1._dl+eft_cache%EFTOmegaV))*eft_cache%k*eft_cache%pi&
+            & +eft_cache%EFTGamma4V*eft_cache%k*eft_cache%pidotdot/(1._dl+eft_cache%EFTOmegaV)+ a*eft_cache%adotoa*eft_cache%k*eft_cache%pidot/(1._dl+eft_cache%EFTOmegaV)*&  ! Gamma4
+            &( +eft_cache%EFTGamma4P -eft_cache%EFTGamma4V*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV))&
+            & +2._dl*eft_cache%k/(1._dl +eft_cache%EFTOmegaV)*(eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTGamma4P)*( eft_cache%Hdot*eft_cache%pi +eft_cache%adotoa*eft_cache%pidot)&
+            & +2._dl*a*eft_cache%adotoa**2*eft_cache%k*eft_cache%pi/(1._dl +eft_cache%EFTOmegaV)*(+0.5_dl*a*eft_cache%EFTGamma4PP +1.5_dl*eft_cache%EFTGamma4P&
+            & -eft_cache%EFTOmegaP/(1._dl +eft_cache%EFTOmegaV)*(eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTGamma4P))&
+            & +2._dl*eft_cache%EFTGamma5V*eft_cache%k/(1._dl+eft_cache%EFTOmegaV)*(eft_cache%pidotdot + eft_cache%adotoa*eft_cache%pidot + eft_cache%Hdot*eft_cache%pi)&      ! Gamma5
+            & +2._dl*a*eft_cache%k*eft_cache%adotoa/(1._dl+eft_cache%EFTOmegaV)*( eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)*(+eft_cache%EFTGamma5P&
+            & -eft_cache%EFTGamma5V*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV))
+        eft_cache%EFTeomX     = 1._dl&                              ! Background operators
+            & -eft_cache%EFTGamma4V/(1._dl +eft_cache%EFTOmegaV)    ! Gamma4
+        eft_cache%EFTeomXdot  = -a*eft_cache%adotoa/(1._dl +eft_cache%EFTOmegaV)*( +eft_cache%EFTGamma4P&  ! Gamma4
+            & -eft_cache%EFTGamma4V*eft_cache%EFTOmegaP/(1._dl +eft_cache%EFTOmegaV))
+        eft_cache%EFTeomY     = +0.5_dl*a*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)&                 ! Background operators
+            & +1.5_dl/(1._dl+eft_cache%EFTOmegaV)*(eft_cache%EFTGamma3V +0.5_dl*a*eft_cache%EFTGamma3P)&   ! Gamma3
+            & +0.5_dl*(eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTGamma4P)/(1._dl+eft_cache%EFTOmegaV)    ! Gamma4
+        eft_cache%EFTeomG     = +1._dl + 0.5_dl*a*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)&               ! Background operators
+            & +0.5_dl*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V/eft_cache%adotoa/(1._dl+eft_cache%EFTOmegaV)&  ! Gamma2
+            & +1.5_dl*eft_cache%EFTGamma3V/(1._dl+eft_cache%EFTOmegaV)&                                          ! Gamma3
+            & +0.5_dl*eft_cache%EFTGamma4V/(1._dl+eft_cache%EFTOmegaV)                                           ! Gamma4
+        eft_cache%EFTeomU     = 1._dl&                                   ! Background operators
+            & +1.5_dl*eft_cache%EFTGamma3V/(1._dl+eft_cache%EFTOmegaV)&  ! Gamma3
+            & +0.5_dl*eft_cache%EFTGamma4V/(1._dl+eft_cache%EFTOmegaV)   ! Gamma4
+
+
+        eft_cache%EFTeomL     = -1.5_dl*a*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)*(3._dl*eft_cache%adotoa**2 -eft_cache%Hdot)*eft_cache%pi&                              ! Background operators
+            & -1.5_dl*a*eft_cache%EFTOmegaP/(1._dl +eft_cache%EFTOmegaV)*eft_cache%adotoa*eft_cache%pidot&
+            & -0.5_dl*a*eft_cache%EFTOmegaP/(1._dl +eft_cache%EFTOmegaV)*eft_cache%k**2*eft_cache%pi&
+            & +0.5_dl*eft_cache%pi/(eft_cache%adotoa*(1._dl +eft_cache%EFTOmegaV))*eft_cache%grhodotq&
+            & +( eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)/( eft_cache%adotoa*(1+eft_cache%EFTOmegaV))*eft_cache%EFTc&
+            & +2._dl*eft_cache%a**2*eft_par_cache%h0_mpc**2*eft_cache%EFTGamma1V/eft_cache%adotoa/(1._dl+eft_cache%EFTOmegaV)*( eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)& ! Gamma1
+            & +1.5_dl*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V/(1._dl+eft_cache%EFTOmegaV)*&                                                                                  ! Gamma2
+            &((eft_cache%Hdot/eft_cache%adotoa-2._dl*eft_cache%adotoa -eft_cache%k**2/(3._dl*eft_cache%adotoa))*eft_cache%pi -eft_cache%pidot)&
+            & -1.5_dl*eft_cache%EFTGamma3V/(1._dl +eft_cache%EFTOmegaV)*( eft_cache%k**2 -3._dl*(eft_cache%Hdot-eft_cache%adotoa**2))*eft_cache%pi&                              ! Gamma3
+            & +1.5_dl*eft_cache%EFTGamma4V/(1._dl +eft_cache%EFTOmegaV)*( eft_cache%Hdot -eft_cache%adotoa**2 -eft_cache%k**2/3._dl)*eft_cache%pi&                               ! Gamma4
+            & +4._dl*eft_cache%EFTGamma6V*eft_cache%k**2/eft_cache%adotoa*( eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)/(1._dl+eft_cache%EFTOmegaV)                          ! Gamma6
+        eft_cache%EFTeomM     = eft_cache%gpresdotq*eft_cache%pi +(eft_cache%grhoq +eft_cache%gpresq)*(eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)&     ! Background operators
+            & +(a*eft_cache%adotoa)**2*eft_cache%EFTOmegaPP*eft_cache%pidot +eft_cache%a**2*eft_cache%adotoa**3*eft_cache%EFTOmegaPP*eft_cache%pi&
+            & +a*eft_cache%adotoa*eft_cache%EFTOmegaP*( eft_cache%pidotdot + ( eft_cache%Hdot/eft_cache%adotoa +4._dl*eft_cache%adotoa)*eft_cache%pidot&
+            & + (2._dl*eft_cache%Hdot +6._dl*eft_cache%adotoa**2 +2._dl/3._dl*eft_cache%k**2)*eft_cache%pi)&
+            & +a*eft_par_cache%h0_mpc*( eft_cache%EFTGamma2V*eft_cache%pidotdot&                                                                            ! Gamma2
+            & +(4._dl*eft_cache%EFTGamma2V +a*eft_cache%EFTGamma2P)*eft_cache%adotoa*eft_cache%pidot +(3._dl*eft_cache%adotoa**2*eft_cache%EFTGamma2V&
+            & +eft_cache%Hdot*eft_cache%EFTGamma2V +a*eft_cache%adotoa**2*eft_cache%EFTGamma2P)*eft_cache%pi)&
+            & +eft_cache%EFTGamma3V*(3._dl*eft_cache%adotoa**2 -3._dl*eft_cache%Hdot +eft_cache%k**2)*eft_cache%pidot&                                      ! Gamma3
+            & +eft_cache%EFTGamma3V*(6._dl*eft_cache%adotoa**3 -3._dl*eft_cache%Hdotdot)*eft_cache%pi&
+            & +2._dl*eft_cache%adotoa*eft_cache%k**2*eft_cache%pi*(eft_cache%EFTGamma3V +0.5_dl*a*eft_cache%EFTGamma3P)&
+            & -3._dl*a*eft_cache%adotoa*( eft_cache%Hdot -eft_cache%adotoa**2)*eft_cache%EFTGamma3P*eft_cache%pi&
+            & -eft_cache%EFTGamma4V*( eft_cache%Hdot -eft_cache%adotoa**2 -eft_cache%k**2/3._dl)*eft_cache%pidot&                                           ! Gamma4
+            & -2._dl*eft_cache%adotoa*(eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTGamma4P)*( eft_cache%Hdot -eft_cache%adotoa**2 -eft_cache%k**2/3._dl)*eft_cache%pi&
+            & -eft_cache%EFTGamma4V*(eft_cache%Hdotdot -2*eft_cache%adotoa*eft_cache%Hdot)*eft_cache%pi&
+            & -4._dl*eft_cache%EFTGamma5V*eft_cache%k**2*(eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)/3._dl                                             ! Gamma5
+        eft_cache%EFTeomV     = +0.5_dl*a*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)&        ! Background operators
+            & -(eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTGamma4P)/(1._dl+eft_cache%EFTOmegaV)  ! Gamma4
+        eft_cache%EFTeomVdot  = +0.5_dl*a*eft_cache%adotoa/(1._dl +eft_cache%EFTOmegaV)*( eft_cache%EFTOmegaP +a*eft_cache%EFTOmegaPP&   ! Background operators
+            & -a*eft_cache%EFTOmegaP**2/(1._dl+eft_cache%EFTOmegaV))&
+            & -a*eft_cache%adotoa/(1._dl+eft_cache%EFTOmegaV)*(+0.5_dl*a*eft_cache%EFTGamma4PP +1.5_dl*eft_cache%EFTGamma4P&             ! Gamma4
+            & -eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)*(eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTGamma4P))
+
+    end subroutine EFTCAMBModelComputeEinstein
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the pi field equations factors. For details refer to the numerical notes.
+    subroutine EFTCAMBModelComputePi( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_model)                         :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor.
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        eft_cache%EFTpiA = eft_cache%EFTc +2*a**2*eft_par_cache%h0_mpc**2*eft_cache%EFTGamma1V +3._dl/2._dl*a**2*( eft_cache%adotoa*eft_cache%EFTOmegaP+eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)**2&
+            &/(2._dl*(1+eft_cache%EFTOmegaV) +eft_cache%EFTGamma3V +eft_cache%EFTGamma4V) +4._dl*eft_cache%k**2*eft_cache%EFTGamma6V
+            !
+        eft_cache%EFTpiB = eft_cache%EFTcdot +4._dl*eft_cache%adotoa*eft_cache%EFTc +8._dl*a**2*eft_cache%adotoa*eft_par_cache%h0_mpc**2*(eft_cache%EFTGamma1V+ 0.25_dl*a*eft_cache%EFTGamma1P)&
+            & +4._dl*eft_cache%k**2*eft_cache%adotoa*(2._dl*eft_cache%EFTGamma6V+ a*eft_cache%EFTGamma6P) +a*eft_cache%k**2*(eft_cache%EFTGamma4V&
+            & +2._dl*eft_cache%EFTGamma5V)/(2._dl*(1._dl+eft_cache%EFTOmegaV)-2._dl*eft_cache%EFTGamma4V)*(eft_cache%adotoa*eft_cache%EFTOmegaP +eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)&
+            & -a*(eft_cache%adotoa*eft_cache%EFTOmegaP +eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/( 4._dl*( 1._dl +eft_cache%EFTOmegaV) +6._dl*eft_cache%EFTGamma3V +2._dl*eft_cache%EFTGamma4V)*&
+            &(-3._dl*( eft_cache%grhoq +eft_cache%gpresq ) -3._dl*a*eft_cache%adotoa**2*eft_cache%EFTOmegaP*(4._dl +eft_cache%Hdot/(eft_cache%adotoa**2)) -3._dl*a**2*eft_cache%adotoa**2*eft_cache%EFTOmegaPP&
+            & -3._dl*a*eft_cache%adotoa*eft_par_cache%h0_mpc*(4._dl*eft_cache%EFTGamma2V +a*eft_cache%EFTGamma2P) -( 9._dl*eft_cache%EFTGamma3V -3._dl*eft_cache%EFTGamma4V)*&
+            &( eft_cache%Hdot -eft_cache%adotoa**2) +eft_cache%k**2*(3._dl*eft_cache%EFTGamma3V -eft_cache%EFTGamma4V +4._dl*eft_cache%EFTGamma5V ))&
+            & +1._dl/(1._dl+eft_cache%EFTOmegaV +2._dl*eft_cache%EFTGamma5V)*( a*eft_cache%adotoa*eft_cache%EFTOmegaP +2._dl*eft_cache%adotoa*(eft_cache%EFTGamma5V + eft_cache%EFTGamma5P)&
+            & -(1._dl+eft_cache%EFTOmegaV)*(a*eft_cache%adotoa*eft_cache%EFTOmegaP +a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/( 2._dl*( 1._dl +eft_cache%EFTOmegaV) +3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V))*&
+            &(-eft_cache%EFTc +1.5_dl*a*eft_cache%adotoa**2*eft_cache%EFTOmegaP -2._dl*a**2*eft_par_cache%h0_mpc*eft_cache%EFTGamma1V -4._dl*eft_cache%EFTGamma6V*eft_cache%k**2 +1.5_dl*a*eft_cache%adotoa*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)
+            !
+        eft_cache%EFTpiC = +eft_cache%adotoa*eft_cache%EFTcdot + ( 6._dl*eft_cache%adotoa**2 -2._dl*eft_cache%Hdot)*eft_cache%EFTc +1.5_dl*a*eft_cache%adotoa*eft_cache%EFTOmegaP*( eft_cache%Hdotdot -2._dl*eft_cache%adotoa**3) &
+            & +6._dl*(a*eft_cache%adotoa)**2*eft_par_cache%h0_mpc**2*eft_cache%EFTGamma1V +2._dl*a**2*eft_cache%Hdot*eft_par_cache%h0_mpc**2*eft_cache%EFTGamma1V &
+            & +2._dl*a**3*eft_cache%adotoa**2*eft_par_cache%h0_mpc**2*eft_cache%EFTGamma1P +1.5_dl*( eft_cache%Hdot -eft_cache%adotoa**2 )**2*(eft_cache%EFTGamma4V +3._dl*eft_cache%EFTGamma3V )&
+            & +4.5_dl*eft_cache%adotoa*eft_par_cache%h0_mpc*a*( eft_cache%Hdot -eft_cache%adotoa**2)*( eft_cache%EFTGamma2V +a*eft_cache%EFTGamma2P/3._dl )&
+            & +0.5_dl*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V*( 3._dl*eft_cache%Hdotdot -12._dl*eft_cache%Hdot*eft_cache%adotoa +6._dl*eft_cache%adotoa**3) &
+            & -a*( eft_cache%adotoa*eft_cache%EFTOmegaP +eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/(4._dl*(1._dl+eft_cache%EFTOmegaV)+6._dl*eft_cache%EFTGamma3V +2._dl*eft_cache%EFTGamma4V)*&
+            &(-3._dl*eft_cache%gpresdotq -3._dl*eft_cache%adotoa*( eft_cache%grhoq +eft_cache%gpresq) -3._dl*a*eft_cache%adotoa**3*( a*eft_cache%EFTOmegaPP +6._dl*eft_cache%EFTOmegaP) &
+            & -6._dl*a*eft_cache%adotoa*eft_cache%Hdot*eft_cache%EFTOmegaP +3._dl*(eft_cache%Hdotdot -2._dl*eft_cache%adotoa*eft_cache%Hdot)*(eft_cache%EFTGamma4V +3._dl*eft_cache%EFTGamma3V)&
+            & +6._dl*eft_cache%adotoa*(eft_cache%Hdot -eft_cache%adotoa**2)*( 3._dl*eft_cache%EFTGamma3V +1.5_dl*a*eft_cache%EFTGamma3P +eft_cache%EFTGamma4V + 0.5_dl*a*eft_cache%EFTGamma4P)&
+            & -3._dl*a*eft_par_cache%h0_mpc*(3._dl*eft_cache%adotoa**2*eft_cache%EFTGamma2V +eft_cache%Hdot*eft_cache%EFTGamma2V +a*eft_cache%adotoa**2*eft_cache%EFTGamma2P))&
+            & +1._dl/(1._dl +eft_cache%EFTOmegaV +2._dl*eft_cache%EFTGamma5V)*( a*eft_cache%adotoa*eft_cache%EFTOmegaP +2._dl*eft_cache%adotoa*(eft_cache%EFTGamma5V +a*eft_cache%EFTGamma5P)&
+            & -(1._dl+eft_cache%EFTOmegaV)*( a*eft_cache%adotoa*eft_cache%EFTOmegaP+a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/(2._dl*(1._dl+eft_cache%EFTOmegaV)+3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V))*&
+            &(-0.5*eft_cache%grhodotq -eft_cache%adotoa*eft_cache%EFTc +1.5_dl*a*eft_cache%adotoa*eft_cache%EFTOmegaP*(3._dl*eft_cache%adotoa**2 -eft_cache%Hdot) -2._dl*a**2*eft_cache%adotoa*eft_par_cache%h0_mpc**2*eft_cache%EFTGamma1V&
+            & -1.5_dl*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V*(eft_cache%Hdot-2._dl*eft_cache%adotoa**2) -3._dl*eft_cache%adotoa*( eft_cache%Hdot -eft_cache%adotoa**2)*(1.5_dl*eft_cache%EFTGamma3V +0.5_dl*eft_cache%EFTGamma4V))
+            !
+        eft_cache%EFTpiD = eft_cache%EFTc -0.5_dl*a*eft_cache%adotoa*eft_par_cache%h0_mpc*(eft_cache%EFTGamma2V +a*eft_cache%EFTGamma2P) +(eft_cache%adotoa**2-eft_cache%Hdot)*(3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V)&
+            & +4._dl*( eft_cache%Hdot*eft_cache%EFTGamma6V + eft_cache%adotoa**2*eft_cache%EFTGamma6V + a*eft_cache%adotoa**2*eft_cache%EFTGamma6P)&
+            & +2._dl*( eft_cache%Hdot*eft_cache%EFTGamma5V +a*eft_cache%adotoa**2*eft_cache%EFTGamma5P)&
+            & -a*(eft_cache%adotoa*eft_cache%EFTOmegaP +eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/(4._dl*(1._dl+eft_cache%EFTOmegaV)+6._dl*eft_cache%EFTGamma3V +2._dl*eft_cache%EFTGamma4V)*&
+            &(-2._dl*a*eft_cache%adotoa*eft_cache%EFTOmegaP +4._dl*eft_cache%adotoa*eft_cache%EFTGamma5V -2._dl*eft_cache%adotoa*(3._dl*eft_cache%EFTGamma3V +1.5_dl*a*eft_cache%EFTGamma3P &
+            & +eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTGamma4P))&
+            & +1._dl/(1._dl+eft_cache%EFTOmegaV+2._dl*eft_cache%EFTGamma5V)*(a*eft_cache%adotoa*eft_cache%EFTOmegaP+2._dl*eft_cache%adotoa*(eft_cache%EFTGamma5V +a*eft_cache%EFTGamma5P)&
+            & -(1._dl+eft_cache%EFTOmegaV)*(a*eft_cache%adotoa*eft_cache%EFTOmegaP +a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/(2._dl*(1._dl+eft_cache%EFTOmegaV)+3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V))*&
+            &(+0.5_dl*a*eft_cache%adotoa*eft_cache%EFTOmegaP -2._dl*eft_cache%adotoa*eft_cache%EFTGamma5V +0.5_dl*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V +1.5_dl*eft_cache%adotoa*eft_cache%EFTGamma3V&
+            & +0.5_dl*eft_cache%adotoa*eft_cache%EFTGamma4V -4._dl*eft_cache%adotoa*eft_cache%EFTGamma6V)&
+            & +(eft_cache%EFTGamma4V +2._dl*eft_cache%EFTGamma5V)/(2._dl*(1._dl+eft_cache%EFTOmegaV) -2._dl*eft_cache%EFTGamma4V)*(eft_cache%grhoq +eft_cache%gpresq +a*eft_cache%adotoa**2*eft_cache%EFTOmegaP&
+            & -eft_cache%EFTGamma4V*( eft_cache%Hdot -eft_cache%adotoa**2) +a*eft_cache%adotoa*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V +3._dl*eft_cache%EFTGamma3V*(eft_cache%adotoa**2-eft_cache%Hdot))&
+            & +eft_cache%k**2*(+0.5_dl*eft_cache%EFTGamma3V +0.5_dl*eft_cache%EFTGamma4V &
+            & +(eft_cache%EFTGamma4V +2._dl*eft_cache%EFTGamma5V)/(2._dl*(1._dl+eft_cache%EFTOmegaV) -2._dl*eft_cache%EFTGamma4V)*(eft_cache%EFTGamma3V +eft_cache%EFTGamma4V))
+            !
+        eft_cache%EFTpiE = (eft_cache%EFTc -1.5_dl*a*eft_cache%adotoa**2*eft_cache%EFTOmegaP -0.5_dl*a*eft_cache%adotoa*eft_par_cache%h0_mpc*(2._dl*eft_cache%EFTGamma2V +a*eft_cache%EFTGamma2P)&
+            & +0.5_dl*eft_cache%EFTGamma3V*(eft_cache%k**2-3._dl*eft_cache%Hdot+3._dl*eft_cache%adotoa**2) +0.5_dl*eft_cache%EFTGamma4V*(eft_cache%k**2 -eft_cache%Hdot +eft_cache%adotoa**2)&
+            & -a*(eft_cache%adotoa*eft_cache%EFTOmegaP +eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/( 4._dl*(1._dl+eft_cache%EFTOmegaV) +6._dl*eft_cache%EFTGamma3V +2._dl*eft_cache%EFTGamma4V)*&
+            &(-2._dl*eft_cache%adotoa*(a*eft_cache%EFTOmegaP +2._dl*(1._dl+eft_cache%EFTOmegaV)) -2._dl*eft_cache%adotoa*(3._dl*eft_cache%EFTGamma3V +1.5_dl*a*eft_cache%EFTGamma3P&
+            & +eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTGamma4P))&
+            & +1._dl/(1._dl+eft_cache%EFTOmegaV+2._dl*eft_cache%EFTGamma5V)*(a*eft_cache%adotoa*eft_cache%EFTOmegaP+2._dl*eft_cache%adotoa*(eft_cache%EFTGamma5V +a*eft_cache%EFTGamma5P)&
+            & -(1._dl+eft_cache%EFTOmegaV)*(a*eft_cache%adotoa*eft_cache%EFTOmegaP+a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/(2._dl*(1._dl+eft_cache%EFTOmegaV)+3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V))*&
+            &( +eft_cache%adotoa*(1._dl +eft_cache%EFTOmegaV +0.5_dl*a*eft_cache%EFTOmegaP) +0.5_dl*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V +1.5_dl*eft_cache%adotoa*eft_cache%EFTGamma3V +0.5_dl*eft_cache%adotoa*eft_cache%EFTGamma4V)&
+            & +(eft_cache%EFTGamma4V +2._dl*eft_cache%EFTGamma5V)/(2._dl*(1._dl +eft_cache%EFTOmegaV) -2._dl*eft_cache%EFTGamma4V)*eft_cache%k**2*(eft_cache%EFTGamma4V +eft_cache%EFTGamma3V))*eft_cache%k*eft_cache%z&
+            & +1._dl*a*(eft_cache%adotoa*eft_cache%EFTOmegaP +eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/(4._dl*(1._dl+eft_cache%EFTOmegaV)+6._dl*eft_cache%EFTGamma3V +2._dl*eft_cache%EFTGamma4V)*&
+            &(eft_cache%grhog_t*eft_cache%clxg +eft_cache%grhor_t*eft_cache%clxr +3._dl*eft_cache%dgpnu ) +(eft_cache%EFTGamma4V +2._dl*eft_cache%EFTGamma5V)/(2._dl*(1._dl+eft_cache%EFTOmegaV) -2._dl*eft_cache%EFTGamma4V)*eft_cache%k*eft_cache%dgq&
+            & -0.5_dl/(1._dl+eft_cache%EFTOmegaV +2._dl*eft_cache%EFTGamma5V)*(a*eft_cache%adotoa*eft_cache%EFTOmegaP+2._dl*eft_cache%adotoa*(eft_cache%EFTGamma5V +a*eft_cache%EFTGamma5P)&
+            & -(1._dl+eft_cache%EFTOmegaV)*(a*eft_cache%adotoa*eft_cache%EFTOmegaP+a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/(2._dl*(1._dl+eft_cache%EFTOmegaV)+3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V))*eft_cache%dgrho
+
+    end subroutine EFTCAMBModelComputePi
 
     ! ---------------------------------------------------------------------------------------------
 

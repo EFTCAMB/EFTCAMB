@@ -22,3 +22,5 @@ eftprofile
 
 # ignore the compilation folder:
 Release
+Debuglib
+Debug
