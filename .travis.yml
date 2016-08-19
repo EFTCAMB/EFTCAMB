@@ -1,0 +1,30 @@
+language:
+  sh
+  python
+
+python:
+  - "2.7"
+
+sudo: required
+
+branches:
+  only:
+    - master
+
+cache: apt
+
+services:
+  - docker
+
+before_install:
+  - docker pull eftcamb/eftbox
+
+install:
+
+script:
+  - while true; do echo 'Travis do not sleep!'; sleep 300s; done &
+  - TIME_PID=$!
+  - docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make all"
+  - kill $TIME_PID
+
+after_success:
