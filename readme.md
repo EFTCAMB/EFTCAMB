@@ -1,6 +1,8 @@
 EFTCAMB
 =======
 
+[![Build Status](https://travis-ci.org/EFTCAMB/EFTCAMB.svg?branch=new_features)](https://travis-ci.org/EFTCAMB/EFTCAMB)
+
 This folder contains the EFTCAMB code.
 
 ### 1. EFTCAMB Requirements:
