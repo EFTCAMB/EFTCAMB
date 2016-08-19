@@ -203,10 +203,10 @@ contains
 
         implicit none
 
-        class(constant_parametrization_1D) :: self  !< the base class
+        class(constant_parametrization_2D) :: self  !< the base class
         real(dl), intent(in)               :: x     !< the first input scale factor
         real(dl), intent(in)               :: y     !< the second input scale factor
-        real(dl) :: ConstantParametrized1DValue     !< the output value
+        real(dl) :: ConstantParametrized2DValue     !< the output value
 
         ConstantParametrized2DValue = self%constant_value
 
