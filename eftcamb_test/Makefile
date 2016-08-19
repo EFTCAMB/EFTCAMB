@@ -52,7 +52,7 @@ spectra_plot:
 	
 # legacy target:
 
-compare_legacy: spectra
+compare_legacy:
 	@bash $(SCRIPT_DIR)/legacy_comp_spectra.sh
 
 create_legacy: spectra

@@ -49,6 +49,9 @@ module EFTCAMB_pure_EFT_std
         integer  :: PureEFTmodelGamma5  !< Model selection flag for Pure EFT Gamma5.
         integer  :: PureEFTmodelGamma6  !< Model selection flag for Pure EFT Gamma6.
 
+        ! selection flag for Horndeski:
+        logical  :: PureEFTHorndeski    !< Selects wether to use the Horndeski bound on EFT functions.
+
         ! the pure EFT functions:
         class( parametrized_function_1D ), allocatable :: PureEFTOmega    !< The pure EFT function Omega.
         class( parametrized_function_1D ), allocatable :: PureEFTwDE      !< The pure EFT function w_DE.
@@ -94,6 +97,7 @@ contains
         class(EFTCAMB_std_pure_EFT) :: self   !< the base class
         type(TIniFile)              :: Ini    !< Input ini file
 
+        ! read model selection flags:
         self%PureEFTmodelOmega  = Ini_Read_Int_File( Ini, 'PureEFTmodelOmega'  , 0 )
         self%EFTwDE             = Ini_Read_Int_File( Ini, 'EFTwDE'             , 0 )
         self%PureEFTmodelGamma1 = Ini_Read_Int_File( Ini, 'PureEFTmodelGamma1' , 0 )
@@ -102,6 +106,8 @@ contains
         self%PureEFTmodelGamma4 = Ini_Read_Int_File( Ini, 'PureEFTmodelGamma4' , 0 )
         self%PureEFTmodelGamma5 = Ini_Read_Int_File( Ini, 'PureEFTmodelGamma5' , 0 )
         self%PureEFTmodelGamma6 = Ini_Read_Int_File( Ini, 'PureEFTmodelGamma6' , 0 )
+        ! read the Horndeski flag:
+        self%PureEFTHorndeski   = Ini_Read_Logical_File( Ini, 'PureEFTHorndeski' , .false. )
 
     end subroutine EFTCAMBPureEFTstdReadModelSelectionFromFile
 
@@ -170,39 +176,42 @@ contains
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma3 =', self%PureEFTmodelGamma3
                 write(*,'(a)')    'Please select an appropriate model.'
         end select
-        ! allocate Gamma4:
-        if ( allocated(self%PureEFTGamma4) ) deallocate(self%PureEFTGamma4)
-        select case ( self%PureEFTmodelGamma4 )
-            case(0)
-                allocate( parametrized_function_1D::self%PureEFTGamma4 )
-            case(1)
-                allocate( constant_parametrization_1D::self%PureEFTGamma4 )
-            case default
-                write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma4 =', self%PureEFTmodelGamma4
-                write(*,'(a)')    'Please select an appropriate model.'
-        end select
-        ! allocate Gamma5:
-        if ( allocated(self%PureEFTGamma5) ) deallocate(self%PureEFTGamma5)
-        select case ( self%PureEFTmodelGamma5 )
-            case(0)
-                allocate( parametrized_function_1D::self%PureEFTGamma5 )
-            case(1)
-                allocate( constant_parametrization_1D::self%PureEFTGamma5 )
-            case default
-                write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma5 =', self%PureEFTmodelGamma5
-                write(*,'(a)')    'Please select an appropriate model.'
-        end select
-        ! allocate Gamma6:
-        if ( allocated(self%PureEFTGamma6) ) deallocate(self%PureEFTGamma6)
-        select case ( self%PureEFTmodelGamma6 )
-            case(0)
-                allocate( parametrized_function_1D::self%PureEFTGamma6 )
-            case(1)
-                allocate( constant_parametrization_1D::self%PureEFTGamma6 )
-            case default
-                write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma6 =', self%PureEFTmodelGamma6
-                write(*,'(a)')    'Please select an appropriate model.'
-        end select
+        ! allocate the other functions only if not Horndeski:
+        if ( .not. self%PureEFTHorndeski ) then
+            ! allocate Gamma4:
+            if ( allocated(self%PureEFTGamma4) ) deallocate(self%PureEFTGamma4)
+            select case ( self%PureEFTmodelGamma4 )
+                case(0)
+                    allocate( parametrized_function_1D::self%PureEFTGamma4 )
+                case(1)
+                    allocate( constant_parametrization_1D::self%PureEFTGamma4 )
+                case default
+                    write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma4 =', self%PureEFTmodelGamma4
+                    write(*,'(a)')    'Please select an appropriate model.'
+            end select
+            ! allocate Gamma5:
+            if ( allocated(self%PureEFTGamma5) ) deallocate(self%PureEFTGamma5)
+            select case ( self%PureEFTmodelGamma5 )
+                case(0)
+                    allocate( parametrized_function_1D::self%PureEFTGamma5 )
+                case(1)
+                    allocate( constant_parametrization_1D::self%PureEFTGamma5 )
+                case default
+                    write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma5 =', self%PureEFTmodelGamma5
+                    write(*,'(a)')    'Please select an appropriate model.'
+            end select
+            ! allocate Gamma6:
+            if ( allocated(self%PureEFTGamma6) ) deallocate(self%PureEFTGamma6)
+            select case ( self%PureEFTmodelGamma6 )
+                case(0)
+                    allocate( parametrized_function_1D::self%PureEFTGamma6 )
+                case(1)
+                    allocate( constant_parametrization_1D::self%PureEFTGamma6 )
+                case default
+                    write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma6 =', self%PureEFTmodelGamma6
+                    write(*,'(a)')    'Please select an appropriate model.'
+            end select
+        end if
 
         ! initialize the names:
         call self%PureEFTOmega%init ( 'EFTOmega' , '\Omega'       )
@@ -210,9 +219,12 @@ contains
         call self%PureEFTGamma1%init( 'EFTGamma1', '\gamma^{(1)}' )
         call self%PureEFTGamma2%init( 'EFTGamma2', '\gamma^{(2)}' )
         call self%PureEFTGamma3%init( 'EFTGamma3', '\gamma^{(3)}' )
-        call self%PureEFTGamma4%init( 'EFTGamma4', '\gamma^{(4)}' )
-        call self%PureEFTGamma5%init( 'EFTGamma5', '\gamma^{(5)}' )
-        call self%PureEFTGamma6%init( 'EFTGamma6', '\gamma^{(6)}' )
+
+        if ( .not. self%PureEFTHorndeski ) then
+            call self%PureEFTGamma4%init( 'EFTGamma4', '\gamma^{(4)}' )
+            call self%PureEFTGamma5%init( 'EFTGamma5', '\gamma^{(5)}' )
+            call self%PureEFTGamma6%init( 'EFTGamma6', '\gamma^{(6)}' )
+        end if
 
     end subroutine EFTCAMBPureEFTstdAllocateModelSelection
 
@@ -241,9 +253,12 @@ contains
         call self%PureEFTGamma1%init_from_file( Ini )
         call self%PureEFTGamma2%init_from_file( Ini )
         call self%PureEFTGamma3%init_from_file( Ini )
-        call self%PureEFTGamma4%init_from_file( Ini )
-        call self%PureEFTGamma5%init_from_file( Ini )
-        call self%PureEFTGamma6%init_from_file( Ini )
+
+        if ( .not. self%PureEFTHorndeski ) then
+            call self%PureEFTGamma4%init_from_file( Ini )
+            call self%PureEFTGamma5%init_from_file( Ini )
+            call self%PureEFTGamma6%init_from_file( Ini )
+        end if
 
     end subroutine EFTCAMBPureEFTstdInitModelParametersFromFile
 
@@ -261,9 +276,11 @@ contains
         self%parameter_number = self%parameter_number +self%PureEFTGamma1%parameter_number
         self%parameter_number = self%parameter_number +self%PureEFTGamma2%parameter_number
         self%parameter_number = self%parameter_number +self%PureEFTGamma3%parameter_number
-        self%parameter_number = self%parameter_number +self%PureEFTGamma4%parameter_number
-        self%parameter_number = self%parameter_number +self%PureEFTGamma5%parameter_number
-        self%parameter_number = self%parameter_number +self%PureEFTGamma6%parameter_number
+        if ( .not. self%PureEFTHorndeski ) then
+            self%parameter_number = self%parameter_number +self%PureEFTGamma4%parameter_number
+            self%parameter_number = self%parameter_number +self%PureEFTGamma5%parameter_number
+            self%parameter_number = self%parameter_number +self%PureEFTGamma6%parameter_number
+        end if
 
     end subroutine EFTCAMBPureEFTstdComputeParametersNumber
 
@@ -277,6 +294,9 @@ contains
 
         write(*,*)
         write(*,'(a,a)')    '   Model               =  ', self%name
+        if ( self%PureEFTHorndeski ) then
+            write(*,"(a)")  '   Pure EFT Horndeski'
+        end if
         write(*,'(a,I3)')   '   Number of params    ='  , self%parameter_number
         ! print model functions informations:
         write(*,*)
@@ -285,9 +305,12 @@ contains
         if ( self%PureEFTmodelGamma1 /= 0 ) write(*,'(a,I3)') '   PureEFTmodelGamma1  =', self%PureEFTmodelGamma1
         if ( self%PureEFTmodelGamma2 /= 0 ) write(*,'(a,I3)') '   PureEFTmodelGamma2  =', self%PureEFTmodelGamma2
         if ( self%PureEFTmodelGamma3 /= 0 ) write(*,'(a,I3)') '   PureEFTmodelGamma3  =', self%PureEFTmodelGamma3
-        if ( self%PureEFTmodelGamma4 /= 0 ) write(*,'(a,I3)') '   PureEFTmodelGamma4  =', self%PureEFTmodelGamma4
-        if ( self%PureEFTmodelGamma5 /= 0 ) write(*,'(a,I3)') '   PureEFTmodelGamma5  =', self%PureEFTmodelGamma5
-        if ( self%PureEFTmodelGamma6 /= 0 ) write(*,'(a,I3)') '   PureEFTmodelGamma6  =', self%PureEFTmodelGamma6
+        if ( .not. self%PureEFTHorndeski ) then
+            if ( self%PureEFTmodelGamma4 /= 0 ) write(*,'(a,I3)') '   PureEFTmodelGamma4  =', self%PureEFTmodelGamma4
+            if ( self%PureEFTmodelGamma5 /= 0 ) write(*,'(a,I3)') '   PureEFTmodelGamma5  =', self%PureEFTmodelGamma5
+            if ( self%PureEFTmodelGamma6 /= 0 ) write(*,'(a,I3)') '   PureEFTmodelGamma6  =', self%PureEFTmodelGamma6
+        end if
+
         write(*,*)
 
         call self%PureEFTOmega%feedback()
@@ -295,9 +318,11 @@ contains
         call self%PureEFTGamma1%feedback()
         call self%PureEFTGamma2%feedback()
         call self%PureEFTGamma3%feedback()
-        call self%PureEFTGamma4%feedback()
-        call self%PureEFTGamma5%feedback()
-        call self%PureEFTGamma6%feedback()
+        if ( .not. self%PureEFTHorndeski ) then
+            call self%PureEFTGamma4%feedback()
+            call self%PureEFTGamma5%feedback()
+            call self%PureEFTGamma6%feedback()
+        end if
 
     end subroutine EFTCAMBPureEFTstdFeedback
 
@@ -395,13 +420,23 @@ contains
         eft_cache%EFTGamma2P  = self%PureEFTGamma2%first_derivative(a)
         eft_cache%EFTGamma3V  = self%PureEFTGamma3%value(a)
         eft_cache%EFTGamma3P  = self%PureEFTGamma3%first_derivative(a)
-        eft_cache%EFTGamma4V  = self%PureEFTGamma4%value(a)
-        eft_cache%EFTGamma4P  = self%PureEFTGamma4%first_derivative(a)
-        eft_cache%EFTGamma4PP = self%PureEFTGamma4%second_derivative(a)
-        eft_cache%EFTGamma5V  = self%PureEFTGamma5%value(a)
-        eft_cache%EFTGamma5P  = self%PureEFTGamma5%first_derivative(a)
-        eft_cache%EFTGamma6V  = self%PureEFTGamma6%value(a)
-        eft_cache%EFTGamma6P  = self%PureEFTGamma6%first_derivative(a)
+        if ( self%PureEFTHorndeski ) then
+            eft_cache%EFTGamma4V  = -self%PureEFTGamma3%value(a)
+            eft_cache%EFTGamma4P  = -self%PureEFTGamma3%first_derivative(a)
+            eft_cache%EFTGamma4PP = -self%PureEFTGamma3%second_derivative(a)
+            eft_cache%EFTGamma5V  = +0.5_dl*self%PureEFTGamma3%value(a)
+            eft_cache%EFTGamma5P  = +0.5_dl*self%PureEFTGamma3%first_derivative(a)
+            eft_cache%EFTGamma6V  = 0._dl
+            eft_cache%EFTGamma6P  = 0._dl
+        else
+            eft_cache%EFTGamma4V  = self%PureEFTGamma4%value(a)
+            eft_cache%EFTGamma4P  = self%PureEFTGamma4%first_derivative(a)
+            eft_cache%EFTGamma4PP = self%PureEFTGamma4%second_derivative(a)
+            eft_cache%EFTGamma5V  = self%PureEFTGamma5%value(a)
+            eft_cache%EFTGamma5P  = self%PureEFTGamma5%first_derivative(a)
+            eft_cache%EFTGamma6V  = self%PureEFTGamma6%value(a)
+            eft_cache%EFTGamma6P  = self%PureEFTGamma6%first_derivative(a)
+        end if
 
     end subroutine EFTCAMBPureEFTstdSecondOrderEFTFunctions
 

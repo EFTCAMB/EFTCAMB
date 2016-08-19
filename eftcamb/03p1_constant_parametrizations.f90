@@ -28,6 +28,7 @@ module EFTCAMB_constant_parametrization_1D
 
     use precision
     use EFTDef
+    use AMLutils
     use EFTCAMB_abstract_parametrizations_1D
 
     implicit none
@@ -150,7 +151,7 @@ contains
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
-                stop
+                call MpiStop('EFTCAMB error')
         end select
 
     end subroutine ConstantParametrized1DParameterNames
@@ -171,7 +172,7 @@ contains
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
-                stop
+                call MpiStop('EFTCAMB error')
         end select
 
     end subroutine ConstantParametrized1DParameterNamesLatex
@@ -193,7 +194,7 @@ contains
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
-                stop
+                call MpiStop('EFTCAMB error')
         end select
 
     end subroutine ConstantParametrized1DParameterValues

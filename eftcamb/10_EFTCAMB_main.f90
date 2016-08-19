@@ -30,6 +30,7 @@ module EFTCAMB_main
     use EFTCAMB_abstract_model
     use EFTCAMB_pure_EFT_std
     use IniFile
+    use AMLutils
     use EFTDef
 
     implicit none
@@ -166,7 +167,7 @@ contains
         ! check the allocation of the model:
         if ( .not. allocated(self%model) ) then
             write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model feedback without allocating the model'
-            stop
+            call MpiStop('EFTCAMB error')
         end if
         ! check feedback level:
         if ( .not. self%EFTCAMB_feedback_level > 0 ) return
@@ -234,7 +235,7 @@ contains
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and PureEFTmodel =', self%PureEFTmodel
                         write(*,'(a)')    'Please select an appropriate model.'
-                        stop
+                        call MpiStop('EFTCAMB error')
                 end select
 
             case (2)     ! Alternative EFT:
@@ -252,7 +253,7 @@ contains
                 write(*,'(a)') 'EFTFlag=2  EFT alternative parametrizations'
                 write(*,'(a)') 'EFTFlag=3  designer mapping EFT'
                 write(*,'(a)') 'EFTFlag=4  full mapping EFT'
-                stop
+                call MpiStop('EFTCAMB error')
 
         end select
 
@@ -271,7 +272,7 @@ contains
         if ( .not. allocated(self%model) ) then
             write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model read_model_selection'
             write(*,*) ' without allocating the model'
-            stop
+            call MpiStop('EFTCAMB error')
         end if
 
         ! call the model specific read parameters:
@@ -292,7 +293,7 @@ contains
         if ( .not. allocated(self%model) ) then
             write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model allocate_model_selection'
             write(*,*) ' without allocating the model'
-            stop
+            call MpiStop('EFTCAMB error')
         end if
 
         ! call the model specific read parameters:
@@ -313,7 +314,7 @@ contains
         if ( .not. allocated(self%model) ) then
             write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model read_model_parameters_from_file'
             write(*,*) ' without allocating the model'
-            stop
+            call MpiStop('EFTCAMB error')
         end if
 
         ! call the model specific read parameters:

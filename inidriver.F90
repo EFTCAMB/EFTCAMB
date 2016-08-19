@@ -1,9 +1,9 @@
-    !     Code for Anisotropies in the Microwave Background
-    !     by Antony Lewis (http://cosmologist.info/) and Anthony Challinor
-    !     See readme.html for documentation. This is a sample driver routine that reads
-    !     in one set of parameters and produdes the corresponding output.
+!     Code for Anisotropies in the Microwave Background
+!     by Antony Lewis (http://cosmologist.info/) and Anthony Challinor
+!     See readme.html for documentation. This is a sample driver routine that reads
+!     in one set of parameters and produdes the corresponding output.
 
-    program driver
+program driver
     use IniFile
     use CAMB
     use LambdaGeneral
@@ -124,12 +124,14 @@
     ! EFTCAMB MOD START: read and allocate EFTCAMB
     ! read the EFTCAMB model selection flags:
     call P%EFTCAMB%EFTCAMB_init_from_file( DefIni )
-    ! print the EFTCAMB header:
-    call P%EFTCAMB%EFTCAMB_print_header()
-    ! initialize the model from file:
-    call P%EFTCAMB%EFTCAMB_init_model_from_file( DefIni )
-    ! print feedback:
-    call P%EFTCAMB%EFTCAMB_print_model_feedback()
+    if ( P%EFTCAMB%EFTFlag /= 0 ) then
+        ! print the EFTCAMB header:
+        call P%EFTCAMB%EFTCAMB_print_header()
+        ! initialize the model from file:
+        call P%EFTCAMB%EFTCAMB_init_model_from_file( DefIni )
+        ! print feedback:
+        call P%EFTCAMB%EFTCAMB_print_model_feedback()
+    end if
     ! EFTCAMB MOD END.
 
     P%Nu_mass_eigenstates = Ini_Read_Int('nu_mass_eigenstates',1)
@@ -164,7 +166,7 @@
     !in the P%WantTransfer loop.
     if (((P%NonLinear==NonLinear_lens .or. P%NonLinear==NonLinear_both) .and. P%DoLensing) &
         .or. P%PK_WantTransfer) then
-    P%Transfer%high_precision=  Ini_Read_Logical('transfer_high_precision',.false.)
+        P%Transfer%high_precision=  Ini_Read_Logical('transfer_high_precision',.false.)
     else
         P%transfer%high_precision = .false.
     endif
@@ -361,7 +363,7 @@
     stop
 
 100 stop 'Must give num_massive number of integer physical neutrinos for each eigenstate'
-    end program driver
+end program driver
 
 
 #ifdef RUNIDLE

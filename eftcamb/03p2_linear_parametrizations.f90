@@ -28,6 +28,7 @@ module EFTCAMB_linear_parametrizations_1D
 
     use precision
     use EFTDef
+    use AMLutils
     use EFTCAMB_abstract_parametrizations_1D
 
     implicit none
@@ -49,6 +50,8 @@ module EFTCAMB_linear_parametrizations_1D
         procedure :: feedback              => LinearParametrized1DFeedback            !< subroutine that prints to screen the informations about the function.
         procedure :: parameter_names       => LinearParametrized1DParameterNames      !< subroutine that returns the i-th parameter name of the function
         procedure :: parameter_names_latex => LinearParametrized1DParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format
+        procedure :: parameter_value       => LinearParametrized1DParameterValues     !< subroutine that returns the value of the function i-th parameter.
+
         ! evaluation procedures:
         procedure :: value                 => LinearParametrized1DValue               !< function that returns the value of the function
         procedure :: first_derivative      => LinearParametrized1DFirstDerivative     !< function that returns the first derivative of the function
@@ -90,7 +93,11 @@ contains
         class(linear_parametrization_1D)  :: self   !< the base class
         type(TIniFile)                    :: Ini    !< Input ini file
 
-        self%linear_value = Ini_Read_Double_File( Ini, TRIM(self%name)//'_0', 0._dl )
+        character(len=EFT_names_max_length) :: param_name
+
+        call self%parameter_names( 1, param_name )
+
+        self%linear_value = Ini_Read_Double_File( Ini, TRIM(param_name), 0._dl )
 
     end subroutine LinearParametrized1DInitFromFile
 
@@ -144,7 +151,7 @@ contains
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
-                stop
+                call MpiStop('EFTCAMB error')
         end select
 
     end subroutine LinearParametrized1DParameterNames
@@ -165,10 +172,31 @@ contains
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
-                stop
+                call MpiStop('EFTCAMB error')
         end select
 
     end subroutine LinearParametrized1DParameterNamesLatex
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that returns the value of the function i-th parameter.
+    subroutine LinearParametrized1DParameterValues( self, i, value )
+
+        implicit none
+
+        class(linear_parametrization_1D) :: self        !< the base class
+        integer     , intent(in)         :: i           !< The index of the parameter
+        real(dl)    , intent(out)        :: value       !< the output value of the i-th parameter
+
+        select case (i)
+            case(1)
+                value = self%linear_value
+            case default
+                write(*,*) 'Illegal index for parameter_names.'
+                write(*,*) 'Maximum value is:', self%parameter_number
+                call MpiStop('EFTCAMB error')
+        end select
+
+    end subroutine LinearParametrized1DParameterValues
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the linear function in the scale factor.

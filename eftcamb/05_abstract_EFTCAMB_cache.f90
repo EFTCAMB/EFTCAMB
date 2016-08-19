@@ -123,35 +123,41 @@ module EFTCAMB_cache
         real(dl) :: grhodotq      !< the value of the time derivative of the effective density of the Q field. Refer to the Numerical Notes for the definition.
         real(dl) :: gpresdotq     !< the value of the time derivative of the effective pressure of the Q field. Refer to the Numerical Notes for the definition.
         ! 7) the Einstein equations coefficients:
-        real(dl) :: EFTeomF       !< the value of the the Einstein equations coefficient F. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomN       !< the value of the the Einstein equations coefficient N. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomNdot    !< the value of the the Einstein equations coefficient dN/dtau. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomX       !< the value of the the Einstein equations coefficient X. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomXdot    !< the value of the the Einstein equations coefficient dX/dtau. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomY       !< the value of the the Einstein equations coefficient Y. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomG       !< the value of the the Einstein equations coefficient G. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomU       !< the value of the the Einstein equations coefficient U. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomL       !< the value of the the Einstein equations coefficient L. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomM       !< the value of the the Einstein equations coefficient M. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomV       !< the value of the the Einstein equations coefficient V. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTeomVdot    !< the value of the the Einstein equations coefficient dV/dtau. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomF       !< the value of the Einstein equations coefficient F. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomN       !< the value of the Einstein equations coefficient N. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomNdot    !< the value of the Einstein equations coefficient dN/dtau. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomX       !< the value of the Einstein equations coefficient X. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomXdot    !< the value of the Einstein equations coefficient dX/dtau. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomY       !< the value of the Einstein equations coefficient Y. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomG       !< the value of the Einstein equations coefficient G. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomU       !< the value of the Einstein equations coefficient U. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomL       !< the value of the Einstein equations coefficient L. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomM       !< the value of the Einstein equations coefficient M. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomV       !< the value of the Einstein equations coefficient V. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomVdot    !< the value of the Einstein equations coefficient dV/dtau. Refer to the Numerical Notes for the definition.
         ! 8) pi field factors:
-        real(dl) :: EFTpiA        !< the value of the the pi field equation coefficient A. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTpiB        !< the value of the the pi field equation coefficient B. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTpiC        !< the value of the the pi field equation coefficient C. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTpiD        !< the value of the the pi field equation coefficient D. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTpiE        !< the value of the the pi field equation coefficient E. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiA        !< the value of the pi field equation coefficient A. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiB        !< the value of the pi field equation coefficient B. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiC        !< the value of the pi field equation coefficient C. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiD        !< the value of the pi field equation coefficient D. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiE        !< the value of the pi field equation coefficient E. Refer to the Numerical Notes for the definition.
         ! 9) pi field quantities:
-        real(dl) :: pi          !< the value of the pi field at a given time and scale.
-        real(dl) :: pidot       !< the value of the (conformal) time derivative of the pi field at a given time and scale.
-        real(dl) :: pidotdot    !< the value of the (conformal) second time derivative of the pi field at a given time and scale.
-        ! 10) perturbations quantities:
-        real(dl) :: z           !< Syncronous gauge Z perturbation.
-        real(dl) :: clxg        !< Syncronous gauge radiation density perturbation.
-        real(dl) :: clxr        !< Syncronous gauge massless neutrinos density perturbation.
-        real(dl) :: dgpnu       !< Syncronous gauge massive neutrinos pressure perturbation.
-        real(dl) :: dgrho       !< Syncronous gauge total density perturbation.
-        real(dl) :: dgq         !< Syncronous gauge total velocity perturbation.
+        real(dl) :: pi            !< the value of the pi field at a given time and scale.
+        real(dl) :: pidot         !< the value of the (conformal) time derivative of the pi field at a given time and scale.
+        real(dl) :: pidotdot      !< the value of the (conformal) second time derivative of the pi field at a given time and scale.
+        ! 10) scalar perturbations quantities:
+        real(dl) :: z             !< Syncronous gauge Z perturbation.
+        real(dl) :: dz            !< Syncronous gauge dot Z perturbation. This is used to store the non-RSA result.
+        real(dl) :: sigma         !< Syncronous gauge sigma perturbation. This is used to store the non-RSA result.
+        real(dl) :: clxg          !< Syncronous gauge radiation density perturbation.
+        real(dl) :: clxr          !< Syncronous gauge massless neutrinos density perturbation.
+        real(dl) :: dgpnu         !< Syncronous gauge massive neutrinos pressure perturbation.
+        real(dl) :: dgrho         !< Syncronous gauge total density perturbation.
+        real(dl) :: dgq           !< Syncronous gauge total velocity perturbation.
+        ! 11) tensor perturbations quantities:
+        real(dl) :: EFTAT         !< the value of the tensor equation coefficient A. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTBT         !< the value of the tensor equation coefficient B. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTDT         !< the value of the tensor equation coefficient D. Refer to the Numerical Notes for the definition.
 
     contains
 
@@ -251,6 +257,10 @@ contains
         self%dgpnu         = 0._dl
         self%dgrho         = 0._dl
         self%dgq           = 0._dl
+        ! 11) tensor perturbations quantities:
+        self%EFTAT         = 0._dl
+        self%EFTBT         = 0._dl
+        self%EFTDT         = 0._dl
 
     end subroutine EFTCAMBTimestepCacheInit
 

@@ -111,7 +111,7 @@ for i in $PATH_TO_DATA_1/*_params.ini;
 	if [ "$SUCCESS" = false ]; then
 		if [ "${FAILURE_REASON[-1]}" = "diff failure" ]; then 
 			printf "${BRed}   Plotting results\n${Color_Off}"
-			#python $PLOTTER $PATH_TO_DATA_1/$filename $PATH_TO_DATA_2/$filename $PATH_TO_RES ${filename}_LEGACY ${filename}_NEW &> /dev/null
+			python $PLOTTER $PATH_TO_DATA_1/$filename $PATH_TO_DATA_2/$filename $PATH_TO_RES ${filename}_LEGACY ${filename}_NEW &> /dev/null
 		fi
 		FAILED_TEST+=($filename)
 	else
