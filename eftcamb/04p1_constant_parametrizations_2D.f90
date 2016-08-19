@@ -22,7 +22,7 @@
 !> This module contains the definition of the constant parametrization, inheriting from
 !! parametrized_function_2D.
 
-!> @author Bin Hu, Marco Raveri
+!> @author Simone Peirone, Bin Hu, Marco Raveri
 
 module EFTCAMB_constant_parametrization_2D
 

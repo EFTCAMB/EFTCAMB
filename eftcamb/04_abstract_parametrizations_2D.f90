@@ -25,7 +25,7 @@
 !! that are used by several models in EFTCAMB. As a rule, when there is a free function
 !! in EFT it should be declared as a class inheriting from parametrized_function
 
-!> @author Bin Hu, Marco Raveri
+!> @author Simone Peirone, Bin Hu, Marco Raveri
 
 module EFTCAMB_abstract_parametrizations_2D
 
