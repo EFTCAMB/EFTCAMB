@@ -9,10 +9,6 @@ python:
 
 sudo: required
 
-branches:
-  only:
-    - master
-
 cache: apt
 
 services:
