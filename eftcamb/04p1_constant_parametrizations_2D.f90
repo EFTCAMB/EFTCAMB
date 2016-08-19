@@ -23,10 +23,14 @@
 !! parametrized_function_2D.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 !> @author Simone Peirone, Bin Hu, Marco Raveri
 =======
 !> @author Bin Hu, Marco Raveri
 >>>>>>> added constant parametrization for 2D functions
+=======
+!> @author Simone Peirone, Bin Hu, Marco Raveri
+>>>>>>> Added name to @author list
 
 module EFTCAMB_constant_parametrization_2D
 
