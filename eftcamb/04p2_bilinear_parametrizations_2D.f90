@@ -174,14 +174,14 @@ contains
     end subroutine BilinearParametrized2DParameterNamesLatex
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the value of the bilinear function in the two scale factors.
+    !> Function that returns the value of the bilinear function in the two variables.
     function BilinearParametrized2DValue( self, x, y )
 
         implicit none
 
         class(bilinear_parametrization_2D) :: self  !< the base class
-        real(dl), intent(in)               :: x     !< the first input scale factor
-        real(dl), intent(in)               :: y     !< the second input scale factor
+        real(dl), intent(in)               :: x     !< the first input variable
+        real(dl), intent(in)               :: y     !< the second input variable
         real(dl) :: BilinearParametrized2DValue     !< the output value
 
         BilinearParametrized2DValue = self%linear_value_1*x + self%linear_value_2*y
@@ -190,14 +190,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the first partial derivative, with respect to the
-    ! first scale factor, of the bilinear function.
+    ! first variable, of the bilinear function.
     function BilinearParametrized2DFirstDerivativeX( self, x, y )
 
         implicit none
 
         class(bilinear_parametrization_2D) :: self           !< the base class
-        real(dl), intent(in)             :: x                !< the first input scale factor
-        real(dl), intent(in)             :: y                !< the second input scale factor
+        real(dl), intent(in)             :: x                !< the first input variable
+        real(dl), intent(in)             :: y                !< the second input variable
         real(dl) :: BilinearParametrized2DFirstDerivativeX   !< the output value
 
         BilinearParametrized2DFirstDerivativeX = self%linear_value_1
@@ -206,14 +206,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the first partial derivative, with respect to the
-    ! second scale factor, of the bilinear function.
+    ! second variable, of the bilinear function.
     function BilinearParametrized2DFirstDerivativeY( self, x, y )
 
         implicit none
 
         class(bilinear_parametrization_2D) :: self           !< the base class
-        real(dl), intent(in)             :: x                !< the first input scale factor
-        real(dl), intent(in)             :: y                !< the second input scale factor
+        real(dl), intent(in)             :: x                !< the first input variable
+        real(dl), intent(in)             :: y                !< the second input variable
         real(dl) :: BilinearParametrized2DFirstDerivativeY   !< the output value
 
         BilinearParametrized2DFirstDerivativeY = self%linear_value_2
