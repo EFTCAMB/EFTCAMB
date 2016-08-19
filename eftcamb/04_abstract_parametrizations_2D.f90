@@ -59,11 +59,11 @@ module EFTCAMB_abstract_parametrizations_2D
         procedure :: parameter_value       => ParametrizedFunction2DParameterValues     !< subroutine that returns the value of the function i-th parameter.
         ! evaluation procedures:
         procedure :: value                 => ParametrizedFunction2DValue               !< function that returns the value of the function.
-        procedure :: first_derivative_x    => ParametrizedFunction2DFirstDerivativex    !< function that returns the first partial derivative of the function with respect to x.
-        procedure :: first_derivative_y    => ParametrizedFunction2DFirstDerivativey    !< function that returns the first partial derivative of the function with respect to y.
-        procedure :: second_derivative_x   => ParametrizedFunction2DSecondDerivativex   !< function that returns the second partial derivative of the function with respect to x.
-        procedure :: second_derivative_y   => ParametrizedFunction2DSecondDerivativey   !< function that returns the second partial derivative of the function with respect to y.
-        procedure :: second_derivative_xy  => ParametrizedFunction2DSecondDerivativexy  !< function that returns the mixed partial derivative of the function with respect to x and y.
+        procedure :: first_derivative_x    => ParametrizedFunction2DFirstDerivativeX    !< function that returns the first partial derivative of the function with respect to x.
+        procedure :: first_derivative_y    => ParametrizedFunction2DFirstDerivativeY    !< function that returns the first partial derivative of the function with respect to y.
+        procedure :: second_derivative_x   => ParametrizedFunction2DSecondDerivativeX   !< function that returns the second partial derivative of the function with respect to x.
+        procedure :: second_derivative_y   => ParametrizedFunction2DSecondDerivativeY   !< function that returns the second partial derivative of the function with respect to y.
+        procedure :: second_derivative_xy  => ParametrizedFunction2DSecondDerivativeXY  !< function that returns the mixed partial derivative of the function with respect to x and y.
 
     end type parametrized_function_2D
 
@@ -169,83 +169,83 @@ contains
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the first partial derivative of the function
     !! with respect to the first scale factor.
-    function ParametrizedFunction2DFirstDerivativex( self, x, y )
+    function ParametrizedFunction2DFirstDerivativeX( self, x, y )
 
         implicit none
 
         class(parametrized_function_2D) :: self             !< the base class
         real(dl), intent(in)            :: x                !< the first input scale factor
         real(dl), intent(in)            :: y                !< the second input scale factor
-        real(dl) :: ParametrizedFunction2DFirstDerivativex  !< the output value
+        real(dl) :: ParametrizedFunction2DFirstDerivativeX  !< the output value
 
-        ParametrizedFunction2DFirstDerivativex = 0._dl
+        ParametrizedFunction2DFirstDerivativeX = 0._dl
 
-    end function ParametrizedFunction2DFirstDerivative
+    end function ParametrizedFunction2DFirstDerivativeX
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the first partial derivative of the function
     !! with respect to the second scale factor.
-    function ParametrizedFunction2DFirstDerivativey( self, x, y )
+    function ParametrizedFunction2DFirstDerivativeY( self, x, y )
 
         implicit none
 
         class(parametrized_function_2D) :: self             !< the base class
         real(dl), intent(in)            :: x                !< the first input scale factor
         real(dl), intent(in)            :: y                !< the second input scale factor
-        real(dl) :: ParametrizedFunction2DFirstDerivativey  !< the output value
+        real(dl) :: ParametrizedFunction2DFirstDerivativeY  !< the output value
 
-        ParametrizedFunction2DFirstDerivativey = 0._dl
+        ParametrizedFunction2DFirstDerivativeY = 0._dl
 
-    end function ParametrizedFunction2DFirstDerivativey
+    end function ParametrizedFunction2DFirstDerivativeY
 
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the second partial derivative of the function
     !! with respect to the first scale factor.
-    function ParametrizedFunction2DSecondDerivativex( self, x, y )
+    function ParametrizedFunction2DSecondDerivativeX( self, x, y )
 
         implicit none
 
         class(parametrized_function_2D) :: self             !< the base class
         real(dl), intent(in)            :: x                !< the first input scale factor
         real(dl), intent(in)            :: y                !< the second input scale factor
-        real(dl) :: ParametrizedFunction2DSecondDerivativex !< the output value
+        real(dl) :: ParametrizedFunction2DSecondDerivativeX !< the output value
 
-        ParametrizedFunction2DSecondDerivativex = 0._dl
+        ParametrizedFunction2DSecondDerivativeX = 0._dl
 
-    end function ParametrizedFunction2DSecondDerivativex
+    end function ParametrizedFunction2DSecondDerivativeX
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the second partial derivative of the function
     !! with respect to the second scale factor.
-    function ParametrizedFunction2DSecondDerivativey( self, x, y )
+    function ParametrizedFunction2DSecondDerivativeY( self, x, y )
 
         implicit none
 
         class(parametrized_function_2D) :: self             !< the base class
         real(dl), intent(in)            :: x                !< the first input scale factor
         real(dl), intent(in)            :: y                !< the second input scale factor
-        real(dl) :: ParametrizedFunction2DSecondDerivativey !< the output value
+        real(dl) :: ParametrizedFunction2DSecondDerivativeY !< the output value
 
-        ParametrizedFunction2DSecondDerivativey = 0._dl
+        ParametrizedFunction2DSecondDerivativeY = 0._dl
 
-    end function ParametrizedFunction2DSecondDerivativey
+    end function ParametrizedFunction2DSecondDerivativeY
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the mixed partial derivative of the function
     !! with respect to the first and second scale factors.
-    function ParametrizedFunction2DSecondDerivativexy( self, x, y )
+    function ParametrizedFunction2DSecondDerivativeXY( self, x, y )
 
         implicit none
 
         class(parametrized_function_2D) :: self             !< the base class
         real(dl), intent(in)            :: x                !< the first input scale factor
         real(dl), intent(in)            :: y                !< the second input scale factor
-        real(dl) :: ParametrizedFunction2DSecondDerivativexy!< the output value
+        real(dl) :: ParametrizedFunction2DSecondDerivativeXY!< the output value
 
-        ParametrizedFunction2DSecondDerivativexy = 0._dl
+        ParametrizedFunction2DSecondDerivativeXY = 0._dl
 
-    end function ParametrizedFunction2DSecondDerivativexy
+    end function ParametrizedFunction2DSecondDerivativeXY
 
 
    ! ---------------------------------------------------------------------------------------------
