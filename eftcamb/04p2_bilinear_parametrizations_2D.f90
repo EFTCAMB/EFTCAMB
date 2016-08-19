@@ -78,7 +78,7 @@ contains
         ! store the latex name of the function:
         self%name_latex       = TRIM( latexname )
         ! initialize the number of parameters:
-        self%parameter_number = 1
+        self%parameter_number = 2
 
     end subroutine BilinearParametrized2DInitialize
 
@@ -91,8 +91,14 @@ contains
         class(bilinear_parametrization_2D)  :: self   !< the base class
         type(TIniFile)                      :: Ini    !< Input ini file
 
-        self%linear_value_1 = Ini_Read_Double_File( Ini, TRIM(self%name)//'_0', 0._dl )
-        self%linear_value_2 = Ini_Read_Double_File( Ini, TRIM(self%name)//'_0', 0._dl )
+        character(len=EFT_names_max_length) :: param_name_1
+        character(len=EFT_names_max_length) :: param_name_2
+
+        call self%parameter_names( 1, param_name_1 )
+        call self%parameter_names( 2, param_name_2 )
+
+        self%linear_value_1 = Ini_Read_Double_File( Ini, TRIM(self%name)//'_1', 0._dl )
+        self%linear_value_2 = Ini_Read_Double_File( Ini, TRIM(self%name)//'_2', 0._dl )
 
     end subroutine BilinearParametrized2DInitFromFile
 
@@ -143,7 +149,9 @@ contains
 
         select case (i)
             case(1)
-                name = TRIM(self%name)//'0'
+                name = TRIM(self%name)//'_1'
+            case(2)
+                name = TRIM(self%name)//'_2'
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
@@ -163,8 +171,10 @@ contains
         character(*), intent(out)          :: latexname   !< the output latex name of the i-th parameter
 
         select case (i)
-            case(1)
-                latexname = TRIM(self%name_latex)//'_0'
+        case(1)
+            latexname = TRIM(self%name_latex)//'_1'
+        case(2)
+            latexname = TRIM(self%name_latex)//'_2'
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
