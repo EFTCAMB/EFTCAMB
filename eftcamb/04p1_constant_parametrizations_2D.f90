@@ -225,8 +225,8 @@ contains
 >>>>>>> added constant parametrization for 2D functions
 =======
         class(constant_parametrization_2D) :: self  !< the base class
-        real(dl), intent(in)               :: x     !< the first input scale factor
-        real(dl), intent(in)               :: y     !< the second input scale factor
+        real(dl), intent(in)               :: x     !< the first input variable
+        real(dl), intent(in)               :: y     !< the second input variable
         real(dl) :: ConstantParametrized2DValue     !< the output value
 >>>>>>> corrected minor mistake
 

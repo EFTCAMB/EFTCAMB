@@ -181,12 +181,17 @@ contains
 
         class(parametrized_function_2D) :: self  !< the base class
 <<<<<<< HEAD
+<<<<<<< HEAD
         real(dl), intent(in)            :: x     !< the first input variable
         real(dl), intent(in)            :: y     !< the second input variable
 =======
         real(dl), intent(in)            :: x     !< the first input scale factor
         real(dl), intent(in)            :: y     !< the second input scale factor
 >>>>>>> added abstract 2D parametrization
+=======
+        real(dl), intent(in)            :: x     !< the first input variable
+        real(dl), intent(in)            :: y     !< the second input variable
+>>>>>>> Corrected some documentation
         real(dl) :: ParametrizedFunction2DValue  !< the output value
 
         ParametrizedFunction2DValue = 0._dl
@@ -196,6 +201,7 @@ contains
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the first partial derivative of the function
 <<<<<<< HEAD
+<<<<<<< HEAD
     !! with respect to the first variable.
     function ParametrizedFunction2DFirstDerivativeX( self, x, y )
 =======
@@ -204,12 +210,16 @@ contains
     function ParametrizedFunction2DFirstDerivativex( self, x, y )
 >>>>>>> added abstract 2D parametrization
 =======
+=======
+    !! with respect to the first variable.
+>>>>>>> Corrected some documentation
     function ParametrizedFunction2DFirstDerivativeX( self, x, y )
 >>>>>>> Some minor modifications
 
         implicit none
 
         class(parametrized_function_2D) :: self             !< the base class
+<<<<<<< HEAD
 <<<<<<< HEAD
         real(dl), intent(in)            :: x                !< the first input variable
         real(dl), intent(in)            :: y                !< the second input variable
@@ -226,6 +236,10 @@ contains
 =======
         real(dl), intent(in)            :: x                !< the first input scale factor
         real(dl), intent(in)            :: y                !< the second input scale factor
+=======
+        real(dl), intent(in)            :: x                !< the first input variable
+        real(dl), intent(in)            :: y                !< the second input variable
+>>>>>>> Corrected some documentation
         real(dl) :: ParametrizedFunction2DFirstDerivativeX  !< the output value
 
         ParametrizedFunction2DFirstDerivativeX = 0._dl
@@ -234,17 +248,22 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the first partial derivative of the function
+<<<<<<< HEAD
     !! with respect to the second scale factor.
 <<<<<<< HEAD
     function ParametrizedFunction2DFirstDerivativey( self, x, y )
 >>>>>>> added abstract 2D parametrization
 =======
+=======
+    !! with respect to the second variable.
+>>>>>>> Corrected some documentation
     function ParametrizedFunction2DFirstDerivativeY( self, x, y )
 >>>>>>> Some minor modifications
 
         implicit none
 
         class(parametrized_function_2D) :: self             !< the base class
+<<<<<<< HEAD
 <<<<<<< HEAD
         real(dl), intent(in)            :: x                !< the first input variable
         real(dl), intent(in)            :: y                !< the second input variable
@@ -256,6 +275,10 @@ contains
 =======
         real(dl), intent(in)            :: x                !< the first input scale factor
         real(dl), intent(in)            :: y                !< the second input scale factor
+=======
+        real(dl), intent(in)            :: x                !< the first input variable
+        real(dl), intent(in)            :: y                !< the second input variable
+>>>>>>> Corrected some documentation
         real(dl) :: ParametrizedFunction2DFirstDerivativeY  !< the output value
 
         ParametrizedFunction2DFirstDerivativeY = 0._dl
@@ -271,6 +294,7 @@ contains
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the second partial derivative of the function
 <<<<<<< HEAD
+<<<<<<< HEAD
     !! with respect to the first variable.
     function ParametrizedFunction2DSecondDerivativeX( self, x, y )
 =======
@@ -279,12 +303,16 @@ contains
     function ParametrizedFunction2DSecondDerivativex( self, x, y )
 >>>>>>> added abstract 2D parametrization
 =======
+=======
+    !! with respect to the first variable.
+>>>>>>> Corrected some documentation
     function ParametrizedFunction2DSecondDerivativeX( self, x, y )
 >>>>>>> Some minor modifications
 
         implicit none
 
         class(parametrized_function_2D) :: self             !< the base class
+<<<<<<< HEAD
 <<<<<<< HEAD
         real(dl), intent(in)            :: x                !< the first input variable
         real(dl), intent(in)            :: y                !< the second input variable
@@ -300,6 +328,10 @@ contains
 =======
         real(dl), intent(in)            :: x                !< the first input scale factor
         real(dl), intent(in)            :: y                !< the second input scale factor
+=======
+        real(dl), intent(in)            :: x                !< the first input variable
+        real(dl), intent(in)            :: y                !< the second input variable
+>>>>>>> Corrected some documentation
         real(dl) :: ParametrizedFunction2DSecondDerivativeX !< the output value
 
         ParametrizedFunction2DSecondDerivativeX = 0._dl
@@ -307,18 +339,23 @@ contains
     end function ParametrizedFunction2DSecondDerivativeX
 
     ! ---------------------------------------------------------------------------------------------
+<<<<<<< HEAD
     !> Function that returns the value of the second partial derivative of the function
     !! with respect to the second scale factor.
 <<<<<<< HEAD
     function ParametrizedFunction2DSecondDerivativey( self, x, y )
 >>>>>>> added abstract 2D parametrization
 =======
+=======
+    !> Function that returns the value of the variable.
+>>>>>>> Corrected some documentation
     function ParametrizedFunction2DSecondDerivativeY( self, x, y )
 >>>>>>> Some minor modifications
 
         implicit none
 
         class(parametrized_function_2D) :: self             !< the base class
+<<<<<<< HEAD
 <<<<<<< HEAD
         real(dl), intent(in)            :: x                !< the first input variable
         real(dl), intent(in)            :: y                !< the second input variable
@@ -335,6 +372,10 @@ contains
 =======
         real(dl), intent(in)            :: x                !< the first input scale factor
         real(dl), intent(in)            :: y                !< the second input scale factor
+=======
+        real(dl), intent(in)            :: x                !< the first input variable
+        real(dl), intent(in)            :: y                !< the second input variable
+>>>>>>> Corrected some documentation
         real(dl) :: ParametrizedFunction2DSecondDerivativeY !< the output value
 
         ParametrizedFunction2DSecondDerivativeY = 0._dl
@@ -343,17 +384,22 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the mixed partial derivative of the function
+<<<<<<< HEAD
     !! with respect to the first and second scale factors.
 <<<<<<< HEAD
     function ParametrizedFunction2DSecondDerivativexy( self, x, y )
 >>>>>>> added abstract 2D parametrization
 =======
+=======
+    !! with respect to the first and second variables.
+>>>>>>> Corrected some documentation
     function ParametrizedFunction2DSecondDerivativeXY( self, x, y )
 >>>>>>> Some minor modifications
 
         implicit none
 
         class(parametrized_function_2D) :: self             !< the base class
+<<<<<<< HEAD
 <<<<<<< HEAD
         real(dl), intent(in)            :: x                !< the first input variable
         real(dl), intent(in)            :: y                !< the second input variable
@@ -365,6 +411,10 @@ contains
 =======
         real(dl), intent(in)            :: x                !< the first input scale factor
         real(dl), intent(in)            :: y                !< the second input scale factor
+=======
+        real(dl), intent(in)            :: x                !< the first input variable
+        real(dl), intent(in)            :: y                !< the second input variable
+>>>>>>> Corrected some documentation
         real(dl) :: ParametrizedFunction2DSecondDerivativeXY!< the output value
 
         ParametrizedFunction2DSecondDerivativeXY = 0._dl
