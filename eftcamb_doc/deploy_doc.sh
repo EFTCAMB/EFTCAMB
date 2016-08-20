@@ -22,11 +22,6 @@
 
 #!/bin/bash
 
-
-echo 'ciao Marco'
-
-exit 0
-
 # get the path of the script:
 SCRIPT_PATH="`dirname \"$0\"`"                  # relative
 SCRIPT_PATH="`( cd \"$SCRIPT_PATH\" && pwd )`"  # absolutized and normalized
@@ -67,9 +62,7 @@ cd ..
 # Clean out existing contents
 rm -rf out/**/* || exit 0
 
-# build the documentation:
-doxygen EFTCAMB_doxyfile
-
+# copy the documentation that has to be already built:
 cp -r $SCRIPT_PATH/doxygen_doc/html/* out/
 
 # Now let's go have some fun with the cloned repo
