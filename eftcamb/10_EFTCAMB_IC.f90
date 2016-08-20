@@ -22,7 +22,7 @@
 
 !> @author Bin Hu, Marco Raveri
 
-module EFTCAMB_IC
+submodule (GaugeInterface) EFTCAMB_IC
 
     use precision
 
@@ -30,6 +30,10 @@ module EFTCAMB_IC
 
 contains
 
-end module EFTCAMB_IC
+    module subroutine initial_conditions()
+
+    end subroutine initial_conditions
+
+end submodule EFTCAMB_IC
 
 !----------------------------------------------------------------------------------------

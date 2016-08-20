@@ -59,8 +59,8 @@ module EFTCAMB_main
         class(EFTCAMB_model), allocatable :: model !< This is the EFTCAMB model in the main class.
 
         ! EFTCAMB working flags:
-        integer   :: EFTCAMB_feedback_level                    !< Amount of feedback that is printed to screen.
-        real(dl)  :: EFTCAMB_turn_on_time = EFTturnonpiInitial !< Scale factor at which EFTCAMB becomes active. Default set to EFTturnonpiInitial in EFTDef.f90.
+        integer   :: EFTCAMB_feedback_level      !< Amount of feedback that is printed to screen.
+        real(dl)  :: EFTCAMB_turn_on_time        !< Scale factor at which EFTCAMB becomes active. Default set to EFTturnonpiInitial in EFTDef.f90.
 
     contains
 
@@ -102,8 +102,9 @@ contains
         self%EFT_physical_stability     = Ini_Read_Logical_File( Ini, 'EFT_physical_stability'    , .true. )
         self%EFTAdditionalPriors        = Ini_Read_Logical_File( Ini, 'EFTAdditionalPriors'       , .true. )
         self%MinkowskyPriors            = Ini_Read_Logical_File( Ini, 'MinkowskyPriors'           , .true. )
-        ! feedback flag (shared with CAMB):
+        ! EFTCAMB working stuff:
         self%EFTCAMB_feedback_level     = Ini_Read_Int_File( Ini, 'feedback_level', 1 )
+        self%EFTCAMB_turn_on_time       = Ini_Read_Double_File( Ini, 'EFTCAMB_turn_on_time', EFTturnonpiInitial )
 
     end subroutine read_EFTCAMB_flags_from_file
 

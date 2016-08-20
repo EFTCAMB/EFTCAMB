@@ -75,16 +75,12 @@ module EFTCAMB_cache
         real(dl) :: a             !< the value of the scale factor at which the cache is being used.
         real(dl) :: tau           !< the value of conformal time at the given scale factor.
         real(dl) :: k             !< the scale that is being solved for. In \f$ \mbox{Mpc}^{-1} \f$.
-        ! 2) expansion history:
-        real(dl) :: adotoa        !< the value of \f$ \mathcal{H} \f$ at the given scale factor.
-        real(dl) :: Hdot          !< the value of \f$ d\mathcal{H} /d \tau \f$ at the given scale factor.
-        real(dl) :: Hdotdot       !< the value of \f$ d^2 \mathcal{H} / d \tau^2 \f$ at the given scale factor.
-        ! 3) total matter densities:
+        ! 2) total matter densities:
         real(dl) :: grhoa2        !< the input value of \f$ \sum_m\rho_m / a^2 m_0^2 \f$.
         real(dl) :: grhom_t       !< the value of \f$ \sum_m\rho_m a^2 /m_0^2 \f$.
         real(dl) :: gpresm_t      !< the value of \f$ \sum_m P_m a^2 /m_0^2 \f$.
         real(dl) :: gpresdotm_t   !< the value of \f$ \sum_m\dot{P}_m a^2 /m_0^2 \f$.
-        ! 4) densities and pressure of the various species:
+        ! 3) densities and pressure of the various species:
         real(dl) :: grhob_t       !< the value of \f$ \rho_b a^2 / m_0^2 \f$
         real(dl) :: grhoc_t       !< the value of \f$ \rho_{cdm} a^2 / m_0^2 \f$
         real(dl) :: grhor_t       !< the value of \f$ \rho_{\nu} a^2 / m_0^2 \f$
@@ -95,6 +91,10 @@ module EFTCAMB_cache
         real(dl) :: gpinu_tot     !< the value of \f$ \sum_\nu P_{m\nu} a^2 / m_0^2 \f$
         real(dl) :: grhonudot_tot !< the value of \f$ \sum_\nu \dot{\rho}_{m\nu} a^2 / m_0^2 \f$
         real(dl) :: gpinudot_tot  !< the value of \f$ \sum_\nu \dot{P}_{m\nu} a^2 / m_0^2 \f$
+        ! 4) expansion history:
+        real(dl) :: adotoa        !< the value of \f$ \mathcal{H} \f$ at the given scale factor.
+        real(dl) :: Hdot          !< the value of \f$ d\mathcal{H} /d \tau \f$ at the given scale factor.
+        real(dl) :: Hdotdot       !< the value of \f$ d^2 \mathcal{H} / d \tau^2 \f$ at the given scale factor.
         ! 5) EFT functions:
         real(dl) :: EFTOmegaV     !< the value of Omega \f$ \Omega(a) \f$.
         real(dl) :: EFTOmegaP     !< the value of the derivative wrt scale factor of Omega \f$ d \Omega(a) / da \f$.
@@ -149,6 +149,7 @@ module EFTCAMB_cache
         real(dl) :: z             !< Syncronous gauge Z perturbation.
         real(dl) :: dz            !< Syncronous gauge dot Z perturbation. This is used to store the non-RSA result.
         real(dl) :: sigma         !< Syncronous gauge sigma perturbation. This is used to store the non-RSA result.
+        real(dl) :: sigmadot      !< Syncronous gauge dot sigma perturbation. This is used to store the non-RSA result.
         real(dl) :: clxg          !< Syncronous gauge radiation density perturbation.
         real(dl) :: clxr          !< Syncronous gauge massless neutrinos density perturbation.
         real(dl) :: dgpnu         !< Syncronous gauge massive neutrinos pressure perturbation.

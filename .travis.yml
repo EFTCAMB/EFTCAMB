@@ -22,14 +22,15 @@ before_install:
 
 env:
   global:
-  - ENCRYPTION_LABEL: "<.... encryption label from previous step ....>"
+  - ENCRYPTION_LABEL: "978549549c67"
   - COMMIT_AUTHOR_EMAIL: "mraveri@sissa.it"
 
 script:
   - while true; do echo 'Travis do not sleep!'; sleep 300s; done &
   - TIME_PID=$!
   - docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make all"
-    - docker run -e "COMMIT_AUTHOR_EMAIL=$(COMMIT_AUTHOR_EMAIL)" -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; echo $COMMIT_AUTHOR_EMAIL "
+  - docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make eftcamb_doc"
   - kill $TIME_PID
 
 after_success:
+  - docker run -e "COMMIT_AUTHOR_EMAIL=$(COMMIT_AUTHOR_EMAIL)" -e "ENCRYPTION_LABEL=$(ENCRYPTION_LABEL)" -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; bash $(pwd)/eftcamb_doc/deploy_doc.sh "
