@@ -15,7 +15,7 @@ These includes:
 
 To use other parts of the code, like the test or documentation parts other requirements have to be met:
 
-A docker with all the required libraries is available at: https://hub.docker.com/r/eftcamb/eftbox/
+A docker with all the required libraries is available at [dockerhub](https://hub.docker.com/r/eftcamb/eftbox/).
 
 ### 2. Installation procedure:
 
@@ -46,6 +46,9 @@ If you use the EFTCAMB/EFTCosmoMC package, please refer the original CAMB/ Cosmo
     Marco Raveri, Bin Hu, Noemi Frusciante, Alessandra Silvestri,  
     [arXiv:1405.1022 [astro-ph.CO]](https://arxiv.org/abs/1405.1022) [Phys.Rev. D90 (2014) 043513](http://journals.aps.org/prd/abstract/10.1103/PhysRevD.90.043513)
 
+This is the usual, fair way of giving credit to contributors to a
+scientific result. In addition, it helps us justify our effort in
+developing the EFTCAMB code as an academic undertaking.
 
 ### 6. Licence Information:
 

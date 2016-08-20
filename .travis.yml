@@ -28,16 +28,17 @@ env:
 script:
   - while true; do echo 'Travis do not sleep!'; sleep 300s; done &
   - TIME_PID=$!
-  - docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make all"
+  #- docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make all"
   - docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make eftcamb_doc"
   - kill $TIME_PID
 
 after_success:
   - docker run \
     -v $(pwd):$(pwd) \
-    -t eftcamb/eftbox /bin/sh \
+    -t eftcamb/eftbox \
     -e COMMIT_AUTHOR_EMAIL \
     -e ENCRYPTION_LABEL \
     -e TRAVIS_PULL_REQUEST \
     -e TRAVIS_BRANCH \
+    /bin/sh \
     -c "cd $(pwd) ; bash $(pwd)/eftcamb_doc/deploy_doc.sh "
