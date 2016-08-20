@@ -8,9 +8,14 @@ This folder contains the EFTCAMB code.
 ### 1. EFTCAMB Requirements:
 
 Compiling EFTCAMB requires a modern fortran compiler capable of handeling F2008 features.
+These includes:
 
-ifort
-gcc/gfortran 6.0
+	ifort v>15.0 (?)
+	gcc/gfortran v>6.0
+
+To use other parts of the code, like the test or documentation parts other requirements have to be met:
+
+A docker with all the required libraries is available at: https://hub.docker.com/r/eftcamb/eftbox/
 
 ### 2. Installation procedure:
 
@@ -22,6 +27,14 @@ gcc/gfortran 6.0
 
 
 ### 5. Citing this work:
+
+If you use the EFTCAMB/EFTCosmoMC package, please refer the original CAMB/ CosmoMC paper and ours:
+
+* Effective Field Theory of Cosmic Acceleration: an implementation in CAMB
+Bin Hu, Marco Raveri, Noemi Frusciante, Alessandra Silvestri, arXiv:1312.5742 [astro-ph.CO] Phys.Rev. D89 (2014) 103530
+
+* Effective Field Theory of Cosmic Acceleration: constraining dark energy with CMB data
+Marco Raveri, Bin Hu, Noemi Frusciante, Alessandra Silvestri, arXiv:1405.1022 [astro-ph.CO] Phys.Rev. D90 (2014) 043513
 
 
 ### 6. Licence Information:

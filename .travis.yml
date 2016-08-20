@@ -33,4 +33,8 @@ script:
   - kill $TIME_PID
 
 after_success:
-  - docker run -e "COMMIT_AUTHOR_EMAIL=$(COMMIT_AUTHOR_EMAIL)" -e "ENCRYPTION_LABEL=$(ENCRYPTION_LABEL)" -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; bash $(pwd)/eftcamb_doc/deploy_doc.sh "
+  - docker run -e "COMMIT_AUTHOR_EMAIL=$COMMIT_AUTHOR_EMAIL" \
+    -e "ENCRYPTION_LABEL=$ENCRYPTION_LABEL" \
+    -e "TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST" \
+    -e "TRAVIS_BRANCH=$TRAVIS_BRANCH" \
+    -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; bash $(pwd)/eftcamb_doc/deploy_doc.sh "
