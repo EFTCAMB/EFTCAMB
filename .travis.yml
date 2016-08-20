@@ -20,12 +20,16 @@ notifications:
 before_install:
   - docker pull eftcamb/eftbox
 
-install:
+env:
+  global:
+  - ENCRYPTION_LABEL: "<.... encryption label from previous step ....>"
+  - COMMIT_AUTHOR_EMAIL: "mraveri@sissa.it"
 
 script:
   - while true; do echo 'Travis do not sleep!'; sleep 300s; done &
   - TIME_PID=$!
   - docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make all"
+    - docker run -e "COMMIT_AUTHOR_EMAIL=$(COMMIT_AUTHOR_EMAIL)" -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; echo $COMMIT_AUTHOR_EMAIL "
   - kill $TIME_PID
 
 after_success:
