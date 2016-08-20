@@ -7,6 +7,11 @@ This folder contains the EFTCAMB code.
 
 ### 1. EFTCAMB Requirements:
 
+Compiling EFTCAMB requires a modern fortran compiler capable of handeling F2008 features.
+
+ifort
+gcc/gfortran 6.0
+
 ### 2. Installation procedure:
 
 

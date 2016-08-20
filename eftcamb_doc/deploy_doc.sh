@@ -37,6 +37,9 @@ cd $SCRIPT_PATH
 SOURCE_BRANCH="new_features"
 TARGET_BRANCH="gh-pages"
 
+echo $TRAVIS_PULL_REQUEST
+echo $TRAVIS_BRANCH
+
 # Pull requests and commits to other branches shouldn't try to deploy, just build to verify
 if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
 	printf "${Green} The current branch is: %s${Color_Off}" "$TRAVIS_BRANCH"
