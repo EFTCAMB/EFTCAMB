@@ -64,6 +64,10 @@
     use MassiveNu
     use InitialPower
     use Errors
+
+    ! EFTCAMB IW
+    use EFTCAMB_ReturnToGR
+
     implicit none
     private
 
@@ -132,6 +136,11 @@
     real(sp) actual,timeprev,starttime
 
     WantLateTime =  CP%DoLensing .or. num_redshiftwindows > 0
+
+    ! run EFTCAMB initialization: IW
+    if ( CP%EFTCAMB%EFTFlag /= 0 ) then
+        call EFTCAMBReturnToGR()
+    end if
 
     if (CP%WantCls) then
         if (CP%WantTensors .and. CP%WantScalars) call MpiStop('CMBMAIN cannot generate tensors and scalars')

@@ -47,10 +47,12 @@ module EFTDef
         !!    This choice will however make the results dependent on what one calls late time,
         !!    i.e. the choice of EFTturnonpiInitial, so we advice to state it clearly when reporting results.
 
-    logical , parameter :: DebugEFTCAMB = .false. !< EFTCAMB debug flag.This will turn on printing of many
-        !! things to aid debugging the code.
+    logical , parameter :: DebugEFTCAMB = .false.       !< EFTCAMB debug flag.This will turn on printing of many things to aid debugging the code.
 
-    integer , parameter :: EFT_names_max_length = 20   !< maximum length of names for EFT functions and parameters.
+    integer , parameter :: EFT_names_max_length = 20    !< maximum length of names for EFT functions and parameters.
+
+    integer , parameter :: EFT_RGR_num_points   = 1000  !< number of points to sample logaritmically the time in the return to GR module.
+
 
 end module EFTDef
 

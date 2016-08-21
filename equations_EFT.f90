@@ -276,9 +276,13 @@ module GaugeInterface
     ! EFTCAMB MOD START: interface for EFTCAMB initial conditions. Not to crowd the equations module
     ! we implement it in a submodule
     interface
-        module subroutine initial_conditions( )
 
-        end subroutine initial_conditions
+        module subroutine EFTCAMBInitialConditions( y, EV, tau )
+            type(EvolutionVars) EV
+            real(dl) :: y(EV%nvar)
+            real(dl) :: tau
+        end subroutine EFTCAMBInitialConditions
+
     end interface
     ! EFTCAMB MOD END.
 
@@ -472,17 +476,14 @@ contains
                 EV=EVout
             ! EFTCAMB MOD START: effect of the DE switch.
             else if (next_switch==EV%EFTturnOnTime) then
-                ind=1
+                ind = 1
                 EVout%EFTCAMBactive = .true.
                 EVout%EFTturnOnTime = noSwitch
                 call SetupScalarArrayIndices(EVout)
                 call CopyScalarVariableArray(y,yout, EV, EVout)
-                y=yout
-                EV=EVout
-                ! IW
-                !call EFTpiInitialConditions(y,EV,tau)
-                !y(EV%w_ix)   = 1.d-8
-                !y(EV%w_ix+1) = 1.d-8
+                y   = yout
+                EV  = EVout
+                call EFTCAMBInitialConditions( y, EV, tau )
             ! EFTCAMB MOD STOP
             end if
 
