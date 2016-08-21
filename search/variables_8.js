@@ -1,20 +1,4 @@
 var searchData=
 [
-  ['parameter_5fnumber',['parameter_number',['../structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a922d1a310d7fc63e234b63837b1e9381',1,'eftcamb_abstract_parametrizations_1d::parametrized_function_1d::parameter_number()'],['../structeftcamb__abstract__model_1_1eftcamb__model.html#a0fdb9ad74be4b89531a1d1a3c6505381',1,'eftcamb_abstract_model::eftcamb_model::parameter_number()']]],
-  ['pureeftgamma1',['pureeftgamma1',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a76479aa644856aecf293ad544025ed98',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftgamma2',['pureeftgamma2',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#ae62008ceb053f308ff557fa51243fbb3',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftgamma3',['pureeftgamma3',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a71f8c52d171df00f8d804ea7fe38c99b',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftgamma4',['pureeftgamma4',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a9487a8de639a4dde236128da6d177347',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftgamma5',['pureeftgamma5',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a3033fdde4c3d41bba883f46a5588a854',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftgamma6',['pureeftgamma6',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a782efa817909612c67162c9c7c0dec08',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftmodel',['pureeftmodel',['../structeftcamb__main_1_1eftcamb.html#ad6bbb652003f2d9d422fd9222b644201',1,'eftcamb_main::eftcamb']]],
-  ['pureeftmodelgamma1',['pureeftmodelgamma1',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a345548f011346142f6a91675a2af5af1',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftmodelgamma2',['pureeftmodelgamma2',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a14f5e93419bee1af80d6be8a5281a7ae',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftmodelgamma3',['pureeftmodelgamma3',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a3f02b84280d0c403efbe9bf6a1775424',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftmodelgamma4',['pureeftmodelgamma4',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#abf0b0ac87cece0978901ea987461e393',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftmodelgamma5',['pureeftmodelgamma5',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a5c7c7d96f2dd858926a11c6cffe8b8c2',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftmodelgamma6',['pureeftmodelgamma6',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#aab2c3292d1468cf29d602a483e1946d5',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftmodelomega',['pureeftmodelomega',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#abf27c8407a91eb73044aeec5b5ce9917',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftomega',['pureeftomega',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a340d3ed1e39ebab9b276746d2f86dbdf',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]],
-  ['pureeftwde',['pureeftwde',['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a0dd52b63615945b2d7a3e2fb1e561db9',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft']]]
+  ['linear_5fvalue',['linear_value',['../structeftcamb__linear__parametrizations__1d_1_1linear__parametrization__1d.html#a56d40a8c0be35de15c81628939d04644',1,'eftcamb_linear_parametrizations_1d::linear_parametrization_1d']]]
 ];

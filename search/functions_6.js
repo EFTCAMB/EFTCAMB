@@ -8,5 +8,6 @@ var searchData=
   ['linearparametrized1dintegral',['linearparametrized1dintegral',['../namespaceeftcamb__linear__parametrizations__1d.html#a5c2183ebaf45bdc4db3de5cb3938c28d',1,'eftcamb_linear_parametrizations_1d']]],
   ['linearparametrized1dparameternames',['linearparametrized1dparameternames',['../namespaceeftcamb__linear__parametrizations__1d.html#a443818001870b252f368435b558efdef',1,'eftcamb_linear_parametrizations_1d']]],
   ['linearparametrized1dparameternameslatex',['linearparametrized1dparameternameslatex',['../namespaceeftcamb__linear__parametrizations__1d.html#a849074b7a8bf8fe98b8cfa681aa8c53d',1,'eftcamb_linear_parametrizations_1d']]],
+  ['linearparametrized1dparametervalues',['linearparametrized1dparametervalues',['../namespaceeftcamb__linear__parametrizations__1d.html#af238dfb1d57b3d5a4a2060fc7b177f18',1,'eftcamb_linear_parametrizations_1d']]],
   ['linearparametrized1dvalue',['linearparametrized1dvalue',['../namespaceeftcamb__linear__parametrizations__1d.html#a7b775ad8ac6f14bf7c2dd2ba2b3376fe',1,'eftcamb_linear_parametrizations_1d']]]
 ];

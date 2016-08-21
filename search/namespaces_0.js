@@ -4,6 +4,7 @@ var searchData=
   ['eftcamb_5fabstract_5fmodel_5fdesigner',['eftcamb_abstract_model_designer',['../namespaceeftcamb__abstract__model__designer.html',1,'']]],
   ['eftcamb_5fabstract_5fmodel_5ffull',['eftcamb_abstract_model_full',['../namespaceeftcamb__abstract__model__full.html',1,'']]],
   ['eftcamb_5fabstract_5fparametrizations_5f1d',['eftcamb_abstract_parametrizations_1d',['../namespaceeftcamb__abstract__parametrizations__1d.html',1,'']]],
+  ['eftcamb_5fcache',['eftcamb_cache',['../namespaceeftcamb__cache.html',1,'']]],
   ['eftcamb_5fconstant_5fparametrization_5f1d',['eftcamb_constant_parametrization_1d',['../namespaceeftcamb__constant__parametrization__1d.html',1,'']]],
   ['eftcamb_5fgr_5fmodel',['eftcamb_gr_model',['../namespaceeftcamb__gr__model.html',1,'']]],
   ['eftcamb_5finterpolation',['eftcamb_interpolation',['../namespaceeftcamb__interpolation.html',1,'']]],
