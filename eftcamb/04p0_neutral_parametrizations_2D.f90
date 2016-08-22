@@ -132,9 +132,9 @@ contains
         class(zero_parametrization_2D) :: self          !< the base class
         real(dl), intent(in)           :: x             !< the input first variable
         real(dl), intent(in)           :: y             !< the input second variable
-        real(dl) :: ZeroParametrized1DSecondDerivativeX !< the output value
+        real(dl) :: ZeroParametrized2DSecondDerivativeX !< the output value
 
-        ZeroParametrized1DSecondDerivativeX = 0._dl
+        ZeroParametrized2DSecondDerivativeX = 0._dl
 
     end function ZeroParametrized2DSecondDerivativeX
 
@@ -147,9 +147,9 @@ contains
         class(zero_parametrization_2D) :: self          !< the base class
         real(dl), intent(in)           :: x             !< the input first variable
         real(dl), intent(in)           :: y             !< the input second variable
-        real(dl) :: ZeroParametrized1DSecondDerivativeY !< the output value
+        real(dl) :: ZeroParametrized2DSecondDerivativeY !< the output value
 
-        ZeroParametrized1DSecondDerivativeY = 0._dl
+        ZeroParametrized2DSecondDerivativeY = 0._dl
 
     end function ZeroParametrized2DSecondDerivativeY
 
@@ -162,9 +162,9 @@ contains
         class(zero_parametrization_2D) :: self          !< the base class
         real(dl), intent(in)           :: x             !< the input first variable
         real(dl), intent(in)           :: y             !< the input second variable
-        real(dl) :: ZeroParametrized1DSecondDerivativeXY!< the output value
+        real(dl) :: ZeroParametrized2DSecondDerivativeXY!< the output value
 
-        ZeroParametrized1DSecondDerivativeXY = 0._dl
+        ZeroParametrized2DSecondDerivativeXY = 0._dl
 
     end function ZeroParametrized2DSecondDerivativeXY
 
