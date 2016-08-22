@@ -47,6 +47,8 @@ var searchData=
   ['eftcambpureeftstdreadmodelselectionfromfile',['eftcambpureeftstdreadmodelselectionfromfile',['../namespaceeftcamb__pure__eft__std.html#a11e55abb217ebae122c4ebab93846646',1,'eftcamb_pure_eft_std']]],
   ['eftcambpureeftstdsecondordereftfunctions',['eftcambpureeftstdsecondordereftfunctions',['../namespaceeftcamb__pure__eft__std.html#a7be14cbfcacafa227e1022c8d4e227f2',1,'eftcamb_pure_eft_std']]],
   ['eftcambreturntogr',['eftcambreturntogr',['../namespaceeftcamb__returntogr.html#a43f42e486e1b8099f36b0087466fd8fe',1,'eftcamb_returntogr']]],
+  ['eftcambreturntogr_5ffeedback',['eftcambreturntogr_feedback',['../namespaceeftcamb__returntogr.html#a88aa32f345582a21913dd4d8a4a03eba',1,'eftcamb_returntogr']]],
   ['eftcambreturntogr_5ffunctions',['eftcambreturntogr_functions',['../namespaceeftcamb__returntogr.html#aeee3ab5cb370662110caad67734f5ad1',1,'eftcamb_returntogr']]],
-  ['eftcambtimestepcacheinit',['eftcambtimestepcacheinit',['../namespaceeftcamb__cache.html#a128fda4970c26c618a3908b4d60a8601',1,'eftcamb_cache']]]
+  ['eftcambtimestepcacheinit',['eftcambtimestepcacheinit',['../namespaceeftcamb__cache.html#a128fda4970c26c618a3908b4d60a8601',1,'eftcamb_cache']]],
+  ['eftstabilitycomputation',['eftstabilitycomputation',['../namespaceeftcamb__stability.html#a56d0bc71166957cf46f0066184d8fcb1',1,'eftcamb_stability']]]
 ];
