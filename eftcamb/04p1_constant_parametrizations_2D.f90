@@ -22,15 +22,8 @@
 !> This module contains the definition of the constant parametrization, inheriting from
 !! parametrized_function_2D.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 !> @author Simone Peirone, Bin Hu, Marco Raveri
-=======
-!> @author Bin Hu, Marco Raveri
->>>>>>> added constant parametrization for 2D functions
-=======
-!> @author Simone Peirone, Bin Hu, Marco Raveri
->>>>>>> Added name to @author list
+
 
 module EFTCAMB_constant_parametrization_2D
 
@@ -211,24 +204,11 @@ contains
 
         implicit none
 
-<<<<<<< HEAD
-<<<<<<< HEAD
         class(constant_parametrization_2D) :: self  !< the base class
         real(dl), intent(in)               :: x     !< the first input variable
         real(dl), intent(in)               :: y     !< the second input variable
         real(dl) :: ConstantParametrized2DValue     !< the output value
-=======
-        class(constant_parametrization_1D) :: self  !< the base class
-        real(dl), intent(in)               :: x     !< the first input scale factor
-        real(dl), intent(in)               :: y     !< the second input scale factor
-        real(dl) :: ConstantParametrized1DValue     !< the output value
->>>>>>> added constant parametrization for 2D functions
-=======
-        class(constant_parametrization_2D) :: self  !< the base class
-        real(dl), intent(in)               :: x     !< the first input variable
-        real(dl), intent(in)               :: y     !< the second input variable
-        real(dl) :: ConstantParametrized2DValue     !< the output value
->>>>>>> corrected minor mistake
+
 
         ConstantParametrized2DValue = self%constant_value
 
