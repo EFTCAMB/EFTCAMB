@@ -84,7 +84,7 @@ contains
 
         implicit none
 
-        class(zero_parametrization_1D) :: self   !< the base class
+        class(zero_parametrization_2D) :: self   !< the base class
         real(dl), intent(in)           :: x      !< the input first variable
         real(dl), intent(in)           :: y      !< the input second variable
         real(dl) :: ZeroParametrized2DValue      !< the output value
