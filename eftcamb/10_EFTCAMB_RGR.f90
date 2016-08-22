@@ -37,6 +37,21 @@ module EFTCAMB_ReturnToGR
 contains
 
     ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that prints feedback for the RGR module. Prints something only if
+    !! EFTCAMB_feedback_level is greater than 1.
+    subroutine EFTCAMBReturnToGR_feedback()
+
+        implicit none
+
+        if ( CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
+
+            write(*,'(a,F12.10)') 'EFTCAMB Return to GR time: ', CP%EFTCAMB%EFTCAMB_turn_on_time
+
+        end if
+
+    end subroutine
+
+    ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the return to GR of a theory.
     subroutine EFTCAMBReturnToGR()
 
@@ -60,6 +75,14 @@ contains
         eft_functions_t2 = 0._dl
         call EFTCAMBReturnToGR_functions( a_used, eft_functions_t2 )
         last_a           = a_used
+
+        ! check if already above threshold:
+        if ( any( eft_functions_t2 > 0._dl ) ) then
+            CP%EFTCAMB%EFTCAMB_turn_on_time = last_a
+            call EFTCAMBReturnToGR_feedback()
+            return
+        end if
+
         ! loop over the logarithm of the scale factor:
         do i=2, EFT_RGR_num_points
             ! initialize:
@@ -68,28 +91,19 @@ contains
             eft_functions_t1 = 0._dl
             ! compute RGR functions:
             call EFTCAMBReturnToGR_functions( a_used, eft_functions_t1 )
+
+            ! check if above threshold:
+            if ( any( eft_functions_t1 > 0._dl ) ) then
+                CP%EFTCAMB%EFTCAMB_turn_on_time = last_a
+                call EFTCAMBReturnToGR_feedback()
+                return
+            end if
+
             ! check if the threshold has been crossed:
-
-            print*, '****** eft1 *************'
-            print*, eft_functions_t1
-            print*, '*******************'
-
-            print*, '****** eft2 *************'
-            print*, eft_functions_t2
-            print*, '*******************'
-
-
             eft_functions_t2 = eft_functions_t1*eft_functions_t2
-
-
-            print*, '****** eft1*eft2 *************'
-            print*, eft_functions_t2
-            print*, '*******************'
-
-
             if ( any( eft_functions_t2 < 0._dl ) ) then
                 CP%EFTCAMB%EFTCAMB_turn_on_time = last_a
-                print*, 'EFTCAMB RGR:', last_a
+                call EFTCAMBReturnToGR_feedback()
                 return
             else
                 ! prepare everything to proceed to the next step:
@@ -98,7 +112,7 @@ contains
             end if
         end do
 
-        print*, 'EFTCAMB RGR:', last_a
+        call EFTCAMBReturnToGR_feedback()
 
     end subroutine EFTCAMBReturnToGR
 
@@ -135,7 +149,7 @@ contains
                 call Nu_background(a*nu_masses(nu_i),EFT_grhonu,EFT_gpinu)
                 eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
                 eft_cache%gpinu_tot  = eft_cache%gpinu_tot  + grhormass_t*EFT_gpinu
-             end do
+            end do
         end if
         ! assemble total densities and pressure:
         eft_cache%grhom_t  = eft_cache%grhob_t +eft_cache%grhoc_t +eft_cache%grhor_t +eft_cache%grhog_t +eft_cache%grhonu_tot
@@ -189,29 +203,6 @@ contains
         call CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, CP%eft_par_cache , eft_cache )
 
         ! get the EFT functions:
-        eft_functions( 1) = abs( eft_cache%EFTOmegaV           )
-        eft_functions( 2) = abs( a*adotoa*eft_cache%EFTOmegaP  )
-        eft_functions( 3) = abs( eft_cache%EFTOmegaPP          )
-        eft_functions( 4) = abs( eft_cache%EFTOmegaPPP         )
-        eft_functions( 5) = abs( eft_cache%EFTc/a2             )
-        eft_functions( 6) = abs( eft_cache%EFTLambda/a2 +CP%eft_par_cache%grhov )
-        eft_functions( 7) = abs( eft_cache%EFTcdot/a2          )
-        eft_functions( 8) = abs( eft_cache%EFTLambdadot/a2     )
-        eft_functions( 9) = abs( eft_cache%EFTGamma1V          )
-        eft_functions(10) = abs( a*adotoa*eft_cache%EFTGamma1P )
-        eft_functions(11) = abs( eft_cache%EFTGamma2V          )
-        eft_functions(12) = abs( a*adotoa*eft_cache%EFTGamma2P )
-        eft_functions(13) = abs( eft_cache%EFTGamma3V          )
-        eft_functions(14) = abs( a*adotoa*eft_cache%EFTGamma3P )
-        eft_functions(15) = abs( eft_cache%EFTGamma4V          )
-        eft_functions(16) = abs( a*adotoa*eft_cache%EFTGamma4P )
-        eft_functions(17) = abs( eft_cache%EFTGamma4PP         )
-        eft_functions(18) = abs( eft_cache%EFTGamma5V          )
-        eft_functions(19) = abs( a*adotoa*eft_cache%EFTGamma5P )
-        eft_functions(20) = abs( a*adotoa*eft_cache%EFTGamma6V )
-        eft_functions(21) = abs( eft_cache%EFTGamma6P          )
-
-        ! old version:
         eft_functions( 1) = abs( eft_cache%EFTOmegaV           )
         eft_functions( 2) = abs( a*adotoa*eft_cache%EFTOmegaP  )
         eft_functions( 3) = 0._dl

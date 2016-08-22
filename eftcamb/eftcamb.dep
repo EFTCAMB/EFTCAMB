@@ -11,8 +11,13 @@ $(OUTPUT_DIR)/02_interpolation.o :  \
 	$(OUTPUT_DIR)/constants.o
 
 $(OUTPUT_DIR)/10_EFTCAMB_stability.o :  \
+	$(OUTPUT_DIR)/05_abstract_EFTCAMB.o \
+	$(OUTPUT_DIR)/05p2_abstract_EFTCAMB_full.o \
 	$(OUTPUT_DIR)/constants.o \
-	$(OUTPUT_DIR)/05_abstract_EFTCAMB.o
+	$(OUTPUT_DIR)/05p3_abstract_EFTCAMB_designer.o \
+	$(OUTPUT_DIR)/modules.o \
+	$(OUTPUT_DIR)/modules.o \
+	$(OUTPUT_DIR)/01_EFT_def.o
 
 $(OUTPUT_DIR)/03p2_linear_parametrizations.o :  \
 	$(OUTPUT_DIR)/03_abstract_parametrizations_1D.o \
@@ -65,7 +70,6 @@ $(OUTPUT_DIR)/05p1_EFTCAMB_GR.o :  \
 	$(OUTPUT_DIR)/constants.o
 
 $(OUTPUT_DIR)/10_EFTCAMB_IC.o :  \
-	$(OUTPUT_DIR)/modules.o \
 	$(OUTPUT_DIR)/constants.o
 
 $(OUTPUT_DIR)/03p1_constant_parametrizations.o :  \
@@ -113,8 +117,13 @@ $(DLL_DIR)/02_interpolation.o :  \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/10_EFTCAMB_stability.o :  \
+	$(DLL_DIR)/05_abstract_EFTCAMB.o \
+	$(DLL_DIR)/05p2_abstract_EFTCAMB_full.o \
 	$(DLL_DIR)/constants.o \
-	$(DLL_DIR)/05_abstract_EFTCAMB.o
+	$(DLL_DIR)/05p3_abstract_EFTCAMB_designer.o \
+	$(DLL_DIR)/modules.o \
+	$(DLL_DIR)/modules.o \
+	$(DLL_DIR)/01_EFT_def.o
 
 $(DLL_DIR)/03p2_linear_parametrizations.o :  \
 	$(DLL_DIR)/03_abstract_parametrizations_1D.o \
@@ -167,7 +176,6 @@ $(DLL_DIR)/05p1_EFTCAMB_GR.o :  \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/10_EFTCAMB_IC.o :  \
-	$(DLL_DIR)/modules.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/03p1_constant_parametrizations.o :  \

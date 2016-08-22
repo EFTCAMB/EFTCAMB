@@ -41,19 +41,33 @@ contains
         real(dl) :: yprime(EV%nvar)
         real(dl) :: k, a
 
-        ! 1) call derivs to ensure that the EFTCAMB cache is filled:
+        real(dl) :: EFTpiEdot, vb, clxc, clxb
+
+        ! call derivs to ensure that the EFTCAMB cache is filled:
         yprime = 0._dl
         call derivs( EV, EV%ScalEqsToPropagate, tau, y, yprime )
         k = EV%k_buf
         a = EV%eft_cache%a
 
-        ! 1- Test initial conditions
+        ! initialize initial conditions:
         y(EV%w_ix)   = 0._dl
         y(EV%w_ix+1) = 0._dl
 
+        ! compute E dot:
+        vb   = y(5)
+        clxc = y(3)
+        clxb = y(4)
+
+        EFTpiEdot = ( EV%eft_cache%EFTcdot +0.75_dl*(2._dl*EV%eft_cache%adotoa*EV%eft_cache%Hdot*a*a*EV%eft_cache%EFTOmegaP**2/(1._dl+EV%eft_cache%EFTOmegaV)&
+            & +2._dl*EV%eft_cache%adotoa**3*a**3*EV%eft_cache%EFTOmegaP*EV%eft_cache%EFTOmegaPP/(1._dl + EV%eft_cache%EFTOmegaV)-a**3*EV%eft_cache%adotoa**3*EV%eft_cache%EFTOmegaP**3/(1._dl+EV%eft_cache%EFTOmegaV)**2))*k*EV%eft_cache%z &
+            & +(EV%eft_cache%EFTc+0.75_dl*EV%eft_cache%adotoa**2*(a*a*EV%eft_cache%EFTOmegaP**2)/(1._dl+EV%eft_cache%EFTOmegaV))*k*EV%eft_cache%dz +2._dl*EV%eft_cache%adotoa*EV%eft_cache%EFTpiE&
+            & +(-EV%eft_cache%dgrho +(EV%eft_cache%grhog_t*EV%eft_cache%clxg+EV%eft_cache%grhor_t*EV%eft_cache%clxr))/4._dl*(+a*EV%eft_cache%adotoa**2*EV%eft_cache%EFTOmegaP +a*EV%eft_cache%Hdot*EV%eft_cache%EFTOmegaP+a*a*EV%eft_cache%adotoa**2*EV%eft_cache%EFTOmegaPP &
+            & -a*a*EV%eft_cache%adotoa**2*EV%eft_cache%EFTOmegaP**2/(1._dl+EV%eft_cache%EFTOmegaV))/(1._dl+EV%eft_cache%EFTOmegaV)&
+            & -EV%eft_cache%adotoa/4._dl*a*EV%eft_cache%EFTOmegaP/(1._dl+EV%eft_cache%EFTOmegaV)*(EV%eft_cache%grhob_t*(-k*(EV%eft_cache%z +vb)-3._dl*EV%eft_cache%adotoa*clxb) + EV%eft_cache%grhoc_t*(-k*EV%eft_cache%z -3._dl*EV%eft_cache%adotoa*clxc))
+
         if ( EV%eft_cache%EFTpiC +k*k*EV%eft_cache%EFTpiD /= 0._dl ) then
             y(EV%w_ix)   = -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k*k*EV%eft_cache%EFTpiD )
-            y(EV%w_ix+1) = CP%eft_par_cache%h0_Mpc*(EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k*k*EV%eft_cache%EFTpiD )**2*a*EV%eft_cache%adotoa*(EFTpiCdotFunction(a,k)+k*k*EFTpiDdotFunction(a,k)) )
+            y(EV%w_ix+1) = CP%eft_par_cache%h0_Mpc*(EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k*k*EV%eft_cache%EFTpiD )**2*a*EV%eft_cache%adotoa*(EFTpiCdotFunction(a,k)+k*k*EFTpiDdotFunction(a,k)) -EFTpiEdot/( EV%eft_cache%EFTpiC +k*k*EV%eft_cache%EFTpiD ) )
         else
             y(EV%w_ix)   = 0._dl
             y(EV%w_ix+1) = 0._dl
@@ -62,16 +76,16 @@ contains
     end subroutine EFTCAMBInitialConditions
 
     !----------------------------------------------------------------------------------------
-
+    !> Function that computes the pi field coefficient C at a given time and scale.
     function EFTpiCfunction( a, k )
-        use ModelParams
+
         implicit none
 
-        real(dl) EFTpiCfunction
-        real(dl), intent(IN) :: a,k
+        real(dl), intent(in) :: a               !< input scale factor
+        real(dl), intent(in) :: k               !< input scale
+        real(dl)             :: EFTpiCfunction  !< return value of the function
 
         type(EFTCAMB_timestep_cache) :: eft_cache
-
         integer  :: nu_i
         real(dl) :: grhormass_t, EFT_gpinudot, EFT_grhonudot, EFT_gpinu, EFT_grhonu
         real(dl) :: adotoa, adotdota, grho, grhob_t, grhoc_t, grhor_t, grhog_t, gpres, grho_matter, a2
@@ -178,13 +192,15 @@ contains
 
     end function EFTpiCfunction
 
-
+    !----------------------------------------------------------------------------------------
+    !> Function that computes the pi field coefficient D at a given time and scale.
     function EFTpiDfunction(a,k)
-        use ModelParams
+
         implicit none
 
-        real(dl) EFTpiDfunction
-        real(dl), intent(IN) :: a,k
+        real(dl), intent(in) :: a               !< input value of the scale factor
+        real(dl), intent(in) :: k               !< input scale
+        real(dl)             :: EFTpiDfunction  !< return value of the function
 
         type(EFTCAMB_timestep_cache) :: eft_cache
 
@@ -291,26 +307,50 @@ contains
 
     end function EFTpiDfunction
 
-    ! EFTCAMB: numerical derivative of the function C
+    !----------------------------------------------------------------------------------------
+    !> Function that computes the numerical derivative of the pi field coefficient C
+    !! at a given time and scale.
     function EFTpiCdotFunction(a,k)
+
         implicit none
-        real(dl) EFTpiCdotFunction, temp, err
-        real(dl), intent(IN) :: a,k
-        EFTpiCdotfunction = dfridr(EFTpiCfunction,a,k,0.03_dl*a,err)
+
+        real(dl), intent(in) :: a                  !< input value of the scale factor
+        real(dl), intent(in) :: k                  !< input scale
+        real(dl)             :: EFTpiCdotFunction  !< return value of the function
+
+        real(dl) err
+
+        EFTpiCdotfunction = dfridr( EFTpiCfunction, a, k, 0.03_dl*a, err )
+
         return
+
     end function EFTpiCdotFunction
 
-    ! EFTCAMB: numerical derivative of the function D
+    !----------------------------------------------------------------------------------------
+    !> Function that computes the numerical derivative of the pi field coefficient D
+    !! at a given time and scale.
     function EFTpiDdotFunction(a,k)
+
         implicit none
-        real(dl) EFTpiDdotFunction, temp, err
-        real(dl), intent(IN) :: a,k
-        EFTpiDdotfunction = dfridr(EFTpiDfunction,a,k,0.03_dl*a,err)
+
+        real(dl), intent(in) :: a                  !< input value of the scale factor
+        real(dl), intent(in) :: k                  !< input scale
+        real(dl)             :: EFTpiDdotFunction  !< return value of the function
+
+
+        real(dl) err
+
+        EFTpiDdotfunction = dfridr( EFTpiDfunction, a, k, 0.03_dl*a, err )
+
         return
+
     end function EFTpiDdotFunction
 
-    ! EFTCAMB: algorithm to compute the numerical derivative. Modified to accept two function arguments.
-    function dfridr(func,x,k,h,err)
+    !----------------------------------------------------------------------------------------
+    !> Algorithm to compute the numerical derivative.
+    !! Modified to accept two function arguments.
+    function dfridr( func, x, k, h, err )
+
         implicit none
 
         integer,parameter :: ntab = 100
@@ -349,6 +389,8 @@ contains
 12      continue
         return
     end function dfridr
+
+    !----------------------------------------------------------------------------------------
 
 end submodule EFTCAMB_IC
 

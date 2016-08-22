@@ -132,7 +132,7 @@ contains
         do i=1, self%parameter_number
             call self%parameter_names( i, param_name  )
             call self%parameter_value( i, param_value )
-            write(*,*) param_name, '=', param_value
+            write(*,'(a23,a,F12.6)') param_name, '=', param_value
         end do
 
     end subroutine LinearParametrized1DFeedback
