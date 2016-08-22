@@ -15,18 +15,17 @@
 
 !> @file 04_abstract_parametrizations_2D.f90
 !! This file contains the abstract class for generic parametrizations for 2D functions
-!! that are used by several models in EFTCAMB. As a rule, when there is a free function
-!! in EFT it should be declared as a class inheriting from parametrized_function.
+!! that are used by several models in EFTCAMB. When there is a free function
+!! in EFT it should be declared as a class inheriting from parametrized_function_2D.
 !! This guarantees maximum performances as well as maximum flexibility.
 
 
 !----------------------------------------------------------------------------------------
 !> This module contains the abstract class for generic parametrizations for 2D functions
-!! that are used by several models in EFTCAMB. As a rule, when there is a free function
-!! in EFT it should be declared as a class inheriting from parametrized_function
+!! that are used by several models in EFTCAMB. When there is a free function
+!! in EFT it should be declared as a class inheriting from parametrized_function_2D.
 
 !> @author Simone Peirone, Bin Hu, Marco Raveri
-
 
 module EFTCAMB_abstract_parametrizations_2D
 
@@ -41,7 +40,7 @@ module EFTCAMB_abstract_parametrizations_2D
     !> This is the abstract type for parametrized functions. As a rule, when there is a
     !! free function in EFT it should be declared as a class inheriting from parametrized_function.
     !! This guarantees maximum performances as well as maximum flexibility.
-    type parametrized_function_2D
+    type, abstract :: parametrized_function_2D
 
         integer                       :: parameter_number !< number of parameters defining the parametrized function
         character(len=:), allocatable :: name             !< name of the function
@@ -50,41 +49,126 @@ module EFTCAMB_abstract_parametrizations_2D
     contains
 
         ! initialization procedures:
-        procedure :: init                  => ParametrizedFunction2DInitialize          !< subroutine that initializes the name and latex name of the function.
+        procedure( ParametrizedFunction2DInitialize       ), deferred :: init           !< subroutine that initializes the name and latex name of the function.
         procedure :: init_from_file        => ParametrizedFunction2DInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
-        procedure :: init_parameters       => ParametrizedFunction2DInit                !< subroutine that initializes the function parameters based on the values found in an input array.
+        procedure :: init_parameters       => ParametrizedFunction2DInitParams          !< subroutine that initializes the function parameters based on the values found in an input array.
         ! utility functions:
         procedure :: feedback              => ParametrizedFunction2DFeedback            !< subroutine that prints to screen the informations about the function.
         procedure :: parameter_names       => ParametrizedFunction2DParameterNames      !< subroutine that returns the i-th parameter name of the function.
         procedure :: parameter_names_latex => ParametrizedFunction2DParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format.
         procedure :: parameter_value       => ParametrizedFunction2DParameterValues     !< subroutine that returns the value of the function i-th parameter.
         ! evaluation procedures:
-        procedure :: value                 => ParametrizedFunction2DValue               !< function that returns the value of the function.
-
-        procedure :: first_derivative_x    => ParametrizedFunction2DFirstDerivativeX    !< function that returns the first partial derivative of the function with respect to x.
-        procedure :: first_derivative_y    => ParametrizedFunction2DFirstDerivativeY    !< function that returns the first partial derivative of the function with respect to y.
-        procedure :: second_derivative_x   => ParametrizedFunction2DSecondDerivativeX   !< function that returns the second partial derivative of the function with respect to x.
-        procedure :: second_derivative_y   => ParametrizedFunction2DSecondDerivativeY   !< function that returns the second partial derivative of the function with respect to y.
-        procedure :: second_derivative_xy  => ParametrizedFunction2DSecondDerivativeXY  !< function that returns the mixed partial derivative of the function with respect to x and y.
-
+        procedure( ParametrizedFunction2DValue              ), deferred :: value               !< function that returns the value of the function.
+        procedure( ParametrizedFunction2DFirstDerivativeX   ), deferred :: first_derivative_x  !< function that returns the first partial derivative of the function with respect to x.
+        procedure( ParametrizedFunction2DFirstDerivativeY   ), deferred :: first_derivative_y  !< function that returns the first partial derivative of the function with respect to y.
+        procedure( ParametrizedFunction2DSecondDerivativeX  ), deferred :: second_derivative_x !< function that returns the second partial derivative of the function with respect to x.
+        procedure( ParametrizedFunction2DSecondDerivativeY  ), deferred :: second_derivative_y !< function that returns the second partial derivative of the function with respect to y.
+        procedure( ParametrizedFunction2DSecondDerivativeXY ), deferred :: second_derivative_xy!< function that returns the mixed partial derivative of the function with respect to x and y.
 
     end type parametrized_function_2D
 
     ! ---------------------------------------------------------------------------------------------
+    ! parametrized_function_2D abstract interfaces: these are all the function procedures
+    ! that the user HAS to override when writing its own parametrized 2D function.
+    ! ---------------------------------------------------------------------------------------------
 
-contains
+    abstract interface
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Subroutine that initializes the name and latex name of the parametrization.
+        subroutine ParametrizedFunction2DInitialize( self, name, latexname )
+            use precision
+            import parametrized_function_2D
+            implicit none
+            class(parametrized_function_2D)  :: self       !< the base class
+            character(*), intent(in)         :: name       !< the name of the function
+            character(*), intent(in)         :: latexname  !< the latex name of the function
+        end subroutine ParametrizedFunction2DInitialize
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Function that returns the value of the function.
+        function ParametrizedFunction2DValue( self, x, y )
+            use precision
+            import parametrized_function_2D
+            implicit none
+            class(parametrized_function_2D) :: self  !< the base class
+            real(dl), intent(in)            :: x     !< the input first variable
+            real(dl), intent(in)            :: y     !< the input second variable
+            real(dl) :: ParametrizedFunction2DValue  !< the output value
+        end function ParametrizedFunction2DValue
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Function that returns the value of the first partial derivative of the function
+        !! with respect to the first variable
+        function ParametrizedFunction2DFirstDerivativeX( self, x, y )
+            use precision
+            import parametrized_function_2D
+            implicit none
+            class(parametrized_function_2D) :: self             !< the base class
+            real(dl), intent(in)            :: x                !< the input first variable
+            real(dl), intent(in)            :: y                !< the input second variable
+            real(dl) :: ParametrizedFunction2DFirstDerivativeX  !< the output value
+        end function ParametrizedFunction2DFirstDerivativeX
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Function that returns the value of the first partial derivative of the function
+        !! with respect to the second variable
+        function ParametrizedFunction2DFirstDerivativeY( self, x, y )
+            use precision
+            import parametrized_function_2D
+            implicit none
+            class(parametrized_function_2D) :: self             !< the base class
+            real(dl), intent(in)            :: x                !< the input first variable
+            real(dl), intent(in)            :: y                !< the input second variable
+            real(dl) :: ParametrizedFunction2DFirstDerivativeY  !< the output value
+        end function ParametrizedFunction2DFirstDerivativeY
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Function that returns the value of the second partial derivative of the function
+        !! with respect to the first variable.
+        function ParametrizedFunction2DSecondDerivativeX( self, x, y )
+            use precision
+            import parametrized_function_2D
+            implicit none
+            class(parametrized_function_2D) :: self             !< the base class
+            real(dl), intent(in)            :: x                !< the input first variable
+            real(dl), intent(in)            :: y                !< the input second variable
+            real(dl) :: ParametrizedFunction2DSecondDerivativeX !< the output value
+        end function ParametrizedFunction2DSecondDerivativeX
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Function that returns the value of the second partial derivative of the function
+        !! with respect to the second variable.
+        function ParametrizedFunction2DSecondDerivativeY( self, x, y )
+            use precision
+            import parametrized_function_2D
+            implicit none
+            class(parametrized_function_2D) :: self             !< the base class
+            real(dl), intent(in)            :: x                !< the input first variable
+            real(dl), intent(in)            :: y                !< the input second variable
+            real(dl) :: ParametrizedFunction2DSecondDerivativeY !< the output value
+        end function ParametrizedFunction2DSecondDerivativeY
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Function that returns the value of the mixed partial derivative of the function
+        !! with respect to the first and second variable.
+        function ParametrizedFunction2DSecondDerivativeXY( self, x, y )
+            use precision
+            import parametrized_function_2D
+            implicit none
+            class(parametrized_function_2D) :: self             !< the base class
+            real(dl), intent(in)            :: x                !< the input first variable
+            real(dl), intent(in)            :: y                !< the input second variable
+            real(dl) :: ParametrizedFunction2DSecondDerivativeXY!< the output value
+        end function ParametrizedFunction2DSecondDerivativeXY
+
+       ! ---------------------------------------------------------------------------------------------
+
+  end interface
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that initializes the name and latex name of the parametrization.
-    subroutine ParametrizedFunction2DInitialize( self, name, latexname )
 
-        implicit none
-
-        class(parametrized_function_2D)  :: self       !< the base class
-        character(*), intent(in)         :: name       !< the name of the function
-        character(*), intent(in)         :: latexname  !< the latex name of the function
-
-    end subroutine ParametrizedFunction2DInitialize
+contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that reads a Ini file looking for the parameters of the function.
@@ -99,14 +183,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that reads a Ini file looking for the parameters of the function.
-    subroutine ParametrizedFunction2DInit( self, array )
+    subroutine ParametrizedFunction2DInitParams( self, array )
 
         implicit none
 
         class(parametrized_function_2D)                        :: self   !< the base class.
         real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
 
-    end subroutine ParametrizedFunction2DInit
+    end subroutine ParametrizedFunction2DInitParams
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints to screen the informations about the function
@@ -155,108 +239,6 @@ contains
     end subroutine ParametrizedFunction2DParameterValues
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the value of the function.
-    function ParametrizedFunction2DValue( self, x, y )
-
-        implicit none
-
-        class(parametrized_function_2D) :: self  !< the base class
-
-        real(dl), intent(in)            :: x     !< the first input variable
-        real(dl), intent(in)            :: y     !< the second input variable
-
-        real(dl) :: ParametrizedFunction2DValue  !< the output value
-
-        ParametrizedFunction2DValue = 0._dl
-
-    end function ParametrizedFunction2DValue
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the value of the first partial derivative of the function
-    !! with respect to the first variable.
-    function ParametrizedFunction2DFirstDerivativeX( self, x, y )
-
-
-        implicit none
-
-        class(parametrized_function_2D) :: self             !< the base class
-
-        real(dl), intent(in)            :: x                !< the first input variable
-        real(dl), intent(in)            :: y                !< the second input variable
-        real(dl) :: ParametrizedFunction2DFirstDerivativeX  !< the output value
-
-        ParametrizedFunction2DFirstDerivativeX = 0._dl
-
-    end function ParametrizedFunction2DFirstDerivativeX
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the value of the first partial derivative of the function
-    !! with respect to the second variable.
-    function ParametrizedFunction2DFirstDerivativeY( self, x, y )
-
-        implicit none
-
-        class(parametrized_function_2D) :: self             !< the base class
-
-        real(dl), intent(in)            :: x                !< the first input variable
-        real(dl), intent(in)            :: y                !< the second input variable
-        real(dl) :: ParametrizedFunction2DFirstDerivativeY  !< the output value
-
-        ParametrizedFunction2DFirstDerivativeY = 0._dl
-
-    end function ParametrizedFunction2DFirstDerivativeY
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the value of the second partial derivative of the function
-    !! with respect to the first variable.
-    function ParametrizedFunction2DSecondDerivativeX( self, x, y )
-
-        implicit none
-
-        class(parametrized_function_2D) :: self             !< the base class
-
-        real(dl), intent(in)            :: x                !< the first input variable
-        real(dl), intent(in)            :: y                !< the second input variable
-        real(dl) :: ParametrizedFunction2DSecondDerivativeX !< the output value
-
-        ParametrizedFunction2DSecondDerivativeX = 0._dl
-
-    end function ParametrizedFunction2DSecondDerivativeX
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the value of the variable.
-    function ParametrizedFunction2DSecondDerivativeY( self, x, y )
-
-        implicit none
-
-        class(parametrized_function_2D) :: self             !< the base class
-
-        real(dl), intent(in)            :: x                !< the first input variable
-        real(dl), intent(in)            :: y                !< the second input variable
-        real(dl) :: ParametrizedFunction2DSecondDerivativeY !< the output value
-
-        ParametrizedFunction2DSecondDerivativeY = 0._dl
-
-    end function ParametrizedFunction2DSecondDerivativeY
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the value of the mixed partial derivative of the function
-    !! with respect to the first and second variables.
-    function ParametrizedFunction2DSecondDerivativeXY( self, x, y )
-
-        implicit none
-
-        class(parametrized_function_2D) :: self             !< the base class
-
-        real(dl), intent(in)            :: x                !< the first input variable
-        real(dl), intent(in)            :: y                !< the second input variable
-        real(dl) :: ParametrizedFunction2DSecondDerivativeXY!< the output value
-
-        ParametrizedFunction2DSecondDerivativeXY = 0._dl
-
-    end function ParametrizedFunction2DSecondDerivativeXY
-
-   ! ---------------------------------------------------------------------------------------------
 
 end module EFTCAMB_abstract_parametrizations_2D
 

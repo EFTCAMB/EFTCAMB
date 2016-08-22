@@ -24,18 +24,17 @@
 
 !> @author Simone Peirone, Bin Hu, Marco Raveri
 
-
 module EFTCAMB_constant_parametrization_2D
 
     use precision
     use EFTDef
+    use AMLutils
     use EFTCAMB_abstract_parametrizations_2D
 
     implicit none
 
     ! ---------------------------------------------------------------------------------------------
     !> Type containing the constant function parametrization. Inherits from parametrized_function_2D.
-    !! Notice that the derivatives are not overridden since they are zero identically.
     type, extends ( parametrized_function_2D ) :: constant_parametrization_2D
 
         real(dl) :: constant_value
@@ -55,6 +54,11 @@ module EFTCAMB_constant_parametrization_2D
 
         ! evaluation procedures:
         procedure :: value                 => ConstantParametrized2DValue               !< function that returns the value of the function
+        procedure :: first_derivative_x    => ConstantParametrized2DFirstDerivativeX    !< function that returns the first partial derivative of the function with respect to x.
+        procedure :: first_derivative_y    => ConstantParametrized2DFirstDerivativeY    !< function that returns the first partial derivative of the function with respect to y.
+        procedure :: second_derivative_x   => ConstantParametrized2DSecondDerivativeX   !< function that returns the second derivative of the function.
+        procedure :: second_derivative_y   => ConstantParametrized2DSecondDerivativeY   !< function that returns the second derivative of the function.
+        procedure :: second_derivative_xy  => ConstantParametrized2DSecondDerivativeXY  !< function that returns the second derivative of the function.
 
     end type constant_parametrization_2D
 
@@ -150,7 +154,7 @@ contains
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
-                stop
+                call MpiStop('EFTCAMB error')
         end select
 
     end subroutine ConstantParametrized2DParameterNames
@@ -171,7 +175,7 @@ contains
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
-                stop
+                call MpiStop('EFTCAMB error')
         end select
 
     end subroutine ConstantParametrized2DParameterNamesLatex
@@ -193,7 +197,7 @@ contains
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
-                stop
+                call MpiStop('EFTCAMB error')
         end select
 
     end subroutine ConstantParametrized2DParameterValues
@@ -215,6 +219,82 @@ contains
     end function ConstantParametrized2DValue
 
     ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the first partial derivative of the constant function with respect to x.
+    function ConstantParametrized2DFirstDerivativeX( self, x, y )
+
+        implicit none
+
+        class(constant_parametrization_2D) :: self         !< the base class
+        real(dl), intent(in)           :: x            !< the input first variable
+        real(dl), intent(in)           :: y            !< the input second variable
+        real(dl) :: ConstantParametrized2DFirstDerivativeX !< the output value
+
+        ConstantParametrized2DFirstDerivativeX = 0._dl
+
+    end function ConstantParametrized2DFirstDerivativeX
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the first partial derivative of the constant function with respect to y.
+    function ConstantParametrized2DFirstDerivativeY( self, x, y )
+
+        implicit none
+
+        class(constant_parametrization_2D) :: self         !< the base class
+        real(dl), intent(in)           :: x            !< the input first variable
+        real(dl), intent(in)           :: y            !< the input second variable
+        real(dl) :: ConstantParametrized2DFirstDerivativeY !< the output value
+
+        ConstantParametrized2DFirstDerivativeY = 0._dl
+
+    end function ConstantParametrized2DFirstDerivativeY
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the second partial derivative of the constant function with respect to x.
+    function ConstantParametrized2DSecondDerivativeX( self, x, y )
+
+        implicit none
+
+        class(constant_parametrization_2D) :: self          !< the base class
+        real(dl), intent(in)           :: x             !< the input first variable
+        real(dl), intent(in)           :: y             !< the input second variable
+        real(dl) :: ConstantParametrized2DSecondDerivativeX !< the output value
+
+        ConstantParametrized2DSecondDerivativeX = 0._dl
+
+    end function ConstantParametrized2DSecondDerivativeX
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the second partial derivative of the constant function with respect to y.
+    function ConstantParametrized2DSecondDerivativeY( self, x, y )
+
+        implicit none
+
+        class(constant_parametrization_2D) :: self          !< the base class
+        real(dl), intent(in)           :: x             !< the input first variable
+        real(dl), intent(in)           :: y             !< the input second variable
+        real(dl) :: ConstantParametrized2DSecondDerivativeY !< the output value
+
+        ConstantParametrized2DSecondDerivativeY = 0._dl
+
+    end function ConstantParametrized2DSecondDerivativeY
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the mixed partial derivative of the constant function with respect to x and y.
+    function ConstantParametrized2DSecondDerivativeXY( self, x, y )
+
+        implicit none
+
+        class(constant_parametrization_2D) :: self          !< the base class
+        real(dl), intent(in)           :: x             !< the input first variable
+        real(dl), intent(in)           :: y             !< the input second variable
+        real(dl) :: ConstantParametrized2DSecondDerivativeXY!< the output value
+
+        ConstantParametrized2DSecondDerivativeXY = 0._dl
+
+    end function ConstantParametrized2DSecondDerivativeXY
+
+    !----------------------------------------------------------------------------------------
+
 
 end module EFTCAMB_constant_parametrization_2D
 

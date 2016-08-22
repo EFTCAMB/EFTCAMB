@@ -28,13 +28,13 @@ module EFTCAMB_bilinear_parametrizations_2D
 
     use precision
     use EFTDef
+    use AMLutils
     use EFTCAMB_abstract_parametrizations_2D
 
     implicit none
 
     ! ---------------------------------------------------------------------------------------------
     !> Type containing the bilinear function parametrization. Inherits from parametrized_function_2D.
-    !! Notice that the derivatives above the first are not overridden since they are zero identically.
     type, extends ( parametrized_function_2D ) :: bilinear_parametrization_2D
 
         real(dl) :: linear_value_1
@@ -43,7 +43,7 @@ module EFTCAMB_bilinear_parametrizations_2D
     contains
 
         ! initialization:
-        procedure :: init                  => BilinearParametrized2DInitialize          !< subroutine that initializes the constant parametrization.
+        procedure :: init                  => BilinearParametrized2DInitialize          !< subroutine that initializes the bilinear parametrization.
         procedure :: init_from_file        => BilinearParametrized2DInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
         procedure :: init_parameters       => BilinearParametrized2DInit                !< subroutine that initializes the function parameters based on the values found in an input array.
         ! utility functions:
@@ -54,6 +54,9 @@ module EFTCAMB_bilinear_parametrizations_2D
         procedure :: value                 => BilinearParametrized2DValue               !< function that returns the value of the function.
         procedure :: first_derivative_x    => BilinearParametrized2DFirstDerivativeX    !< function that returns the first partial derivative of the function with respect to x.
         procedure :: first_derivative_y    => BilinearParametrized2DFirstDerivativeY    !< function that returns the first partial derivative of the function with respect to y.
+        procedure :: second_derivative_x   => BilinearParametrized2DSecondDerivativeX       !< function that returns the second derivative of the function with respect to x.
+        procedure :: second_derivative_y   => BilinearParametrized2DSecondDerivativeY       !< function that returns the second derivative of the function with respect to y.
+        procedure :: second_derivative_xy  => BilinearParametrized2DSecondDerivativeXY      !< function that returns the second derivative of the function with respect to x and y.
 
     end type bilinear_parametrization_2D
 
@@ -242,6 +245,51 @@ contains
     end function BilinearParametrized2DFirstDerivativeY
 
     ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the second partial derivative of the function with respect to x.
+    function BilinearParametrized2DSecondDerivativeX( self, x, y )
+
+        implicit none
+
+        class(bilinear_parametrization_2D) :: self          !< the base class
+        real(dl), intent(in)           :: x                 !< the input first variable
+        real(dl), intent(in)           :: y                 !< the input second variable
+        real(dl) :: BilinearParametrized2DSecondDerivativeX !< the output value
+
+        BilinearParametrized2DSecondDerivativeX = 0._dl
+
+    end function BilinearParametrized2DSecondDerivativeX
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the second partial derivative of the function with respect to y.
+    function BilinearParametrized2DSecondDerivativeY( self, x, y )
+
+        implicit none
+
+        class(bilinear_parametrization_2D) :: self          !< the base class
+        real(dl), intent(in)           :: x                 !< the input first variable
+        real(dl), intent(in)           :: y                 !< the input second variable
+        real(dl) :: BilinearParametrized2DSecondDerivativeY !< the output value
+
+        BilinearParametrized2DSecondDerivativeY = 0._dl
+
+    end function BilinearParametrized2DSecondDerivativeY
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the mixed partial derivative of the function with respect to x and y.
+    function BilinearParametrized2DSecondDerivativeXY( self, x, y )
+
+        implicit none
+
+        class(bilinear_parametrization_2D) :: self          !< the base class
+        real(dl), intent(in)           :: x                 !< the input first variable
+        real(dl), intent(in)           :: y                 !< the input second variable
+        real(dl) :: BilinearParametrized2DSecondDerivativeXY!< the output value
+
+        BilinearParametrized2DSecondDerivativeXY = 0._dl
+
+    end function BilinearParametrized2DSecondDerivativeXY
+
+    !----------------------------------------------------------------------------------------
 
 end module EFTCAMB_bilinear_parametrizations_2D
 
