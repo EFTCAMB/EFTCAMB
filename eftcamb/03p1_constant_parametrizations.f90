@@ -35,7 +35,6 @@ module EFTCAMB_constant_parametrization_1D
 
     ! ---------------------------------------------------------------------------------------------
     !> Type containing the constant function parametrization. Inherits from parametrized_function_1D.
-    !! Notice that the derivatives are not overridden since they are zero identically.
     type, extends ( parametrized_function_1D ) :: constant_parametrization_1D
 
         real(dl) :: constant_value
@@ -43,19 +42,22 @@ module EFTCAMB_constant_parametrization_1D
     contains
 
         ! initialization:
-        procedure :: init                  => ConstantParametrized1DInitialize          !< subroutine that initializes the constant parametrization
+        procedure :: init                  => ConstantParametrized1DInitialize          !< subroutine that initializes the constant parametrization.
         procedure :: init_from_file        => ConstantParametrized1DInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
         procedure :: init_parameters       => ConstantParametrized1DInit                !< subroutine that initializes the function parameters based on the values found in an input array.
 
         ! utility functions:
         procedure :: feedback              => ConstantParametrized1DFeedback            !< subroutine that prints to screen the informations about the function.
-        procedure :: parameter_names       => ConstantParametrized1DParameterNames      !< subroutine that returns the i-th parameter name of the function
-        procedure :: parameter_names_latex => ConstantParametrized1DParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format
+        procedure :: parameter_names       => ConstantParametrized1DParameterNames      !< subroutine that returns the i-th parameter name of the function.
+        procedure :: parameter_names_latex => ConstantParametrized1DParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format.
         procedure :: parameter_value       => ConstantParametrized1DParameterValues     !< subroutine that returns the value of the function i-th parameter.
 
         ! evaluation procedures:
-        procedure :: value                 => ConstantParametrized1DValue               !< function that returns the value of the function
-        procedure :: integral              => ConstantParametrized1DIntegral            !< function that returns the strange integral that we need for w_DE
+        procedure :: value                 => ConstantParametrized1DValue               !< function that returns the value of the constant function.
+        procedure :: first_derivative      => ConstantParametrized1DFirstDerivative     !< function that returns the first derivative of the constant function.
+        procedure :: second_derivative     => ConstantParametrized1DSecondDerivative    !< function that returns the second derivative of the constant function.
+        procedure :: third_derivative      => ConstantParametrized1DThirdDerivative     !< function that returns the third derivative of the constant function.
+        procedure :: integral              => ConstantParametrized1DIntegral            !< function that returns the strange integral that we need for w_DE.
 
     end type constant_parametrization_1D
 
@@ -66,7 +68,7 @@ contains
     ! ---------------------------------------------------------------------------------------------
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that initializes the constant parametrization
+    !> Subroutine that initializes the constant parametrization.
     subroutine ConstantParametrized1DInitialize( self, name, latexname )
 
         implicit none
@@ -136,7 +138,7 @@ contains
     end subroutine ConstantParametrized1DFeedback
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that returns the i-th parameter name
+    !> Subroutine that returns the i-th parameter name.
     subroutine ConstantParametrized1DParameterNames( self, i, name )
 
         implicit none
@@ -157,7 +159,7 @@ contains
     end subroutine ConstantParametrized1DParameterNames
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that returns the latex version of the i-th parameter name
+    !> Subroutine that returns the latex version of the i-th parameter name.
     subroutine ConstantParametrized1DParameterNamesLatex( self, i, latexname )
 
         implicit none
@@ -214,7 +216,49 @@ contains
     end function ConstantParametrized1DValue
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the integral of the constant function, as defined in the notes
+    !> Function that returns the first derivative of the constant function.
+    function ConstantParametrized1DFirstDerivative( self, x )
+
+        implicit none
+
+        class(constant_parametrization_1D) :: self          !< the base class
+        real(dl), intent(in)               :: x             !< the input scale factor
+        real(dl) :: ConstantParametrized1DFirstDerivative   !< the output value
+
+        ConstantParametrized1DFirstDerivative = 0._dl
+
+    end function ConstantParametrized1DFirstDerivative
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the second derivative of the constant function.
+    function ConstantParametrized1DSecondDerivative( self, x )
+
+        implicit none
+
+        class(constant_parametrization_1D) :: self          !< the base class
+        real(dl), intent(in)               :: x             !< the input scale factor
+        real(dl) :: ConstantParametrized1DSecondDerivative  !< the output value
+
+        ConstantParametrized1DSecondDerivative = 0._dl
+
+    end function ConstantParametrized1DSecondDerivative
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the third derivative of the constant function.
+    function ConstantParametrized1DThirdDerivative( self, x )
+
+        implicit none
+
+        class(constant_parametrization_1D) :: self          !< the base class
+        real(dl), intent(in)               :: x             !< the input scale factor
+        real(dl) :: ConstantParametrized1DThirdDerivative   !< the output value
+
+        ConstantParametrized1DThirdDerivative = 0._dl
+
+    end function ConstantParametrized1DThirdDerivative
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the strange integral that we need for w_DE.
     function ConstantParametrized1DIntegral( self, x )
 
         implicit none

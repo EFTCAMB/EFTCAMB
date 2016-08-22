@@ -29,6 +29,7 @@ module EFTCAMB_pure_EFT_std
     use precision
     use IniFile
     use EFTCAMB_abstract_parametrizations_1D
+    use EFTCAMB_neutral_parametrization_1D
     use EFTCAMB_constant_parametrization_1D
     use EFTCAMB_linear_parametrizations_1D
     use EFTCAMB_abstract_model_designer
@@ -123,7 +124,7 @@ contains
         if ( allocated(self%PureEFTOmega) ) deallocate(self%PureEFTOmega)
         select case ( self%PureEFTmodelOmega )
             case(0)
-                allocate( parametrized_function_1D::self%PureEFTOmega )
+                allocate( zero_parametrization_1D::self%PureEFTOmega )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTOmega )
             case(2)
@@ -136,7 +137,7 @@ contains
         if ( allocated(self%PureEFTwDE) ) deallocate(self%PureEFTwDE)
         select case ( self%EFTwDE )
             case(0)
-                allocate( parametrized_function_1D::self%PureEFTwDE )
+                allocate( wDE_LCDM_parametrization_1D::self%PureEFTwDE )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTwDE )
             case default
@@ -147,7 +148,7 @@ contains
         if ( allocated(self%PureEFTGamma1) ) deallocate(self%PureEFTGamma1)
         select case ( self%PureEFTmodelGamma1 )
             case(0)
-                allocate( parametrized_function_1D::self%PureEFTGamma1 )
+                allocate( zero_parametrization_1D::self%PureEFTGamma1 )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTGamma1 )
             case default
@@ -158,7 +159,7 @@ contains
         if ( allocated(self%PureEFTGamma2) ) deallocate(self%PureEFTGamma2)
         select case ( self%PureEFTmodelGamma2 )
             case(0)
-                allocate( parametrized_function_1D::self%PureEFTGamma2 )
+                allocate( zero_parametrization_1D::self%PureEFTGamma2 )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTGamma2 )
             case default
@@ -169,7 +170,7 @@ contains
         if ( allocated(self%PureEFTGamma3) ) deallocate(self%PureEFTGamma3)
         select case ( self%PureEFTmodelGamma3 )
             case(0)
-                allocate( parametrized_function_1D::self%PureEFTGamma3 )
+                allocate( zero_parametrization_1D::self%PureEFTGamma3 )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTGamma3 )
             case default
@@ -182,7 +183,7 @@ contains
             if ( allocated(self%PureEFTGamma4) ) deallocate(self%PureEFTGamma4)
             select case ( self%PureEFTmodelGamma4 )
                 case(0)
-                    allocate( parametrized_function_1D::self%PureEFTGamma4 )
+                    allocate( zero_parametrization_1D::self%PureEFTGamma4 )
                 case(1)
                     allocate( constant_parametrization_1D::self%PureEFTGamma4 )
                 case default
@@ -193,7 +194,7 @@ contains
             if ( allocated(self%PureEFTGamma5) ) deallocate(self%PureEFTGamma5)
             select case ( self%PureEFTmodelGamma5 )
                 case(0)
-                    allocate( parametrized_function_1D::self%PureEFTGamma5 )
+                    allocate( zero_parametrization_1D::self%PureEFTGamma5 )
                 case(1)
                     allocate( constant_parametrization_1D::self%PureEFTGamma5 )
                 case default
@@ -204,7 +205,7 @@ contains
             if ( allocated(self%PureEFTGamma6) ) deallocate(self%PureEFTGamma6)
             select case ( self%PureEFTmodelGamma6 )
                 case(0)
-                    allocate( parametrized_function_1D::self%PureEFTGamma6 )
+                    allocate( zero_parametrization_1D::self%PureEFTGamma6 )
                 case(1)
                     allocate( constant_parametrization_1D::self%PureEFTGamma6 )
                 case default

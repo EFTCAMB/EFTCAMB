@@ -43,19 +43,21 @@ module EFTCAMB_linear_parametrizations_1D
     contains
 
         ! initialization:
-        procedure :: init                  => LinearParametrized1DInitialize          !< subroutine that initializes the constant parametrization
+        procedure :: init                  => LinearParametrized1DInitialize          !< subroutine that initializes the linear parametrization.
         procedure :: init_from_file        => LinearParametrized1DInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
         procedure :: init_parameters       => LinearParametrized1DInit                !< subroutine that initializes the function parameters based on the values found in an input array.
         ! utility functions:
         procedure :: feedback              => LinearParametrized1DFeedback            !< subroutine that prints to screen the informations about the function.
-        procedure :: parameter_names       => LinearParametrized1DParameterNames      !< subroutine that returns the i-th parameter name of the function
-        procedure :: parameter_names_latex => LinearParametrized1DParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format
+        procedure :: parameter_names       => LinearParametrized1DParameterNames      !< subroutine that returns the i-th parameter name of the function.
+        procedure :: parameter_names_latex => LinearParametrized1DParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format.
         procedure :: parameter_value       => LinearParametrized1DParameterValues     !< subroutine that returns the value of the function i-th parameter.
 
         ! evaluation procedures:
-        procedure :: value                 => LinearParametrized1DValue               !< function that returns the value of the function
-        procedure :: first_derivative      => LinearParametrized1DFirstDerivative     !< function that returns the first derivative of the function
-        procedure :: integral              => LinearParametrized1DIntegral            !< function that returns the strange integral that we need for w_DE
+        procedure :: value                 => LinearParametrized1DValue               !< function that returns the value of the linear function.
+        procedure :: first_derivative      => LinearParametrized1DFirstDerivative     !< function that returns the first derivative of the linear function.
+        procedure :: second_derivative     => LinearParametrized1DSecondDerivative    !< function that returns the second derivative of the linear function.
+        procedure :: third_derivative      => LinearParametrized1DThirdDerivative     !< function that returns the third derivative of the linear function.
+        procedure :: integral              => LinearParametrized1DIntegral            !< function that returns the strange integral that we need for w_DE.
 
     end type linear_parametrization_1D
 
@@ -225,6 +227,34 @@ contains
         LinearParametrized1DFirstDerivative = self%linear_value
 
     end function LinearParametrized1DFirstDerivative
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the second derivative of the linear function.
+    function LinearParametrized1DSecondDerivative( self, x )
+
+        implicit none
+
+        class(linear_parametrization_1D) :: self          !< the base class
+        real(dl), intent(in)             :: x             !< the input scale factor
+        real(dl) :: LinearParametrized1DSecondDerivative  !< the output value
+
+        LinearParametrized1DSecondDerivative = 0._dl
+
+    end function LinearParametrized1DSecondDerivative
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the third derivative of the linear function.
+    function LinearParametrized1DThirdDerivative( self, x )
+
+        implicit none
+
+        class(linear_parametrization_1D) :: self          !< the base class
+        real(dl), intent(in)             :: x             !< the input scale factor
+        real(dl) :: LinearParametrized1DThirdDerivative   !< the output value
+
+        LinearParametrized1DThirdDerivative = 0._dl
+
+    end function LinearParametrized1DThirdDerivative
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the integral of the linear function, as defined in the notes
