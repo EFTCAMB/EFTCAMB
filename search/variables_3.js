@@ -4,6 +4,7 @@ var searchData=
   ['eft_5fmathematical_5fstability',['eft_mathematical_stability',['../structeftcamb__main_1_1eftcamb.html#a816ae30eccbc56349614c5cd297a1535',1,'eftcamb_main::eftcamb']]],
   ['eft_5fnames_5fmax_5flength',['eft_names_max_length',['../namespaceeftdef.html#afabc483d9c679cd5e08684aa52ef7d0f',1,'eftdef']]],
   ['eft_5fphysical_5fstability',['eft_physical_stability',['../structeftcamb__main_1_1eftcamb.html#a982c8b2a46bf6ca3236974bb0e0c271e',1,'eftcamb_main::eftcamb']]],
+  ['eft_5frgr_5fnum_5fpoints',['eft_rgr_num_points',['../namespaceeftdef.html#aa20f80d06eff182c8e574c6001b1b160',1,'eftdef']]],
   ['eftadditionalpriors',['eftadditionalpriors',['../structeftcamb__main_1_1eftcamb.html#a559bc52e4ccbe7c5fc9309bda4e99557',1,'eftcamb_main::eftcamb']]],
   ['eftat',['eftat',['../structeftcamb__cache_1_1eftcamb__timestep__cache.html#adce45716fd6e56741ceb5fd143c12dca',1,'eftcamb_cache::eftcamb_timestep_cache']]],
   ['eftbt',['eftbt',['../structeftcamb__cache_1_1eftcamb__timestep__cache.html#acc4966f178353b90435c8eed9883427d',1,'eftcamb_cache::eftcamb_timestep_cache']]],

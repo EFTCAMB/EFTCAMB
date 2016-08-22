@@ -98,20 +98,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>This is the abstract type for parametrized functions. As a rule, when there is a free function in EFT it should be declared as a class inheriting from parametrized_function. This guarantees maximum performances as well as maximum flexibility.  
+<p>This is the abstract type for parametrized functions. As a rule, when there is a free function in EFT it should be declared as a class inheriting from parametrized_function_1D. This guarantees maximum performances as well as maximum flexibility.  
  <a href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a11db73873346e8e4b0c9026d815c60cf"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a11db73873346e8e4b0c9026d815c60cf">init</a> =&gt; ParametrizedFunction1DInitialize</td></tr>
-<tr class="memdesc:a11db73873346e8e4b0c9026d815c60cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">subroutine that initializes the name and latex name of the function.  <a href="#a11db73873346e8e4b0c9026d815c60cf">More...</a><br /></td></tr>
-<tr class="separator:a11db73873346e8e4b0c9026d815c60cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4d427223408ce332c7a27f5da778cfb"><td class="memItemLeft" align="right" valign="top">procedure(<a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DInitialize.html">ParametrizedFunction1DInitialize</a>), deferred&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#aa4d427223408ce332c7a27f5da778cfb">init</a></td></tr>
+<tr class="memdesc:aa4d427223408ce332c7a27f5da778cfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">subroutine that initializes the name and latex name of the function.  <a href="#aa4d427223408ce332c7a27f5da778cfb">More...</a><br /></td></tr>
+<tr class="separator:aa4d427223408ce332c7a27f5da778cfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae5597cda67af8d83a09627dc2b3dd9ae"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#ae5597cda67af8d83a09627dc2b3dd9ae">init_from_file</a> =&gt; ParametrizedFunction1DInitFromFile</td></tr>
 <tr class="memdesc:ae5597cda67af8d83a09627dc2b3dd9ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">subroutine that reads a Ini file looking for the parameters of the function.  <a href="#ae5597cda67af8d83a09627dc2b3dd9ae">More...</a><br /></td></tr>
 <tr class="separator:ae5597cda67af8d83a09627dc2b3dd9ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac175303f311ffbe9f2b14eacca379343"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#ac175303f311ffbe9f2b14eacca379343">init_parameters</a> =&gt; ParametrizedFunction1DInit</td></tr>
-<tr class="memdesc:ac175303f311ffbe9f2b14eacca379343"><td class="mdescLeft">&#160;</td><td class="mdescRight">subroutine that initializes the function parameters based on the values found in an input array.  <a href="#ac175303f311ffbe9f2b14eacca379343">More...</a><br /></td></tr>
-<tr class="separator:ac175303f311ffbe9f2b14eacca379343"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ad99dc028353a0bb9668d01ce1ce5f2"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a8ad99dc028353a0bb9668d01ce1ce5f2">init_parameters</a> =&gt; ParametrizedFunction1DInitParams</td></tr>
+<tr class="memdesc:a8ad99dc028353a0bb9668d01ce1ce5f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">subroutine that initializes the function parameters based on the values found in an input array.  <a href="#a8ad99dc028353a0bb9668d01ce1ce5f2">More...</a><br /></td></tr>
+<tr class="separator:a8ad99dc028353a0bb9668d01ce1ce5f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0560e1d6792d6a8a6b183633a330281a"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a0560e1d6792d6a8a6b183633a330281a">feedback</a> =&gt; ParametrizedFunction1DFeedback</td></tr>
 <tr class="memdesc:a0560e1d6792d6a8a6b183633a330281a"><td class="mdescLeft">&#160;</td><td class="mdescRight">subroutine that prints to screen the informations about the function.  <a href="#a0560e1d6792d6a8a6b183633a330281a">More...</a><br /></td></tr>
 <tr class="separator:a0560e1d6792d6a8a6b183633a330281a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,36 +121,36 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:acff67f2d35d829ae158a05d8a16d9c41"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#acff67f2d35d829ae158a05d8a16d9c41">parameter_names_latex</a> =&gt; ParametrizedFunction1DParameterNamesLatex</td></tr>
 <tr class="memdesc:acff67f2d35d829ae158a05d8a16d9c41"><td class="mdescLeft">&#160;</td><td class="mdescRight">subroutine that returns the i-th parameter name of the function in latex format.  <a href="#acff67f2d35d829ae158a05d8a16d9c41">More...</a><br /></td></tr>
 <tr class="separator:acff67f2d35d829ae158a05d8a16d9c41"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a40a57eaec234650c366f1454bae7c2d8"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a40a57eaec234650c366f1454bae7c2d8">parameter_value</a> =&gt; ParametrizedFunction1DValue</td></tr>
-<tr class="memdesc:a40a57eaec234650c366f1454bae7c2d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">subroutine that returns the value of the function i-th parameter.  <a href="#a40a57eaec234650c366f1454bae7c2d8">More...</a><br /></td></tr>
-<tr class="separator:a40a57eaec234650c366f1454bae7c2d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67127ac31ffa44571ea15c72cf7a381a"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a67127ac31ffa44571ea15c72cf7a381a">first_derivative</a> =&gt; ParametrizedFunction1DFirstDerivative</td></tr>
-<tr class="memdesc:a67127ac31ffa44571ea15c72cf7a381a"><td class="mdescLeft">&#160;</td><td class="mdescRight">function that returns the first derivative of the function.  <a href="#a67127ac31ffa44571ea15c72cf7a381a">More...</a><br /></td></tr>
-<tr class="separator:a67127ac31ffa44571ea15c72cf7a381a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad0a898ce9fbcee048bdb2fb719fae4b4"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#ad0a898ce9fbcee048bdb2fb719fae4b4">second_derivative</a> =&gt; ParametrizedFunction1DSecondDerivative</td></tr>
-<tr class="memdesc:ad0a898ce9fbcee048bdb2fb719fae4b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">function that returns the second derivative of the function.  <a href="#ad0a898ce9fbcee048bdb2fb719fae4b4">More...</a><br /></td></tr>
-<tr class="separator:ad0a898ce9fbcee048bdb2fb719fae4b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a49808a65dc9ea123b61d9e5efa72cc7a"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a49808a65dc9ea123b61d9e5efa72cc7a">third_derivative</a> =&gt; ParametrizedFunction1DThirdDerivative</td></tr>
-<tr class="memdesc:a49808a65dc9ea123b61d9e5efa72cc7a"><td class="mdescLeft">&#160;</td><td class="mdescRight">function that returns the third derivative of the function.  <a href="#a49808a65dc9ea123b61d9e5efa72cc7a">More...</a><br /></td></tr>
-<tr class="separator:a49808a65dc9ea123b61d9e5efa72cc7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a505173f25c7d7017344a6ed2ff4d6563"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a505173f25c7d7017344a6ed2ff4d6563">integral</a> =&gt; ParametrizedFunction1DIntegral</td></tr>
-<tr class="memdesc:a505173f25c7d7017344a6ed2ff4d6563"><td class="mdescLeft">&#160;</td><td class="mdescRight">function that returns the strange integral that we need for w_DE.  <a href="#a505173f25c7d7017344a6ed2ff4d6563">More...</a><br /></td></tr>
-<tr class="separator:a505173f25c7d7017344a6ed2ff4d6563"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa286e504659c30d8b39ea4fb5aa710cd"><td class="memItemLeft" align="right" valign="top">procedure&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#aa286e504659c30d8b39ea4fb5aa710cd">parameter_value</a> =&gt; ParametrizedFunction1DParameterValues</td></tr>
+<tr class="memdesc:aa286e504659c30d8b39ea4fb5aa710cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">subroutine that returns the value of the function i-th parameter.  <a href="#aa286e504659c30d8b39ea4fb5aa710cd">More...</a><br /></td></tr>
+<tr class="separator:aa286e504659c30d8b39ea4fb5aa710cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06542bee60f62566007163994838192d"><td class="memItemLeft" align="right" valign="top">procedure(<a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DFirstDerivative.html">ParametrizedFunction1DFirstDerivative</a>), deferred&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a06542bee60f62566007163994838192d">first_derivative</a></td></tr>
+<tr class="memdesc:a06542bee60f62566007163994838192d"><td class="mdescLeft">&#160;</td><td class="mdescRight">function that returns the first derivative of the function.  <a href="#a06542bee60f62566007163994838192d">More...</a><br /></td></tr>
+<tr class="separator:a06542bee60f62566007163994838192d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af7d3230bafe0d8265aa9471ed35e2077"><td class="memItemLeft" align="right" valign="top">procedure(<a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DSecondDerivative.html">ParametrizedFunction1DSecondDerivative</a>), deferred&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#af7d3230bafe0d8265aa9471ed35e2077">second_derivative</a></td></tr>
+<tr class="memdesc:af7d3230bafe0d8265aa9471ed35e2077"><td class="mdescLeft">&#160;</td><td class="mdescRight">function that returns the second derivative of the function.  <a href="#af7d3230bafe0d8265aa9471ed35e2077">More...</a><br /></td></tr>
+<tr class="separator:af7d3230bafe0d8265aa9471ed35e2077"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afcff842f77a44965b8f65b338e447018"><td class="memItemLeft" align="right" valign="top">procedure(<a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DThirdDerivative.html">ParametrizedFunction1DThirdDerivative</a>), deferred&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#afcff842f77a44965b8f65b338e447018">third_derivative</a></td></tr>
+<tr class="memdesc:afcff842f77a44965b8f65b338e447018"><td class="mdescLeft">&#160;</td><td class="mdescRight">function that returns the third derivative of the function.  <a href="#afcff842f77a44965b8f65b338e447018">More...</a><br /></td></tr>
+<tr class="separator:afcff842f77a44965b8f65b338e447018"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2bfe9d208fd8eab729d8c3ca80163323"><td class="memItemLeft" align="right" valign="top">procedure(<a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DIntegral.html">ParametrizedFunction1DIntegral</a>), deferred&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a2bfe9d208fd8eab729d8c3ca80163323">integral</a></td></tr>
+<tr class="memdesc:a2bfe9d208fd8eab729d8c3ca80163323"><td class="mdescLeft">&#160;</td><td class="mdescRight">function that returns the strange integral that we need for w_DE.  <a href="#a2bfe9d208fd8eab729d8c3ca80163323">More...</a><br /></td></tr>
+<tr class="separator:a2bfe9d208fd8eab729d8c3ca80163323"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a922d1a310d7fc63e234b63837b1e9381"><td class="memItemLeft" align="right" valign="top">integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a922d1a310d7fc63e234b63837b1e9381">parameter_number</a></td></tr>
-<tr class="memdesc:a922d1a310d7fc63e234b63837b1e9381"><td class="mdescLeft">&#160;</td><td class="mdescRight">number of parameters defining the parametrized function  <a href="#a922d1a310d7fc63e234b63837b1e9381">More...</a><br /></td></tr>
+<tr class="memdesc:a922d1a310d7fc63e234b63837b1e9381"><td class="mdescLeft">&#160;</td><td class="mdescRight">number of parameters defining the parametrized function.  <a href="#a922d1a310d7fc63e234b63837b1e9381">More...</a><br /></td></tr>
 <tr class="separator:a922d1a310d7fc63e234b63837b1e9381"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6d9c5b2244b8d5dadc97b59e2d71551d"><td class="memItemLeft" align="right" valign="top">character(len=:), allocatable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a6d9c5b2244b8d5dadc97b59e2d71551d">name</a></td></tr>
-<tr class="memdesc:a6d9c5b2244b8d5dadc97b59e2d71551d"><td class="mdescLeft">&#160;</td><td class="mdescRight">name of the function  <a href="#a6d9c5b2244b8d5dadc97b59e2d71551d">More...</a><br /></td></tr>
+<tr class="memdesc:a6d9c5b2244b8d5dadc97b59e2d71551d"><td class="mdescLeft">&#160;</td><td class="mdescRight">name of the function.  <a href="#a6d9c5b2244b8d5dadc97b59e2d71551d">More...</a><br /></td></tr>
 <tr class="separator:a6d9c5b2244b8d5dadc97b59e2d71551d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaf0c12cc1e048e286cba3fcc462d39bf"><td class="memItemLeft" align="right" valign="top">character(len=:), allocatable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#aaf0c12cc1e048e286cba3fcc462d39bf">name_latex</a></td></tr>
-<tr class="memdesc:aaf0c12cc1e048e286cba3fcc462d39bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">latex name of the function  <a href="#aaf0c12cc1e048e286cba3fcc462d39bf">More...</a><br /></td></tr>
+<tr class="memdesc:aaf0c12cc1e048e286cba3fcc462d39bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">latex name of the function.  <a href="#aaf0c12cc1e048e286cba3fcc462d39bf">More...</a><br /></td></tr>
 <tr class="separator:aaf0c12cc1e048e286cba3fcc462d39bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This is the abstract type for parametrized functions. As a rule, when there is a free function in EFT it should be declared as a class inheriting from parametrized_function. This guarantees maximum performances as well as maximum flexibility. </p>
+<div class="textblock"><p>This is the abstract type for parametrized functions. As a rule, when there is a free function in EFT it should be declared as a class inheriting from parametrized_function_1D. This guarantees maximum performances as well as maximum flexibility. </p>
 
 <p>Definition at line <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html#l00043">43</a> of file <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html">03_abstract_parametrizations_1D.f90</a>.</p>
 </div><h2 class="groupheader">Member Function/Subroutine Documentation</h2>
@@ -173,12 +173,12 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a67127ac31ffa44571ea15c72cf7a381a"></a>
+<a class="anchor" id="a06542bee60f62566007163994838192d"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">procedure eftcamb_abstract_parametrizations_1d::parametrized_function_1d::first_derivative </td>
+          <td class="memname">procedure( <a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DFirstDerivative.html">ParametrizedFunction1DFirstDerivative</a> ), deferred eftcamb_abstract_parametrizations_1d::parametrized_function_1d::first_derivative </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -192,12 +192,12 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a11db73873346e8e4b0c9026d815c60cf"></a>
+<a class="anchor" id="aa4d427223408ce332c7a27f5da778cfb"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">procedure eftcamb_abstract_parametrizations_1d::parametrized_function_1d::init </td>
+          <td class="memname">procedure( <a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DInitialize.html">ParametrizedFunction1DInitialize</a> ), deferred eftcamb_abstract_parametrizations_1d::parametrized_function_1d::init </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -230,7 +230,7 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ac175303f311ffbe9f2b14eacca379343"></a>
+<a class="anchor" id="a8ad99dc028353a0bb9668d01ce1ce5f2"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -249,12 +249,12 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a505173f25c7d7017344a6ed2ff4d6563"></a>
+<a class="anchor" id="a2bfe9d208fd8eab729d8c3ca80163323"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">procedure eftcamb_abstract_parametrizations_1d::parametrized_function_1d::integral </td>
+          <td class="memname">procedure( <a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DIntegral.html">ParametrizedFunction1DIntegral</a> ), deferred eftcamb_abstract_parametrizations_1d::parametrized_function_1d::integral </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -306,7 +306,7 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a40a57eaec234650c366f1454bae7c2d8"></a>
+<a class="anchor" id="aa286e504659c30d8b39ea4fb5aa710cd"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -326,12 +326,12 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ad0a898ce9fbcee048bdb2fb719fae4b4"></a>
+<a class="anchor" id="af7d3230bafe0d8265aa9471ed35e2077"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">procedure eftcamb_abstract_parametrizations_1d::parametrized_function_1d::second_derivative </td>
+          <td class="memname">procedure( <a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DSecondDerivative.html">ParametrizedFunction1DSecondDerivative</a> ), deferred eftcamb_abstract_parametrizations_1d::parametrized_function_1d::second_derivative </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -345,12 +345,12 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a49808a65dc9ea123b61d9e5efa72cc7a"></a>
+<a class="anchor" id="afcff842f77a44965b8f65b338e447018"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">procedure eftcamb_abstract_parametrizations_1d::parametrized_function_1d::third_derivative </td>
+          <td class="memname">procedure( <a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DThirdDerivative.html">ParametrizedFunction1DThirdDerivative</a> ), deferred eftcamb_abstract_parametrizations_1d::parametrized_function_1d::third_derivative </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -375,7 +375,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>name of the function </p>
+<p>name of the function. </p>
 
 <p>Definition at line <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html#l00046">46</a> of file <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html">03_abstract_parametrizations_1D.f90</a>.</p>
 
@@ -391,7 +391,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>latex name of the function </p>
+<p>latex name of the function. </p>
 
 <p>Definition at line <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html#l00047">47</a> of file <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html">03_abstract_parametrizations_1D.f90</a>.</p>
 
@@ -407,7 +407,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>number of parameters defining the parametrized function </p>
+<p>number of parameters defining the parametrized function. </p>
 
 <p>Definition at line <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html#l00045">45</a> of file <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html">03_abstract_parametrizations_1D.f90</a>.</p>
 
@@ -419,7 +419,7 @@ Public Attributes</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Aug 21 2016 09:46:31 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 22 2016 09:06:52 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

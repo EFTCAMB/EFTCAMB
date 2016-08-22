@@ -11,6 +11,7 @@ var searchData=
   ['eftcamb_5flinear_5fparametrizations_5f1d',['eftcamb_linear_parametrizations_1d',['../namespaceeftcamb__linear__parametrizations__1d.html',1,'']]],
   ['eftcamb_5fmain',['eftcamb_main',['../namespaceeftcamb__main.html',1,'']]],
   ['eftcamb_5fmixed_5falgorithms',['eftcamb_mixed_algorithms',['../namespaceeftcamb__mixed__algorithms.html',1,'']]],
+  ['eftcamb_5fneutral_5fparametrization_5f1d',['eftcamb_neutral_parametrization_1d',['../namespaceeftcamb__neutral__parametrization__1d.html',1,'']]],
   ['eftcamb_5fpure_5feft_5fstd',['eftcamb_pure_eft_std',['../namespaceeftcamb__pure__eft__std.html',1,'']]],
   ['eftcamb_5freturntogr',['eftcamb_returntogr',['../namespaceeftcamb__returntogr.html',1,'']]],
   ['eftcamb_5frootfind',['eftcamb_rootfind',['../namespaceeftcamb__rootfind.html',1,'']]],

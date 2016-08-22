@@ -11,6 +11,7 @@ var searchData=
   ['compute_5fsecondorder_5feft_5ffunctions',['compute_secondorder_eft_functions',['../structeftcamb__abstract__model_1_1eftcamb__model.html#ab412cc119f21a479d8af337e5af0be0b',1,'eftcamb_abstract_model::eftcamb_model::compute_secondorder_eft_functions()'],['../structeftcamb__pure__eft__std_1_1eftcamb__std__pure__eft.html#a01dbca18cc7130df466f65874cd41e69',1,'eftcamb_pure_eft_std::eftcamb_std_pure_eft::compute_secondorder_eft_functions()']]],
   ['compute_5ftensor_5ffactors',['compute_tensor_factors',['../structeftcamb__abstract__model_1_1eftcamb__model.html#a996a2091ec7108b03b488372fa69ed90',1,'eftcamb_abstract_model::eftcamb_model']]],
   ['constantparametrized1dfeedback',['constantparametrized1dfeedback',['../namespaceeftcamb__constant__parametrization__1d.html#a7fe7a006137f748fc7d7c120fb497dd4',1,'eftcamb_constant_parametrization_1d']]],
+  ['constantparametrized1dfirstderivative',['constantparametrized1dfirstderivative',['../namespaceeftcamb__constant__parametrization__1d.html#adbc6b197a69b6994961b1d938c932c46',1,'eftcamb_constant_parametrization_1d']]],
   ['constantparametrized1dinit',['constantparametrized1dinit',['../namespaceeftcamb__constant__parametrization__1d.html#a8062ff9c9073aaaf81ff5642123e3439',1,'eftcamb_constant_parametrization_1d']]],
   ['constantparametrized1dinitfromfile',['constantparametrized1dinitfromfile',['../namespaceeftcamb__constant__parametrization__1d.html#a14231c6dc7acb5927c115c9c6ab998da',1,'eftcamb_constant_parametrization_1d']]],
   ['constantparametrized1dinitialize',['constantparametrized1dinitialize',['../namespaceeftcamb__constant__parametrization__1d.html#a2edd61e5d99f2bfa73d75cc1b8a2dd0a',1,'eftcamb_constant_parametrization_1d']]],
@@ -18,5 +19,7 @@ var searchData=
   ['constantparametrized1dparameternames',['constantparametrized1dparameternames',['../namespaceeftcamb__constant__parametrization__1d.html#a98f079f191de3aaa96fbf5639c697a2c',1,'eftcamb_constant_parametrization_1d']]],
   ['constantparametrized1dparameternameslatex',['constantparametrized1dparameternameslatex',['../namespaceeftcamb__constant__parametrization__1d.html#aa7292a2367b1f4c7f8a7961d2f553a47',1,'eftcamb_constant_parametrization_1d']]],
   ['constantparametrized1dparametervalues',['constantparametrized1dparametervalues',['../namespaceeftcamb__constant__parametrization__1d.html#aea7ae7edd044513dc721f49bf9dc8e9f',1,'eftcamb_constant_parametrization_1d']]],
+  ['constantparametrized1dsecondderivative',['constantparametrized1dsecondderivative',['../namespaceeftcamb__constant__parametrization__1d.html#a021cb7b6b7ca984fd8e5d27c2fec048f',1,'eftcamb_constant_parametrization_1d']]],
+  ['constantparametrized1dthirdderivative',['constantparametrized1dthirdderivative',['../namespaceeftcamb__constant__parametrization__1d.html#a2a522e3a8a04e6acc504413b28916406',1,'eftcamb_constant_parametrization_1d']]],
   ['constantparametrized1dvalue',['constantparametrized1dvalue',['../namespaceeftcamb__constant__parametrization__1d.html#a9e67c9f55eba11c8e9a31cb54ec8ae70',1,'eftcamb_constant_parametrization_1d']]]
 ];

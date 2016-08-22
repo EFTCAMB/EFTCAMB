@@ -5,6 +5,7 @@ var searchData=
   ['02_5froot_5ffinding_2ef90',['02_root_finding.f90',['../02__root__finding_8f90.html',1,'']]],
   ['02_5futilities_2ef90',['02_utilities.f90',['../02__utilities_8f90.html',1,'']]],
   ['03_5fabstract_5fparametrizations_5f1d_2ef90',['03_abstract_parametrizations_1D.f90',['../03__abstract__parametrizations__1D_8f90.html',1,'']]],
+  ['03p0_5fneutral_5fparametrizations_2ef90',['03p0_neutral_parametrizations.f90',['../03p0__neutral__parametrizations_8f90.html',1,'']]],
   ['03p1_5fconstant_5fparametrizations_2ef90',['03p1_constant_parametrizations.f90',['../03p1__constant__parametrizations_8f90.html',1,'']]],
   ['03p2_5flinear_5fparametrizations_2ef90',['03p2_linear_parametrizations.f90',['../03p2__linear__parametrizations_8f90.html',1,'']]],
   ['04_5fabstract_5fparametrizations_5f2d_2ef90',['04_abstract_parametrizations_2D.f90',['../04__abstract__parametrizations__2D_8f90.html',1,'']]],

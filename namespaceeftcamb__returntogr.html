@@ -83,6 +83,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 </div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#func-members">Functions/Subroutines</a>  </div>
   <div class="headertitle">
 <div class="title">eftcamb_returntogr Module Reference</div>  </div>
 </div><!--header-->
@@ -90,13 +92,80 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <p>This module contains the RGR algorithm. This operates on general EFT models.  
 <a href="#details">More...</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions/Subroutines</h2></td></tr>
+<tr class="memitem:a43f42e486e1b8099f36b0087466fd8fe"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__returntogr.html#a43f42e486e1b8099f36b0087466fd8fe">eftcambreturntogr</a> ()</td></tr>
+<tr class="memdesc:a43f42e486e1b8099f36b0087466fd8fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes the return to GR of a theory.  <a href="#a43f42e486e1b8099f36b0087466fd8fe">More...</a><br /></td></tr>
+<tr class="separator:a43f42e486e1b8099f36b0087466fd8fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeee3ab5cb370662110caad67734f5ad1"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__returntogr.html#aeee3ab5cb370662110caad67734f5ad1">eftcambreturntogr_functions</a> (a, eft_functions)</td></tr>
+<tr class="memdesc:aeee3ab5cb370662110caad67734f5ad1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes the EFT functions as we need them for the RGR function.  <a href="#aeee3ab5cb370662110caad67734f5ad1">More...</a><br /></td></tr>
+<tr class="separator:aeee3ab5cb370662110caad67734f5ad1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This module contains the RGR algorithm. This operates on general EFT models. </p>
 <dl class="section author"><dt>Author</dt><dd>Bin Hu, Marco Raveri </dd></dl>
-</div></div><!-- contents -->
+</div><h2 class="groupheader">Function/Subroutine Documentation</h2>
+<a class="anchor" id="a43f42e486e1b8099f36b0087466fd8fe"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">subroutine eftcamb_returntogr::eftcambreturntogr </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Subroutine that computes the return to GR of a theory. </p>
+
+<p>Definition at line <a class="el" href="10__EFTCAMB__RGR_8f90_source.html#l00042">42</a> of file <a class="el" href="10__EFTCAMB__RGR_8f90_source.html">10_EFTCAMB_RGR.f90</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="aeee3ab5cb370662110caad67734f5ad1"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">subroutine eftcamb_returntogr::eftcambreturntogr_functions </td>
+          <td>(</td>
+          <td class="paramtype">real(dl), intent(in)&#160;</td>
+          <td class="paramname"><em>a</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">real(dl), dimension(21), intent(out)&#160;</td>
+          <td class="paramname"><em>eft_functions</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Subroutine that computes the EFT functions as we need them for the RGR function. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">a</td><td>scale factor at which EFT funcitons are computed.</td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">eft_functions</td><td>vector containing the values of the EFT functions minus their GR value. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="10__EFTCAMB__RGR_8f90_source.html#l00108">108</a> of file <a class="el" href="10__EFTCAMB__RGR_8f90_source.html">10_EFTCAMB_RGR.f90</a>.</p>
+
+</div>
+</div>
+</div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Aug 21 2016 09:46:31 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 22 2016 09:06:52 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>
