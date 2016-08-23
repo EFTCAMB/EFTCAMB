@@ -172,6 +172,8 @@ contains
         adotoa   = eft_cache%adotoa
         ! compute massive neutrinos stuff:
         ! Massive neutrinos mod:
+        eft_cache%grhonu_tot = 0._dl
+        eft_cache%gpinu_tot  = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl

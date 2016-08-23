@@ -1400,6 +1400,15 @@ contains
         end if
         ! EFTCAMB MOD END.
 
+        if (EV%EFTCAMBactive) then ! IW
+            write (1,'(8e15.5)')  EV%eft_cache%a, EV%eft_cache%tau, EV%eft_cache%adotoa, EV%eft_cache%Hdot, EV%eft_cache%Hdotdot, EV%eft_cache%grhov_t
+            write (2,'(25e15.5)') EV%eft_cache%a, EV%eft_cache%tau, EV%eft_cache%EFTOmegaV, EV%eft_cache%EFTOmegaP, EV%eft_cache%EFTOmegaPP, EV%eft_cache%EFTOmegaPPP,&
+                & EV%eft_cache%EFTGamma1V, EV%eft_cache%EFTGamma1P, EV%eft_cache%EFTGamma2V, EV%eft_cache%EFTGamma2P, EV%eft_cache%EFTGamma3V, EV%eft_cache%EFTGamma3P,&
+                & EV%eft_cache%EFTGamma4V, EV%eft_cache%EFTGamma4P, EV%eft_cache%EFTGamma4PP, EV%eft_cache%EFTGamma5V, EV%eft_cache%EFTGamma5P, EV%eft_cache%EFTGamma6V, EV%eft_cache%EFTGamma6P
+             write (3,'(12e15.6)') EV%eft_cache%a, EV%eft_cache%tau, EV%eft_cache%EFTc, EV%eft_cache%EFTLambda, EV%eft_cache%EFTcdot, EV%eft_cache%EFTLambdadot, EV%eft_cache%grhoq,&
+                & EV%eft_cache%gpresq, EV%eft_cache%grhodotq, EV%eft_cache%gpresdotq
+        end if
+
         ! EFTCAMB MOD START: initialization of DE perturbations.
         if (CP%EFTCAMB%EFTflag==0) then
             if (w_lam /= -1 .and. w_Perturb) then
@@ -1417,6 +1426,15 @@ contains
         end if
         ! EFTCAMB MOD END
 
+        ! Debug code. Prints Einstein equations factors.
+        if (EV%EFTCAMBactive) then !IW
+            write (8,'(10e15.5)') EV%eft_cache%a, EV%eft_cache%tau, EV%eft_cache%EFTpiA, EV%eft_cache%EFTpiB, EV%eft_cache%EFTpiC, EV%eft_cache%EFTpiD, EV%eft_cache%EFTpiE
+            write (4,'(7e15.5)') EV%eft_cache%a, EV%eft_cache%tau, EV%eft_cache%pi, EV%eft_cache%pidot, EV%eft_cache%pidotdot
+            write (7,'(15E15.5)') EV%eft_cache%a, EV%eft_cache%tau, EV%eft_cache%EFTeomF, EV%eft_cache%EFTeomN, EV%eft_cache%EFTeomX, EV%eft_cache%EFTeomY, EV%eft_cache%EFTeomG, EV%eft_cache%EFTeomU,&
+                & EV%eft_cache%EFTeomL, EV%eft_cache%EFTeomM, EV%eft_cache%EFTeomNdot, EV%eft_cache%EFTeomVdot, EV%eft_cache%EFTeomXdot
+        end if
+        ! EFTCAMB MOD END
+
         ! EFTCAMB MOD START: compute z,dz before loading radiation and photon
         if ( CP%EFTCAMB%EFTflag==0 .or. .not. EV%EFTCAMBactive) then
             z  = (0.5_dl*dgrho/k + etak)/adotoa
@@ -1428,6 +1446,11 @@ contains
                 & - 0.5_dl*dgrho/k/(1._dl+EV%eft_cache%EFTOmegaV) -adotoa*EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc) -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
         end if
         ! EFTCAMB MOD END.
+
+        if (EV%EFTCAMBactive) then
+            write (5,'(7e15.5)') EV%eft_cache%a, EV%eft_cache%tau, z, dz, EV%eft_cache%sigma, 0._dl, etak
+            write (6,'(7e15.5)') EV%eft_cache%a, EV%eft_cache%tau, clxc, clxb, EV%eft_cache%clxg, EV%eft_cache%clxr
+        end if
 
         if (EV%no_nu_multpoles) then
             clxr   = -4*dz/k
@@ -2388,11 +2411,12 @@ contains
                 ayprime(2) = 0.5_dl*dgq + CP%curv*z
             end if
         else if (CP%EFTCAMB%EFTflag/=0.and.CP%flat.and. EV%EFTCAMBactive) then
+
             ! compute z, dz, sigma and equation for etak:
             EV%eft_cache%z = 1._dl/EV%eft_cache%EFTeomG*(etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
             z              = EV%eft_cache%z
 
-            EV%eft_cache%dz = 1._dl/EV%eft_cache%EFTeomU*(-2*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z +etak -0.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*(grhog_t*clxg+grhor_t*clxr)&
+            EV%eft_cache%dz = 1._dl/EV%eft_cache%EFTeomU*(-2*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z +etak -0.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*( grhog_t*clxg +grhor_t*clxr )&
                 & -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
             dz              = EV%eft_cache%dz
 
@@ -2400,7 +2424,7 @@ contains
             sigma              = EV%eft_cache%sigma
 
             ! Eom:
-            ayprime(2)            = ( 0.5_dl*dgq/(1._dl+EV%eft_cache%EFTOmegaV) + k2/3._dl*EV%eft_cache%EFTeomF/CP%eft_par_cache%h0_Mpc + k2/3._dl*(EV%eft_cache%EFTeomU -EV%eft_cache%EFTeomX)*z )/EV%eft_cache%EFTeomX
+            ayprime(2)         = ( 0.5_dl*dgq/(1._dl+EV%eft_cache%EFTOmegaV) + k2/3._dl*EV%eft_cache%EFTeomF/CP%eft_par_cache%h0_Mpc + k2/3._dl*(EV%eft_cache%EFTeomU -EV%eft_cache%EFTeomX)*z )/EV%eft_cache%EFTeomX
 
         end if
         ! EFTCAMB MOD END
@@ -2442,6 +2466,7 @@ contains
                 end if
             end if
             ! store in cache:
+            EV%eft_cache%pidot    = ayprime(EV%w_ix)
             EV%eft_cache%pidotdot = ayprime(EV%w_ix+1)
         else
             ayprime(EV%w_ix)   = 0._dl
@@ -2955,7 +2980,6 @@ contains
             end if
         else if ( CP%EFTCAMB%EFTFlag /= 0 ) then
             ! compute gpres: add radiation and massless neutrinos to massive neutrinos
-            !gpres = gpres + (grhog_t+grhor_t)/3._dl IW
             ! initialize the cache:
             call EV%eft_cache%initialize()
             ! start to fill the cache:
