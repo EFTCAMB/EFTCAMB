@@ -27,8 +27,6 @@
 module EFTCAMB_neutral_parametrization_1D
 
     use precision
-    use EFTDef
-    use AMLutils
     use EFTCAMB_abstract_parametrizations_1D
 
     implicit none
