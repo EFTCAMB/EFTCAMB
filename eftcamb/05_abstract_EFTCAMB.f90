@@ -301,27 +301,16 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-
-        ! IW: differences here:
-
         eft_cache%EFTeomF     = 1.5_dl/(eft_cache%k*(1._dl+eft_cache%EFTOmegaV))*((eft_cache%grhoq +eft_cache%gpresq)*eft_cache%pi&                             ! Background operators
             & +eft_cache%adotoa**2*a*eft_cache%EFTOmegaP*eft_cache%pi +a*eft_cache%adotoa*eft_cache%EFTOmegaP*eft_cache%pidot)&
             & +1.5_dl*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V*( eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)/(eft_cache%k*(1._dl+eft_cache%EFTOmegaV))&  ! Gamma2
             & +1.5_dl*eft_cache%EFTGamma3V/(1._dl+eft_cache%EFTOmegaV)*(eft_cache%k-3._dl*( eft_cache%Hdot -eft_cache%adotoa**2)/(eft_cache%k))*eft_cache%pi&   ! Gamma3
             & +1.5_dl*eft_cache%EFTGamma4V/(1._dl+eft_cache%EFTOmegaV)*eft_cache%k*eft_cache%pi&                                                                ! Gamma4
             & -1.5_dl*eft_cache%EFTGamma4V/(1._dl+eft_cache%EFTOmegaV)*( eft_cache%Hdot-eft_cache%adotoa**2)/eft_cache%k*eft_cache%pi
-
-
-
         eft_cache%EFTeomG     = +1._dl + 0.5_dl*a*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)&               ! Background operators
             & +0.5_dl*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V/eft_cache%adotoa/(1._dl+eft_cache%EFTOmegaV)&  ! Gamma2
             & +1.5_dl*eft_cache%EFTGamma3V/(1._dl+eft_cache%EFTOmegaV)&                                          ! Gamma3
             & +0.5_dl*eft_cache%EFTGamma4V/(1._dl+eft_cache%EFTOmegaV)                                           ! Gamma4
-
-
-
-        ! IW: differences here:
-
         eft_cache%EFTeomL     = -1.5_dl*a*eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)*(3._dl*eft_cache%adotoa**2 -eft_cache%Hdot)*eft_cache%pi&                              ! Background operators
             & -1.5_dl*a*eft_cache%EFTOmegaP/(1._dl +eft_cache%EFTOmegaV)*eft_cache%adotoa*eft_cache%pidot&
             & -0.5_dl*a*eft_cache%EFTOmegaP/(1._dl +eft_cache%EFTOmegaV)*eft_cache%k**2*eft_cache%pi&
@@ -333,9 +322,6 @@ contains
             & -1.5_dl*eft_cache%EFTGamma3V/(1._dl +eft_cache%EFTOmegaV)*( eft_cache%k**2 -3._dl*(eft_cache%Hdot-eft_cache%adotoa**2))*eft_cache%pi&                              ! Gamma3
             & +1.5_dl*eft_cache%EFTGamma4V/(1._dl +eft_cache%EFTOmegaV)*( eft_cache%Hdot -eft_cache%adotoa**2 -eft_cache%k**2/3._dl)*eft_cache%pi&                               ! Gamma4
             & +4._dl*eft_cache%EFTGamma6V*eft_cache%k**2/eft_cache%adotoa*( eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)/(1._dl+eft_cache%EFTOmegaV)                          ! Gamma6
-
-        ! IW: differences here:
-
         eft_cache%EFTeomM     = eft_cache%gpresdotq*eft_cache%pi +(eft_cache%grhoq +eft_cache%gpresq)*(eft_cache%pidot +eft_cache%adotoa*eft_cache%pi)&     ! Background operators
             & +(a*eft_cache%adotoa)**2*eft_cache%EFTOmegaPP*eft_cache%pidot +a**2*eft_cache%adotoa**3*eft_cache%EFTOmegaPP*eft_cache%pi&
             & +a*eft_cache%adotoa*eft_cache%EFTOmegaP*( eft_cache%pidotdot + ( eft_cache%Hdot/eft_cache%adotoa +4._dl*eft_cache%adotoa)*eft_cache%pidot&

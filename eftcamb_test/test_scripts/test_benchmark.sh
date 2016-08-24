@@ -43,7 +43,7 @@ cd $CAMB_DIR
 printf "\nCompiling EFTCAMB benchmarker: "
 
 make clean &> /dev/null
-make eftbenchmark  &> $RESULTS_LOGS/benchmarker_log.txt
+make eftcamb_apps  &> $RESULTS_LOGS/benchmarker_log.txt
 
 # check if compilation succeded:
 if [ $? -eq 0 ]; then
@@ -69,7 +69,7 @@ for i in $TEST_PARAMS_DIR/*.ini;
 
 	printf "  Doing %s: " "$filename"
 	
-	./eftbenchmark $i &> $RESULTS_BENCHMARK_DIR/$filename.bench
+	./benchmark.x $i &> $RESULTS_BENCHMARK_DIR/$filename.bench
 	
 	# check if run succeded:
 	if [ $? -eq 0 ]; then

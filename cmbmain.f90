@@ -118,7 +118,7 @@
 
     integer :: l_smooth_sample = 3000 !assume transfer functions effectively small for k>2*l_smooth_sample
 
-    real(dl) :: fixq = 1._dl !Debug output of one q
+    real(dl) :: fixq = 0._dl !Debug output of one q
 
     real(dl) :: ALens = 1._dl
 
@@ -944,49 +944,6 @@
 
     tau=taustart
     ind=1
-
-    ! EFTCAMB MOD START: It's always nice to plot the evolution of perturbations in DE/MG models!
-        ! In order to print the user needs to choose the scale by means of fixq and then turno on the
-        ! flag that prints quantities from the output routine.
-        ! It is suggested to run the code on just one core. IW
-
-        if (fixq/=0._dl) then
-            tol1=tol/exp(AccuracyBoost-1)
-
-            write(*,*) 'EFTCAMB: start printing.'
-            call CreateTxtFile('Files/Debug_Evolution_1/1_FRW.dat',1)
-            call CreateTxtFile('Files/Debug_Evolution_1/2_EFTfunctions.dat',2)
-            call CreateTxtFile('Files/Debug_Evolution_1/3_EFTBackground.dat',3)
-            call CreateTxtFile('Files/Debug_Evolution_1/4_PiFieldSolution.dat',4)
-            call CreateTxtFile('Files/Debug_Evolution_1/5_MetricSolution.dat',5)
-            call CreateTxtFile('Files/Debug_Evolution_1/6_DensitySolution.dat',6)
-            call CreateTxtFile('Files/Debug_Evolution_1/7_EinsteinEqFactors.dat',7)
-            call CreateTxtFile('Files/Debug_Evolution_1/8_PiEqFactors.dat',8)
-            call CreateTxtFile('Files/Debug_Evolution_1/9_Sources.dat',9)
-            call CreateTxtFile('Files/Debug_Evolution_1/10_MuGamma.dat',10)
-
-            do j=1,10000
-                tauend = taustart +REAL(j-1)*(CP%tau0-taustart)/REAL(10000-1)
-                call GaugeInterface_EvolveScal(EV,tau,y,tauend,tol1,ind,c,w)
-                yprime = 0
-                call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
-                call output(EV,y,j,tau,sources)
-            end do
-
-            close(1)
-            close(2)
-            close(3)
-            close(4)
-            close(5)
-            close(6)
-            close(7)
-            close(8)
-            close(9)
-            close(10)
-            close(11)
-            write(*,*) 'Stop printing'
-            stop
-        end if
 
     !     Begin timestep loop.
 

@@ -96,7 +96,7 @@ profile: directories $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90
 	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90 $(F90CRLINK) -o $(CAMB_DIR)/profiler.x
 
 clean_apps:
-	@rm $(CAMB_DIR)/*.x
+	@rm -f $(CAMB_DIR)/*.x
 	
 # add the apps targets to the main ones:
 all: eftcamb_apps

@@ -43,7 +43,7 @@ cd $CAMB_DIR
 printf "\nCompiling EFTCAMB profiler: "
 
 make clean &> /dev/null
-make eftprofile  &> $RESULTS_LOGS/profiler_log.txt
+make eftcamb_apps  &> $RESULTS_LOGS/profiler_log.txt
 
 # check if compilation succeded:
 if [ $? -eq 0 ]; then
@@ -69,8 +69,8 @@ for i in $TEST_PARAMS_DIR/*.ini;
 
 	printf "  Doing %s: " "$filename"
 	
-	./eftprofile $i &> $RESULTS_SPECTRA_RAW/$filename.log
-	gprof -b eftprofile &> $RESULTS_PROFILE/$filename.prof
+	./profiler.x $i &> $RESULTS_SPECTRA_RAW/$filename.log
+	gprof -b profiler.x &> $RESULTS_PROFILE/$filename.prof
 	
 	# check if run succeded:
 	if [ $? -eq 0 ]; then
