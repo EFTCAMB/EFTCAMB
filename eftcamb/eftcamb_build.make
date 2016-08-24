@@ -65,3 +65,40 @@ eftcamb: camb
 .PHONY: eftcamb_doc
 eftcamb_doc:
 	@cd $(EFTCAMB_DIR)/../eftcamb_doc && doxygen EFTCAMB_doxyfile
+
+# EFTCAMB APPS:
+
+APPS_SOURCES := $(wildcard $(EFTCAMB_APPS)/*.f90)
+APPS_SOURCES += $(wildcard $(EFTCAMB_APPS)/*.F90)
+
+APPS_NAMES   := $(notdir $(patsubst %.f90,%,$(APPS_SOURCES)))
+APPS_NAMES   := $(notdir $(patsubst %.F90,%,$(APPS_NAMES)))
+
+APPS_BINS    := $(addsuffix .x, $(APPS_NAMES))
+APPS_BINS    := $(addprefix $(CAMB_DIR)/, $(APPS_BINS))
+
+.PHONY: eftcamb_apps
+
+eftcamb_apps: directories $(CAMBOBJ) $(APPS_BINS) profile
+
+$(CAMB_DIR)/%.x: directories $(CAMBOBJ) $(EFTCAMB_APPS)/%.f90 
+	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(EFTCAMB_APPS)/$*.f90 $(F90CRLINK) -o $(CAMB_DIR)/$*.x
+
+$(CAMB_DIR)/%.x: directories $(CAMBOBJ) $(EFTCAMB_APPS)/%.F90 
+	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(EFTCAMB_APPS)/$*.F90 $(F90CRLINK) -o $(CAMB_DIR)/$*.x
+
+# PROFILER: this requires a special target
+ifeq ($(MAKECMDGOALS), profile)
+F90FLAGS += -pg
+endif
+
+profile: directories $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90 
+	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90 $(F90CRLINK) -o $(CAMB_DIR)/profiler.x
+
+clean_apps:
+	@rm $(CAMB_DIR)/*.x
+	
+# add the apps targets to the main ones:
+all: eftcamb_apps
+clean: clean_apps
+

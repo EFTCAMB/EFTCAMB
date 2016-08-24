@@ -17,8 +17,7 @@ gmon.out
 
 # ignore the executables:
 camb
-eftbenchmark
-eftprofile
+*.x
 
 # ignore the compilation folder:
 Release
