@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 03p1_constant_parametrizations.f90
+!> @file 04p1_constant_parametrizations.f90
 !! This file contains the definition of the constant parametrization, inheriting from
 !! parametrized_function_1D.
 
@@ -29,6 +29,7 @@ module EFTCAMB_constant_parametrization_1D
     use precision
     use EFTDef
     use AMLutils
+    use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_1D
 
     implicit none
@@ -203,13 +204,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the constant function.
-    function ConstantParametrized1DValue( self, x )
+    function ConstantParametrized1DValue( self, x, eft_cache )
 
         implicit none
 
-        class(constant_parametrization_1D) :: self  !< the base class
-        real(dl), intent(in)               :: x     !< the input scale factor
-        real(dl) :: ConstantParametrized1DValue     !< the output value
+        class(constant_parametrization_1D)                 :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ConstantParametrized1DValue                         !< the output value
 
         ConstantParametrized1DValue = self%constant_value
 
@@ -217,13 +219,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the first derivative of the constant function.
-    function ConstantParametrized1DFirstDerivative( self, x )
+    function ConstantParametrized1DFirstDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(constant_parametrization_1D) :: self          !< the base class
-        real(dl), intent(in)               :: x             !< the input scale factor
-        real(dl) :: ConstantParametrized1DFirstDerivative   !< the output value
+        class(constant_parametrization_1D)                 :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ConstantParametrized1DFirstDerivative               !< the output value
 
         ConstantParametrized1DFirstDerivative = 0._dl
 
@@ -231,13 +234,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the second derivative of the constant function.
-    function ConstantParametrized1DSecondDerivative( self, x )
+    function ConstantParametrized1DSecondDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(constant_parametrization_1D) :: self          !< the base class
-        real(dl), intent(in)               :: x             !< the input scale factor
-        real(dl) :: ConstantParametrized1DSecondDerivative  !< the output value
+        class(constant_parametrization_1D)                 :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ConstantParametrized1DSecondDerivative              !< the output value
 
         ConstantParametrized1DSecondDerivative = 0._dl
 
@@ -245,13 +249,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the third derivative of the constant function.
-    function ConstantParametrized1DThirdDerivative( self, x )
+    function ConstantParametrized1DThirdDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(constant_parametrization_1D) :: self          !< the base class
-        real(dl), intent(in)               :: x             !< the input scale factor
-        real(dl) :: ConstantParametrized1DThirdDerivative   !< the output value
+        class(constant_parametrization_1D)                 :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ConstantParametrized1DThirdDerivative               !< the output value
 
         ConstantParametrized1DThirdDerivative = 0._dl
 
@@ -259,13 +264,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the strange integral that we need for w_DE.
-    function ConstantParametrized1DIntegral( self, x )
+    function ConstantParametrized1DIntegral( self, x, eft_cache )
 
         implicit none
 
-        class(constant_parametrization_1D) :: self     !< the base class
-        real(dl), intent(in)               :: x        !< the scale factor at which the integral is wanted
-        real(dl) :: ConstantParametrized1DIntegral     !< the output value
+        class(constant_parametrization_1D)                 :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ConstantParametrized1DIntegral                      !< the output value
 
         ConstantParametrized1DIntegral = x**(-1._dl-3._dl*self%constant_value)
 

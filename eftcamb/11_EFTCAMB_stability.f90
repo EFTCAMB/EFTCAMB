@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 10_EFTCAMB_stability.f90
+!> @file 11_EFTCAMB_stability.f90
 !! This file contains the stability detection algorithm of EFTCAMB.
 !! This operates on general EFT models but needs CP to be set.
 

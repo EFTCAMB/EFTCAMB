@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 03p2_linear_parametrizations.f90
+!> @file 04p2_linear_parametrizations.f90
 !! This file contains the definition of the linear parametrization, inheriting from
 !! parametrized_function_1D.
 
@@ -29,6 +29,7 @@ module EFTCAMB_linear_parametrizations_1D
     use precision
     use EFTDef
     use AMLutils
+    use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_1D
 
     implicit none
@@ -202,13 +203,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the linear function in the scale factor.
-    function LinearParametrized1DValue( self, x )
+    function LinearParametrized1DValue( self, x, eft_cache )
 
         implicit none
 
-        class(linear_parametrization_1D) :: self  !< the base class
-        real(dl), intent(in)             :: x     !< the input scale factor
-        real(dl) :: LinearParametrized1DValue     !< the output value
+        class(linear_parametrization_1D)                   :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: LinearParametrized1DValue                           !< the output value
 
         LinearParametrized1DValue = self%linear_value*x
 
@@ -216,13 +218,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the first derivative, wrt scale factor, of the linear function.
-    function LinearParametrized1DFirstDerivative( self, x )
+    function LinearParametrized1DFirstDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(linear_parametrization_1D) :: self          !< the base class
-        real(dl), intent(in)             :: x             !< the input scale factor
-        real(dl) :: LinearParametrized1DFirstDerivative   !< the output value
+        class(linear_parametrization_1D)                   :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: LinearParametrized1DFirstDerivative                 !< the output value
 
         LinearParametrized1DFirstDerivative = self%linear_value
 
@@ -230,13 +233,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the second derivative of the linear function.
-    function LinearParametrized1DSecondDerivative( self, x )
+    function LinearParametrized1DSecondDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(linear_parametrization_1D) :: self          !< the base class
-        real(dl), intent(in)             :: x             !< the input scale factor
-        real(dl) :: LinearParametrized1DSecondDerivative  !< the output value
+        class(linear_parametrization_1D)                   :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: LinearParametrized1DSecondDerivative                !< the output value
 
         LinearParametrized1DSecondDerivative = 0._dl
 
@@ -244,13 +248,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the third derivative of the linear function.
-    function LinearParametrized1DThirdDerivative( self, x )
+    function LinearParametrized1DThirdDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(linear_parametrization_1D) :: self          !< the base class
-        real(dl), intent(in)             :: x             !< the input scale factor
-        real(dl) :: LinearParametrized1DThirdDerivative   !< the output value
+        class(linear_parametrization_1D)                   :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: LinearParametrized1DThirdDerivative                 !< the output value
 
         LinearParametrized1DThirdDerivative = 0._dl
 
@@ -258,13 +263,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the integral of the linear function, as defined in the notes
-    function LinearParametrized1DIntegral( self, x )
+    function LinearParametrized1DIntegral( self, x, eft_cache )
 
         implicit none
 
-        class(linear_parametrization_1D) :: self     !< the base class
-        real(dl), intent(in)             :: x        !< the scale factor at which the integral is wanted
-        real(dl) :: LinearParametrized1DIntegral     !< the output value
+        class(linear_parametrization_1D)                   :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: LinearParametrized1DIntegral                        !< the output value
 
         LinearParametrized1DIntegral = Exp(-3._dl*(x-1._dl)*self%linear_value)/x
 

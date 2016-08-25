@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 03_abstract_parametrizations_1D.f90
+!> @file 04_abstract_parametrizations_1D.f90
 !! This file contains the abstract class for generic parametrizations for 1D functions
 !! that are used by several models in EFTCAMB. When there is a free function
 !! in EFT it should be declared as a class inheriting from parametrized_function_1D.
@@ -31,6 +31,7 @@ module EFTCAMB_abstract_parametrizations_1D
 
     use precision
     use IniFile
+    use EFTCAMB_cache
 
     implicit none
 
@@ -58,11 +59,11 @@ module EFTCAMB_abstract_parametrizations_1D
         procedure :: parameter_names_latex => ParametrizedFunction1DParameterNamesLatex    !< subroutine that returns the i-th parameter name of the function in latex format.
         procedure :: parameter_value       => ParametrizedFunction1DParameterValues        !< subroutine that returns the value of the function i-th parameter.
         ! evaluation procedures:
-        procedure( ParametrizedFunction1DValue            ), deferred :: value             !< function that returns the value of the function.
-        procedure( ParametrizedFunction1DFirstDerivative  ), deferred :: first_derivative  !< function that returns the first derivative of the function.
-        procedure( ParametrizedFunction1DSecondDerivative ), deferred :: second_derivative !< function that returns the second derivative of the function.
-        procedure( ParametrizedFunction1DThirdDerivative  ), deferred :: third_derivative  !< function that returns the third derivative of the function.
-        procedure( ParametrizedFunction1DIntegral         ), deferred :: integral          !< function that returns the strange integral that we need for w_DE.
+        procedure( ParametrizedFunction1DValue            ), deferred :: value             !< function that returns the value of the function. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.
+        procedure( ParametrizedFunction1DFirstDerivative  ), deferred :: first_derivative  !< function that returns the first derivative of the function. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.
+        procedure( ParametrizedFunction1DSecondDerivative ), deferred :: second_derivative !< function that returns the second derivative of the function. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.
+        procedure( ParametrizedFunction1DThirdDerivative  ), deferred :: third_derivative  !< function that returns the third derivative of the function. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.
+        procedure( ParametrizedFunction1DIntegral         ), deferred :: integral          !< function that returns the strange integral that we need for w_DE. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.
 
     end type parametrized_function_1D
 
@@ -85,61 +86,76 @@ module EFTCAMB_abstract_parametrizations_1D
         end subroutine ParametrizedFunction1DInitialize
 
         ! ---------------------------------------------------------------------------------------------
-        !> Function that returns the value of the function.
-        function ParametrizedFunction1DValue( self, x )
-            use precision
+        !> Function that returns the value of the function. The EFTCAMB cache is passed as an optional
+        !! argument in case the parametrization uses some background quantity.
+        function ParametrizedFunction1DValue( self, x, eft_cache )
+            use    precision
+            use    EFTCAMB_cache
             import parametrized_function_1D
             implicit none
-            class(parametrized_function_1D) :: self  !< the base class
-            real(dl), intent(in)            :: x     !< the input scale factor
-            real(dl) :: ParametrizedFunction1DValue  !< the output value
+            class(parametrized_function_1D)                    :: self      !< the base class
+            real(dl), intent(in)                               :: x         !< the input scale factor
+            type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+            real(dl) :: ParametrizedFunction1DValue                         !< the output value
         end function ParametrizedFunction1DValue
 
         ! ---------------------------------------------------------------------------------------------
         !> Function that returns the value of the first derivative of the function
-        !! with respect to the scale factor.
-        function ParametrizedFunction1DFirstDerivative( self, x )
-            use precision
+        !! with respect to the scale factor. The EFTCAMB cache is passed as an optional
+        !! argument in case the parametrization uses some background quantity.
+        function ParametrizedFunction1DFirstDerivative( self, x, eft_cache )
+            use    precision
+            use    EFTCAMB_cache
             import parametrized_function_1D
             implicit none
-            class(parametrized_function_1D) :: self             !< the base class
-            real(dl), intent(in)            :: x                !< the input scale factor
-            real(dl) :: ParametrizedFunction1DFirstDerivative   !< the output value
+            class(parametrized_function_1D)                    :: self      !< the base class
+            real(dl), intent(in)                               :: x         !< the input scale factor
+            type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+            real(dl) :: ParametrizedFunction1DFirstDerivative               !< the output value
         end function ParametrizedFunction1DFirstDerivative
 
         ! ---------------------------------------------------------------------------------------------
         !> Function that returns the value of the second derivative of the function
-        !! with respect to the scale factor.
-        function ParametrizedFunction1DSecondDerivative( self, x )
-            use precision
+        !! with respect to the scale factor. The EFTCAMB cache is passed as an optional
+        !! argument in case the parametrization uses some background quantity.
+        function ParametrizedFunction1DSecondDerivative( self, x, eft_cache )
+            use    precision
+            use    EFTCAMB_cache
             import parametrized_function_1D
             implicit none
-            class(parametrized_function_1D) :: self             !< the base class
-            real(dl), intent(in)            :: x                !< the input scale factor
-            real(dl) :: ParametrizedFunction1DSecondDerivative  !< the output value
+            class(parametrized_function_1D)                    :: self      !< the base class
+            real(dl), intent(in)                               :: x         !< the input scale factor
+            type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+            real(dl) :: ParametrizedFunction1DSecondDerivative              !< the output value
         end function ParametrizedFunction1DSecondDerivative
 
         ! ---------------------------------------------------------------------------------------------
         !> Function that returns the value of the third derivative of the function
-        !! with respect to the scale factor.
-        function ParametrizedFunction1DThirdDerivative( self, x )
-            use precision
+        !! with respect to the scale factor. The EFTCAMB cache is passed as an optional
+        !! argument in case the parametrization uses some background quantity.
+        function ParametrizedFunction1DThirdDerivative( self, x, eft_cache )
+            use    precision
+            use    EFTCAMB_cache
             import parametrized_function_1D
             implicit none
-            class(parametrized_function_1D) :: self            !< the base class
-            real(dl), intent(in)            :: x               !< the input scale factor
-            real(dl) :: ParametrizedFunction1DThirdDerivative  !< the output value
+            class(parametrized_function_1D)                    :: self      !< the base class
+            real(dl), intent(in)                               :: x         !< the input scale factor
+            type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+            real(dl) :: ParametrizedFunction1DThirdDerivative               !< the output value
         end function ParametrizedFunction1DThirdDerivative
 
         ! ---------------------------------------------------------------------------------------------
         !> Function that returns the integral of the function, as defined in the notes.
-        function ParametrizedFunction1DIntegral( self, x )
-            use precision
+        !! The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.
+        function ParametrizedFunction1DIntegral( self, x, eft_cache )
+            use    precision
+            use    EFTCAMB_cache
             import parametrized_function_1D
             implicit none
-            class(parametrized_function_1D) :: self     !< the base class
-            real(dl), intent(in)            :: x        !< the scale factor at which the integral is wanted
-            real(dl) :: ParametrizedFunction1DIntegral  !< the output value
+            class(parametrized_function_1D)                    :: self      !< the base class
+            real(dl), intent(in)                               :: x         !< the input scale factor
+            type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+            real(dl) :: ParametrizedFunction1DIntegral                      !< the output value
         end function ParametrizedFunction1DIntegral
 
         ! ---------------------------------------------------------------------------------------------

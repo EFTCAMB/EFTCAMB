@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 10_EFTCAMB_main.f90
+!> @file 11_EFTCAMB_main.f90
 !! This file contains the general EFTCAMB driver. We have a type that encapsulate all
 !! EFTCAMB parameters and stuff and this is owned by CAMB to do all EFT calculations.
 

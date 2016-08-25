@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 05p2_abstract_EFTCAMB_full.f90
+!> @file 06p2_abstract_EFTCAMB_full.f90
 !! This file contains the abstract definition of all the places where EFTCAMB interacts
 !! with CAMB in case of a full mapping model. All models implementing a model in which
 !! the cosmological background is computed from the values of the EFT functions

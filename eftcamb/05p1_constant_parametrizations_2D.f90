@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04p1_constant_parametrizations_2D.f90
+!> @file 05p1_constant_parametrizations_2D.f90
 !! This file contains the definition of the constant parametrization, inheriting from
 !! parametrized_function_2D.
 

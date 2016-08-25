@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 10_EFTCAMB_RGR.f90
+!> @file 11_EFTCAMB_RGR.f90
 !! This file contains the RGR algorithm. This operates on general EFT models.
 
 

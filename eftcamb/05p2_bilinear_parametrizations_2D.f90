@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04p2_bilinear_parametrizations_2D.f90
+!> @file 05p2_bilinear_parametrizations_2D.f90
 !! This file contains the definition of the bilinear parametrization, inheriting from
 !! parametrized_function_2D.
 

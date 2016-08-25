@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04p0_neutral_parametrizations.f90
+!> @file 05p0_neutral_parametrizations.f90
 !! This file contains the definition of neutral parametrizations that can be used when
 !! parametrized functions should take their GR value.
 

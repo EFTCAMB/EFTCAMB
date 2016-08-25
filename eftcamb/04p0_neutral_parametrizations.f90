@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 03p0_neutral_parametrizations.f90
+!> @file 04p0_neutral_parametrizations.f90
 !! This file contains the definition of neutral parametrizations that can be used when
 !! parametrized functions should take their GR value.
 
@@ -27,6 +27,7 @@
 module EFTCAMB_neutral_parametrization_1D
 
     use precision
+    use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_1D
 
     implicit none
@@ -96,13 +97,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the zero function.
-    function ZeroParametrized1DValue( self, x )
+    function ZeroParametrized1DValue( self, x, eft_cache )
 
         implicit none
 
-        class(zero_parametrization_1D) :: self   !< the base class
-        real(dl), intent(in)           :: x      !< the input scale factor
-        real(dl) :: ZeroParametrized1DValue      !< the output value
+        class(zero_parametrization_1D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized1DValue                             !< the output value
 
         ZeroParametrized1DValue = 0._dl
 
@@ -110,13 +112,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the first derivative of the zero function.
-    function ZeroParametrized1DFirstDerivative( self, x )
+    function ZeroParametrized1DFirstDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(zero_parametrization_1D) :: self         !< the base class
-        real(dl), intent(in)           :: x            !< the input scale factor
-        real(dl) :: ZeroParametrized1DFirstDerivative  !< the output value
+        class(zero_parametrization_1D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized1DFirstDerivative                   !< the output value
 
         ZeroParametrized1DFirstDerivative = 0._dl
 
@@ -124,13 +127,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the second derivative of the zero function.
-    function ZeroParametrized1DSecondDerivative( self, x )
+    function ZeroParametrized1DSecondDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(zero_parametrization_1D) :: self          !< the base class
-        real(dl), intent(in)           :: x             !< the input scale factor
-        real(dl) :: ZeroParametrized1DSecondDerivative  !< the output value
+        class(zero_parametrization_1D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized1DSecondDerivative                  !< the output value
 
         ZeroParametrized1DSecondDerivative = 0._dl
 
@@ -138,13 +142,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the third derivative of the zero function.
-    function ZeroParametrized1DThirdDerivative( self, x )
+    function ZeroParametrized1DThirdDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(zero_parametrization_1D) :: self         !< the base class
-        real(dl), intent(in)           :: x            !< the input scale factor
-        real(dl) :: ZeroParametrized1DThirdDerivative  !< the output value
+        class(zero_parametrization_1D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized1DThirdDerivative                   !< the output value
 
         ZeroParametrized1DThirdDerivative = 0._dl
 
@@ -152,13 +157,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the strange integral that we need for w_DE.
-    function ZeroParametrized1DIntegral( self, x )
+    function ZeroParametrized1DIntegral( self, x, eft_cache )
 
         implicit none
 
-        class(zero_parametrization_1D) :: self     !< the base class
-        real(dl), intent(in)           :: x        !< the scale factor at which the integral is wanted
-        real(dl) :: ZeroParametrized1DIntegral     !< the output value
+        class(zero_parametrization_1D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized1DIntegral                          !< the output value
 
         ZeroParametrized1DIntegral = 1._dl/x
 
@@ -191,13 +197,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the LCDM wDE function.
-    function wDELCDMParametrized1DValue( self, x )
+    function wDELCDMParametrized1DValue( self, x, eft_cache )
 
         implicit none
 
-        class(wDE_LCDM_parametrization_1D) :: self   !< the base class
-        real(dl), intent(in)               :: x      !< the input scale factor
-        real(dl) :: wDELCDMParametrized1DValue       !< the output value
+        class(wDE_LCDM_parametrization_1D)                 :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: wDELCDMParametrized1DValue                          !< the output value
 
         wDELCDMParametrized1DValue = -1._dl
 
@@ -205,13 +212,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the first derivative of the LCDM wDE function.
-    function wDELCDMParametrized1DFirstDerivative( self, x )
+    function wDELCDMParametrized1DFirstDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(wDE_LCDM_parametrization_1D) :: self         !< the base class
-        real(dl), intent(in)               :: x            !< the input scale factor
-        real(dl) :: wDELCDMParametrized1DFirstDerivative   !< the output value
+        class(wDE_LCDM_parametrization_1D)                 :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: wDELCDMParametrized1DFirstDerivative                !< the output value
 
         wDELCDMParametrized1DFirstDerivative = 0._dl
 
@@ -219,13 +227,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the second derivative of the LCDM wDE function.
-    function wDELCDMParametrized1DSecondDerivative( self, x )
+    function wDELCDMParametrized1DSecondDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(wDE_LCDM_parametrization_1D) :: self          !< the base class
-        real(dl), intent(in)               :: x             !< the input scale factor
-        real(dl) :: wDELCDMParametrized1DSecondDerivative   !< the output value
+        class(wDE_LCDM_parametrization_1D)                 :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: wDELCDMParametrized1DSecondDerivative               !< the output value
 
         wDELCDMParametrized1DSecondDerivative = 0._dl
 
@@ -233,13 +242,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the third derivative of the LCDM wDE function.
-    function wDELCDMParametrized1DThirdDerivative( self, x )
+    function wDELCDMParametrized1DThirdDerivative( self, x, eft_cache )
 
         implicit none
 
-        class(wDE_LCDM_parametrization_1D) :: self         !< the base class
-        real(dl), intent(in)               :: x            !< the input scale factor
-        real(dl) :: wDELCDMParametrized1DThirdDerivative   !< the output value
+        class(wDE_LCDM_parametrization_1D)                 :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: wDELCDMParametrized1DThirdDerivative                !< the output value
 
         wDELCDMParametrized1DThirdDerivative = 0._dl
 
@@ -247,13 +257,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the strange integral that we need for w_DE.
-    function wDELCDMParametrized1DIntegral( self, x )
+    function wDELCDMParametrized1DIntegral( self, x, eft_cache )
 
         implicit none
 
-        class(wDE_LCDM_parametrization_1D) :: self     !< the base class
-        real(dl), intent(in)               :: x        !< the scale factor at which the integral is wanted
-        real(dl) :: wDELCDMParametrized1DIntegral      !< the output value
+        class(wDE_LCDM_parametrization_1D)                 :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: wDELCDMParametrized1DIntegral                       !< the output value
 
         wDELCDMParametrized1DIntegral = x**2
 

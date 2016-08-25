@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04_abstract_parametrizations_2D.f90
+!> @file 05_abstract_parametrizations_2D.f90
 !! This file contains the abstract class for generic parametrizations for 2D functions
 !! that are used by several models in EFTCAMB. When there is a free function
 !! in EFT it should be declared as a class inheriting from parametrized_function_2D.

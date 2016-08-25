@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 10_EFTCAMB_IC.f90
+!> @file 11_EFTCAMB_IC.f90
 !! This file contains the perturbation initial conditions calculator.
 
 

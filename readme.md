@@ -71,11 +71,12 @@ For this reason we use the following convention for the prefixes:
 
 * ``01_`` compile time utilities
 * ``02_`` pure algorithms
-* ``03_`` general parametrizations for 1D functions
-* ``04_`` general parametrizations for 2D functions
-* ``05_`` abstract implementation of EFT models
-* ``06_`` implementation of pure EFT models
-* ``07_`` implementation of alternative EFT parametrizations
-* ``08_`` implementation of designer mapping EFT models
-* ``09_`` implementation of full mapping EFT models
-* ``10_`` general EFT algorithms (RGR, stability, init)
+* ``03_`` EFTCAMB cache containing the storage for all cosmological quantities of interest
+* ``04_`` general parametrizations for 1D functions
+* ``05_`` general parametrizations for 2D functions
+* ``06_`` abstract implementation of EFT models
+* ``07_`` implementation of pure EFT models
+* ``08_`` implementation of alternative EFT parametrizations
+* ``09_`` implementation of designer mapping EFT models
+* ``10_`` implementation of full mapping EFT models
+* ``11_`` general EFT algorithms (RGR, stability, init)

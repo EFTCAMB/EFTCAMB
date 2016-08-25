@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 05p1_EFTCAMB_GR.f90
+!> @file 06p1_EFTCAMB_GR.f90
 !! This file contains the definition of the GR limit of EFTCAMB.
 
 
