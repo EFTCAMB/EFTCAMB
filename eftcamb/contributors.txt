@@ -5,6 +5,10 @@ Principal developers:
 - Noemi Frusciante: Institut d'Astrophysique de Paris (IAP);
 - Alessandra Silvestri: Instituut Lorentz Leiden University;
 
+Developers:
+
+- Simone Peirone: Instituut Lorentz Leiden University;
+
 Contributors to code developments (in alphabetical order):
 
 - Matteo Rizzato: small fix to the Makefile;
