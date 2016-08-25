@@ -100,8 +100,8 @@ contains
         call self%parameter_names( 1, param_name_1 )
         call self%parameter_names( 2, param_name_2 )
 
-        self%linear_value_1 = Ini_Read_Double_File( Ini, TRIM(self%name)//'_1', 0._dl )
-        self%linear_value_2 = Ini_Read_Double_File( Ini, TRIM(self%name)//'_2', 0._dl )
+        self%linear_value_1 = Ini_Read_Double_File( Ini, TRIM(param_name_1), 0._dl )
+        self%linear_value_2 = Ini_Read_Double_File( Ini, TRIM(param_name_2), 0._dl )
 
     end subroutine BilinearParametrized2DInitFromFile
 
