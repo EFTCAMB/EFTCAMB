@@ -13,7 +13,9 @@ These includes:
 	ifort v>15.0 (?)
 	gcc/gfortran v>6.0
 
-To use other parts of the code, like the test or documentation parts other requirements have to be met:
+To use other parts of the code, like the test or documentation parts other requirements have to be met.
+These include a fully fledged python installation. We warmly suggest to install a
+bundled package like (https://www.continuum.io/downloads).
 
 A docker with all the required libraries is available at [dockerhub](https://hub.docker.com/r/eftcamb/eftbox/).
 
