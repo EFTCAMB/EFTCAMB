@@ -14,6 +14,7 @@ cache: apt
 services:
   - docker
 
+
 notifications:
   slack: eftcamb:c0M48rajcf8rkANZsQCAHoaF
 
@@ -25,6 +26,7 @@ env:
   - ENCRYPTION_LABEL: "978549549c67"
   - COMMIT_AUTHOR_EMAIL: "mraveri@sissa.it"
 
+
 script:
   - while true; do echo 'Travis do not sleep!'; sleep 300s; done &
   - TIME_PID=$!
@@ -35,3 +37,4 @@ script:
 
 after_success:
   - docker run -v $(pwd):$(pwd) -e ENCRYPTION_LABEL -e encrypted_978549549c67_key -e encrypted_978549549c67_iv -e COMMIT_AUTHOR_EMAIL -e TRAVIS_PULL_REQUEST -e TRAVIS_BRANCH -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; bash $(pwd)/eftcamb_doc/deploy_doc.sh "
+
