@@ -97,20 +97,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>Function that returns the integral of the function, as defined in the notes.  
+<p>Function that returns the integral of the function, as defined in the notes. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.  
  <a href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DIntegral.html#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aa9e1abc7888e2c380ff4b8604a9a7ef2"><td class="memItemLeft" align="right" valign="top">real(dl) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DIntegral.html#aa9e1abc7888e2c380ff4b8604a9a7ef2">parametrizedfunction1dintegral</a> (self, x)</td></tr>
-<tr class="separator:aa9e1abc7888e2c380ff4b8604a9a7ef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91bbe46c76637e80a7737bc9a0ca0fc4"><td class="memItemLeft" align="right" valign="top">real(dl) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DIntegral.html#a91bbe46c76637e80a7737bc9a0ca0fc4">parametrizedfunction1dintegral</a> (self, x, eft_cache)</td></tr>
+<tr class="separator:a91bbe46c76637e80a7737bc9a0ca0fc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Function that returns the integral of the function, as defined in the notes. </p>
+<div class="textblock"><p>Function that returns the integral of the function, as defined in the notes. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity. </p>
 
-<p>Definition at line <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html#l00136">136</a> of file <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html">03_abstract_parametrizations_1D.f90</a>.</p>
+<p>Definition at line <a class="el" href="04__abstract__parametrizations__1D_8f90_source.html#l00150">150</a> of file <a class="el" href="04__abstract__parametrizations__1D_8f90_source.html">04_abstract_parametrizations_1D.f90</a>.</p>
 </div><h2 class="groupheader">Member Function/Subroutine Documentation</h2>
-<a class="anchor" id="aa9e1abc7888e2c380ff4b8604a9a7ef2"></a>
+<a class="anchor" id="a91bbe46c76637e80a7737bc9a0ca0fc4"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -124,7 +124,13 @@ Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">real(dl), intent(in)&#160;</td>
-          <td class="paramname"><em>x</em>&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">type(eftcamb_timestep_cache), intent(in), optional&#160;</td>
+          <td class="paramname"><em>eft_cache</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -136,23 +142,24 @@ Public Member Functions</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir"></td><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">x</td><td>the scale factor at which the integral is wanted</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">x</td><td>the input scale factor</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">eft_cache</td><td>the optional input EFTCAMB cache</td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>the output value </dd></dl>
 
-<p>Definition at line <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html#l00137">137</a> of file <a class="el" href="03__abstract__parametrizations__1D_8f90_source.html">03_abstract_parametrizations_1D.f90</a>.</p>
+<p>Definition at line <a class="el" href="04__abstract__parametrizations__1D_8f90_source.html#l00151">151</a> of file <a class="el" href="04__abstract__parametrizations__1D_8f90_source.html">04_abstract_parametrizations_1D.f90</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this interface was generated from the following file:<ul>
-<li>/home/travis/build/EFTCAMB/EFTCAMB/eftcamb/<a class="el" href="03__abstract__parametrizations__1D_8f90_source.html">03_abstract_parametrizations_1D.f90</a></li>
+<li>/home/travis/build/EFTCAMB/EFTCAMB/eftcamb/<a class="el" href="04__abstract__parametrizations__1D_8f90_source.html">04_abstract_parametrizations_1D.f90</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 25 2016 14:28:45 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 25 2016 15:37:05 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>
