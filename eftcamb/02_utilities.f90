@@ -30,7 +30,7 @@ module EFTCAMB_mixed_algorithms
 
     private
 
-    public hunt
+    public hunt, integer_to_string
 
 contains
 
@@ -90,6 +90,23 @@ contains
         goto 3
 
     end subroutine hunt
+
+    ! ---------------------------------------------------------------------------------------------
+    !> This function converts an integer to a string. Usefull for numbered files output.
+    function integer_to_string( number )
+
+        implicit none
+
+        integer, intent(in) :: number               !< Input integer number
+        character(10)       :: integer_to_string    !< Output string with the number
+
+        write( integer_to_string, '(i10)' ) number
+
+        integer_to_string = trim(adjustl( integer_to_string ))
+
+    end function integer_to_string
+
+    !----------------------------------------------------------------------------------------
 
 end module EFTCAMB_mixed_algorithms
 

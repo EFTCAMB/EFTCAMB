@@ -43,15 +43,11 @@ module EFTCAMB_linear_parametrizations_1D
 
     contains
 
-        ! initialization:
-        procedure :: init                  => LinearParametrized1DInitialize          !< subroutine that initializes the linear parametrization.
-        procedure :: init_from_file        => LinearParametrized1DInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
-        procedure :: init_parameters       => LinearParametrized1DInit                !< subroutine that initializes the function parameters based on the values found in an input array.
         ! utility functions:
-        procedure :: feedback              => LinearParametrized1DFeedback            !< subroutine that prints to screen the informations about the function.
-        procedure :: parameter_names       => LinearParametrized1DParameterNames      !< subroutine that returns the i-th parameter name of the function.
-        procedure :: parameter_names_latex => LinearParametrized1DParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format.
+        procedure :: set_param_number      => LinearParametrized1DSetParamNumber      !< subroutine that sets the number of parameters of the linear parametrized function.
+        procedure :: init_parameters       => LinearParametrized1DInitParams          !< subroutine that initializes the function parameters based on the values found in an input array.
         procedure :: parameter_value       => LinearParametrized1DParameterValues     !< subroutine that returns the value of the function i-th parameter.
+        procedure :: feedback              => LinearParametrized1DFeedback            !< subroutine that prints to screen the informations about the function.
 
         ! evaluation procedures:
         procedure :: value                 => LinearParametrized1DValue               !< function that returns the value of the linear function.
@@ -69,44 +65,21 @@ contains
     ! ---------------------------------------------------------------------------------------------
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that initializes the linear parametrization
-    subroutine LinearParametrized1DInitialize( self, name, latexname )
+    !> Subroutine that sets the number of parameters of the linear parametrized function.
+    subroutine LinearParametrized1DSetParamNumber( self )
 
         implicit none
 
-        class(linear_parametrization_1D) :: self         !< the base class
-        character(*), intent(in)         :: name         !< the name of the function
-        character(*), intent(in)         :: latexname    !< the latex name of the function
+        class(linear_parametrization_1D) :: self       !< the base class
 
-        ! store the name of the function:
-        self%name             = TRIM( name )
-        ! store the latex name of the function:
-        self%name_latex       = TRIM( latexname )
         ! initialize the number of parameters:
         self%parameter_number = 1
 
-    end subroutine LinearParametrized1DInitialize
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that reads a Ini file looking for the parameters of the function.
-    subroutine LinearParametrized1DInitFromFile( self, Ini )
-
-        implicit none
-
-        class(linear_parametrization_1D)  :: self   !< the base class
-        type(TIniFile)                    :: Ini    !< Input ini file
-
-        character(len=EFT_names_max_length) :: param_name
-
-        call self%parameter_names( 1, param_name )
-
-        self%linear_value = Ini_Read_Double_File( Ini, TRIM(param_name), 0._dl )
-
-    end subroutine LinearParametrized1DInitFromFile
+    end subroutine LinearParametrized1DSetParamNumber
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the function parameters based on the values found in an input array.
-    subroutine LinearParametrized1DInit( self, array )
+    subroutine LinearParametrized1DInitParams( self, array )
 
         implicit none
 
@@ -115,70 +88,7 @@ contains
 
         self%linear_value = array(1)
 
-    end subroutine LinearParametrized1DInit
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that prints to screen the informations about the function.
-    subroutine LinearParametrized1DFeedback( self )
-
-        implicit none
-
-        class(linear_parametrization_1D)    :: self         !< the base class
-
-        integer                             :: i
-        real(dl)                            :: param_value
-        character(len=EFT_names_max_length) :: param_name
-
-        write(*,*)     'Linear function: ', self%name
-        do i=1, self%parameter_number
-            call self%parameter_names( i, param_name  )
-            call self%parameter_value( i, param_value )
-            write(*,'(a23,a,F12.6)') param_name, '=', param_value
-        end do
-
-    end subroutine LinearParametrized1DFeedback
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that returns the i-th parameter name
-    subroutine LinearParametrized1DParameterNames( self, i, name )
-
-        implicit none
-
-        class(linear_parametrization_1D)  :: self   !< the base class
-        integer     , intent(in)          :: i      !< the index of the parameter
-        character(*), intent(out)         :: name   !< the output name of the i-th parameter
-
-        select case (i)
-            case(1)
-                name = TRIM(self%name)//'0'
-            case default
-                write(*,*) 'Illegal index for parameter_names.'
-                write(*,*) 'Maximum value is:', self%parameter_number
-                call MpiStop('EFTCAMB error')
-        end select
-
-    end subroutine LinearParametrized1DParameterNames
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that returns the latex version of the i-th parameter name
-    subroutine LinearParametrized1DParameterNamesLatex( self, i, latexname )
-
-        implicit none
-
-        class(linear_parametrization_1D) :: self        !< the base class
-        integer     , intent(in)         :: i           !< The index of the parameter
-        character(*), intent(out)        :: latexname   !< the output latex name of the i-th parameter
-
-        select case (i)
-            case(1)
-                latexname = TRIM(self%name_latex)//'_0'
-            case default
-                write(*,*) 'Illegal index for parameter_names.'
-                write(*,*) 'Maximum value is:', self%parameter_number
-                call MpiStop('EFTCAMB error')
-        end select
-
-    end subroutine LinearParametrized1DParameterNamesLatex
+    end subroutine LinearParametrized1DInitParams
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that returns the value of the function i-th parameter.
@@ -200,6 +110,27 @@ contains
         end select
 
     end subroutine LinearParametrized1DParameterValues
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that prints to screen the informations about the function.
+    subroutine LinearParametrized1DFeedback( self )
+
+        implicit none
+
+        class(linear_parametrization_1D)    :: self         !< the base class
+
+        integer                             :: i
+        real(dl)                            :: param_value
+        character(len=EFT_names_max_length) :: param_name
+
+        write(*,*)     'Linear function: ', self%name
+        do i=1, self%parameter_number
+            call self%parameter_names( i, param_name  )
+            call self%parameter_value( i, param_value )
+            write(*,'(a23,a,F12.6)') param_name, '=', param_value
+        end do
+
+    end subroutine LinearParametrized1DFeedback
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the linear function in the scale factor.

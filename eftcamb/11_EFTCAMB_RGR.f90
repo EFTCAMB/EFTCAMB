@@ -43,9 +43,20 @@ contains
 
         implicit none
 
-        if ( CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
+        real(dl) :: eft_functions(21)
+        integer  :: i
 
+        if ( CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
             write(*,'(a,F12.10)') 'EFTCAMB Return to GR time: ', CP%EFTCAMB%EFTCAMB_turn_on_time
+        end if
+
+        if ( CP%EFTCAMB%EFTCAMB_feedback_level > 2 ) then
+
+            call EFTCAMBReturnToGR_functions( CP%EFTCAMB%EFTCAMB_turn_on_time, eft_functions )
+            write(*,'(a)') 'EFT functions at RGR time: '
+            do i=1, 21
+                write(*,*) eft_functions(i)
+            end do
 
         end if
 

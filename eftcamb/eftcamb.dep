@@ -49,9 +49,12 @@ $(OUTPUT_DIR)/equations_EFT.o :  \
 	$(OUTPUT_DIR)/06p3_abstract_EFTCAMB_designer.o
 
 $(OUTPUT_DIR)/04_abstract_parametrizations_1D.o :  \
-	$(OUTPUT_DIR)/inifile.o \
 	$(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o \
-	$(OUTPUT_DIR)/constants.o
+	$(OUTPUT_DIR)/inifile.o \
+	$(OUTPUT_DIR)/constants.o \
+	$(OUTPUT_DIR)/utils.o \
+	$(OUTPUT_DIR)/02_utilities.o \
+	$(OUTPUT_DIR)/01_EFT_def.o
 
 $(OUTPUT_DIR)/05_abstract_parametrizations_2D.o :  \
 	$(OUTPUT_DIR)/inifile.o \
@@ -178,9 +181,12 @@ $(DLL_DIR)/equations_EFT.o :  \
 	$(DLL_DIR)/06p3_abstract_EFTCAMB_designer.o
 
 $(DLL_DIR)/04_abstract_parametrizations_1D.o :  \
-	$(DLL_DIR)/inifile.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
-	$(DLL_DIR)/constants.o
+	$(DLL_DIR)/inifile.o \
+	$(DLL_DIR)/constants.o \
+	$(DLL_DIR)/utils.o \
+	$(DLL_DIR)/02_utilities.o \
+	$(DLL_DIR)/01_EFT_def.o
 
 $(DLL_DIR)/05_abstract_parametrizations_2D.o :  \
 	$(DLL_DIR)/inifile.o \

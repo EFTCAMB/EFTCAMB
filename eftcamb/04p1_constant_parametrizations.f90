@@ -42,16 +42,11 @@ module EFTCAMB_constant_parametrization_1D
 
     contains
 
-        ! initialization:
-        procedure :: init                  => ConstantParametrized1DInitialize          !< subroutine that initializes the constant parametrization.
-        procedure :: init_from_file        => ConstantParametrized1DInitFromFile        !< subroutine that reads a Ini file looking for the parameters of the function.
-        procedure :: init_parameters       => ConstantParametrized1DInit                !< subroutine that initializes the function parameters based on the values found in an input array.
-
         ! utility functions:
-        procedure :: feedback              => ConstantParametrized1DFeedback            !< subroutine that prints to screen the informations about the function.
-        procedure :: parameter_names       => ConstantParametrized1DParameterNames      !< subroutine that returns the i-th parameter name of the function.
-        procedure :: parameter_names_latex => ConstantParametrized1DParameterNamesLatex !< subroutine that returns the i-th parameter name of the function in latex format.
+        procedure :: set_param_number      => ConstantParametrized1DSetParamNumber      !< subroutine that sets the number of parameters of the constant parametrized function.
+        procedure :: init_parameters       => ConstantParametrized1DInitParams          !< subroutine that initializes the function parameters based on the values found in an input array.
         procedure :: parameter_value       => ConstantParametrized1DParameterValues     !< subroutine that returns the value of the function i-th parameter.
+        procedure :: feedback              => ConstantParametrized1DFeedback            !< subroutine that prints to screen the informations about the function.
 
         ! evaluation procedures:
         procedure :: value                 => ConstantParametrized1DValue               !< function that returns the value of the constant function.
@@ -69,44 +64,21 @@ contains
     ! ---------------------------------------------------------------------------------------------
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that initializes the constant parametrization.
-    subroutine ConstantParametrized1DInitialize( self, name, latexname )
+    !> Subroutine that sets the number of parameters of the constant parametrized function.
+    subroutine ConstantParametrized1DSetParamNumber( self )
 
         implicit none
 
         class(constant_parametrization_1D) :: self       !< the base class
-        character(*), intent(in)           :: name       !< the name of the function
-        character(*), intent(in)           :: latexname  !< the latex name of the function
 
-        ! store the name of the function:
-        self%name             = TRIM( name )
-        ! store the latex name of the function:
-        self%name_latex       = TRIM( latexname )
         ! initialize the number of parameters:
         self%parameter_number = 1
 
-    end subroutine ConstantParametrized1DInitialize
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that reads a Ini file looking for the parameters of the function.
-    subroutine ConstantParametrized1DInitFromFile( self, Ini )
-
-        implicit none
-
-        class(constant_parametrization_1D) :: self   !< the base class
-        type(TIniFile)                     :: Ini    !< Input ini file
-
-        character(len=EFT_names_max_length) :: param_name
-
-        call self%parameter_names( 1, param_name )
-
-        self%constant_value = Ini_Read_Double_File( Ini, TRIM(param_name), 0._dl )
-
-    end subroutine ConstantParametrized1DInitFromFile
+    end subroutine ConstantParametrized1DSetParamNumber
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the function parameters based on the values found in an input array.
-    subroutine ConstantParametrized1DInit( self, array )
+    subroutine ConstantParametrized1DInitParams( self, array )
 
         implicit none
 
@@ -115,7 +87,7 @@ contains
 
         self%constant_value = array(1)
 
-    end subroutine ConstantParametrized1DInit
+    end subroutine ConstantParametrized1DInitParams
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints to screen the informations about the function.
@@ -139,49 +111,6 @@ contains
     end subroutine ConstantParametrized1DFeedback
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that returns the i-th parameter name.
-    subroutine ConstantParametrized1DParameterNames( self, i, name )
-
-        implicit none
-
-        class(constant_parametrization_1D) :: self   !< the base class
-        integer     , intent(in)           :: i      !< the index of the parameter
-        character(*), intent(out)          :: name   !< the output name of the i-th parameter
-
-        select case (i)
-            case(1)
-                name = TRIM(self%name)//'0'
-            case default
-                write(*,*) 'Illegal index for parameter_names.'
-                write(*,*) 'Maximum value is:', self%parameter_number
-                call MpiStop('EFTCAMB error')
-        end select
-
-    end subroutine ConstantParametrized1DParameterNames
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that returns the latex version of the i-th parameter name.
-    subroutine ConstantParametrized1DParameterNamesLatex( self, i, latexname )
-
-        implicit none
-
-        class(constant_parametrization_1D) :: self        !< the base class
-        integer     , intent(in)           :: i           !< The index of the parameter
-        character(*), intent(out)          :: latexname   !< the output latex name of the i-th parameter
-
-        select case (i)
-            case(1)
-                latexname = TRIM(self%name_latex)//'_0'
-            case default
-                write(*,*) 'Illegal index for parameter_names.'
-                write(*,*) 'Maximum value is:', self%parameter_number
-                call MpiStop('EFTCAMB error')
-        end select
-
-    end subroutine ConstantParametrized1DParameterNamesLatex
-
-
-    ! ---------------------------------------------------------------------------------------------
     !> Subroutine that returns the value of the function i-th parameter.
     subroutine ConstantParametrized1DParameterValues( self, i, value )
 
@@ -195,6 +124,7 @@ contains
             case(1)
                 value = self%constant_value
             case default
+                write(*,*) 'In constant_parametrization_1D:', self%name
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
                 call MpiStop('EFTCAMB error')

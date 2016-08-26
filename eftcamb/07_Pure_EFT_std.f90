@@ -215,16 +215,16 @@ contains
         end if
 
         ! initialize the names:
-        call self%PureEFTOmega%init ( 'EFTOmega' , '\Omega'       )
-        call self%PureEFTwDE%init   ( 'EFTw'     , 'w'            )
-        call self%PureEFTGamma1%init( 'EFTGamma1', '\gamma^{(1)}' )
-        call self%PureEFTGamma2%init( 'EFTGamma2', '\gamma^{(2)}' )
-        call self%PureEFTGamma3%init( 'EFTGamma3', '\gamma^{(3)}' )
+        call self%PureEFTOmega%set_name ( 'EFTOmega' , '\Omega'       )
+        call self%PureEFTwDE%set_name   ( 'EFTw'     , 'w'            )
+        call self%PureEFTGamma1%set_name( 'EFTGamma1', '\gamma^{(1)}' )
+        call self%PureEFTGamma2%set_name( 'EFTGamma2', '\gamma^{(2)}' )
+        call self%PureEFTGamma3%set_name( 'EFTGamma3', '\gamma^{(3)}' )
 
         if ( .not. self%PureEFTHorndeski ) then
-            call self%PureEFTGamma4%init( 'EFTGamma4', '\gamma^{(4)}' )
-            call self%PureEFTGamma5%init( 'EFTGamma5', '\gamma^{(5)}' )
-            call self%PureEFTGamma6%init( 'EFTGamma6', '\gamma^{(6)}' )
+            call self%PureEFTGamma4%set_name( 'EFTGamma4', '\gamma^{(4)}' )
+            call self%PureEFTGamma5%set_name( 'EFTGamma5', '\gamma^{(5)}' )
+            call self%PureEFTGamma6%set_name( 'EFTGamma6', '\gamma^{(6)}' )
         end if
 
     end subroutine EFTCAMBPureEFTstdAllocateModelSelection

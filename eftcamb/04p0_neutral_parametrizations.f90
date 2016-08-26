@@ -40,7 +40,9 @@ module EFTCAMB_neutral_parametrization_1D
     contains
 
         ! initialization:
-        procedure :: init                  => ZeroParametrized1DInitialize          !< subroutine that initializes the zero parametrization.
+        procedure :: set_param_number      => ZeroParametrized1DSetParamNumber     !< subroutine that sets the number of parameters of the zero function = 0.
+        procedure :: init_parameters       => ZeroParametrized1DInitParams         !< subroutine that initializes the parameters based on the values found in an input array.
+        procedure :: parameter_value       => ZeroParametrized1DParameterValues    !< subroutine that returns the value of the zero function i-th parameter.
 
         ! evaluation procedures:
         procedure :: value                 => ZeroParametrized1DValue               !< function that returns the value of the zero function.
@@ -59,7 +61,9 @@ module EFTCAMB_neutral_parametrization_1D
     contains
 
         ! initialization:
-        procedure :: init                  => wDELCDMParametrized1DInitialize          !< subroutine that initializes the LCDM wDE parametrization.
+        procedure :: set_param_number      => wDELCDMParametrized1DSetParamNumber     !< subroutine that sets the number of parameters of the LCDM wDE function = 0.
+        procedure :: init_parameters       => wDELCDMParametrized1DInitParams         !< subroutine that initializes the LCDM wDE parameters based on the values found in an input array.
+        procedure :: parameter_value       => wDELCDMParametrized1DParameterValues    !< subroutine that returns the value of the LCDM wDE function i-th parameter.
 
         ! evaluation procedures:
         procedure :: value                 => wDELCDMParametrized1DValue               !< function that returns the value of the LCDM wDE function.
@@ -77,23 +81,39 @@ contains
     ! ---------------------------------------------------------------------------------------------
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that initializes the zero parametrization.
-    subroutine ZeroParametrized1DInitialize( self, name, latexname )
+    !> Subroutine that sets the number of parameters of the zero function = 0.
+    subroutine ZeroParametrized1DSetParamNumber( self )
 
         implicit none
 
         class(zero_parametrization_1D)  :: self       !< the base class
-        character(*), intent(in)        :: name       !< the name of the function
-        character(*), intent(in)        :: latexname  !< the latex name of the function
 
-        ! store the name of the function:
-        self%name             = TRIM( name )
-        ! store the latex name of the function:
-        self%name_latex       = TRIM( latexname )
-        ! initialize the number of parameters:
         self%parameter_number = 0
 
-    end subroutine ZeroParametrized1DInitialize
+    end subroutine ZeroParametrized1DSetParamNumber
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the parameters based on the values found in an input array.
+    subroutine ZeroParametrized1DInitParams( self, array )
+
+        implicit none
+
+        class(zero_parametrization_1D)                         :: self   !< the base class.
+        real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
+
+    end subroutine ZeroParametrized1DInitParams
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that returns the value of the zero function i-th parameter.
+    subroutine ZeroParametrized1DParameterValues( self, i, value )
+
+        implicit none
+
+        class(zero_parametrization_1D)  :: self   !< the base class.
+        integer , intent(in)            :: i      !< input number of the parameter
+        real(dl), intent(out)           :: value  !< output value of the parameter
+
+    end subroutine ZeroParametrized1DParameterValues
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the zero function.
@@ -177,23 +197,39 @@ contains
     ! ---------------------------------------------------------------------------------------------
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that initializes the LCDM wDE parametrization.
-    subroutine wDELCDMParametrized1DInitialize( self, name, latexname )
+    !> Subroutine that sets the number of parameters of the LCDM wDE function = 0.
+    subroutine wDELCDMParametrized1DSetParamNumber( self )
 
         implicit none
 
         class(wDE_LCDM_parametrization_1D)  :: self       !< the base class
-        character(*), intent(in)            :: name       !< the name of the function
-        character(*), intent(in)            :: latexname  !< the latex name of the function
 
-        ! store the name of the function:
-        self%name             = TRIM( name )
-        ! store the latex name of the function:
-        self%name_latex       = TRIM( latexname )
-        ! initialize the number of parameters:
         self%parameter_number = 0
 
-    end subroutine wDELCDMParametrized1DInitialize
+    end subroutine wDELCDMParametrized1DSetParamNumber
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the LCDM wDE parameters based on the values found in an input array.
+    subroutine wDELCDMParametrized1DInitParams( self, array )
+
+        implicit none
+
+        class(wDE_LCDM_parametrization_1D)                     :: self   !< the base class.
+        real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
+
+    end subroutine wDELCDMParametrized1DInitParams
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that returns the value of the LCDM wDE function i-th parameter.
+    subroutine wDELCDMParametrized1DParameterValues( self, i, value )
+
+        implicit none
+
+        class(wDE_LCDM_parametrization_1D) :: self   !< the base class.
+        integer , intent(in)               :: i      !< input number of the parameter
+        real(dl), intent(out)              :: value  !< output value of the parameter
+
+    end subroutine wDELCDMParametrized1DParameterValues
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the LCDM wDE function.
