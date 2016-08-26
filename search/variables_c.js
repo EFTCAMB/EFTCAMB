@@ -1,5 +1,7 @@
 var searchData=
 [
+  ['param_5fnames',['param_names',['../structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a1dab001d3f64437f652240b7b4ec6d99',1,'eftcamb_abstract_parametrizations_1d::parametrized_function_1d']]],
+  ['param_5fnames_5flatex',['param_names_latex',['../structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a4c83f1c4e5384d4933ccc1329ca449c5',1,'eftcamb_abstract_parametrizations_1d::parametrized_function_1d']]],
   ['parameter_5fnumber',['parameter_number',['../structeftcamb__abstract__parametrizations__1d_1_1parametrized__function__1d.html#a922d1a310d7fc63e234b63837b1e9381',1,'eftcamb_abstract_parametrizations_1d::parametrized_function_1d::parameter_number()'],['../structeftcamb__abstract__parametrizations__2d_1_1parametrized__function__2d.html#a1acc6e8d71be6d04783a099304555de9',1,'eftcamb_abstract_parametrizations_2d::parametrized_function_2d::parameter_number()'],['../structeftcamb__abstract__model_1_1eftcamb__model.html#a0fdb9ad74be4b89531a1d1a3c6505381',1,'eftcamb_abstract_model::eftcamb_model::parameter_number()']]],
   ['pi',['pi',['../structeftcamb__cache_1_1eftcamb__timestep__cache.html#a088dffc396db48a51b1d4dca42161ec3',1,'eftcamb_cache::eftcamb_timestep_cache']]],
   ['pidot',['pidot',['../structeftcamb__cache_1_1eftcamb__timestep__cache.html#a318d28986126840c5d8a36da3733a43a',1,'eftcamb_cache::eftcamb_timestep_cache']]],
