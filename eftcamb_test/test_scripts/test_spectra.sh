@@ -43,7 +43,7 @@ cd $CAMB_DIR
 printf "\nCompiling EFTCAMB: "
 
 make clean &> /dev/null
-make camb  &> $RESULTS_LOGS/spectra_log.txt
+make camb ifortErr=1 &> $RESULTS_LOGS/spectra_log.txt
 
 # check if compilation succeded:
 if [ $? -eq 0 ]; then

@@ -43,7 +43,7 @@ cd $CAMB_DIR
 printf "\nCompiling EFTCAMB benchmarker: "
 
 make clean &> /dev/null
-make eftcamb_apps  &> $RESULTS_LOGS/benchmarker_log.txt
+make eftcamb_apps ifortErr=1 &> $RESULTS_LOGS/benchmarker_log.txt
 
 # check if compilation succeded:
 if [ $? -eq 0 ]; then

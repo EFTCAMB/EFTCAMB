@@ -43,7 +43,7 @@ cd $CAMB_DIR
 printf "\nCompiling EFTCAMB profiler: "
 
 make clean &> /dev/null
-make profile  &> $RESULTS_LOGS/profiler_log.txt
+make profile ifortErr=1 &> $RESULTS_LOGS/profiler_log.txt
 
 # check if compilation succeded:
 if [ $? -eq 0 ]; then
