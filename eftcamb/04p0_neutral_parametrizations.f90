@@ -32,6 +32,10 @@ module EFTCAMB_neutral_parametrization_1D
 
     implicit none
 
+    private
+
+    public zero_parametrization_1D, wDE_LCDM_parametrization_1D
+
     ! ---------------------------------------------------------------------------------------------
     !> Type containing the constant function parametrization that returns all zero values.
     !! Inherits from parametrized_function_1D.

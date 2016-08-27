@@ -28,6 +28,7 @@ module EFTCAMB_pure_EFT_std
 
     use precision
     use IniFile
+    use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_neutral_parametrization_1D
     use EFTCAMB_constant_parametrization_1D
@@ -35,6 +36,10 @@ module EFTCAMB_pure_EFT_std
     use EFTCAMB_abstract_model_designer
 
     implicit none
+
+    private
+
+    public EFTCAMB_std_pure_EFT
 
     !----------------------------------------------------------------------------------------
     !> This is the pure EFT model with the six functions of time and w_DE.
@@ -237,6 +242,8 @@ contains
 
         class(EFTCAMB_std_pure_EFT) :: self   !< the base class
         real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
+
+        stop 'IW'
 
     end subroutine EFTCAMBPureEFTstdInitModelParameters
 

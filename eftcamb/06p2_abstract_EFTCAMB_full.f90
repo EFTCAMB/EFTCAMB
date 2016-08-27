@@ -32,9 +32,14 @@ module EFTCAMB_abstract_model_full
 
     use precision
     use IniFile
+    use EFTCAMB_cache
     use EFTCAMB_abstract_model
 
     implicit none
+
+    private
+
+    public EFTCAMB_full_model
 
     !----------------------------------------------------------------------------------------
     !> This is the abstract type for EFTCAMB models.
@@ -42,8 +47,9 @@ module EFTCAMB_abstract_model_full
 
     contains
 
-        procedure :: compute_dtauda => EFTCAMBFullModelComputeDtauda !< function that computes dtauda = 1/sqrt(a^2H^2).
-        procedure :: compute_adotoa => EFTCAMBFullModelComputeAdotoa !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
+        procedure :: compute_dtauda   => EFTCAMBFullModelComputeDtauda    !< function that computes dtauda = 1/sqrt(a^2H^2).
+        procedure :: compute_adotoa   => EFTCAMBFullModelComputeAdotoa    !< subroutine that computes adotoa = H.
+        procedure :: compute_H_derivs => EFTCAMBFullModelComputeHubbleDer !< subroutine that computes the two derivatives wrt conformal time of H.
 
     end type EFTCAMB_full_model
 
@@ -62,12 +68,13 @@ contains
 
         real(dl) :: EFTCAMBFullModelComputeDtauda                     !< the output dtauda
 
-        EFTCAMBFullModelComputeDtauda = 0._dl
+        write(*,*) 'IW'
+        stop
 
     end function EFTCAMBFullModelComputeDtauda
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes adotoa = H and its two derivatives wrt conformal time.
+    !> Subroutine that computes adotoa = H.
     subroutine EFTCAMBFullModelComputeAdotoa( self, a, eft_par_cache, eft_cache )
 
         implicit none
@@ -77,7 +84,26 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
+        write(*,*) 'IW'
+        stop
+
     end subroutine EFTCAMBFullModelComputeAdotoa
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the two derivatives wrt conformal time of H.
+    subroutine EFTCAMBFullModelComputeHubbleDer( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_full_model)                    :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        write(*,*) 'IW'
+        stop
+
+    end subroutine EFTCAMBFullModelComputeHubbleDer
 
     !----------------------------------------------------------------------------------------
 

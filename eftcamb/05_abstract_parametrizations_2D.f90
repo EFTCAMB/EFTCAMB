@@ -34,6 +34,8 @@ module EFTCAMB_abstract_parametrizations_2D
 
     implicit none
 
+    private
+
     public parametrized_function_2D
 
     !----------------------------------------------------------------------------------------

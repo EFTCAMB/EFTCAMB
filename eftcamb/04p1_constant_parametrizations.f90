@@ -34,6 +34,10 @@ module EFTCAMB_constant_parametrization_1D
 
     implicit none
 
+    private
+
+    public constant_parametrization_1D
+
     ! ---------------------------------------------------------------------------------------------
     !> Type containing the constant function parametrization. Inherits from parametrized_function_1D.
     type, extends ( parametrized_function_1D ) :: constant_parametrization_1D

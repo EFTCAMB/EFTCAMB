@@ -36,6 +36,10 @@ module EFTCAMB_abstract_model_designer
 
     implicit none
 
+    private
+
+    public EFTCAMB_designer_model
+
     !----------------------------------------------------------------------------------------
     !> This is the abstract type for EFTCAMB models.
     type, extends ( EFTCAMB_model ), abstract :: EFTCAMB_designer_model

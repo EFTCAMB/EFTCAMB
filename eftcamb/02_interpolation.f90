@@ -35,7 +35,7 @@ module EFTCAMB_interpolation
 contains
 
     ! ---------------------------------------------------------------------------------------------
-    !> Neville interpolator: computes polynomial interpolation
+    !> Neville interpolator: computes polynomial interpolation of a set of points
     subroutine Polint(n,xa,ya,xpl,ypl,dypl)
 
         implicit none

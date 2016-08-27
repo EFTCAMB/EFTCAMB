@@ -13,16 +13,16 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 06_abstract_EFTCAMB.f90
+!> @file 06_abstract_EFTCAMB_model.f90
 !! This file contains the abstract definition of all the places where EFTCAMB interacts
 !! with CAMB. All EFTCAMB models should inherit from this class or the two derived
-!! classes contained in 05p2_abstract_EFTCAMB_full.f90 or 05p3_abstract_EFTCAMB_designer.f90
+!! classes contained in 06p2_abstract_EFTCAMB_full.f90 or 06p3_abstract_EFTCAMB_designer.f90
 
 
 !----------------------------------------------------------------------------------------
 !> This module contains the abstract definition of all the places where EFTCAMB interacts
 !! with CAMB. All EFTCAMB models should inherit from this class or the two derived
-!! classes contained in 05p2_abstract_EFTCAMB_full.f90 or 05p3_abstract_EFTCAMB_designer.f90
+!! classes contained in 06p2_abstract_EFTCAMB_full.f90 or 06p3_abstract_EFTCAMB_designer.f90
 
 !> @author Bin Hu, Marco Raveri
 
@@ -33,6 +33,10 @@ module EFTCAMB_abstract_model
     use EFTCAMB_cache
 
     implicit none
+
+    private
+
+    public EFTCAMB_model
 
     !----------------------------------------------------------------------------------------
     !> This is the abstract type for EFTCAMB models. As a rule, when there is a
@@ -47,31 +51,33 @@ module EFTCAMB_abstract_model
     contains
 
         ! initialization of the model:
-        procedure :: init                            => EFTCAMBModelInitialize                           !< subroutine that initializes the name and latex name of the model.
-        procedure(EFTCAMBModelReadModelSelectionFromFile ), deferred :: read_model_selection             !< subroutine that reads the parameters of the model from file.
-        procedure(EFTCAMBModelAllocateModelSelection     ), deferred :: allocate_model_selection         !< subroutine that allocates the model selection.
-        procedure(EFTCAMBModelInitModelParameters        ), deferred :: init_model_parameters            !< subroutine taht initializes the model parameters based on the values found in an input array.
-        procedure(EFTCAMBModelInitModelParametersFromFile), deferred :: init_model_parameters_from_file  !< subroutine that reads the parameters of the model from file.
+        procedure :: init                        => EFTCAMBModelInitialize                                !< subroutine that initializes the name and latex name of the model.
+        procedure(EFTCAMBModelReadModelSelectionFromFile  ), deferred :: read_model_selection             !< subroutine that reads the parameters of the model from file.
+        procedure(EFTCAMBModelAllocateModelSelection      ), deferred :: allocate_model_selection         !< subroutine that allocates the model selection.
+        procedure(EFTCAMBModelInitModelParameters         ), deferred :: init_model_parameters            !< subroutine taht initializes the model parameters based on the values found in an input array.
+        procedure(EFTCAMBModelInitModelParametersFromFile ), deferred :: init_model_parameters_from_file  !< subroutine that reads the parameters of the model from file.
 
         ! utility functions:
-        procedure(EFTCAMBModelComputeParametersNumber), deferred :: compute_param_number   !< subroutine that computes the number of parameters of the model.
-        procedure(EFTCAMBModelFeedback               ), deferred :: feedback               !< subroutine that prints on the screen feedback information about the model.
-        procedure(EFTCAMBModelParameterNames         ), deferred :: parameter_names        !< subroutine that returns the i-th parameter name of the model.
-        procedure(EFTCAMBModelParameterNamesLatex    ), deferred :: parameter_names_latex  !< subroutine that returns the i-th parameter name of the model.
-        procedure(EFTCAMBModelParameterValues        ), deferred :: parameter_values       !< subroutine that returns the i-th parameter value.
-        ! background initialization functions:
-        procedure :: initialize_background => EFTCAMBModelInitBackground                   !< subroutine that initializes the background of the model, if needed.
-        ! CAMB related procedures:
-        procedure(EFTCAMBModelBackgroundEFTFunctions ), deferred :: compute_background_EFT_functions  !< subroutine that computes the value of the background EFT functions at a given time.
-        procedure(EFTCAMBModelSecondOrderEFTFunctions), deferred :: compute_secondorder_EFT_functions !< subroutine that computes the value of the second order EFT functions at a given time.
-        procedure(EFTCAMBModelComputeDtauda          ), deferred :: compute_dtauda                    !< function that computes dtauda = 1/sqrt(a^2H^2).
-        procedure(EFTCAMBModelComputeAdotoa          ), deferred :: compute_adotoa                    !< subroutine that computes adotoa = H.
-        procedure(EFTCAMBModelComputeHubbleDer       ), deferred :: compute_H_derivs                  !< subroutine that computes the two derivatives wrt conformal time of H.
+        procedure(EFTCAMBModelComputeParametersNumber     ), deferred :: compute_param_number             !< subroutine that computes the number of parameters of the model.
+        procedure(EFTCAMBModelFeedback                    ), deferred :: feedback                         !< subroutine that prints on the screen feedback information about the model.
+        procedure(EFTCAMBModelParameterNames              ), deferred :: parameter_names                  !< subroutine that returns the i-th parameter name of the model.
+        procedure(EFTCAMBModelParameterNamesLatex         ), deferred :: parameter_names_latex            !< subroutine that returns the i-th parameter name of the model.
+        procedure(EFTCAMBModelParameterValues             ), deferred :: parameter_values                 !< subroutine that returns the i-th parameter value.
 
-        procedure :: compute_rhoQPQ           => EFTCAMBModelComputeRhoQPQ                            !< subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
-        procedure :: compute_Einstein_factors => EFTCAMBModelComputeEinstein                          !< subroutine that computes the Einstein equations factors. For details refer to the numerical notes.
-        procedure :: compute_pi_factors       => EFTCAMBModelComputePi                                !< subroutine that computes the pi field equations factors. For details refer to the numerical notes.
-        procedure :: compute_tensor_factors   => EFTCAMBModelComputeTensor                            !< subroutine that computes the factors for the tensor propagation equation. For details refer to the numerical notes.
+        ! background initialization functions:
+        procedure :: initialize_background       => EFTCAMBModelInitBackground                            !< subroutine that initializes the background of the model, if needed.
+
+        ! CAMB related procedures:
+        procedure(EFTCAMBModelBackgroundEFTFunctions ), deferred :: compute_background_EFT_functions      !< subroutine that computes the value of the background EFT functions at a given time.
+        procedure(EFTCAMBModelSecondOrderEFTFunctions), deferred :: compute_secondorder_EFT_functions     !< subroutine that computes the value of the second order EFT functions at a given time.
+        procedure(EFTCAMBModelComputeDtauda          ), deferred :: compute_dtauda                        !< function that computes dtauda = 1/sqrt(a^2H^2).
+        procedure(EFTCAMBModelComputeAdotoa          ), deferred :: compute_adotoa                        !< subroutine that computes adotoa = H.
+        procedure(EFTCAMBModelComputeHubbleDer       ), deferred :: compute_H_derivs                      !< subroutine that computes the two derivatives wrt conformal time of H.
+
+        procedure :: compute_rhoQPQ              => EFTCAMBModelComputeRhoQPQ                             !< subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
+        procedure :: compute_Einstein_factors    => EFTCAMBModelComputeEinsteinFactors                    !< subroutine that computes the Einstein equations factors. For details refer to the numerical notes.
+        procedure :: compute_pi_factors          => EFTCAMBModelComputePiFactors                          !< subroutine that computes the pi field equations factors. For details refer to the numerical notes.
+        procedure :: compute_tensor_factors      => EFTCAMBModelComputeTensorFactors                      !< subroutine that computes the factors for the tensor propagation equation. For details refer to the numerical notes.
 
     end type EFTCAMB_model
 
@@ -292,7 +298,7 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the Einstein equations factors. For details refer to the numerical notes.
-    subroutine EFTCAMBModelComputeEinstein( self, a, eft_par_cache, eft_cache )
+    subroutine EFTCAMBModelComputeEinsteinFactors( self, a, eft_par_cache, eft_cache )
 
         implicit none
 
@@ -370,11 +376,11 @@ contains
             & -a*eft_cache%adotoa/(1._dl+eft_cache%EFTOmegaV)*(+0.5_dl*a*eft_cache%EFTGamma4PP +1.5_dl*eft_cache%EFTGamma4P&             ! Gamma4
             & -eft_cache%EFTOmegaP/(1._dl+eft_cache%EFTOmegaV)*(eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTGamma4P))
 
-    end subroutine EFTCAMBModelComputeEinstein
+    end subroutine EFTCAMBModelComputeEinsteinFactors
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the pi field equations factors. For details refer to the numerical notes.
-    subroutine EFTCAMBModelComputePi( self, a, eft_par_cache, eft_cache )
+    subroutine EFTCAMBModelComputePiFactors( self, a, eft_par_cache, eft_cache )
 
         implicit none
 
@@ -441,11 +447,11 @@ contains
             & -0.5_dl/(1._dl+eft_cache%EFTOmegaV +2._dl*eft_cache%EFTGamma5V)*(a*eft_cache%adotoa*eft_cache%EFTOmegaP+2._dl*eft_cache%adotoa*(eft_cache%EFTGamma5V +a*eft_cache%EFTGamma5P)&
             & -(1._dl+eft_cache%EFTOmegaV)*(a*eft_cache%adotoa*eft_cache%EFTOmegaP+a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V)/(2._dl*(1._dl+eft_cache%EFTOmegaV)+3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V))*eft_cache%dgrho
 
-    end subroutine EFTCAMBModelComputePi
+    end subroutine EFTCAMBModelComputePiFactors
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the factors for the tensor propagation equation. For details refer to the numerical notes.
-    subroutine EFTCAMBModelComputeTensor( self, a, eft_par_cache, eft_cache )
+    subroutine EFTCAMBModelComputeTensorFactors( self, a, eft_par_cache, eft_cache )
 
         implicit none
 
@@ -458,7 +464,7 @@ contains
         eft_cache%EFTBT = 2._dl*eft_cache%adotoa*( 1._dl +eft_cache%EFTOmegaV -eft_cache%EFTGamma4V +0.5_dl*a*eft_cache%EFTOmegaP -0.5_dl*a*eft_cache%EFTGamma4P )
         eft_cache%EFTDT = 1._dl +eft_cache%EFTOmegaV
 
-    end subroutine EFTCAMBModelComputeTensor
+    end subroutine EFTCAMBModelComputeTensorFactors
 
     ! ---------------------------------------------------------------------------------------------
 

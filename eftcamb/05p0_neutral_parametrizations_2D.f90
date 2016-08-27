@@ -31,6 +31,10 @@ module EFTCAMB_neutral_parametrization_2D
 
     implicit none
 
+    private
+
+    public zero_parametrization_2D
+
     ! ---------------------------------------------------------------------------------------------
     !> Type containing the constant function parametrization that returns all zero values.
     !! Inherits from parametrized_function_2D.

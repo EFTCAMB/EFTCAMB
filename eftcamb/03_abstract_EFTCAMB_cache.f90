@@ -39,6 +39,10 @@ module EFTCAMB_cache
 
     implicit none
 
+    private
+
+    public EFTCAMB_parameter_cache, EFTCAMB_timestep_cache
+
     !----------------------------------------------------------------------------------------
     !> This is the type that defines the EFTCAMB parameter cache. The idea is to copy in here
     !! the cosmological parameters that we need from CAMB and then use this for the interfaces.

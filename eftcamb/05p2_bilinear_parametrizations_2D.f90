@@ -27,11 +27,16 @@
 module EFTCAMB_bilinear_parametrizations_2D
 
     use precision
-    use EFTDef
+    use IniFile
     use AMLutils
+    use EFTDef
     use EFTCAMB_abstract_parametrizations_2D
 
     implicit none
+
+    private
+
+    public bilinear_parametrization_2D
 
     ! ---------------------------------------------------------------------------------------------
     !> Type containing the bilinear function parametrization. Inherits from parametrized_function_2D.
