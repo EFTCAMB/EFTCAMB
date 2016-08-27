@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['k',['k',['../structeftcamb__cache_1_1eftcamb__timestep__cache.html#a9eb35783c4b4ff93870393622411b850',1,'eftcamb_cache::eftcamb_timestep_cache']]]
+  ['zbrac',['zbrac',['../namespaceeftcamb__rootfind.html#affaa35082efc13bce9419d4f6e21ab5f',1,'eftcamb_rootfind']]],
+  ['zbrent',['zbrent',['../namespaceeftcamb__rootfind.html#a839787bc49b6a2330c527b344fc22c40',1,'eftcamb_rootfind']]]
 ];

@@ -96,17 +96,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__parametrizations__2d_1_1parametrized__function__2d.html">parametrized_function_2d</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is the abstract type for parametrized functions. As a rule, when there is a free function in EFT it should be declared as a class inheriting from parametrized_function. This guarantees maximum performances as well as maximum flexibility.  <a href="structeftcamb__abstract__parametrizations__2d_1_1parametrized__function__2d.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DFirstDerivativeX.html">ParametrizedFunction2DFirstDerivativeX</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function that returns the value of the first partial derivative of the function with respect to the first variable.  <a href="interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DFirstDerivativeX.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DFirstDerivativeY.html">ParametrizedFunction2DFirstDerivativeY</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function that returns the value of the first partial derivative of the function with respect to the second variable.  <a href="interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DFirstDerivativeY.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DInitialize.html">ParametrizedFunction2DInitialize</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that initializes the name and latex name of the parametrization.  <a href="interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DInitialize.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DSecondDerivativeX.html">ParametrizedFunction2DSecondDerivativeX</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function that returns the value of the second partial derivative of the function with respect to the first variable.  <a href="interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DSecondDerivativeX.html#details">More...</a><br /></td></tr>
@@ -126,52 +120,11 @@ Functions/Subroutines</h2></td></tr>
 <tr class="memitem:a2a5aa6ec5dc008891cb794ede997090a"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__parametrizations__2d.html#a2a5aa6ec5dc008891cb794ede997090a">parametrizedfunction2dinitfromfile</a> (self, Ini)</td></tr>
 <tr class="memdesc:a2a5aa6ec5dc008891cb794ede997090a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that reads a Ini file looking for the parameters of the function.  <a href="#a2a5aa6ec5dc008891cb794ede997090a">More...</a><br /></td></tr>
 <tr class="separator:a2a5aa6ec5dc008891cb794ede997090a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6f0777b8f7ae1d38d6cbcba2ba98306b"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__parametrizations__2d.html#a6f0777b8f7ae1d38d6cbcba2ba98306b">parametrizedfunction2dinitparams</a> (self, array)</td></tr>
-<tr class="memdesc:a6f0777b8f7ae1d38d6cbcba2ba98306b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that reads a Ini file looking for the parameters of the function.  <a href="#a6f0777b8f7ae1d38d6cbcba2ba98306b">More...</a><br /></td></tr>
-<tr class="separator:a6f0777b8f7ae1d38d6cbcba2ba98306b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51de07ea9208adf640f5a00ac670f273"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__parametrizations__2d.html#a51de07ea9208adf640f5a00ac670f273">parametrizedfunction2dfeedback</a> (self)</td></tr>
-<tr class="memdesc:a51de07ea9208adf640f5a00ac670f273"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that prints to screen the informations about the function.  <a href="#a51de07ea9208adf640f5a00ac670f273">More...</a><br /></td></tr>
-<tr class="separator:a51de07ea9208adf640f5a00ac670f273"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7e3b1b3659e1244e823992b7cada919"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__parametrizations__2d.html#ae7e3b1b3659e1244e823992b7cada919">parametrizedfunction2dparameternames</a> (self, i, name)</td></tr>
-<tr class="memdesc:ae7e3b1b3659e1244e823992b7cada919"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that returns the i-th parameter name.  <a href="#ae7e3b1b3659e1244e823992b7cada919">More...</a><br /></td></tr>
-<tr class="separator:ae7e3b1b3659e1244e823992b7cada919"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a661dfd16678186f8c81663e4cac28d1d"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__parametrizations__2d.html#a661dfd16678186f8c81663e4cac28d1d">parametrizedfunction2dparameternameslatex</a> (self, i, latexname)</td></tr>
-<tr class="memdesc:a661dfd16678186f8c81663e4cac28d1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that returns the latex version of the i-th parameter name.  <a href="#a661dfd16678186f8c81663e4cac28d1d">More...</a><br /></td></tr>
-<tr class="separator:a661dfd16678186f8c81663e4cac28d1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adb2b06de666b08d4b06f2bb92f10b5bf"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__parametrizations__2d.html#adb2b06de666b08d4b06f2bb92f10b5bf">parametrizedfunction2dparametervalues</a> (self, i, value)</td></tr>
-<tr class="memdesc:adb2b06de666b08d4b06f2bb92f10b5bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function that returns the value of the function i-th parameter.  <a href="#adb2b06de666b08d4b06f2bb92f10b5bf">More...</a><br /></td></tr>
-<tr class="separator:adb2b06de666b08d4b06f2bb92f10b5bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This module contains the abstract class for generic parametrizations for 2D functions that are used by several models in EFTCAMB. When there is a free function in EFT it should be declared as a class inheriting from parametrized_function_2D. </p>
 <dl class="section author"><dt>Author</dt><dd>Simone Peirone, Bin Hu, Marco Raveri </dd></dl>
 </div><h2 class="groupheader">Function/Subroutine Documentation</h2>
-<a class="anchor" id="a51de07ea9208adf640f5a00ac670f273"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_abstract_parametrizations_2d::parametrizedfunction2dfeedback </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__parametrizations__2d_1_1parametrized__function__2d.html">parametrized_function_2d</a>)&#160;</td>
-          <td class="paramname"><em>self</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that prints to screen the informations about the function. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">self</td><td>the base class </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html#l00198">198</a> of file <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html">05_abstract_parametrizations_2D.f90</a>.</p>
-
-</div>
-</div>
 <a class="anchor" id="a2a5aa6ec5dc008891cb794ede997090a"></a>
 <div class="memitem">
 <div class="memproto">
@@ -179,7 +132,7 @@ Functions/Subroutines</h2></td></tr>
         <tr>
           <td class="memname">subroutine eftcamb_abstract_parametrizations_2d::parametrizedfunction2dinitfromfile </td>
           <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__parametrizations__2d_1_1parametrized__function__2d.html">parametrized_function_2d</a>)&#160;</td>
+          <td class="paramtype">class(parametrized_function_2d)&#160;</td>
           <td class="paramname"><em>self</em>, </td>
         </tr>
         <tr>
@@ -205,183 +158,14 @@ Functions/Subroutines</h2></td></tr>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html#l00176">176</a> of file <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html">05_abstract_parametrizations_2D.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="a6f0777b8f7ae1d38d6cbcba2ba98306b"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_abstract_parametrizations_2d::parametrizedfunction2dinitparams </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__parametrizations__2d_1_1parametrized__function__2d.html">parametrized_function_2d</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">real(dl), dimension(self%parameter_number), intent(in)&#160;</td>
-          <td class="paramname"><em>array</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that reads a Ini file looking for the parameters of the function. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">self</td><td>the base class.</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">array</td><td>input array with the values of the parameters. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html#l00187">187</a> of file <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html">05_abstract_parametrizations_2D.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="ae7e3b1b3659e1244e823992b7cada919"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_abstract_parametrizations_2d::parametrizedfunction2dparameternames </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__parametrizations__2d_1_1parametrized__function__2d.html">parametrized_function_2d</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>i</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">character(*), intent(out)&#160;</td>
-          <td class="paramname"><em>name</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that returns the i-th parameter name. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">i</td><td>the index of the parameter</td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">name</td><td>the output name of the i-th parameter </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html#l00208">208</a> of file <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html">05_abstract_parametrizations_2D.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="a661dfd16678186f8c81663e4cac28d1d"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_abstract_parametrizations_2d::parametrizedfunction2dparameternameslatex </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__parametrizations__2d_1_1parametrized__function__2d.html">parametrized_function_2d</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>i</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">character(*), intent(out)&#160;</td>
-          <td class="paramname"><em>latexname</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that returns the latex version of the i-th parameter name. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">i</td><td>the index of the parameter</td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">latexname</td><td>the output latex name of the i-th parameter </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html#l00220">220</a> of file <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html">05_abstract_parametrizations_2D.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="adb2b06de666b08d4b06f2bb92f10b5bf"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_abstract_parametrizations_2d::parametrizedfunction2dparametervalues </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__parametrizations__2d_1_1parametrized__function__2d.html">parametrized_function_2d</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>i</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">real(dl), intent(out)&#160;</td>
-          <td class="paramname"><em>value</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Function that returns the value of the function i-th parameter. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">i</td><td>the index of the parameter</td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">value</td><td>the output value of the i-th parameter </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html#l00232">232</a> of file <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html">05_abstract_parametrizations_2D.f90</a>.</p>
+<p>Definition at line <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html#l00178">178</a> of file <a class="el" href="05__abstract__parametrizations__2D_8f90_source.html">05_abstract_parametrizations_2D.f90</a>.</p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 26 2016 14:59:38 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Aug 27 2016 08:59:31 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

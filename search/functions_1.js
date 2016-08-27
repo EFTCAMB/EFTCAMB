@@ -1,15 +1,16 @@
 var searchData=
 [
-  ['bilinearparametrized2dfeedback',['bilinearparametrized2dfeedback',['../namespaceeftcamb__bilinear__parametrizations__2d.html#a6623a55a33b324b86f100425f065c183',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dfirstderivativex',['bilinearparametrized2dfirstderivativex',['../namespaceeftcamb__bilinear__parametrizations__2d.html#ab2fd27f3a4cda186ac1ed0f4c8bdc87f',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dfirstderivativey',['bilinearparametrized2dfirstderivativey',['../namespaceeftcamb__bilinear__parametrizations__2d.html#a6aa33cac3b40e0744083c36103f493e8',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dinit',['bilinearparametrized2dinit',['../namespaceeftcamb__bilinear__parametrizations__2d.html#a536da58318eda730514503549ea5f7d8',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dinitfromfile',['bilinearparametrized2dinitfromfile',['../namespaceeftcamb__bilinear__parametrizations__2d.html#a6fc016a8755b68a88fd3e1454ab1e5e3',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dinitialize',['bilinearparametrized2dinitialize',['../namespaceeftcamb__bilinear__parametrizations__2d.html#a1f306e1990eb1ed63d0b4a1fbd2b7556',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dparameternames',['bilinearparametrized2dparameternames',['../namespaceeftcamb__bilinear__parametrizations__2d.html#a08433ad62dc0025f7e8260ac02d3e81b',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dparameternameslatex',['bilinearparametrized2dparameternameslatex',['../namespaceeftcamb__bilinear__parametrizations__2d.html#ab9276c2cd5cc844b426c7b5e75218783',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dsecondderivativex',['bilinearparametrized2dsecondderivativex',['../namespaceeftcamb__bilinear__parametrizations__2d.html#a255cb6f7f9a66bd9a5721c7cc0764bbc',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dsecondderivativexy',['bilinearparametrized2dsecondderivativexy',['../namespaceeftcamb__bilinear__parametrizations__2d.html#a697f11f23d4191aec25d8549714d3481',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dsecondderivativey',['bilinearparametrized2dsecondderivativey',['../namespaceeftcamb__bilinear__parametrizations__2d.html#ad1951daeda7ca5589955ef7270b6d3ff',1,'eftcamb_bilinear_parametrizations_2d']]],
-  ['bilinearparametrized2dvalue',['bilinearparametrized2dvalue',['../namespaceeftcamb__bilinear__parametrizations__2d.html#aa6bb9790bc4afddf7131b270352f2fd0',1,'eftcamb_bilinear_parametrizations_2d']]]
+  ['eftcamb_5fallocate_5fmodel',['eftcamb_allocate_model',['../structeftcamb__main_1_1eftcamb.html#a53b95ed686f6eba480585885d7976da9',1,'eftcamb_main::eftcamb']]],
+  ['eftcamb_5fallocate_5fmodel_5ffunctions',['eftcamb_allocate_model_functions',['../structeftcamb__main_1_1eftcamb.html#a46b472d40c1f5bbdfe31979244935ce9',1,'eftcamb_main::eftcamb']]],
+  ['eftcamb_5finit_5ffrom_5ffile',['eftcamb_init_from_file',['../structeftcamb__main_1_1eftcamb.html#af4f6fc03f727bca0aba89f38376ddd16',1,'eftcamb_main::eftcamb']]],
+  ['eftcamb_5finit_5fmodel_5ffrom_5ffile',['eftcamb_init_model_from_file',['../structeftcamb__main_1_1eftcamb.html#a470ac87ad10cb90b4e1263500ebe82e0',1,'eftcamb_main::eftcamb']]],
+  ['eftcamb_5fprint_5fheader',['eftcamb_print_header',['../structeftcamb__main_1_1eftcamb.html#a08b85ef3f5e267917f9baf1c837342b3',1,'eftcamb_main::eftcamb']]],
+  ['eftcamb_5fprint_5fmodel_5ffeedback',['eftcamb_print_model_feedback',['../structeftcamb__main_1_1eftcamb.html#a9e83840a41331e49fc23bb8b3ea19c5b',1,'eftcamb_main::eftcamb']]],
+  ['eftcamb_5fread_5fmodel_5fparameters',['eftcamb_read_model_parameters',['../structeftcamb__main_1_1eftcamb.html#ab79be00125e93a31362733706402c9f0',1,'eftcamb_main::eftcamb']]],
+  ['eftcamb_5fread_5fmodel_5fselection',['eftcamb_read_model_selection',['../structeftcamb__main_1_1eftcamb.html#a860fe5bf02d72db9fd4bf6eeb4d5b9f4',1,'eftcamb_main::eftcamb']]],
+  ['eftcambmodelinitialize',['eftcambmodelinitialize',['../namespaceeftcamb__abstract__model.html#a58e20c962d78d221baedca0fa89ffe01',1,'eftcamb_abstract_model']]],
+  ['eftcambreturntogr',['eftcambreturntogr',['../namespaceeftcamb__returntogr.html#a43f42e486e1b8099f36b0087466fd8fe',1,'eftcamb_returntogr']]],
+  ['eftcambreturntogr_5ffeedback',['eftcambreturntogr_feedback',['../namespaceeftcamb__returntogr.html#a88aa32f345582a21913dd4d8a4a03eba',1,'eftcamb_returntogr']]],
+  ['eftcambreturntogr_5ffunctions',['eftcambreturntogr_functions',['../namespaceeftcamb__returntogr.html#aeee3ab5cb370662110caad67734f5ad1',1,'eftcamb_returntogr']]],
+  ['eftstabilitycomputation',['eftstabilitycomputation',['../namespaceeftcamb__stability.html#a56d0bc71166957cf46f0066184d8fcb1',1,'eftcamb_stability']]]
 ];

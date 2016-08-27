@@ -88,8 +88,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Types</a> &#124;
-<a href="#namespaces">Modules</a> &#124;
-<a href="#func-members">Functions/Subroutines</a>  </div>
+<a href="#namespaces">Modules</a>  </div>
   <div class="headertitle">
 <div class="title">03_abstract_EFTCAMB_cache.f90 File Reference</div>  </div>
 </div><!--header-->
@@ -100,32 +99,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <p><a href="03__abstract__EFTCAMB__cache_8f90_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__cache_1_1eftcamb__parameter__cache.html">eftcamb_cache::eftcamb_parameter_cache</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is the type that defines the EFTCAMB parameter cache. The idea is to copy in here the cosmological parameters that we need from CAMB and then use this for the interfaces.  <a href="structeftcamb__cache_1_1eftcamb__parameter__cache.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__cache_1_1eftcamb__timestep__cache.html">eftcamb_cache::eftcamb_timestep_cache</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is the type that defines the EFTCAMB time step cache.  <a href="structeftcamb__cache_1_1eftcamb__timestep__cache.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Modules</h2></td></tr>
 <tr class="memitem:namespaceeftcamb__cache"><td class="memItemLeft" align="right" valign="top">module &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__cache.html">eftcamb_cache</a></td></tr>
 <tr class="memdesc:namespaceeftcamb__cache"><td class="mdescLeft">&#160;</td><td class="mdescRight">This module contains the definition of a time step cache for EFTCAMB. To perform EFTCAMB calculations, at any timestep, we need several quantities. Densities, values of the EFT functions and so on. Instead of complicating the interface of the functions we shall define a type that holds all these informations. We also need a cache for cosmological parameters that are used in the calculations. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions/Subroutines</h2></td></tr>
-<tr class="memitem:a128fda4970c26c618a3908b4d60a8601"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__cache.html#a128fda4970c26c618a3908b4d60a8601">eftcamb_cache::eftcambtimestepcacheinit</a> (self)</td></tr>
-<tr class="memdesc:a128fda4970c26c618a3908b4d60a8601"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that initializes to zero all the elements of the cache.  <a href="namespaceeftcamb__cache.html#a128fda4970c26c618a3908b4d60a8601">More...</a><br /></td></tr>
-<tr class="separator:a128fda4970c26c618a3908b4d60a8601"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a53d6a2c0e5560bfea69feb1c6487f1af"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__cache.html#a53d6a2c0e5560bfea69feb1c6487f1af">eftcamb_cache::eftcambparametercacheinit</a> (self)</td></tr>
-<tr class="memdesc:a53d6a2c0e5560bfea69feb1c6487f1af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that initializes to zero all the elements of the parameter cache.  <a href="namespaceeftcamb__cache.html#a53d6a2c0e5560bfea69feb1c6487f1af">More...</a><br /></td></tr>
-<tr class="separator:a53d6a2c0e5560bfea69feb1c6487f1af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afa2af4e1a0a33aeb09d790e67c6f7a8f"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__cache.html#afa2af4e1a0a33aeb09d790e67c6f7a8f">eftcamb_cache::eftcambparametercacheprint</a> (self)</td></tr>
-<tr class="memdesc:afa2af4e1a0a33aeb09d790e67c6f7a8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that prints the EFTCAMB parameters cache to screen.  <a href="namespaceeftcamb__cache.html#afa2af4e1a0a33aeb09d790e67c6f7a8f">More...</a><br /></td></tr>
-<tr class="separator:afa2af4e1a0a33aeb09d790e67c6f7a8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file contains the definition of a time step cache for EFTCAMB. To perform EFTCAMB calculations, at any timestep, we need several quantities. Densities, values of the EFT functions and so on. Instead of complicating the interface of the functions we shall define a type that holds all these informations. We also need a cache for cosmological parameters that are used in the calculations. </p>
@@ -134,7 +112,7 @@ Functions/Subroutines</h2></td></tr>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 26 2016 14:59:38 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Aug 27 2016 08:59:31 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

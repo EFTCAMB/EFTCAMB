@@ -13,7 +13,7 @@ var searchData=
   ['05p0_5fneutral_5fparametrizations_5f2d_2ef90',['05p0_neutral_parametrizations_2D.f90',['../05p0__neutral__parametrizations__2D_8f90.html',1,'']]],
   ['05p1_5fconstant_5fparametrizations_5f2d_2ef90',['05p1_constant_parametrizations_2D.f90',['../05p1__constant__parametrizations__2D_8f90.html',1,'']]],
   ['05p2_5fbilinear_5fparametrizations_5f2d_2ef90',['05p2_bilinear_parametrizations_2D.f90',['../05p2__bilinear__parametrizations__2D_8f90.html',1,'']]],
-  ['06_5fabstract_5feftcamb_2ef90',['06_abstract_EFTCAMB.f90',['../06__abstract__EFTCAMB_8f90.html',1,'']]],
+  ['06_5fabstract_5feftcamb_5fmodel_2ef90',['06_abstract_EFTCAMB_model.f90',['../06__abstract__EFTCAMB__model_8f90.html',1,'']]],
   ['06p1_5feftcamb_5fgr_2ef90',['06p1_EFTCAMB_GR.f90',['../06p1__EFTCAMB__GR_8f90.html',1,'']]],
   ['06p2_5fabstract_5feftcamb_5ffull_2ef90',['06p2_abstract_EFTCAMB_full.f90',['../06p2__abstract__EFTCAMB__full_8f90.html',1,'']]],
   ['06p3_5fabstract_5feftcamb_5fdesigner_2ef90',['06p3_abstract_EFTCAMB_designer.f90',['../06p3__abstract__EFTCAMB__designer_8f90.html',1,'']]],

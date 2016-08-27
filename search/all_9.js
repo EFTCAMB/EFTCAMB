@@ -1,8 +1,22 @@
 var searchData=
 [
-  ['h0',['h0',['../structeftcamb__cache_1_1eftcamb__parameter__cache.html#aaa8e90c9b4475729742f016f7d3d23ad',1,'eftcamb_cache::eftcamb_parameter_cache']]],
-  ['h0_5fmpc',['h0_mpc',['../structeftcamb__cache_1_1eftcamb__parameter__cache.html#a3ec989e71c68d6f679943700d1e9e6de',1,'eftcamb_cache::eftcamb_parameter_cache']]],
-  ['hdot',['hdot',['../structeftcamb__cache_1_1eftcamb__timestep__cache.html#a4fc36a72b1d51eee0aa8995c0952fa0f',1,'eftcamb_cache::eftcamb_timestep_cache']]],
-  ['hdotdot',['hdotdot',['../structeftcamb__cache_1_1eftcamb__timestep__cache.html#a7d394c60ac9da3588f9f641c2ff10aa8',1,'eftcamb_cache::eftcamb_timestep_cache']]],
-  ['hunt',['hunt',['../namespaceeftcamb__mixed__algorithms.html#a49112db7d349f4c49113e783d76f6f79',1,'eftcamb_mixed_algorithms']]]
+  ['parametrizedfunction1dfirstderivative',['ParametrizedFunction1DFirstDerivative',['../interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DFirstDerivative.html',1,'eftcamb_abstract_parametrizations_1d']]],
+  ['parametrizedfunction1dinitparams',['ParametrizedFunction1DInitParams',['../interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DInitParams.html',1,'eftcamb_abstract_parametrizations_1d']]],
+  ['parametrizedfunction1dintegral',['ParametrizedFunction1DIntegral',['../interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DIntegral.html',1,'eftcamb_abstract_parametrizations_1d']]],
+  ['parametrizedfunction1dparametervalues',['ParametrizedFunction1DParameterValues',['../interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DParameterValues.html',1,'eftcamb_abstract_parametrizations_1d']]],
+  ['parametrizedfunction1dparamnumber',['parametrizedfunction1dparamnumber',['../namespaceeftcamb__abstract__parametrizations__1d.html#ab5e36011ccd6693c129fbe5fa860bb9c',1,'eftcamb_abstract_parametrizations_1d']]],
+  ['parametrizedfunction1dsecondderivative',['ParametrizedFunction1DSecondDerivative',['../interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DSecondDerivative.html',1,'eftcamb_abstract_parametrizations_1d']]],
+  ['parametrizedfunction1dthirdderivative',['ParametrizedFunction1DThirdDerivative',['../interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DThirdDerivative.html',1,'eftcamb_abstract_parametrizations_1d']]],
+  ['parametrizedfunction1dvalue',['ParametrizedFunction1DValue',['../interfaceeftcamb__abstract__parametrizations__1d_1_1ParametrizedFunction1DValue.html',1,'eftcamb_abstract_parametrizations_1d']]],
+  ['parametrizedfunction2dfirstderivativex',['ParametrizedFunction2DFirstDerivativeX',['../interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DFirstDerivativeX.html',1,'eftcamb_abstract_parametrizations_2d']]],
+  ['parametrizedfunction2dfirstderivativey',['ParametrizedFunction2DFirstDerivativeY',['../interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DFirstDerivativeY.html',1,'eftcamb_abstract_parametrizations_2d']]],
+  ['parametrizedfunction2dinitfromfile',['parametrizedfunction2dinitfromfile',['../namespaceeftcamb__abstract__parametrizations__2d.html#a2a5aa6ec5dc008891cb794ede997090a',1,'eftcamb_abstract_parametrizations_2d']]],
+  ['parametrizedfunction2dsecondderivativex',['ParametrizedFunction2DSecondDerivativeX',['../interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DSecondDerivativeX.html',1,'eftcamb_abstract_parametrizations_2d']]],
+  ['parametrizedfunction2dsecondderivativexy',['ParametrizedFunction2DSecondDerivativeXY',['../interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DSecondDerivativeXY.html',1,'eftcamb_abstract_parametrizations_2d']]],
+  ['parametrizedfunction2dsecondderivativey',['ParametrizedFunction2DSecondDerivativeY',['../interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DSecondDerivativeY.html',1,'eftcamb_abstract_parametrizations_2d']]],
+  ['parametrizedfunction2dvalue',['ParametrizedFunction2DValue',['../interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DValue.html',1,'eftcamb_abstract_parametrizations_2d']]],
+  ['polint',['polint',['../namespaceeftcamb__interpolation.html#aee659aa531ddbbc90fa1e320718dbce6',1,'eftcamb_interpolation']]],
+  ['print_5feftcamb_5fflags',['print_eftcamb_flags',['../namespaceeftcamb__main.html#a737bf4f7e31daac4d7a693697a61e075',1,'eftcamb_main']]],
+  ['print_5feftcamb_5fheader',['print_eftcamb_header',['../namespaceeftcamb__main.html#a5d0a9d9916f1610f3a14ab7c5643a25f',1,'eftcamb_main']]],
+  ['pureeftmodel',['pureeftmodel',['../structeftcamb__main_1_1eftcamb.html#ad6bbb652003f2d9d422fd9222b644201',1,'eftcamb_main::eftcamb']]]
 ];

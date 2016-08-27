@@ -91,14 +91,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>This module contains the abstract definition of all the places where EFTCAMB interacts with CAMB. All EFTCAMB models should inherit from this class or the two derived classes contained in 05p2_abstract_EFTCAMB_full.f90 or 05p3_abstract_EFTCAMB_designer.f90.  
+<p>This module contains the abstract definition of all the places where EFTCAMB interacts with CAMB. All EFTCAMB models should inherit from this class or the two derived classes contained in <a class="el" href="06p2__abstract__EFTCAMB__full_8f90.html" title="This file contains the abstract definition of all the places where EFTCAMB interacts with CAMB in cas...">06p2_abstract_EFTCAMB_full.f90</a> or <a class="el" href="06p3__abstract__EFTCAMB__designer_8f90.html" title="This file contains the abstract definition of all the places where EFTCAMB interacts with CAMB in cas...">06p3_abstract_EFTCAMB_designer.f90</a>.  
 <a href="#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__abstract__model_1_1eftcamb__model.html">eftcamb_model</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is the abstract type for EFTCAMB models. As a rule, when there is a new model it should be declared as a class inheriting from EFTCAMB_model. This guarantees maximum performances as well as maximum flexibility.  <a href="structeftcamb__abstract__model_1_1eftcamb__model.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelAllocateModelSelection.html">EFTCAMBModelAllocateModelSelection</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that reads the parameters of the model from file.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelAllocateModelSelection.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -114,29 +111,11 @@ Data Types</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelComputeHubbleDer.html">EFTCAMBModelComputeHubbleDer</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes the two derivatives wrt conformal time of H.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelComputeHubbleDer.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelComputeParametersNumber.html">EFTCAMBModelComputeParametersNumber</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes the number of parameters of the model.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelComputeParametersNumber.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelFeedback.html">EFTCAMBModelFeedback</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that prints on the screen feedback information about the model.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelFeedback.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelInitModelParameters.html">EFTCAMBModelInitModelParameters</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that reads the parameters of the model from file.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelInitModelParameters.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelInitModelParametersFromFile.html">EFTCAMBModelInitModelParametersFromFile</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that reads the parameters of the model from file.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelInitModelParametersFromFile.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelParameterNames.html">EFTCAMBModelParameterNames</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that returns the i-th parameter name of the model.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelParameterNames.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelParameterNamesLatex.html">EFTCAMBModelParameterNamesLatex</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that returns the i-th parameter name of the model.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelParameterNamesLatex.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelParameterValues.html">EFTCAMBModelParameterValues</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that returns the i-th parameter name of the model.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelParameterValues.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelReadModelSelectionFromFile.html">EFTCAMBModelReadModelSelectionFromFile</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that reads the parameters of the model from file.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelReadModelSelectionFromFile.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelSecondOrderEFTFunctions.html">EFTCAMBModelSecondOrderEFTFunctions</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes the value of the second order EFT functions at a given time.  <a href="interfaceeftcamb__abstract__model_1_1EFTCAMBModelSecondOrderEFTFunctions.html#details">More...</a><br /></td></tr>
@@ -147,256 +126,11 @@ Functions/Subroutines</h2></td></tr>
 <tr class="memitem:a58e20c962d78d221baedca0fa89ffe01"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__model.html#a58e20c962d78d221baedca0fa89ffe01">eftcambmodelinitialize</a> (self, name, latexname)</td></tr>
 <tr class="memdesc:a58e20c962d78d221baedca0fa89ffe01"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that initializes the name and latex name of the model.  <a href="#a58e20c962d78d221baedca0fa89ffe01">More...</a><br /></td></tr>
 <tr class="separator:a58e20c962d78d221baedca0fa89ffe01"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1e85cc6ff6465d9f0620b99ec4d5cb3e"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__model.html#a1e85cc6ff6465d9f0620b99ec4d5cb3e">eftcambmodelinitbackground</a> (self)</td></tr>
-<tr class="memdesc:a1e85cc6ff6465d9f0620b99ec4d5cb3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that initializes the background of the model, if needed.  <a href="#a1e85cc6ff6465d9f0620b99ec4d5cb3e">More...</a><br /></td></tr>
-<tr class="separator:a1e85cc6ff6465d9f0620b99ec4d5cb3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3d47029d695b0433a7c16f49666eb1c5"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__model.html#a3d47029d695b0433a7c16f49666eb1c5">eftcambmodelcomputerhoqpq</a> (self, a, eft_par_cache, eft_cache)</td></tr>
-<tr class="memdesc:a3d47029d695b0433a7c16f49666eb1c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes  and P_Q. For details refer to the numerical notes.  <a href="#a3d47029d695b0433a7c16f49666eb1c5">More...</a><br /></td></tr>
-<tr class="separator:a3d47029d695b0433a7c16f49666eb1c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab3dfc418495f71186fb4a760d7ac10c8"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__model.html#ab3dfc418495f71186fb4a760d7ac10c8">eftcambmodelcomputeeinstein</a> (self, a, eft_par_cache, eft_cache)</td></tr>
-<tr class="memdesc:ab3dfc418495f71186fb4a760d7ac10c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes the Einstein equations factors. For details refer to the numerical notes.  <a href="#ab3dfc418495f71186fb4a760d7ac10c8">More...</a><br /></td></tr>
-<tr class="separator:ab3dfc418495f71186fb4a760d7ac10c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab210d1c00bf141d2fab90dadf9319361"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__model.html#ab210d1c00bf141d2fab90dadf9319361">eftcambmodelcomputepi</a> (self, a, eft_par_cache, eft_cache)</td></tr>
-<tr class="memdesc:ab210d1c00bf141d2fab90dadf9319361"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes the pi field equations factors. For details refer to the numerical notes.  <a href="#ab210d1c00bf141d2fab90dadf9319361">More...</a><br /></td></tr>
-<tr class="separator:ab210d1c00bf141d2fab90dadf9319361"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa64eb52990e68d518002d77f54ae8579"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__abstract__model.html#aa64eb52990e68d518002d77f54ae8579">eftcambmodelcomputetensor</a> (self, a, eft_par_cache, eft_cache)</td></tr>
-<tr class="memdesc:aa64eb52990e68d518002d77f54ae8579"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes the factors for the tensor propagation equation. For details refer to the numerical notes.  <a href="#aa64eb52990e68d518002d77f54ae8579">More...</a><br /></td></tr>
-<tr class="separator:aa64eb52990e68d518002d77f54ae8579"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This module contains the abstract definition of all the places where EFTCAMB interacts with CAMB. All EFTCAMB models should inherit from this class or the two derived classes contained in 05p2_abstract_EFTCAMB_full.f90 or 05p3_abstract_EFTCAMB_designer.f90. </p>
+<div class="textblock"><p>This module contains the abstract definition of all the places where EFTCAMB interacts with CAMB. All EFTCAMB models should inherit from this class or the two derived classes contained in <a class="el" href="06p2__abstract__EFTCAMB__full_8f90.html" title="This file contains the abstract definition of all the places where EFTCAMB interacts with CAMB in cas...">06p2_abstract_EFTCAMB_full.f90</a> or <a class="el" href="06p3__abstract__EFTCAMB__designer_8f90.html" title="This file contains the abstract definition of all the places where EFTCAMB interacts with CAMB in cas...">06p3_abstract_EFTCAMB_designer.f90</a>. </p>
 <dl class="section author"><dt>Author</dt><dd>Bin Hu, Marco Raveri </dd></dl>
 </div><h2 class="groupheader">Function/Subroutine Documentation</h2>
-<a class="anchor" id="ab3dfc418495f71186fb4a760d7ac10c8"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_abstract_model::eftcambmodelcomputeeinstein </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__model_1_1eftcamb__model.html">eftcamb_model</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">real(dl), intent(in)&#160;</td>
-          <td class="paramname"><em>a</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(eftcamb_parameter_cache), intent(inout)&#160;</td>
-          <td class="paramname"><em>eft_par_cache</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(eftcamb_timestep_cache ), intent(inout)&#160;</td>
-          <td class="paramname"><em>eft_cache</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that computes the Einstein equations factors. For details refer to the numerical notes. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">a</td><td>the input scale factor.</td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_par_cache</td><td>the EFTCAMB parameter cache that contains all the physical parameters.</td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_cache</td><td>the EFTCAMB timestep cache that contains all the physical values. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="06__abstract__EFTCAMB_8f90_source.html#l00296">296</a> of file <a class="el" href="06__abstract__EFTCAMB_8f90_source.html">06_abstract_EFTCAMB.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="ab210d1c00bf141d2fab90dadf9319361"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_abstract_model::eftcambmodelcomputepi </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__model_1_1eftcamb__model.html">eftcamb_model</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">real(dl), intent(in)&#160;</td>
-          <td class="paramname"><em>a</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(eftcamb_parameter_cache), intent(inout)&#160;</td>
-          <td class="paramname"><em>eft_par_cache</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(eftcamb_timestep_cache ), intent(inout)&#160;</td>
-          <td class="paramname"><em>eft_cache</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that computes the pi field equations factors. For details refer to the numerical notes. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">a</td><td>the input scale factor.</td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_par_cache</td><td>the EFTCAMB parameter cache that contains all the physical parameters.</td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_cache</td><td>the EFTCAMB timestep cache that contains all the physical values. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="06__abstract__EFTCAMB_8f90_source.html#l00378">378</a> of file <a class="el" href="06__abstract__EFTCAMB_8f90_source.html">06_abstract_EFTCAMB.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="a3d47029d695b0433a7c16f49666eb1c5"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_abstract_model::eftcambmodelcomputerhoqpq </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__model_1_1eftcamb__model.html">eftcamb_model</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">real(dl), intent(in)&#160;</td>
-          <td class="paramname"><em>a</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(eftcamb_parameter_cache), intent(inout)&#160;</td>
-          <td class="paramname"><em>eft_par_cache</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(eftcamb_timestep_cache ), intent(inout)&#160;</td>
-          <td class="paramname"><em>eft_cache</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that computes  and P_Q. For details refer to the numerical notes. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">a</td><td>the input scale factor.</td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_par_cache</td><td>the EFTCAMB parameter cache that contains all the physical parameters.</td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_cache</td><td>the EFTCAMB timestep cache that contains all the physical values. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="06__abstract__EFTCAMB_8f90_source.html#l00275">275</a> of file <a class="el" href="06__abstract__EFTCAMB_8f90_source.html">06_abstract_EFTCAMB.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="aa64eb52990e68d518002d77f54ae8579"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_abstract_model::eftcambmodelcomputetensor </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__model_1_1eftcamb__model.html">eftcamb_model</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">real(dl), intent(in)&#160;</td>
-          <td class="paramname"><em>a</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(eftcamb_parameter_cache), intent(inout)&#160;</td>
-          <td class="paramname"><em>eft_par_cache</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(eftcamb_timestep_cache ), intent(inout)&#160;</td>
-          <td class="paramname"><em>eft_cache</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that computes the factors for the tensor propagation equation. For details refer to the numerical notes. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">a</td><td>the input scale factor.</td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_par_cache</td><td>the EFTCAMB parameter cache that contains all the physical parameters.</td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_cache</td><td>the EFTCAMB timestep cache that contains all the physical values. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="06__abstract__EFTCAMB_8f90_source.html#l00449">449</a> of file <a class="el" href="06__abstract__EFTCAMB_8f90_source.html">06_abstract_EFTCAMB.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="a1e85cc6ff6465d9f0620b99ec4d5cb3e"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_abstract_model::eftcambmodelinitbackground </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__model_1_1eftcamb__model.html">eftcamb_model</a>)&#160;</td>
-          <td class="paramname"><em>self</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that initializes the background of the model, if needed. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">self</td><td>the base class </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="06__abstract__EFTCAMB_8f90_source.html#l00265">265</a> of file <a class="el" href="06__abstract__EFTCAMB_8f90_source.html">06_abstract_EFTCAMB.f90</a>.</p>
-
-</div>
-</div>
 <a class="anchor" id="a58e20c962d78d221baedca0fa89ffe01"></a>
 <div class="memitem">
 <div class="memproto">
@@ -404,7 +138,7 @@ Functions/Subroutines</h2></td></tr>
         <tr>
           <td class="memname">subroutine eftcamb_abstract_model::eftcambmodelinitialize </td>
           <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__abstract__model_1_1eftcamb__model.html">eftcamb_model</a>)&#160;</td>
+          <td class="paramtype">class(eftcamb_model)&#160;</td>
           <td class="paramname"><em>self</em>, </td>
         </tr>
         <tr>
@@ -437,14 +171,14 @@ Functions/Subroutines</h2></td></tr>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="06__abstract__EFTCAMB_8f90_source.html#l00250">250</a> of file <a class="el" href="06__abstract__EFTCAMB_8f90_source.html">06_abstract_EFTCAMB.f90</a>.</p>
+<p>Definition at line <a class="el" href="06__abstract__EFTCAMB__model_8f90_source.html#l00256">256</a> of file <a class="el" href="06__abstract__EFTCAMB__model_8f90_source.html">06_abstract_EFTCAMB_model.f90</a>.</p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 26 2016 14:59:38 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Aug 27 2016 08:59:31 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>
