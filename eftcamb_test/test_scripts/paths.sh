@@ -38,7 +38,7 @@ CAMB_DIR=$TEST_DIR/..
 TEST_PARAMS_DIR=$TEST_DIR/parameters
 TEST_PYTHON_DIR=$TEST_DIR/python
 TEST_RESULTS_DIR=$TEST_DIR/results
-TEST_LEGACY_DIR=$TEST_DIR/results_legacy
+TEST_LEGACY_DIR=$TEST_DIR/eftcamb_legacy
 
 # results directory:
 RESULTS_BENCHMARK_DIR=$TEST_RESULTS_DIR/Benchmark_Results
