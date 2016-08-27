@@ -33,15 +33,13 @@ Then the test suite will run also benchmarks and profiling for the same models a
 
 To add a test just add the parameter file to the parameters folder. Everything else will be executed automatically.
 
-4. Replacing baseline results:
-==============================
+4. Baseline results:
+====================
 
-By running the command::
+The folder eftcamb_legacy contains a git repository that hosts the legacy results. 
+This is enclosed as a submodule of the main EFTCAMB repository.
 
-	make create_legacy
-
-the test script will create all the spectra and replace the thrusted ones with the new ones.
-This will totally overwrite the previous results so this command is dangerous to use. Use it with care.
+Running the test for the first time will initialize it.
 
 5. Makefile targets:
 ====================

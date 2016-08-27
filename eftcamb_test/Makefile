@@ -24,7 +24,7 @@ SCRIPT_DIR=$(TEST_DIR)/test_scripts
 RESULTS_DIR=$(TEST_DIR)/results
 PARAMETER_DIR=$(TEST_DIR)/parameters
 PYTHON_DIR=$(TEST_DIR)/python
-LEGACY_DIR=$(TEST_DIR)/results_legacy
+LEGACY_DIR=$(TEST_DIR)/eftcamb_legacy
 
 # make general targets:
 
@@ -52,13 +52,11 @@ spectra_plot:
 	
 # legacy target:
 
-compare_legacy:
-	@bash $(SCRIPT_DIR)/legacy_comp_spectra.sh
+init_legacy:
+	@bash $(SCRIPT_DIR)/legacy_init.sh
 
-create_legacy: spectra
-	@rm -rf $(LEGACY_DIR)/*
-	@mv -f  $(RESULTS_DIR)/Spectra_results/* $(LEGACY_DIR)/
-	@rm -rf $(LEGACY_DIR)/*.log
+compare_legacy: init_legacy
+	@bash $(SCRIPT_DIR)/legacy_comp_spectra.sh
 
 # clean target:
 
