@@ -1,0 +1,3 @@
+[submodule "eftcamb_test/eftcamb_legacy"]
+	path = eftcamb_test/eftcamb_legacy
+	url = https://github.com/EFTCAMB/EFTCAMB_legacy.git
