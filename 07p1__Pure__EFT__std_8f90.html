@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.11"/>
-<title>EFTCAMB: /home/travis/build/EFTCAMB/EFTCAMB/eftcamb/11_EFTCAMB_RGR.f90 File Reference</title>
+<title>EFTCAMB: /home/travis/build/EFTCAMB/EFTCAMB/eftcamb/07p1_Pure_EFT_std.f90 File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -87,40 +87,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#namespaces">Modules</a> &#124;
-<a href="#func-members">Functions/Subroutines</a>  </div>
+<a href="#nested-classes">Data Types</a> &#124;
+<a href="#namespaces">Modules</a>  </div>
   <div class="headertitle">
-<div class="title">11_EFTCAMB_RGR.f90 File Reference</div>  </div>
+<div class="title">07p1_Pure_EFT_std.f90 File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This file contains the RGR algorithm. This operates on general EFT models.  
+<p>This file contains the definition of the Pure EFT model in which the EFT is described by six functions of time and w_DE. Please refer to the numerical notes for details.  
 <a href="#details">More...</a></p>
 
-<p><a href="11__EFTCAMB__RGR_8f90_source.html">Go to the source code of this file.</a></p>
+<p><a href="07p1__Pure__EFT__std_8f90_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Modules</h2></td></tr>
-<tr class="memitem:namespaceeftcamb__returntogr"><td class="memItemLeft" align="right" valign="top">module &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__returntogr.html">eftcamb_returntogr</a></td></tr>
-<tr class="memdesc:namespaceeftcamb__returntogr"><td class="mdescLeft">&#160;</td><td class="mdescRight">This module contains the RGR algorithm. This operates on general EFT models. <br /></td></tr>
+<tr class="memitem:namespaceeftcamb__pure__eft__std"><td class="memItemLeft" align="right" valign="top">module &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__pure__eft__std.html">eftcamb_pure_eft_std</a></td></tr>
+<tr class="memdesc:namespaceeftcamb__pure__eft__std"><td class="mdescLeft">&#160;</td><td class="mdescRight">This module contains the definition of the Pure EFT model in which the EFT is described by six functions of time and w_DE. Please refer to the numerical notes for details. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions/Subroutines</h2></td></tr>
-<tr class="memitem:a88aa32f345582a21913dd4d8a4a03eba"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__returntogr.html#a88aa32f345582a21913dd4d8a4a03eba">eftcamb_returntogr::eftcambreturntogr_feedback</a> ()</td></tr>
-<tr class="memdesc:a88aa32f345582a21913dd4d8a4a03eba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that prints feedback for the RGR module. Prints something only if EFTCAMB_feedback_level is greater than 1.  <a href="namespaceeftcamb__returntogr.html#a88aa32f345582a21913dd4d8a4a03eba">More...</a><br /></td></tr>
-<tr class="separator:a88aa32f345582a21913dd4d8a4a03eba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a43f42e486e1b8099f36b0087466fd8fe"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__returntogr.html#a43f42e486e1b8099f36b0087466fd8fe">eftcamb_returntogr::eftcambreturntogr</a> ()</td></tr>
-<tr class="memdesc:a43f42e486e1b8099f36b0087466fd8fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes the return to GR of a theory.  <a href="namespaceeftcamb__returntogr.html#a43f42e486e1b8099f36b0087466fd8fe">More...</a><br /></td></tr>
-<tr class="separator:a43f42e486e1b8099f36b0087466fd8fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeee3ab5cb370662110caad67734f5ad1"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__returntogr.html#aeee3ab5cb370662110caad67734f5ad1">eftcamb_returntogr::eftcambreturntogr_functions</a> (a, eft_functions)</td></tr>
-<tr class="memdesc:aeee3ab5cb370662110caad67734f5ad1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that computes the EFT functions as we need them for the RGR function.  <a href="namespaceeftcamb__returntogr.html#aeee3ab5cb370662110caad67734f5ad1">More...</a><br /></td></tr>
-<tr class="separator:aeee3ab5cb370662110caad67734f5ad1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This file contains the RGR algorithm. This operates on general EFT models. </p>
+<div class="textblock"><p>This file contains the definition of the Pure EFT model in which the EFT is described by six functions of time and w_DE. Please refer to the numerical notes for details. </p>
 
-<p>Definition in file <a class="el" href="11__EFTCAMB__RGR_8f90_source.html">11_EFTCAMB_RGR.f90</a>.</p>
+<p>Definition in file <a class="el" href="07p1__Pure__EFT__std_8f90_source.html">07p1_Pure_EFT_std.f90</a>.</p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

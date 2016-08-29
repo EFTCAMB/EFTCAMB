@@ -18,6 +18,7 @@ var searchData=
   ['eftcamb_5fcache',['eftcamb_cache',['../namespaceeftcamb__cache.html',1,'']]],
   ['eftcamb_5fconstant_5fparametrization_5f1d',['eftcamb_constant_parametrization_1d',['../namespaceeftcamb__constant__parametrization__1d.html',1,'']]],
   ['eftcamb_5fconstant_5fparametrization_5f2d',['eftcamb_constant_parametrization_2d',['../namespaceeftcamb__constant__parametrization__2d.html',1,'']]],
+  ['eftcamb_5fdesigner_5ffr',['eftcamb_designer_fr',['../namespaceeftcamb__designer__fr.html',1,'']]],
   ['eftcamb_5ffeedback_5flevel',['eftcamb_feedback_level',['../structeftcamb__main_1_1eftcamb.html#afed6473f72be52b10fdd5f63c6be902a',1,'eftcamb_main::eftcamb']]],
   ['eftcamb_5fgr_5fmodel',['eftcamb_gr_model',['../namespaceeftcamb__gr__model.html',1,'']]],
   ['eftcamb_5finit_5ffrom_5ffile',['eftcamb_init_from_file',['../structeftcamb__main_1_1eftcamb.html#af4f6fc03f727bca0aba89f38376ddd16',1,'eftcamb_main::eftcamb']]],

@@ -17,5 +17,6 @@ var searchData=
   ['06p1_5feftcamb_5fgr_2ef90',['06p1_EFTCAMB_GR.f90',['../06p1__EFTCAMB__GR_8f90.html',1,'']]],
   ['06p2_5fabstract_5feftcamb_5ffull_2ef90',['06p2_abstract_EFTCAMB_full.f90',['../06p2__abstract__EFTCAMB__full_8f90.html',1,'']]],
   ['06p3_5fabstract_5feftcamb_5fdesigner_2ef90',['06p3_abstract_EFTCAMB_designer.f90',['../06p3__abstract__EFTCAMB__designer_8f90.html',1,'']]],
-  ['07_5fpure_5feft_5fstd_2ef90',['07_Pure_EFT_std.f90',['../07__Pure__EFT__std_8f90.html',1,'']]]
+  ['07p1_5fpure_5feft_5fstd_2ef90',['07p1_Pure_EFT_std.f90',['../07p1__Pure__EFT__std_8f90.html',1,'']]],
+  ['09p1_5fdesigner_5ffr_2ef90',['09p1_Designer_fR.f90',['../09p1__Designer__fR_8f90.html',1,'']]]
 ];
