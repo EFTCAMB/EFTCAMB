@@ -13,10 +13,12 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file benchmark.F90
-!! This application runs the benchmarks for a given EFTCAMB model.
+!> @file stability_sampler.F90
+!! This application takes care of doing 1D and 2D parameter space sampling enforcing
+!! EFTCAMB viability conditions, as specified by a parameter file.
+!! Part of this file is taken from the inidriver file of CAMB.
 
-program benchmarker
+program stability_sampler
 
     use IniFile
     use CAMB
@@ -44,10 +46,6 @@ program benchmarker
         MatterPowerFileNames(max_transfer_redshifts), outroot, version_check
     real(dl) output_factor, nmassive
     real(dl) t1, t2
-
-    ! EFTCAMB BENCHMARK:
-    real(dl), allocatable :: timings(:)
-    real(dl)              :: time, variance
 
 #ifdef WRITE_FITS
     character(LEN=Ini_max_string_len) FITSfilename
@@ -350,54 +348,18 @@ program benchmarker
 
     write(*,"(a,a)") 'Model: ', trim(outroot)
 
-    allocate( timings(benchmark_count) )
+    ! compute the number of parameters:
 
-    do i=1, benchmark_count
 
-        t1 = omp_get_wtime()
+    ! check if the number of parameters is less than 2 for the simple samplers to work:
 
-        if (global_error_flag==0) call CAMB_GetResults(P)
-        if (global_error_flag/=0) then
-            write (*,*) 'Error result '//trim(global_error_message)
-            stop
-        endif
 
-        t2 = omp_get_wtime()
+    ! do the sampling and save to file:
 
-        t2 = (t2 -t1)
-
-        timings(i) = t2
-
-    end do
-
-    ! compute time statistics:
-    ! 1) mean and variance:
-    time     = 0._dl
-    if ( benchmark_count>0 ) then
-        do i=1, benchmark_count
-            time = time +timings(i)
-        end do
-        time = time/real(benchmark_count)
-    end if
-    ! 2) variance:
-    variance = 0._dl
-    if ( benchmark_count>1 ) then
-        do i=1, benchmark_count
-            variance = variance + (timings(i)-time)**2
-        end do
-        variance = sqrt( variance/real(benchmark_count-1) )
-    end if
-
-    ! print results:
-    if ( benchmark_count>1 ) then
-        write(*,"(F9.3,a,F9.3,a)") time, ' +- ', variance, ' (sec)'
-    else if ( benchmark_count>0 .and. benchmark_count<=1 ) then
-        write(*,"(F9.3,a)") time, ' (sec)'
-    end if
 
     call CAMB_cleanup
     stop
 
 100 stop 'Must give num_massive number of integer physical neutrinos for each eigenstate'
 
-end program benchmarker
+end program stability_sampler
