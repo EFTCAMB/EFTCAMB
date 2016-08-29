@@ -140,10 +140,13 @@ module EFTCAMB_cache
         real(dl) :: EFTeomV       !< the value of the Einstein equations coefficient V. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTeomVdot    !< the value of the Einstein equations coefficient dV/dtau. Refer to the Numerical Notes for the definition.
         ! 8) pi field factors:
-        real(dl) :: EFTpiA        !< the value of the pi field equation coefficient A. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTpiB        !< the value of the pi field equation coefficient B. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiA1       !< the value of the pi field equation coefficient A1. Scale independent part of A. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiA2       !< the value of the pi field equation coefficient A2. Part proportional to \f$ k^2 \f$. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiB1       !< the value of the pi field equation coefficient B1. Scale independent part of B. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiB2       !< the value of the pi field equation coefficient B2. Part proportional to \f$ k^2 \f$. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTpiC        !< the value of the pi field equation coefficient C. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFTpiD        !< the value of the pi field equation coefficient D. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiD1       !< the value of the pi field equation coefficient D1. Scale independent part of D. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTpiD2       !< the value of the pi field equation coefficient D2. Part proportional to \f$ k^2 \f$. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTpiE        !< the value of the pi field equation coefficient E. Refer to the Numerical Notes for the definition.
         ! 9) pi field quantities:
         real(dl) :: pi            !< the value of the pi field at a given time and scale.
@@ -246,10 +249,13 @@ contains
         self%EFTeomV       = 0._dl
         self%EFTeomVdot    = 0._dl
         ! 8) pi field factors:
-        self%EFTpiA        = 0._dl
-        self%EFTpiB        = 0._dl
+        self%EFTpiA1       = 0._dl
+        self%EFTpiA2       = 0._dl
+        self%EFTpiB1       = 0._dl
+        self%EFTpiB2       = 0._dl
         self%EFTpiC        = 0._dl
-        self%EFTpiD        = 0._dl
+        self%EFTpiD1       = 0._dl
+        self%EFTpiD2       = 0._dl
         self%EFTpiE        = 0._dl
         ! 9) pi field quantities:
         self%pi            = 0._dl

@@ -2424,19 +2424,19 @@ contains
             call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , EV%eft_cache )
             ! use them:
             ayprime(EV%w_ix)   =  EV%eft_cache%pidot
-            ayprime(EV%w_ix+1) = -EV%eft_cache%EFTpiB/EV%eft_cache%EFTpiA*EV%eft_cache%pidot &
-                & - ( EV%eft_cache%EFTpiC +k*k*EV%eft_cache%EFTpiD )/EV%eft_cache%EFTpiA*EV%eft_cache%pi &
-                & - CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/EV%eft_cache%EFTpiA
+            ayprime(EV%w_ix+1) = -( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )*EV%eft_cache%pidot &
+                & - ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )*EV%eft_cache%pi &
+                & - CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )
             ! strategies to adopt if the theory does not propagate an additional dof
-            if (EV%eft_cache%EFTpiA==0._dl) then
-                if ( EV%eft_cache%EFTpiB==0._dl ) then
+            if ( ( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )==0._dl) then
+                if ( ( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )==0._dl ) then
                     vq                 = 0._dl
                     ay(EV%w_ix)        = 0._dl
                     ay(EV%w_ix+1)      = 0._dl
                     ayprime(EV%w_ix)   = 0._dl
                     ayprime(EV%w_ix+1) = 0._dl
                 else
-                    vq                 = -(EV%eft_cache%EFTpiC+ k*k*EV%eft_cache%EFTpiD)*clxq/EV%eft_cache%EFTpiB -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/EV%eft_cache%EFTpiB
+                    vq                 = -( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 )*clxq/( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 ) -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )
                     ay(EV%w_ix+1)      = vq
                     ayprime(EV%w_ix)   = vq
                     ayprime(EV%w_ix+1) = 0._dl
