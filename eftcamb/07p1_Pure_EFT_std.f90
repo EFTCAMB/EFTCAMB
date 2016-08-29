@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 07_Pure_EFT_std.f90
+!> @file 07p1_Pure_EFT_std.f90
 !! This file contains the definition of the Pure EFT model in which the EFT is described
 !! by six functions of time and w_DE. Please refer to the numerical notes for details.
 
