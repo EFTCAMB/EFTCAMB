@@ -27,11 +27,12 @@
 module EFTCAMB_main
 
     use precision
-    use EFTCAMB_abstract_model
-    use EFTCAMB_pure_EFT_std
     use IniFile
     use AMLutils
     use EFTDef
+    use EFTCAMB_abstract_model
+    use EFTCAMB_pure_EFT_std
+    use EFTCAMB_designer_fR
 
     implicit none
 
@@ -220,11 +221,7 @@ contains
         ! do the allocation:
         select case ( self%EFTflag )
 
-            case (0)     ! GR:
-
-                ! cannot allocate an abstract type. Create a GR model.
-                !allocate( EFTCAMB_model::self%model )
-                !call self%model%init( 'GR', 'GR' )
+            case (0)     ! GR: no need to allocate
 
             case (1)     ! Pure EFT:
 
@@ -241,9 +238,26 @@ contains
 
             case (2)     ! Alternative EFT:
 
+                write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
+                call MpiStop('EFTCAMB error')
+
             case (3)     ! Designer mapping EFT:
 
+                select case ( self%DesignerEFTmodel )
+                    case(1)
+                        allocate( EFTCAMB_fR_designer::self%model )
+                        call self%model%init( 'Designer f(R)', 'Designer f(R)' )
+                    case default
+                        write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
+                        write(*,'(a,I3)') 'and DesignerEFTmodel =', self%DesignerEFTmodel
+                        write(*,'(a)')    'Please select an appropriate model.'
+                        call MpiStop('EFTCAMB error')
+                end select
+
             case (4)     ! Full mapping EFT:
+
+                write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
+                call MpiStop('EFTCAMB error')
 
             case default ! not found:
 

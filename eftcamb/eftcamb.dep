@@ -93,10 +93,11 @@ $(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o :  \
 	$(OUTPUT_DIR)/constants.o
 
 $(OUTPUT_DIR)/11_EFTCAMB_main.o :  \
+	$(OUTPUT_DIR)/09p1_Designer_fR.o \
 	$(OUTPUT_DIR)/06_abstract_EFTCAMB_model.o \
 	$(OUTPUT_DIR)/inifile.o \
-	$(OUTPUT_DIR)/utils.o \
 	$(OUTPUT_DIR)/constants.o \
+	$(OUTPUT_DIR)/utils.o \
 	$(OUTPUT_DIR)/01_EFT_def.o \
 	$(OUTPUT_DIR)/07p1_Pure_EFT_std.o
 
@@ -239,10 +240,11 @@ $(DLL_DIR)/03_abstract_EFTCAMB_cache.o :  \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/11_EFTCAMB_main.o :  \
+	$(DLL_DIR)/09p1_Designer_fR.o \
 	$(DLL_DIR)/06_abstract_EFTCAMB_model.o \
 	$(DLL_DIR)/inifile.o \
-	$(DLL_DIR)/utils.o \
 	$(DLL_DIR)/constants.o \
+	$(DLL_DIR)/utils.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/07p1_Pure_EFT_std.o
 

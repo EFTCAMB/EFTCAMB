@@ -59,12 +59,17 @@ module EFTCAMB_designer_fR
         procedure :: allocate_model_selection        => EFTCAMBDesignerFRAllocateModelSelection      !< subroutine that allocates the model selection.
         procedure :: init_model_parameters           => EFTCAMBDesignerFRInitModelParameters         !< subroutine taht initializes the model parameters based on the values found in an input array.
         procedure :: init_model_parameters_from_file => EFTCAMBDesignerFRInitModelParametersFromFile !< subroutine that reads the parameters of the model from file.
+
+        ! background solver:
+        procedure :: initialize_background           => EFTCAMBDesignerFRInitBackground   !< subroutine that initializes the background of designer f(R).
+
         ! utility functions:
         procedure :: compute_param_number  => EFTCAMBDesignerFRComputeParametersNumber    !< subroutine that computes the number of parameters of the model.
         procedure :: feedback              => EFTCAMBDesignerFRFeedback                   !< subroutine that prints on the screen feedback information about the model.
         procedure :: parameter_names       => EFTCAMBDesignerFRParameterNames             !< subroutine that returns the i-th parameter name of the model.
         procedure :: parameter_names_latex => EFTCAMBDesignerFRParameterNamesLatex        !< subroutine that returns the i-th parameter name of the model.
         procedure :: parameter_values      => EFTCAMBDesignerFRParameterValues            !< subroutine that returns the i-th parameter value.
+
         ! CAMB related procedures:
         procedure :: compute_background_EFT_functions  => EFTCAMBDesignerFRBackgroundEFTFunctions   !< subroutine that computes the value of the background EFT functions at a given time.
         procedure :: compute_secondorder_EFT_functions => EFTCAMBDesignerFRSecondOrderEFTFunctions  !< subroutine that computes the value of the second order EFT functions at a given time.
@@ -147,6 +152,28 @@ contains
     end subroutine EFTCAMBDesignerFRInitModelParametersFromFile
 
     ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the background of designer f(R).
+    subroutine EFTCAMBDesignerFRInitBackground( self, params_cache )
+
+        implicit none
+
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
+        type(EFTCAMB_parameter_cache), intent(in)    :: params_cache  !< a EFTCAMB parameter cache containing cosmological parameters
+
+
+
+
+
+
+
+
+
+        write(*,*) 'ciao Marco', params_cache%h0
+        stop
+
+    end subroutine EFTCAMBDesignerFRInitBackground
+
+    ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the number of parameters of the model.
     subroutine EFTCAMBDesignerFRComputeParametersNumber( self )
 
@@ -171,10 +198,12 @@ contains
         write(*,'(a,a)')    '   Model               =  ', self%name
         write(*,'(a,I3)')   '   Number of params    ='  , self%parameter_number
         ! print model functions informations:
+        if ( self%EFTwDE /= 0 ) then
+            write(*,*)
+            write(*,'(a,I3)')  '   EFTwDE              =', self%EFTwDE
+        end if
         write(*,*)
-        if ( self%EFTwDE             /= 0 ) write(*,'(a,I3)') '   EFTwDE              =', self%EFTwDE
-        write(*,*)
-        write(*,'(a,I3)')   '   B0 ='  , self%parameter_number
+        write(*,'(a24,F12.6)') '   B0                  =', self%B0
 
         call self%PureEFTwDE%feedback()
 

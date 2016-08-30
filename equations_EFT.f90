@@ -66,7 +66,7 @@ subroutine init_background
     ! EFTCAMB MOD START: call EFTCAMB model background initialization
     use ModelParams
     if ( CP%EFTCAMB%EFTFlag /= 0 ) then
-        call CP%EFTCAMB%model%initialize_background()
+        call CP%EFTCAMB%model%initialize_background( CP%eft_par_cache )
     end if
     ! EFTCAMB MOD END.
 

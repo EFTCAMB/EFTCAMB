@@ -267,11 +267,12 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the background of the model, if needed.
-    subroutine EFTCAMBModelInitBackground( self )
+    subroutine EFTCAMBModelInitBackground( self, params_cache )
 
         implicit none
 
         class(EFTCAMB_model)                         :: self          !< the base class
+        type(EFTCAMB_parameter_cache), intent(in)    :: params_cache  !< a EFTCAMB parameter cache containing cosmological parameters
 
     end subroutine EFTCAMBModelInitBackground
 
