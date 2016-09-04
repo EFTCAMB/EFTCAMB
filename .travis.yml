@@ -30,10 +30,10 @@ env:
 script:
   - while true; do echo 'Travis do not sleep!'; sleep 300s; done &
   - TIME_PID=$!
-  - docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make eftcamb"
-  - docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make eftcamb_apps"
-  - docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd)/eftcamb_test ; make test"
-  - docker run -v $(pwd):$(pwd) -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make eftcamb_doc"
+  - docker run -v $(pwd):$(pwd) -e TRAVIS -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make eftcamb"
+  - docker run -v $(pwd):$(pwd) -e TRAVIS -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make eftcamb_apps"
+  - docker run -v $(pwd):$(pwd) -e TRAVIS -t eftcamb/eftbox /bin/sh -c "cd $(pwd)/eftcamb_test ; make test"
+  - docker run -v $(pwd):$(pwd) -e TRAVIS -t eftcamb/eftbox /bin/sh -c "cd $(pwd) ; make eftcamb_doc"
   - kill $TIME_PID
 
 after_success:

@@ -223,7 +223,7 @@ contains
         OmegaGamma_EFT     = params_cache%omegag
         OmegaNu_EFT        = params_cache%omegar
 
-        Omegarad_EFT = OmegaGamma_EFT + OmegaNu_EFT
+        Omegarad_EFT       = OmegaGamma_EFT + OmegaNu_EFT
 
         EquivalenceScale_fR = (Omegarad_EFT+ OmegaMassiveNu_EFT)/Omegam_EFT
         Ratio_fR = EquivalenceScale_fR/Exp( self%x_initial )
@@ -387,9 +387,9 @@ contains
                     adotoa = +a*params_cache%h0_Mpc*sqrt(EFunction)
                     Hdot   = +0.5_dl*params_cache%h0_Mpc**2*a**2*EFunPrime +adotoa**2
 
-                    rhonu  = 0._dl
-                    presnu = 0._dl
-                    presnudot = 0._dl
+                    rhonu        = 0._dl
+                    presnu       = 0._dl
+                    presnudot    = 0._dl
                     presnudotdot = 0._dl
 
                     grhormass_t = params_cache%grhormass(nu_i)/a**2
@@ -561,6 +561,11 @@ contains
                 & -3._dl*Omegavac_EFT*exp(-3._dl*EFT_E_gfun)*&
                 &(EFT_E_gfunppp-9._dl*EFT_E_gfunp*EFT_E_gfunpp+9._dl*EFT_E_gfunp**3) + EFT_E3P_nu
 
+            ! compute E dark energy:
+            Ede   = +Omegavac_EFT*exp(-3._dl*EFT_E_gfun)
+            Edep  = -3._dl*Omegavac_EFT*EFT_E_gfunp*exp(-3._dl*EFT_E_gfun)
+            Edepp = -3._dl*Omegavac_EFT*exp(-3._dl*EFT_E_gfun)*(EFT_E_gfunpp -3._dl*EFT_E_gfunp**2)
+
             ! call derivs to compute ydot at a given time:
             call derivs( num_eq, x, y, ydot )
 
@@ -570,21 +575,16 @@ contains
 
             ! compute B:
             B       = 2._dl/3._dl/(1._dl +f_sub_R)*1._dl/(4._dl*EFunPrime +EFunPrime2)*EFunction/EFunPrime*&
-                &(ydot(2)-ydot(1)*(4._dl*EFunPrime2+EFunPrime3)/(4._dl*EFunPrime +EFunPrime2))
-
-            ! compute E dark energy:
-            Ede   = +Omegavac_EFT*exp(-3._dl*EFT_E_gfun)
-            Edep  = -3._dl*Omegavac_EFT*EFT_E_gfunp*exp(-3._dl*EFT_E_gfun)
-            Edepp = -3._dl*Omegavac_EFT*exp(-3._dl*EFT_E_gfun)*(EFT_E_gfunpp -3._dl*EFT_E_gfunp**2)
+                &( ydot(2) -ydot(1)*(4._dl*EFunPrime2+EFunPrime3)/(4._dl*EFunPrime +EFunPrime2) )
 
             ! compute the EFT functions:
             self%EFTOmega%y(ind)    = f_sub_R
             self%EFTOmega%yp(ind)   = Exp(-x)/(6._dl*EFunction*(EFunPrime2+4._dl*EFunPrime))*(-EFunPrime2*(6._dl*Ede+y(1))&
                 &+EFunPrime*(ydot(1)-4._dl*(6._dl*Ede +y(1)))+2._dl*EFunction*ydot(1))
+
             self%EFTOmega%ypp(ind)  = Exp(-2._dl*x)/(12._dl*EFunction**2*(EFunPrime2+4._dl*EFunPrime))*&
                 &(EFunPrime*(EFunPrime*(24._dl*Ede-ydot(1) +4._dl*y(1))-6._dl*EFunction*(8._dl*Edep +ydot(1)))&
                 &+EFunPrime2*(EFunPrime*(6._dl*Ede +y(1))-12._dl*EFunction*Edep))
-
             self%EFTOmega%yppp(ind) = Exp(-3._dl*x)/(24._dl*EFunction**3*(EFunPrime2+4._dl*EFunPrime))*&
                 &(2._dl*EFunction*(EFunPrime2**2*(6._dl*Ede+y(1))&
                 & +4._dl*EFunPrime**2*(18._dl*Edep+6._dl*Ede+2._dl*ydot(1) +y(1))&
@@ -830,7 +830,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer) :: self   !< the base class
+        class(EFTCAMB_fR_designer)  :: self   !< the base class
         integer     , intent(in)    :: i      !< the index of the parameter
         character(*), intent(out)   :: name   !< the output name of the i-th parameter
 

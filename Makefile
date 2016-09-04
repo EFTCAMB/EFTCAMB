@@ -14,7 +14,7 @@ F90C     = ifort
 #FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
 #DEBUGFLAGS = -openmp -g -check all -check noarg_temp_created -traceback -fpp -fpe0
 FFLAGS = -qopenmp -O3 -W0 -WB -fpp -qopt-report=0
-DEBUGFLAGS = -qopenmp -mkl=parallel -fpp -g -qopt-report=0 -fp-stack-check -O0 -traceback -check all -check bounds -check uninit -check noarg_temp_created
+DEBUGFLAGS = -qopenmp -mkl=parallel -fpp -g -qopt-report=0 -fp-stack-check -O0 -traceback -check all -check bounds -check uninit -check noarg_temp_created -DDEBUG
 # EFTCAMB MOD END.
 SFFLAGS = -shared -fpic
 ## This is flag is passed to the Fortran compiler allowing it to link C++ if required (not usually):
