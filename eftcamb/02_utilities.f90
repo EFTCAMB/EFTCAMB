@@ -34,7 +34,6 @@ module EFTCAMB_mixed_algorithms
 
 contains
 
-
     ! ---------------------------------------------------------------------------------------------
     !> Hunting algorithm: This is used to efficiently search an ordered table by means of a
     !> hunting and a bisection algorithm.
@@ -42,10 +41,10 @@ contains
 
         implicit none
 
-        integer  n     !< the length of the table
-        real(dl) xx(n) !< the table to be searched
-        real(dl) x     !< the requested value
-        integer  jlo   !< the index of the closest (from below) entry of the table
+        integer  :: n      !< the length of the table
+        real(dl) :: xx(n)  !< the table to be searched
+        real(dl) :: x      !< the requested value
+        integer  :: jlo    !< the index of the closest (from below) entry of the table
 
         integer inc,jhi,jm
         logical ascnd

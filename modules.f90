@@ -396,10 +396,14 @@ contains
         fHe = CP%YHe/(mass_ratio_He_H*(1.d0-CP%YHe))  !n_He_tot / n_H_tot
 
         if (.not.call_again) then
+
+            ! EFTCAMB MOD START: clean up the EFTCAMB parameter cache
+            call CP%eft_par_cache%initialize()
+            ! EFTCAMB MOD END.
+
             call init_massive_nu(CP%omegan /=0)
 
             ! EFTCAMB MOD START: initialize the EFTCAMB parameter cache
-            call CP%eft_par_cache%initialize()
             ! 1) relative densities:
             CP%eft_par_cache%omegac      = CP%omegac
             CP%eft_par_cache%omegab      = CP%omegab

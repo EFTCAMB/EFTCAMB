@@ -53,7 +53,6 @@ module EFTDef
 
     integer , parameter :: EFT_RGR_num_points   = 1000  !< number of points to sample logaritmically the time in the return to GR module.
 
-
 end module EFTDef
 
 !----------------------------------------------------------------------------------------

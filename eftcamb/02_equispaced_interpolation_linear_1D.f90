@@ -17,6 +17,7 @@
 !! This file contains the class that can be used for 1D linearly interpolated functions
 !! on an equispaced grid.
 
+
 !----------------------------------------------------------------------------------------
 !> This module contains the class that can be used for 1D linearly interpolated functions
 !! on an equispaced grid.

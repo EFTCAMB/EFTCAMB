@@ -14,21 +14,17 @@
 !----------------------------------------------------------------------------------------
 
 !> @file 03_abstract_EFTCAMB_cache.f90
-!! This file contains the definition of a time step cache for EFTCAMB.
-!! To perform EFTCAMB calculations, at any timestep, we need several quantities.
-!! Densities, values of the EFT functions and so on.
-!! Instead of complicating the interface of the functions we shall define a type that
-!! holds all these informations.
-!! We also need a cache for cosmological parameters that are used in the calculations.
+!! This file contains the definition of the EFTCAMB caches.
+!! These are used to store parameters that can be used by EFTCAMB, in EFTCAMB_parameter_cache
+!! or are used to store partial results when solving the time evolution of perturbations,
+!! in EFTCAMB_timestep_cache.
 
 
 !----------------------------------------------------------------------------------------
-!> This module contains the definition of a time step cache for EFTCAMB.
-!! To perform EFTCAMB calculations, at any timestep, we need several quantities.
-!! Densities, values of the EFT functions and so on.
-!! Instead of complicating the interface of the functions we shall define a type that
-!! holds all these informations.
-!! We also need a cache for cosmological parameters that are used in the calculations.
+!> This module contains the definition of the EFTCAMB caches.
+!! These are used to store parameters that can be used by EFTCAMB, in EFTCAMB_parameter_cache
+!! or are used to store partial results when solving the time evolution of perturbations,
+!! in EFTCAMB_timestep_cache.
 
 !> @author Bin Hu, Marco Raveri
 
@@ -46,6 +42,8 @@ module EFTCAMB_cache
     !----------------------------------------------------------------------------------------
     !> This is the type that defines the EFTCAMB parameter cache. The idea is to copy in here
     !! the cosmological parameters that we need from CAMB and then use this for the interfaces.
+    !! This also contains a wrapper for Massive Neutrinos quantities that can be used in
+    !! the background code.
     type :: EFTCAMB_parameter_cache
 
         ! 1) relative densities:
@@ -57,8 +55,8 @@ module EFTCAMB_cache
         real(dl) :: omegag         !< the value of \f$ \Omega_{ \gamma }^0 \f$.
         real(dl) :: omegar         !< the value of \f$ \Omega_{ \nu }^0 \f$ of massless neutrinos.
         ! 2) Hubble constant:
-        real(dl) :: h0             !< reduced Hubble constant \f$ H_0/100 \f$
-        real(dl) :: h0_Mpc         !< the Hubble constant in MegaParsec \f$ 10^3 \cdot H_0/c \f$
+        real(dl) :: h0             !< reduced Hubble constant \f$ H_0/100 \f$.
+        real(dl) :: h0_Mpc         !< the Hubble constant in MegaParsec \f$ 10^3 \cdot H_0/c \f$.
         ! 3) densities:
         real(dl) :: grhog          !< the value of \f$ 8 \pi G_{N} \rho_{\gamma}(t_0) \f$.
         real(dl) :: grhornomass    !< the value of \f$ 8 \pi G_{N} \rho_{\nu}(t_0) \f$.
@@ -67,10 +65,10 @@ module EFTCAMB_cache
         real(dl) :: grhov          !< the value of \f$ 8 \pi G_{N} \rho_{\Lambda}(t_0) \f$.
         real(dl) :: grhok          !< the value of \f$ 8 \pi G_{N} \rho_{\rm K}(t_0) \f$.
         ! 4) massive neutrinos:
-        integer  :: Num_Nu_Massive                       !< number of massive neutrinos
-        integer  :: Nu_mass_eigenstates                  !< number of mass eigenstates
-        real(dl), allocatable, dimension(:) :: grhormass !< densities of neutrinos in each mass eigenstate \f$ 8 \pi G_{N} \rho_{ m\nu }(t_0) \f$
-        real(dl), allocatable, dimension(:) :: nu_masses !< neutrino masses
+        integer  :: Num_Nu_Massive                        !< number of massive neutrinos
+        integer  :: Nu_mass_eigenstates                   !< number of mass eigenstates
+        real(dl), allocatable, dimension(:) :: grhormass  !< densities of neutrinos in each mass eigenstate \f$ 8 \pi G_{N} \rho_{ m\nu }(t_0) \f$
+        real(dl), allocatable, dimension(:) :: nu_masses  !< neutrino masses
         ! 5) massive neutrinos wrapper:
         procedure( Nu_background_Wrapper ), pointer, nopass :: Nu_background => null()  !< wrapper to the subroutine that computes the background massive neutrinos density and pressure.
         procedure( Nu_rho_Wrapper        ), pointer, nopass :: Nu_rho        => null()  !< wrapper to the subroutine that computes the background massive neutrinos density.
@@ -366,6 +364,10 @@ contains
         self%Nu_mass_eigenstates  = 0
         if ( allocated(self%grhormass) ) deallocate(self%grhormass)
         if ( allocated(self%nu_masses) ) deallocate(self%nu_masses)
+        if ( associated(self%Nu_background) ) nullify(self%Nu_background)
+        if ( associated(self%Nu_rho)        ) nullify(self%Nu_rho)
+        if ( associated(self%Nu_pidot)      ) nullify(self%Nu_pidot)
+        if ( associated(self%Nu_pidotdot)   ) nullify(self%Nu_pidotdot)
 
     end subroutine EFTCAMBParameterCacheInit
 
