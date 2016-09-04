@@ -60,27 +60,27 @@ contains
 
             write(*,'(a)') 'EFT functions at RGR time: '
 
-            if ( eft_functions(1 ) .gt. 0._dl ) write(*,'(a15,E12.6)') 'OmegaV       = ', eft_functions(1 ) +EFTtoGR
-            if ( eft_functions(2 ) .gt. 0._dl ) write(*,'(a15,E12.6)') 'OmegaP       = ', eft_functions(2 ) +EFTtoGR
-            if ( eft_functions(3 ) .gt. 0._dl ) write(*,'(a15,E12.6)') 'OmegaPP      = ', eft_functions(3 ) +EFTtoGR
-            if ( eft_functions(4 ) .gt. 0._dl ) write(*,'(a15,E12.6)') 'OmegaPPP     = ', eft_functions(4 ) +EFTtoGR
-            if ( eft_functions(5 ) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTc         = ', eft_functions(5 ) +EFTtoGR
-            if ( eft_functions(6 ) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTLambda    = ', eft_functions(6 ) +EFTtoGR
-            if ( eft_functions(7 ) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTcdot      = ', eft_functions(7 ) +EFTtoGR
-            if ( eft_functions(8 ) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTLambdadot = ', eft_functions(8 ) +EFTtoGR
-            if ( eft_functions(9 ) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma1V   = ', eft_functions(9 ) +EFTtoGR
-            if ( eft_functions(10) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma1P   = ', eft_functions(10) +EFTtoGR
-            if ( eft_functions(11) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma2V   = ', eft_functions(11) +EFTtoGR
-            if ( eft_functions(12) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma2P   = ', eft_functions(12) +EFTtoGR
-            if ( eft_functions(13) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma3V   = ', eft_functions(13) +EFTtoGR
-            if ( eft_functions(14) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma3P   = ', eft_functions(14) +EFTtoGR
-            if ( eft_functions(15) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma4V   = ', eft_functions(15) +EFTtoGR
-            if ( eft_functions(16) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma4P   = ', eft_functions(16) +EFTtoGR
-            if ( eft_functions(17) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma4PP  = ', eft_functions(17) +EFTtoGR
-            if ( eft_functions(18) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma5V   = ', eft_functions(18) +EFTtoGR
-            if ( eft_functions(19) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma5P   = ', eft_functions(19) +EFTtoGR
-            if ( eft_functions(20) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma6V   = ', eft_functions(18) +EFTtoGR
-            if ( eft_functions(21) .gt. 0._dl ) write(*,'(a15,E12.6)') 'EFTGamma6P   = ', eft_functions(19) +EFTtoGR
+            if ( eft_functions(1 ) .gt. 0._dl ) write(*,'(a15,E13.6)') 'OmegaV       = ', eft_functions(1 ) +EFTtoGR
+            if ( eft_functions(2 ) .gt. 0._dl ) write(*,'(a15,E13.6)') 'OmegaP       = ', eft_functions(2 ) +EFTtoGR
+            if ( eft_functions(3 ) .gt. 0._dl ) write(*,'(a15,E13.6)') 'OmegaPP      = ', eft_functions(3 ) +EFTtoGR
+            if ( eft_functions(4 ) .gt. 0._dl ) write(*,'(a15,E13.6)') 'OmegaPPP     = ', eft_functions(4 ) +EFTtoGR
+            if ( eft_functions(5 ) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTc         = ', eft_functions(5 ) +EFTtoGR
+            if ( eft_functions(6 ) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTLambda    = ', eft_functions(6 ) +EFTtoGR
+            if ( eft_functions(7 ) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTcdot      = ', eft_functions(7 ) +EFTtoGR
+            if ( eft_functions(8 ) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTLambdadot = ', eft_functions(8 ) +EFTtoGR
+            if ( eft_functions(9 ) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma1V   = ', eft_functions(9 ) +EFTtoGR
+            if ( eft_functions(10) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma1P   = ', eft_functions(10) +EFTtoGR
+            if ( eft_functions(11) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma2V   = ', eft_functions(11) +EFTtoGR
+            if ( eft_functions(12) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma2P   = ', eft_functions(12) +EFTtoGR
+            if ( eft_functions(13) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma3V   = ', eft_functions(13) +EFTtoGR
+            if ( eft_functions(14) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma3P   = ', eft_functions(14) +EFTtoGR
+            if ( eft_functions(15) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma4V   = ', eft_functions(15) +EFTtoGR
+            if ( eft_functions(16) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma4P   = ', eft_functions(16) +EFTtoGR
+            if ( eft_functions(17) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma4PP  = ', eft_functions(17) +EFTtoGR
+            if ( eft_functions(18) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma5V   = ', eft_functions(18) +EFTtoGR
+            if ( eft_functions(19) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma5P   = ', eft_functions(19) +EFTtoGR
+            if ( eft_functions(20) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma6V   = ', eft_functions(18) +EFTtoGR
+            if ( eft_functions(21) .gt. 0._dl ) write(*,'(a15,E13.6)') 'EFTGamma6P   = ', eft_functions(19) +EFTtoGR
 
         end if
 

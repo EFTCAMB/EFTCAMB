@@ -355,7 +355,6 @@ contains
         self%h0_Mpc      = 0._dl
         self%grhog       = 0._dl
         self%grhornomass = 0._dl
-        self%grhormass   = 0._dl
         self%grhoc       = 0._dl
         self%grhob       = 0._dl
         self%grhov       = 0._dl
@@ -385,26 +384,26 @@ contains
         write(*,'(a)') "***************************************************************"
         write(*,'(a)') 'EFTCAMB parameters cache content:'
         write(*,'(a)') "***************************************************************"
-        write(*,'(a14,E12.6)') ' Omega_CDM  : ', self%omegac
-        write(*,'(a14,E12.6)') ' Omega_b    : ', self%omegab
-        write(*,'(a14,E12.6)') ' Omega_v    : ', self%omegav
-        write(*,'(a14,E12.6)') ' Omega_k    : ', self%omegak
-        write(*,'(a14,E12.6)') ' Omega_n    : ', self%omegan
-        write(*,'(a14,E12.6)') ' Omega_g    : ', self%omegag
-        write(*,'(a14,E12.6)') ' Omega_r    : ', self%omegar
+        write(*,'(a14,E13.6)') ' Omega_CDM  : ', self%omegac
+        write(*,'(a14,E13.6)') ' Omega_b    : ', self%omegab
+        write(*,'(a14,E13.6)') ' Omega_v    : ', self%omegav
+        write(*,'(a14,E13.6)') ' Omega_k    : ', self%omegak
+        write(*,'(a14,E13.6)') ' Omega_n    : ', self%omegan
+        write(*,'(a14,E13.6)') ' Omega_g    : ', self%omegag
+        write(*,'(a14,E13.6)') ' Omega_r    : ', self%omegar
         write(*,'(a14,F12.6)') ' h          : ', self%h0
-        write(*,'(a14,E12.6)') ' h_Mpc      : ', self%h0_Mpc
-        write(*,'(a14,E12.6)') ' grhog      : ', self%grhog
-        write(*,'(a14,E12.6)') ' grnonomass : ', self%grhornomass
-        write(*,'(a14,E12.6)') ' grhoc      : ', self%grhoc
-        write(*,'(a14,E12.6)') ' grhob      : ', self%grhob
-        write(*,'(a14,E12.6)') ' grhov      : ', self%grhov
-        write(*,'(a14,E12.6)') ' grhok      : ', self%grhok
+        write(*,'(a14,E13.6)') ' h_Mpc      : ', self%h0_Mpc
+        write(*,'(a14,E13.6)') ' grhog      : ', self%grhog
+        write(*,'(a14,E13.6)') ' grnonomass : ', self%grhornomass
+        write(*,'(a14,E13.6)') ' grhoc      : ', self%grhoc
+        write(*,'(a14,E13.6)') ' grhob      : ', self%grhob
+        write(*,'(a14,E13.6)') ' grhov      : ', self%grhov
+        write(*,'(a14,E13.6)') ' grhok      : ', self%grhok
         write(*,'(a22,I10)') ' Num_Nu_Massive      : ', self%Num_Nu_Massive
         write(*,'(a22,I10)') ' Nu_mass_eigenstates : ', self%Nu_mass_eigenstates
         do i=1, self%Nu_mass_eigenstates
-            write(*,'(a11,I3,a9,E12.6)') ' grhormass(',i,')      : ', self%grhormass(i)
-            write(*,'(a11,I3,a9,E12.6)') ' nu_masses(',i,')      : ', self%nu_masses(i)
+            write(*,'(a11,I3,a9,E13.6)') ' grhormass(',i,')      : ', self%grhormass(i)
+            write(*,'(a11,I3,a9,E13.6)') ' nu_masses(',i,')      : ', self%nu_masses(i)
         end do
         write(*,'(a)') "***************************************************************"
 

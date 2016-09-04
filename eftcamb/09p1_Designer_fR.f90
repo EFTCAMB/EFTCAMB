@@ -299,8 +299,6 @@ contains
             call  derivs(num_eq, t1, y, ydot)
             call  EFT_rk4(num_eq, y, ydot, t1, self%EFTOmega%grid_width, y, derivs)
 
-
-
             ! compute output EFT functions if needed:
             if ( .not. only_B0 ) then
                 call output( num_eq, i+1, t2, y, B0 )
@@ -310,7 +308,7 @@ contains
 
         ! compute B0:
         if ( only_B0 ) then
-            call output( num_eq, i+1, t2, y, B0 )
+            call output( num_eq, self%EFTOmega%num_points, t2, y, B0 )
         end if
 
         return
@@ -675,6 +673,7 @@ contains
 
         ! 1) Find the horizontal asymptote of B0(A)
         ATemp1 = 0._dl
+        ATemp2 = 0._dl
         do ind=10, 100, 1
             ATemp1 = ATemp2
             ATemp2 = 10._dl**REAL(ind)
