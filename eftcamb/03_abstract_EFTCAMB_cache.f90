@@ -110,8 +110,8 @@ module EFTCAMB_cache
             use precision
             implicit none
             real(dl), intent(in)  :: am     !< input scale factor times the neutrino mass
-            real(dl), intent(in)  :: adotoa !< input conformal Hubble
-            real(dl), intent(in)  :: presnu !< input neutrino pressure
+            real(dl)              :: adotoa !< input conformal Hubble
+            real(dl)              :: presnu !< input neutrino pressure
             real(dl)              :: Nu_pidot_Wrapper !< output value of the time derivative of neutrino pressure
         end function Nu_pidot_Wrapper
         !----------------------------------------------------------------------------------------
@@ -121,10 +121,10 @@ module EFTCAMB_cache
             use precision
             implicit none
             real(dl), intent(in)  :: am        !< input scale factor times the neutrino mass
-            real(dl), intent(in)  :: adotoa    !< input conformal Hubble
-            real(dl), intent(in)  :: Hdot      !< input time derivative of conformal Hubble
-            real(dl), intent(in)  :: presnu    !< input neutrino pressure
-            real(dl), intent(in)  :: presnudot !< input time derivative of neutrino pressure
+            real(dl)              :: adotoa    !< input conformal Hubble
+            real(dl)              :: Hdot      !< input time derivative of conformal Hubble
+            real(dl)              :: presnu    !< input neutrino pressure
+            real(dl)              :: presnudot !< input time derivative of neutrino pressure
             real(dl)              :: Nu_pidotdot_Wrapper !< output value of the second time derivative of neutrino pressure
         end function Nu_pidotdot_Wrapper
         !----------------------------------------------------------------------------------------

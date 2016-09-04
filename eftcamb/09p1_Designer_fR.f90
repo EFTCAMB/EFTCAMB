@@ -292,8 +292,14 @@ contains
             t1 = self%EFTOmega%x(i)
             t2 = self%EFTOmega%x(i+1)
             ! solve the system:
-            call DLSODA ( derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, RWORK, LRW, IWORK, LIW, jacobian, JacobianMode)
+            !call DLSODA ( derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, RWORK, LRW, IWORK, LIW, jacobian, JacobianMode)
             ! check istate for LSODA good completion:
+
+
+            call  derivs(num_eq, t1, y, ydot)
+            call  EFT_rk4(num_eq, y, ydot, t1, self%EFTOmega%grid_width, y, derivs)
+
+
 
             ! compute output EFT functions if needed:
             if ( .not. only_B0 ) then
@@ -594,6 +600,56 @@ contains
         end subroutine
 
         ! ---------------------------------------------------------------------------------------------
+
+        ! -------------------------------------------------------------------------------------------------
+
+        !   5) Fourth order Runge-Kutta.
+        !      This is a very simple algorithm that is used to solve the designer equation.
+        !
+
+        subroutine EFT_rk4(n, y, dydx, x, h, yout, deriv)
+            ! n     = dimensionality of the problem;
+            ! y     = 'position' at t=x;
+            ! dydx  = 'velocity' at t=x;
+            ! x     = initial time;
+            ! h     = time step;
+            ! yout  = 'position' at t=x+h computed using fourth order Runge-Kutta;
+            ! deriv = name of the subroutine that computes dydx.
+            use precision
+            implicit none
+
+            real(dl) :: x, h
+            integer  :: n
+            real(dl), dimension(n) :: y, dydx, yout
+
+            external deriv
+
+            real(dl), dimension(n) :: yt, dyt,dym
+            real(dl) :: hh,h6,xh
+            integer :: i
+
+            hh=h*0.5_dl
+            h6=h/6._dl
+
+            xh=x+hh
+            yt=y+hh*dydx
+
+            call deriv(n, xh, yt, dyt)
+
+            yt=y+hh*dyt
+
+            call deriv(n, xh, yt, dym)
+
+            yt  =y+h*dym
+            dym =dyt+dym
+
+            call deriv(n, x+h, yt, dyt)
+
+            yout=y+h6*(dydx+dyt+2.0*dym)
+
+            return
+        end subroutine EFT_rk4
+
 
     end subroutine EFTCAMBDesignerFRSolveDesignerEquations
 

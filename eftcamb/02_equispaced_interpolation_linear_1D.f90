@@ -142,7 +142,8 @@ contains
         ! if outside the interpolation range return the null value:
         if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
         ! return the index of the point:
-        ind = int( ( x-self%x_initial -Mod(x -self%x_initial, self%grid_width))/(self%grid_width) ) +1
+        ind = int( ( x-self%x_initial)/self%grid_width ) +1
+
         ! store the values:
         x1  = self%x(ind)
         x2  = self%x(ind+1)
@@ -172,7 +173,8 @@ contains
         ! if outside the interpolation range return the null value:
         if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
         ! return the index of the point:
-        ind = int( ( x-self%x_initial -Mod(x -self%x_initial, self%grid_width))/(self%grid_width) ) +1
+        ind = int( ( x-self%x_initial)/self%grid_width ) +1
+
         ! store the values:
         x1  = self%x(ind)
         x2  = self%x(ind+1)
@@ -202,12 +204,14 @@ contains
         ! if outside the interpolation range return the null value:
         if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
         ! return the index of the point:
-        ind = int( ( x-self%x_initial -Mod(x -self%x_initial, self%grid_width))/(self%grid_width) ) +1
+        ind = int( ( x-self%x_initial)/self%grid_width ) +1
+
         ! store the values:
         x1  = self%x(ind)
         x2  = self%x(ind+1)
         y1  = self%ypp(ind)
         y2  = self%ypp(ind+1)
+
         ! compute the linear interpolation:
         mu  = (x-x1)/(x2-x1)
         EquispacedLinearIntepolateFunction1DSecondDerivative = y1*( 1._dl -mu ) +y2*mu
@@ -232,7 +236,8 @@ contains
         ! if outside the interpolation range return the null value:
         if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
         ! return the index of the point:
-        ind = int( ( x-self%x_initial -Mod(x -self%x_initial, self%grid_width))/(self%grid_width) ) +1
+        ind = int( ( x-self%x_initial)/self%grid_width ) +1
+
         ! store the values:
         x1  = self%x(ind)
         x2  = self%x(ind+1)
