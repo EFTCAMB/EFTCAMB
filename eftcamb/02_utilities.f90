@@ -45,7 +45,7 @@ contains
         integer  n     !< the length of the table
         real(dl) xx(n) !< the table to be searched
         real(dl) x     !< the requested value
-        real(dl) jlo   !< the index of the closest (from below) entry of the table
+        integer  jlo   !< the index of the closest (from below) entry of the table
 
         integer inc,jhi,jm
         logical ascnd

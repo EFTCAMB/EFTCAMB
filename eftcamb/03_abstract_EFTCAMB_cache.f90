@@ -48,21 +48,34 @@ module EFTCAMB_cache
     !! the cosmological parameters that we need from CAMB and then use this for the interfaces.
     type :: EFTCAMB_parameter_cache
 
+        ! 1) relative densities:
         real(dl) :: omegac         !< the value of \f$ \Omega_{\rm CDM}^0 \f$.
         real(dl) :: omegab         !< the value of \f$ \Omega_{\rm b}^0 \f$.
         real(dl) :: omegav         !< the value of \f$ \Omega_{\Lambda}^0 \f$.
         real(dl) :: omegak         !< the value of \f$ \Omega_{\rm K}^0 \f$.
-
+        real(dl) :: omegan         !< the value of \f$ \Omega_{m\nu}^0 \f$ of massive neutrinos.
+        real(dl) :: omegag         !< the value of \f$ \Omega_{ \gamma }^0 \f$.
+        real(dl) :: omegar         !< the value of \f$ \Omega_{ \nu }^0 \f$ of massless neutrinos.
+        ! 2) Hubble constant:
         real(dl) :: h0             !< reduced Hubble constant \f$ H_0/100 \f$
         real(dl) :: h0_Mpc         !< the Hubble constant in MegaParsec \f$ 10^3 \cdot H_0/c \f$
-
+        ! 3) densities:
         real(dl) :: grhog          !< the value of \f$ 8 \pi G_{N} \rho_{\gamma}(t_0) \f$.
         real(dl) :: grhornomass    !< the value of \f$ 8 \pi G_{N} \rho_{\nu}(t_0) \f$.
-        real(dl) :: grhormass      !< the value of \f$ 8 \pi G_{N} \rho_{m\nu}(t_0) \f$.
         real(dl) :: grhoc          !< the value of \f$ 8 \pi G_{N} \rho_{\rm CDM}(t_0) \f$.
         real(dl) :: grhob          !< the value of \f$ 8 \pi G_{N} \rho_{\rm b}(t_0) \f$.
         real(dl) :: grhov          !< the value of \f$ 8 \pi G_{N} \rho_{\Lambda}(t_0) \f$.
         real(dl) :: grhok          !< the value of \f$ 8 \pi G_{N} \rho_{\rm K}(t_0) \f$.
+        ! 4) massive neutrinos:
+        integer  :: Num_Nu_Massive                       !< number of massive neutrinos
+        integer  :: Nu_mass_eigenstates                  !< number of mass eigenstates
+        real(dl), allocatable, dimension(:) :: grhormass !< densities of neutrinos in each mass eigenstate \f$ 8 \pi G_{N} \rho_{ m\nu }(t_0) \f$
+        real(dl), allocatable, dimension(:) :: nu_masses !< neutrino masses
+        ! 5) massive neutrinos wrapper:
+        procedure( Nu_background_Wrapper ), pointer, nopass :: Nu_background => null()  !< wrapper to the subroutine that computes the background massive neutrinos density and pressure.
+        procedure( Nu_rho_Wrapper        ), pointer, nopass :: Nu_rho        => null()  !< wrapper to the subroutine that computes the background massive neutrinos density.
+        procedure( Nu_pidot_Wrapper      ), pointer, nopass :: Nu_pidot      => null()  !< wrapper to the function that computes the background massive neutrinos time derivative of pressure.
+        procedure( Nu_pidotdot_Wrapper   ), pointer, nopass :: Nu_pidotdot   => null()  !< wrapper to the function that computes the background massive neutrinos second time derivative of pressure.
 
     contains
 
@@ -70,6 +83,55 @@ module EFTCAMB_cache
         procedure :: print      => EFTCAMBParameterCachePrint !< subroutine that prints the EFTCAMB parameters cache to screen.
 
     end type EFTCAMB_parameter_cache
+
+    !----------------------------------------------------------------------------------------
+    ! Interface containing the wrapper to massive neutrinos stuff.
+    interface
+        !----------------------------------------------------------------------------------------
+        !> Wrapper to the subroutine that computes the background massive neutrinos density
+        !! and pressure.
+        subroutine Nu_background_Wrapper( am, rhonu, pnu )
+            use precision
+            implicit none
+            real(dl), intent(in)  :: am     !< input scale factor times the neutrino mass
+            real(dl), intent(out) :: rhonu  !< output neutrino density \f$ \frac{\rho_{\nu} a^2}{m_0^2} \f$
+            real(dl), intent(out) :: pnu    !< output neutrino pressure \f$ \frac{ P_{\nu} a^2}{m_0^2} \f$
+        end subroutine Nu_background_Wrapper
+        !----------------------------------------------------------------------------------------
+        !> Wrapper to the subroutine that computes the background massive neutrinos density.
+        subroutine Nu_rho_Wrapper( am, rhonu )
+            use precision
+            implicit none
+            real(dl), intent(in)  :: am     !< input scale factor times the neutrino mass
+            real(dl), intent(out) :: rhonu  !< output neutrino density \f$ \frac{\rho_{\nu} a^2}{m_0^2} \f$
+        end subroutine Nu_rho_Wrapper
+        !----------------------------------------------------------------------------------------
+        !> Wrapper to the function that computes the background massive neutrinos
+        !! time derivative of pressure.
+        function Nu_pidot_Wrapper( am, adotoa, presnu )
+            use precision
+            implicit none
+            real(dl), intent(in)  :: am     !< input scale factor times the neutrino mass
+            real(dl), intent(in)  :: adotoa !< input conformal Hubble
+            real(dl), intent(in)  :: presnu !< input neutrino pressure
+            real(dl)              :: Nu_pidot_Wrapper !< output value of the time derivative of neutrino pressure
+        end function Nu_pidot_Wrapper
+        !----------------------------------------------------------------------------------------
+        !> Wwrapper to the function that computes the background massive neutrinos
+        !! second time derivative of pressure.
+        function Nu_pidotdot_Wrapper( am, adotoa, Hdot, presnu, presnudot )
+            use precision
+            implicit none
+            real(dl), intent(in)  :: am        !< input scale factor times the neutrino mass
+            real(dl), intent(in)  :: adotoa    !< input conformal Hubble
+            real(dl), intent(in)  :: Hdot      !< input time derivative of conformal Hubble
+            real(dl), intent(in)  :: presnu    !< input neutrino pressure
+            real(dl), intent(in)  :: presnudot !< input time derivative of neutrino pressure
+            real(dl)              :: Nu_pidotdot_Wrapper !< output value of the second time derivative of neutrino pressure
+        end function Nu_pidotdot_Wrapper
+        !----------------------------------------------------------------------------------------
+    end interface
+
 
     !----------------------------------------------------------------------------------------
     !> This is the type that defines the EFTCAMB time step cache.
@@ -288,6 +350,9 @@ contains
         self%omegab      = 0._dl
         self%omegav      = 0._dl
         self%omegak      = 0._dl
+        self%omegan      = 0._dl
+        self%omegag      = 0._dl
+        self%omegar      = 0._dl
         self%h0          = 0._dl
         self%h0_Mpc      = 0._dl
         self%grhog       = 0._dl
@@ -297,6 +362,10 @@ contains
         self%grhob       = 0._dl
         self%grhov       = 0._dl
         self%grhok       = 0._dl
+        self%Num_Nu_Massive       = 0
+        self%Nu_mass_eigenstates  = 0
+        if ( allocated(self%grhormass) ) deallocate(self%grhormass)
+        if ( allocated(self%nu_masses) ) deallocate(self%nu_masses)
 
     end subroutine EFTCAMBParameterCacheInit
 
@@ -308,21 +377,34 @@ contains
 
         class(EFTCAMB_parameter_cache)  :: self !< the base class.
 
+        integer  :: i
+
         ! print to screen the parameter cache:
-        write(*,*) 'EFTCAMB parameters cache content:'
-        write(*,*) 'Omega_CDM  :', self%omegac
-        write(*,*) 'Omega_b    :', self%omegab
-        write(*,*) 'Omega_v    :', self%omegav
-        write(*,*) 'Omega_k    :', self%omegak
-        write(*,*) 'h          :', self%h0
-        write(*,*) 'h_Mpc      :', self%h0_Mpc
-        write(*,*) 'grhog      :', self%grhog
-        write(*,*) 'grnonomass :', self%grhornomass
-        write(*,*) 'grhormass  :', self%grhormass
-        write(*,*) 'grhoc      :', self%grhoc
-        write(*,*) 'grhob      :', self%grhob
-        write(*,*) 'grhov      :', self%grhov
-        write(*,*) 'grhok      :', self%grhok
+        write(*,'(a)') "***************************************************************"
+        write(*,'(a)') 'EFTCAMB parameters cache content:'
+        write(*,'(a)') "***************************************************************"
+        write(*,'(a14,E12.6)') ' Omega_CDM  : ', self%omegac
+        write(*,'(a14,E12.6)') ' Omega_b    : ', self%omegab
+        write(*,'(a14,E12.6)') ' Omega_v    : ', self%omegav
+        write(*,'(a14,E12.6)') ' Omega_k    : ', self%omegak
+        write(*,'(a14,E12.6)') ' Omega_n    : ', self%omegan
+        write(*,'(a14,E12.6)') ' Omega_g    : ', self%omegag
+        write(*,'(a14,E12.6)') ' Omega_r    : ', self%omegar
+        write(*,'(a14,F12.6)') ' h          : ', self%h0
+        write(*,'(a14,E12.6)') ' h_Mpc      : ', self%h0_Mpc
+        write(*,'(a14,E12.6)') ' grhog      : ', self%grhog
+        write(*,'(a14,E12.6)') ' grnonomass : ', self%grhornomass
+        write(*,'(a14,E12.6)') ' grhoc      : ', self%grhoc
+        write(*,'(a14,E12.6)') ' grhob      : ', self%grhob
+        write(*,'(a14,E12.6)') ' grhov      : ', self%grhov
+        write(*,'(a14,E12.6)') ' grhok      : ', self%grhok
+        write(*,'(a22,I10)') ' Num_Nu_Massive      : ', self%Num_Nu_Massive
+        write(*,'(a22,I10)') ' Nu_mass_eigenstates : ', self%Nu_mass_eigenstates
+        do i=1, self%Nu_mass_eigenstates
+            write(*,'(a11,I3,a9,E12.6)') ' grhormass(',i,')      : ', self%grhormass(i)
+            write(*,'(a11,I3,a9,E12.6)') ' nu_masses(',i,')      : ', self%nu_masses(i)
+        end do
+        write(*,'(a)') "***************************************************************"
 
     end subroutine EFTCAMBParameterCachePrint
 

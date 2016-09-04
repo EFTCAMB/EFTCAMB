@@ -50,8 +50,8 @@ contains
         integer  :: i,m,ns
         real(dl) :: den,dif,dift,ho,hp,wpl,cc(n),d(n)
 
-        ns=1
-        dif=abs(xpl-xa(1))
+        ns  = 1
+        dif = abs( xpl-xa(1) )
         do i=1,n
             dift=abs(xpl-xa(i))
             if (dift<dif) then
@@ -61,21 +61,21 @@ contains
             cc(i)=ya(i)
             d(i)=ya(i)
         end do
-        ypl=ya(ns)
-        ns=ns-1
-        do m=1,n-1
-            do i=1,n-m
-                ho=xa(i)-xpl
-                hp=xa(i+m)-xpl
-                wpl=cc(i+1)-d(i)
-                den=ho-hp
+        ypl = ya(ns)
+        ns  = ns -1
+        do m=1, n-1
+            do i=1, n-m
+                ho  = xa(i)-xpl
+                hp  = xa(i+m)-xpl
+                wpl = cc(i+1)-d(i)
+                den = ho-hp
                 if (den==0.) then
                     write(*,*) 'failure in polint'
                     stop
                 end if
-                den=wpl/den
-                d(i)=hp*den
-                cc(i)=ho*den
+                den   = wpl/den
+                d(i)  = hp*den
+                cc(i) = ho*den
             end do
             if (2*ns<n-m) then
                 dypl=cc(ns+1)

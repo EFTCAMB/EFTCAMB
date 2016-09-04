@@ -388,26 +388,6 @@ contains
         !  adotrad gives the relation a(tau) in the radiation era:
         adotrad = sqrt((grhog+grhornomass+sum(grhormass(1:CP%Nu_mass_eigenstates)))/3)
 
-        ! EFTCAMB MOD START: initialize the EFTCAMB parameter cache
-        call CP%eft_par_cache%initialize()
-
-        CP%eft_par_cache%omegac      = CP%omegac
-        CP%eft_par_cache%omegab      = CP%omegab
-        CP%eft_par_cache%omegav      = CP%omegav
-        CP%eft_par_cache%omegak      = CP%omegak
-
-        CP%eft_par_cache%h0          = CP%h0
-        CP%eft_par_cache%h0_Mpc      = CP%h0/c*1000._dl
-
-        CP%eft_par_cache%grhog       = grhog
-        CP%eft_par_cache%grhornomass = grhornomass
-        CP%eft_par_cache%grhoc       = grhoc
-        CP%eft_par_cache%grhob       = grhob
-        CP%eft_par_cache%grhov       = grhov
-        CP%eft_par_cache%grhok       = grhok
-
-        ! EFTCAMB MOD END.
-
         Nnow = CP%omegab*(1-CP%yhe)*grhom*c**2/kappa/m_H/Mpc**2
 
         akthom = sigma_thomson*Nnow*Mpc
@@ -417,6 +397,35 @@ contains
 
         if (.not.call_again) then
             call init_massive_nu(CP%omegan /=0)
+
+            ! EFTCAMB MOD START: initialize the EFTCAMB parameter cache
+            call CP%eft_par_cache%initialize()
+            ! 1) relative densities:
+            CP%eft_par_cache%omegac      = CP%omegac
+            CP%eft_par_cache%omegab      = CP%omegab
+            CP%eft_par_cache%omegav      = CP%omegav
+            CP%eft_par_cache%omegak      = CP%omegak
+            CP%eft_par_cache%omegan      = CP%omegan
+            CP%eft_par_cache%omegag      = grhog/grhom
+            CP%eft_par_cache%omegar      = grhornomass/grhom
+            ! 2) Hubble constant:
+            CP%eft_par_cache%h0          = CP%h0
+            CP%eft_par_cache%h0_Mpc      = CP%h0/c*1000._dl
+            ! 3) densities:
+            CP%eft_par_cache%grhog       = grhog
+            CP%eft_par_cache%grhornomass = grhornomass
+            CP%eft_par_cache%grhoc       = grhoc
+            CP%eft_par_cache%grhob       = grhob
+            CP%eft_par_cache%grhov       = grhov
+            CP%eft_par_cache%grhok       = grhok
+            ! 4) massive neutrinos:
+            CP%eft_par_cache%Num_Nu_Massive       = CP%Num_Nu_Massive
+            CP%eft_par_cache%Nu_mass_eigenstates  = CP%Nu_mass_eigenstates
+            allocate( CP%eft_par_cache%grhormass(max_nu), CP%eft_par_cache%nu_masses(max_nu) )
+            CP%eft_par_cache%grhormass            = grhormass
+            CP%eft_par_cache%nu_masses            = nu_masses
+            ! EFTCAMB MOD END.
+
             call init_background
             if (global_error_flag==0) then
                 CP%tau0=TimeOfz(0._dl)
@@ -1518,6 +1527,19 @@ contains
         !  rho_massless/n = int q^3/(1+e^q) / int q^2/(1+e^q)=7/180 pi^4/Zeta(3)
         !  then m = Omega_nu/N_nu rho_crit /n
         !  Error due to velocity < 1e-5
+
+
+        ! EFTCAMB MOD START: initialize the massive neutrino's wrapper
+        if ( associated( CP%eft_par_cache%Nu_background ) ) nullify( CP%eft_par_cache%Nu_background )
+        if ( associated( CP%eft_par_cache%Nu_rho        ) ) nullify( CP%eft_par_cache%Nu_rho        )
+        if ( associated( CP%eft_par_cache%Nu_pidot      ) ) nullify( CP%eft_par_cache%Nu_pidot      )
+        if ( associated( CP%eft_par_cache%Nu_pidotdot   ) ) nullify( CP%eft_par_cache%Nu_pidotdot   )
+
+        CP%eft_par_cache%Nu_background  => Nu_background
+        CP%eft_par_cache%Nu_rho         => Nu_rho
+        CP%eft_par_cache%Nu_pidot       => Nu_pidot
+        CP%eft_par_cache%Nu_pidotdot    => Nu_pidotdot
+        ! EFTCAMB MOD END.
 
         do i=1, CP%Nu_mass_eigenstates
             nu_masses(i)=const/(1.5d0*zeta3)*grhom/grhor*CP%omegan*CP%Nu_mass_fractions(i) &
