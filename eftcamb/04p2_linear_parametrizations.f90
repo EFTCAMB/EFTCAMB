@@ -40,7 +40,6 @@ module EFTCAMB_linear_parametrizations_1D
 
     ! ---------------------------------------------------------------------------------------------
     !> Type containing the linear function parametrization. Inherits from parametrized_function_1D.
-    !! Notice that the derivatives above the first are not overridden since they are zero identically.
     type, extends ( parametrized_function_1D ) :: linear_parametrization_1D
 
         real(dl) :: linear_value
