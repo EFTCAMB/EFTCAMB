@@ -75,7 +75,7 @@ contains
 
         implicit none
 
-        class(linear_parametrization_2D) :: self       !< the base class
+        class(bilinear_parametrization_2D) :: self       !< the base class
 
         ! initialize the number of parameters:
         self%parameter_number = 2
@@ -88,7 +88,7 @@ contains
 
         implicit none
 
-        class(linear_parametrization_2D)                        :: self   !< the base class.
+        class(bilinear_parametrization_2D)                        :: self   !< the base class.
         real(dl), dimension(self%parameter_number), intent(in)  :: array  !< input array with the values of the parameters.
 
         self%linear_value_1 = array(1)
@@ -102,7 +102,7 @@ contains
 
         implicit none
 
-        class(linear_parametrization_2D) :: self        !< the base class
+        class(bilinear_parametrization_2D) :: self        !< the base class
         integer     , intent(in)         :: i           !< The index of the parameter
         real(dl)    , intent(out)        :: value       !< the output value of the i-th parameter
 
@@ -125,7 +125,7 @@ contains
 
         implicit none
 
-        class(linear_parametrization_2D)    :: self         !< the base class
+        class(bilinear_parametrization_2D)    :: self         !< the base class
 
         integer                             :: i
         real(dl)                            :: param_value
