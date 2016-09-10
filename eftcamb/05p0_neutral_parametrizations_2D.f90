@@ -27,6 +27,7 @@
 module EFTCAMB_neutral_parametrization_2D
 
     use precision
+    use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_2D
 
     implicit none
@@ -43,7 +44,9 @@ module EFTCAMB_neutral_parametrization_2D
     contains
 
         ! initialization:
-        procedure :: init                  => ZeroParametrized2DInitialize          !< subroutine that initializes the zero parametrization.
+        procedure :: set_param_number      => ZeroParametrized2DSetParamNumber     !< subroutine that sets the number of parameters of the zero function = 0.
+        procedure :: init_parameters       => ZeroParametrized2DInitParams         !< subroutine that initializes the parameters based on the values found in an input array.
+        procedure :: parameter_value       => ZeroParametrized2DParameterValues    !< subroutine that returns the value of the zero function i-th parameter.
 
         ! evaluation procedures:
         procedure :: value                 => ZeroParametrized2DValue               !< function that returns the value of the zero function.
@@ -62,34 +65,52 @@ contains
     ! ---------------------------------------------------------------------------------------------
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that initializes the zero parametrization.
-    subroutine ZeroParametrized2DInitialize( self, name, latexname )
+    !> Subroutine that sets the number of parameters of the zero function = 0.
+    subroutine ZeroParametrized2DSetParamNumber( self )
 
         implicit none
 
         class(zero_parametrization_2D)  :: self       !< the base class
-        character(*), intent(in)        :: name       !< the name of the function
-        character(*), intent(in)        :: latexname  !< the latex name of the function
 
-        ! store the name of the function:
-        self%name             = TRIM( name )
-        ! store the latex name of the function:
-        self%name_latex       = TRIM( latexname )
-        ! initialize the number of parameters:
         self%parameter_number = 0
 
-    end subroutine ZeroParametrized2DInitialize
+    end subroutine ZeroParametrized2DSetParamNumber
+
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the value of the zero function.
-    function ZeroParametrized2DValue( self, x, y )
+    !> Subroutine that initializes the parameters based on the values found in an input array.
+    subroutine ZeroParametrized2DInitParams( self, array )
 
         implicit none
 
-        class(zero_parametrization_2D) :: self   !< the base class
-        real(dl), intent(in)           :: x      !< the input first variable
-        real(dl), intent(in)           :: y      !< the input second variable
-        real(dl) :: ZeroParametrized2DValue      !< the output value
+        class(zero_parametrization_2D)                         :: self   !< the base class.
+        real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
+
+    end subroutine ZeroParametrized2DInitParams
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that returns the value of the zero function i-th parameter.
+    subroutine ZeroParametrized2DParameterValues( self, i, value )
+
+        implicit none
+
+        class(zero_parametrization_2D)  :: self   !< the base class.
+        integer , intent(in)            :: i      !< input number of the parameter
+        real(dl), intent(out)           :: value  !< output value of the parameter
+
+    end subroutine ZeroParametrized2DParameterValues
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the value of the zero function.
+    function ZeroParametrized2DValue( self, x, y, eft_cache )
+
+        implicit none
+
+        class(zero_parametrization_2D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input first variable
+        real(dl), intent(in)                               :: y         !< the input second variable
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized2DValue                             !< the output value
 
         ZeroParametrized2DValue = 0._dl
 
@@ -97,14 +118,15 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the first partial derivative of the zero function with respect to x.
-    function ZeroParametrized2DFirstDerivativeX( self, x, y )
+    function ZeroParametrized2DFirstDerivativeX( self, x, y, eft_cache )
 
         implicit none
 
-        class(zero_parametrization_2D) :: self         !< the base class
-        real(dl), intent(in)           :: x            !< the input first variable
-        real(dl), intent(in)           :: y            !< the input second variable
-        real(dl) :: ZeroParametrized2DFirstDerivativeX !< the output value
+        class(zero_parametrization_2D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input first variable
+        real(dl), intent(in)                               :: y         !< the input second variable
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized2DFirstDerivativeX                  !< the output value
 
         ZeroParametrized2DFirstDerivativeX = 0._dl
 
@@ -112,14 +134,15 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the first partial derivative of the zero function with respect to y.
-    function ZeroParametrized2DFirstDerivativeY( self, x, y )
+    function ZeroParametrized2DFirstDerivativeY( self, x, y, eft_cache )
 
         implicit none
 
-        class(zero_parametrization_2D) :: self         !< the base class
-        real(dl), intent(in)           :: x            !< the input first variable
-        real(dl), intent(in)           :: y            !< the input second variable
-        real(dl) :: ZeroParametrized2DFirstDerivativeY !< the output value
+        class(zero_parametrization_2D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input first variable
+        real(dl), intent(in)                               :: y         !< the input second variable
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized2DFirstDerivativeY                  !< the output value
 
         ZeroParametrized2DFirstDerivativeY = 0._dl
 
@@ -127,14 +150,15 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the second partial derivative of the zero function with respect to x.
-    function ZeroParametrized2DSecondDerivativeX( self, x, y )
+    function ZeroParametrized2DSecondDerivativeX( self, x, y, eft_cache )
 
         implicit none
 
-        class(zero_parametrization_2D) :: self          !< the base class
-        real(dl), intent(in)           :: x             !< the input first variable
-        real(dl), intent(in)           :: y             !< the input second variable
-        real(dl) :: ZeroParametrized2DSecondDerivativeX !< the output value
+        class(zero_parametrization_2D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input first variable
+        real(dl), intent(in)                               :: y         !< the input second variable
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized2DSecondDerivativeX                 !< the output value
 
         ZeroParametrized2DSecondDerivativeX = 0._dl
 
@@ -142,14 +166,15 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the second partial derivative of the zero function with respect to y.
-    function ZeroParametrized2DSecondDerivativeY( self, x, y )
+    function ZeroParametrized2DSecondDerivativeY( self, x, y, eft_cache )
 
         implicit none
 
-        class(zero_parametrization_2D) :: self          !< the base class
-        real(dl), intent(in)           :: x             !< the input first variable
-        real(dl), intent(in)           :: y             !< the input second variable
-        real(dl) :: ZeroParametrized2DSecondDerivativeY !< the output value
+        class(zero_parametrization_2D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input first variable
+        real(dl), intent(in)                               :: y         !< the input second variable
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized2DSecondDerivativeY                 !< the output value
 
         ZeroParametrized2DSecondDerivativeY = 0._dl
 
@@ -157,21 +182,21 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the mixed partial derivative of the zero function with respect to x and y.
-    function ZeroParametrized2DSecondDerivativeXY( self, x, y )
+    function ZeroParametrized2DSecondDerivativeXY( self, x, y, eft_cache )
 
         implicit none
 
-        class(zero_parametrization_2D) :: self          !< the base class
-        real(dl), intent(in)           :: x             !< the input first variable
-        real(dl), intent(in)           :: y             !< the input second variable
-        real(dl) :: ZeroParametrized2DSecondDerivativeXY!< the output value
+        class(zero_parametrization_2D)                     :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input first variable
+        real(dl), intent(in)                               :: y         !< the input second variable
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ZeroParametrized2DSecondDerivativeXY                !< the output value
 
         ZeroParametrized2DSecondDerivativeXY = 0._dl
 
     end function ZeroParametrized2DSecondDerivativeXY
 
     !----------------------------------------------------------------------------------------
-
 
 end module EFTCAMB_neutral_parametrization_2D
 
