@@ -143,9 +143,7 @@ contains
 !        call CP%EFTCAMB%model%compute_rhoQPQ( a, CP%eft_par_cache , eft_cache )
 !        ! compute second order EFT functions:
 !        call CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, CP%eft_par_cache , eft_cache )
-
-
-
+!
 !        ! 6) Pi field equation coefficients:
 !        eft_cache%k = 0._dl
 !        k2 = eft_cache%k*eft_cache%k
@@ -155,69 +153,6 @@ contains
 !        call compute_tensor_factors( a, CP%eft_par_cache , eft_cache )
 
 
-
-
-!        eft_cache%EFTAT = 1._dl + eft_cache%EFTOmegaV - eft_cache%EFTGamma4V
-!        ! First part of the A coefficient:
-!        eft_cache%EFTpiA1 = eft_cache%EFTc +2._dl*a2*EFT_H0**2*eft_cache%EFTGamma1V +1.5_dl*a2*(eft_cache%adotoa*&
-!            &eft_cache%EFTOmegaP+EFT_H0*eft_cache%EFTGamma2V)**2/(2._dl*(1+eft_cache%EFTOmegaV)+eft_cache%EFTGamma3V+eft_cache%EFTGamma4V)
-!        ! Second part of the A coefficient, the k^2 term:
-!        eft_cache%EFTpiA2 = +4._dl*eft_cache%EFTGamma6V
-!        ! First part of the B coefficient:
-!        eft_cache%EFTpiB1 = eft_cache%EFTcdot +4._dl*eft_cache%adotoa*eft_cache%EFTc +8._dl*a2*eft_cache%adotoa*EFT_H0**2*&
-!            &(eft_cache%EFTGamma1V+ 0.25_dl*eft_cache%a*eft_cache%EFTGamma1P)&
-!            & -eft_cache%a*(eft_cache%adotoa*eft_cache%EFTOmegaP+EFT_H0*eft_cache%EFTGamma2V)/(4._dl*(1._dl+eft_cache%EFTOmegaV)&
-!            &+6._dl*eft_cache%EFTGamma3V +2._dl*eft_cache%EFTGamma4V)*&
-!            &(-3._dl*(eft_cache%grhoq + eft_cache%gpresq) -3._dl*eft_cache%a*eft_cache%adotoa**2*eft_cache%EFTOmegaP*&
-!            &(4._dl +eft_cache%Hdot/(eft_cache%adotoa**2)) -3._dl*a2*eft_cache%adotoa**2*eft_cache%EFTOmegaPP&
-!            & -3._dl*eft_cache%a*eft_cache%adotoa*EFT_H0*(4._dl*eft_cache%EFTGamma2V + eft_cache%a*eft_cache%EFTGamma2P)&
-!            &-(9._dl*eft_cache%EFTGamma3V -3._dl*eft_cache%EFTGamma4V)*(eft_cache%Hdot-eft_cache%adotoa**2))&
-!            & +1._dl/(1._dl+eft_cache%EFTOmegaV+2._dl*eft_cache%EFTGamma5V)*(eft_cache%a*eft_cache%adotoa*eft_cache%EFTOmegaP&
-!            &+2._dl*eft_cache%adotoa*(eft_cache%EFTGamma5V + eft_cache%EFTGamma5P)&
-!            & -(1._dl+eft_cache%EFTOmegaV)*(eft_cache%a*eft_cache%adotoa*eft_cache%EFTOmegaP+eft_cache%a*EFT_H0*eft_cache%EFTGamma2V)&
-!            &/(2._dl*(1._dl+eft_cache%EFTOmegaV) +3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V))*&
-!            &(-eft_cache%EFTc +1.5_dl*eft_cache%a*eft_cache%adotoa**2*eft_cache%EFTOmegaP -2._dl*a2*EFT_H0*eft_cache%EFTGamma1V&
-!            &+1.5_dl*eft_cache%a*eft_cache%adotoa*EFT_H0*eft_cache%EFTGamma2V)
-!        ! Second part of the B coefficient, the k^2 term:
-!        k2      = 1._dl
-!        EFTpiB2 = +4._dl*k2*adotoa*(2._dl*EFTGamma6V+ a*EFTGamma6P) +a*k2*(EFTGamma4V&
-!            & +2._dl*EFTGamma5V)/(2._dl*(1._dl+EFTOmegaV)-2._dl*EFTGamma4V)*(adotoa*EFTOmegaP+EFT_H0*EFTGamma2V)&
-!            & -a*(adotoa*EFTOmegaP+EFT_H0*EFTGamma2V)/(4._dl*(1._dl+EFTOmegaV)+6._dl*EFTGamma3V +2._dl*EFTGamma4V)*&
-!            &( +k2*(3._dl*EFTGamma3V -EFTGamma4V +4._dl*EFTGamma5V))&
-!            & +1._dl/(1._dl+EFTOmegaV+2._dl*EFTGamma5V)*(a*adotoa*EFTOmegaP+2._dl*adotoa*(EFTGamma5V + EFTGamma5P)&
-!            & -(1._dl+EFTOmegaV)*(a*adotoa*EFTOmegaP+a*EFT_H0*EFTGamma2V)/(2._dl*(1._dl+EFTOmegaV) +3._dl*EFTGamma3V +EFTGamma4V))*&
-!            &(-4._dl*EFTGamma6V*k2)
-!        ! The C coefficient:
-!        EFTpiC = +adotoa*EFTcdot +(6._dl*adotoa**2-2._dl*Hdot)*EFTc +1.5_dl*a*adotoa*EFTOmegaP*(Hdotdot-2._dl*adotoa**3) &
-!            & +6._dl*a2*adotoa**2*EFT_H0**2*EFTGamma1V +2._dl*a2*Hdot*EFT_H0**2*EFTGamma1V &
-!            & +2._dl*a2*a*adotoa**2*EFT_H0**2*EFTGamma1P +1.5_dl*(Hdot-adotoa**2)**2*(EFTGamma4V +3._dl*EFTGamma3V )&
-!            & +4.5_dl*adotoa*EFT_H0*a*(Hdot-adotoa**2)*(EFTGamma2V + a*EFTGamma2P/3._dl )&
-!            & +0.5_dl*a*EFT_H0*EFTGamma2V*(3._dl*Hdotdot -12._dl*Hdot*adotoa +6._dl*adotoa**3) &
-!            & -a*(adotoa*EFTOmegaP+EFT_H0*EFTGamma2V)/(4._dl*(1._dl+EFTOmegaV)+6._dl*EFTGamma3V +2._dl*EFTGamma4V)*&
-!            &(-3._dl*EFTgpresdotQ -3._dl*adotoa*(EFTgrhoQ +EFTgpresQ)-3._dl*a*adotoa**3*(a*EFTOmegaPP +6._dl*EFTOmegaP) &
-!            & -6._dl*a*adotoa*Hdot*EFTOmegaP +3._dl*(Hdotdot-2._dl*adotoa*Hdot)*(EFTGamma4V +3._dl*EFTGamma3V)&
-!            & +6._dl*adotoa*(Hdot-adotoa**2)*(3._dl*EFTGamma3V +1.5_dl*a*EFTGamma3P +EFTGamma4V + 0.5_dl*a*EFTGamma4P)&
-!            & -3._dl*a*EFT_H0*(3._dl*adotoa**2*EFTGamma2V +Hdot*EFTGamma2V +a*adotoa**2*EFTGamma2P))&
-!            & +1._dl/(1._dl+EFTOmegaV+2._dl*EFTGamma5V)*(a*adotoa*EFTOmegaP+2._dl*adotoa*(EFTGamma5V +a*EFTGamma5P)&
-!            & -(1._dl+EFTOmegaV)*(a*adotoa*EFTOmegaP+a*EFT_H0*EFTGamma2V)/(2._dl*(1._dl+EFTOmegaV)+3._dl*EFTGamma3V +EFTGamma4V))*&
-!            &(-0.5*EFTgrhodotQ -adotoa*EFTc +1.5_dl*a*adotoa*EFTOmegaP*(3._dl*adotoa**2-Hdot) -2._dl*a2*adotoa*EFT_H0**2*EFTGamma1V&
-!            & -1.5_dl*a*EFT_H0*EFTGamma2V*(Hdot-2._dl*adotoa**2) -3._dl*adotoa*(Hdot-adotoa**2)*(1.5_dl*EFTGamma3V +0.5_dl*EFTGamma4V))
-!        ! First part of the D coefficient, the k^2 term:
-!        EFTpiD1 = EFTc -0.5_dl*a*adotoa*EFT_H0*(EFTGamma2V +a*EFTGamma2P) +(adotoa**2-Hdot)*(3._dl*EFTGamma3V +EFTGamma4V)&
-!            & +4._dl*(Hdot*EFTGamma6V + adotoa**2*EFTGamma6V + a*adotoa**2*EFTGamma6P)&
-!            & +2._dl*(Hdot*EFTGamma5V +a*adotoa**2*EFTGamma5P)&
-!            & -a*(adotoa*EFTOmegaP+EFT_H0*EFTGamma2V)/(4._dl*(1._dl+EFTOmegaV)+6._dl*EFTGamma3V +2._dl*EFTGamma4V)*&
-!            &(-2._dl*a*adotoa*EFTOmegaP +4._dl*adotoa*EFTGamma5V -2._dl*adotoa*(3._dl*EFTGamma3V +1.5_dl*a*EFTGamma3P &
-!            & +EFTGamma4V +0.5_dl*a*EFTGamma4P))&
-!            & +1._dl/(1._dl+EFTOmegaV+2._dl*EFTGamma5V)*(a*adotoa*EFTOmegaP+2._dl*adotoa*(EFTGamma5V +a*EFTGamma5P)&
-!            & -(1._dl+EFTOmegaV)*(a*adotoa*EFTOmegaP +a*EFT_H0*EFTGamma2V)/(2._dl*(1._dl+EFTOmegaV)+3._dl*EFTGamma3V +EFTGamma4V))*&
-!            &(+0.5_dl*a*adotoa*EFTOmegaP -2._dl*adotoa*EFTGamma5V +0.5_dl*a*EFT_H0*EFTGamma2V +1.5_dl*adotoa*EFTGamma3V&
-!            & +0.5_dl*adotoa*EFTGamma4V -4._dl*adotoa*EFTGamma6V)&
-!            & +(EFTGamma4V +2._dl*EFTGamma5V)/(2._dl*(1._dl+EFTOmegaV) -2._dl*EFTGamma4V)*(EFTgrhoQ +EFTgpresQ +a*adotoa**2*EFTOmegaP&
-!            & -EFTGamma4V*(Hdot-adotoa**2) +a*adotoa*EFT_H0*EFTGamma2V +3._dl*EFTGamma3V*(adotoa**2-Hdot))
-!        ! Second part of the D coefficient, the k^4 term:
-!        EFTpiD2 = +(+0.5_dl*EFTGamma3V +0.5_dl*EFTGamma4V &
-!            & +(EFTGamma4V +2._dl*EFTGamma5V)/(2._dl*(1._dl+EFTOmegaV) -2._dl*EFTGamma4V)*(EFTGamma3V +EFTGamma4V))
 !
 !        if ( CP%EFTflag==4 ) then ! Full mapping EFT overwrites some of these quantities:
 !            if ( CP%FullMappingEFTmodel==1 ) then ! Horava gravity
