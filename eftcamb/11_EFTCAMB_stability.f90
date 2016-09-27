@@ -149,7 +149,14 @@ contains
 !        ! 6) Pi field equation coefficients:
 !        eft_cache%k = 0._dl
 !        k2 = eft_cache%k*eft_cache%k
-!        ! Coefficient A of tensors:
+!        ! Compute pi field equations factors
+!        call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , eft_cache )
+!        ! Compute coefficients for the tensor propagation equation
+!        call compute_tensor_factors( a, CP%eft_par_cache , eft_cache )
+
+
+
+
 !        eft_cache%EFTAT = 1._dl + eft_cache%EFTOmegaV - eft_cache%EFTGamma4V
 !        ! First part of the A coefficient:
 !        eft_cache%EFTpiA1 = eft_cache%EFTc +2._dl*a2*EFT_H0**2*eft_cache%EFTGamma1V +1.5_dl*a2*(eft_cache%adotoa*&
@@ -171,10 +178,6 @@ contains
 !            &/(2._dl*(1._dl+eft_cache%EFTOmegaV) +3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V))*&
 !            &(-eft_cache%EFTc +1.5_dl*eft_cache%a*eft_cache%adotoa**2*eft_cache%EFTOmegaP -2._dl*a2*EFT_H0*eft_cache%EFTGamma1V&
 !            &+1.5_dl*eft_cache%a*eft_cache%adotoa*EFT_H0*eft_cache%EFTGamma2V)
-
-!SP: till here
-
-
 !        ! Second part of the B coefficient, the k^2 term:
 !        k2      = 1._dl
 !        EFTpiB2 = +4._dl*k2*adotoa*(2._dl*EFTGamma6V+ a*EFTGamma6P) +a*k2*(EFTGamma4V&
