@@ -144,30 +144,27 @@ contains
 !        ! compute second order EFT functions:
 !        call CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, CP%eft_par_cache , eft_cache )
 !
-!        ! 6) Pi field equation coefficients:
-!        eft_cache%k = 0._dl
-!        k2 = eft_cache%k*eft_cache%k
 !        ! Compute pi field equations factors
 !        call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , eft_cache )
 !        ! Compute coefficients for the tensor propagation equation
 !        call compute_tensor_factors( a, CP%eft_par_cache , eft_cache )
-
-
 !
 !        if ( CP%EFTflag==4 ) then ! Full mapping EFT overwrites some of these quantities:
 !            if ( CP%FullMappingEFTmodel==1 ) then ! Horava gravity
-!                EFTpiA1 = 0._dl
-!                EFTpiA2 = 0.5_dl*CP%Horava_eta
-!                EFTpiB1 = 0._dl
-!                EFTpiB2 = adotoa*CP%Horava_eta
-!                EFTpiC  = 0._dl
-!                EFTpiD1 = 0.5_dl*(3._dl*CP%Horava_lambda-2._dl*CP%Horava_xi)*(adotoa**2-Hdot) + 0.5_dl*CP%Horava_eta*(adotoa**2+Hdot)
-!                EFTpiD2 = 0.5_dl*CP%Horava_lambda*(1._dl+CP%Horava_xi)
+!                eft_cache%EFTpiA1 = 0._dl
+!                eft_cache%EFTpiA2 = 0.5_dl*CP%Horava_eta
+!                eft_cache%EFTpiB1 = 0._dl
+!                eft_cache%EFTpiB2 = eft_cache%adotoa*CP%Horava_eta
+!                eft_cache%EFTpiC  = 0._dl
+!                eft_cache%EFTpiD1 = 0.5_dl*(3._dl*CP%Horava_lambda-2._dl*CP%Horava_xi)*(eft_cache%adotoa**2-eft_cache%Hdot) + 0.5_dl*CP%Horava_eta*(eft_cache%adotoa**2+eft_cache%Hdot)
+!                eft_cache%EFTpiD2 = 0.5_dl*CP%Horava_lambda*(1._dl+CP%Horava_xi)
 !            end if
 !        end if
 !
-
+!        ! Compute kinetic and gradient terms
 !        call compute_kinetic_gradient( a, CP%eft_par_cache , eft_cache )
+
+
 
 !        ! 7) Compute k_max_CAMB. This is slightly overestimated to be safe...
 !
