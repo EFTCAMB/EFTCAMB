@@ -166,26 +166,9 @@ contains
 !            end if
 !        end if
 !
-!        EFT_kinetic  = 9._dl*( 1._dl +EFTOmegaV -EFTGamma4V )*( 4._dl*EFTc*( 1._dl +EFTOmegaV -EFTGamma4V ) &
-!            & +3._dl*adotoa**2*EFTOmegaP**2*a2 + &
-!            & a2*EFT_H0*( EFT_H0*( 3._dl*EFTGamma2V**2 +8._dl*EFTGamma1V*( 1._dl +EFTOmegaV -EFTGamma4V ) +6._dl*adotoa*EFTGamma2V*EFTOmegaP ) ) )
-!        ! Gradient term:
-!        EFT_gradient = 9._dl*(8._dl*a*adotoa**2*EFTGamma5P - 16._dl*adotoa**2*EFTGamma5V**2 + 16._dl*EFTc*EFTGamma5V**2 - 2._dl*a**2*adotoa**2*EFTGamma4P*EFTOmegaP + 4._dl*a**2*adotoa**2*EFTGamma5P*EFTOmegaP -&
-!            &4._dl*a*adotoa**2*EFTGamma5V*EFTOmegaP - 4._dl*a**2*adotoa**2*EFTGamma4P*EFTGamma5V*EFTOmegaP - 8._dl*a*adotoa**2*EFTGamma5V**2*EFTOmegaP + 3._dl*a**2*adotoa**2*EFTOmegaP**2 +&
-!            &4._dl*a**2*adotoa**2*EFTGamma5V*EFTOmegaP**2 + 16._dl*a*adotoa**2*EFTGamma5P*EFTOmegaV + 16._dl*EFTc*EFTGamma5V*EFTOmegaV - 16._dl*adotoa**2*EFTGamma5V**2*EFTOmegaV -&
-!            &2._dl*a**2*adotoa**2*EFTGamma4P*EFTOmegaP*EFTOmegaV + 4._dl*a**2*adotoa**2*EFTGamma5P*EFTOmegaP*EFTOmegaV - 4._dl*a*adotoa**2*EFTGamma5V*EFTOmegaP*EFTOmegaV +&
-!            &3._dl*a**2*adotoa**2*EFTOmegaP**2*EFTOmegaV + 8._dl*a*adotoa**2*EFTGamma5P*EFTOmegaV**2 - a**2*EFTGamma2V**2*EFT_H0**2*(1 + EFTOmegaV) +&
-!            &4._dl*a**2*adotoa**2*EFTGamma5V*EFTOmegaPP*(1._dl + 2._dl*EFTGamma5V + EFTOmegaV) + 4._dl*EFTc*(4._dl*EFTGamma5V + (1._dl + EFTOmegaV)**2) -&
-!            &2._dl*a*adotoa*EFT_H0*(a*EFTGamma2P*(1._dl - EFTGamma4V + EFTOmegaV)*(1._dl + 2._dl*EFTGamma5V + EFTOmegaV) +&
-!            &EFTGamma2V*(EFTGamma4V*(-1._dl + 2._dl*a*EFTGamma5P + 2._dl*EFTGamma5V + a*EFTOmegaP - EFTOmegaV) +&
-!            &(1._dl + EFTOmegaV)*(1._dl + a*(EFTGamma4P - 2._dl*EFTGamma5P - EFTOmegaP) + EFTOmegaV) - 2._dl*EFTGamma5V*(1._dl - a*EFTGamma4P + a*EFTOmegaP + EFTOmegaV))) +&
-!            &8._dl*EFTGamma5V*Hdot + 16._dl*EFTGamma5V**2*Hdot + 4._dl*a*EFTGamma5V*EFTOmegaP*Hdot + 8._dl*a*EFTGamma5V**2*EFTOmegaP*Hdot + 16._dl*EFTGamma5V*EFTOmegaV*Hdot +&
-!            &16._dl*EFTGamma5V**2*EFTOmegaV*Hdot + 4._dl*a*EFTGamma5V*EFTOmegaP*EFTOmegaV*Hdot + 8._dl*EFTGamma5V*EFTOmegaV**2*Hdot +&
-!            &4._dl*EFTGamma4V**2*(adotoa**2*(1._dl + 2._dl*a*EFTGamma5P + 4._dl*EFTGamma5V + a*EFTOmegaP + EFTOmegaV) - (1._dl + 2._dl*EFTGamma5V + EFTOmegaV)*Hdot) +&
-!            &2._dl*EFTGamma4V*(adotoa**2*(-(a**2*EFTOmegaP**2) + a**2*EFTOmegaPP*(1._dl + 2._dl*EFTGamma5V + EFTOmegaV) -&
-!            &4._dl*(1._dl + EFTOmegaV)*(1._dl + 2._dl*a*EFTGamma5P + 4._dl*EFTGamma5V + EFTOmegaV) - a*EFTOmegaP*(3._dl + 2._dl*a*EFTGamma5P + 2._dl*EFTGamma5V + 3._dl*EFTOmegaV)) +&
-!            &(1._dl + 2._dl*EFTGamma5V + EFTOmegaV)*(4._dl + a*EFTOmegaP + 4._dl*EFTOmegaV)*Hdot))
-!
+
+!        call compute_kinetic_gradient( a, CP%eft_par_cache , eft_cache )
+
 !        ! 7) Compute k_max_CAMB. This is slightly overestimated to be safe...
 !
 !        !    This is just to be safe if doing only background stuff. We still require stability of linear scales.
