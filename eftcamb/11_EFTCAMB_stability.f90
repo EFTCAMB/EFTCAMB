@@ -180,8 +180,8 @@ contains
 !        ! All the coefficients should not be Nan. This can happen for strange values of the parameters
 !        ! for which a division by zero may occur.
 !
-!        EFT_HaveNan = IsNaN(EFTAT).or.IsNaN(EFTpiA1).or.IsNaN(EFTpiA2).or.IsNaN(EFTpiB1).or.IsNaN(EFTpiB2)&
-!            & .or.IsNaN(EFTpiC).or.IsNaN(EFTpiD1).or.IsNaN(EFTpiD2).or.IsNaN(EFT_kinetic).or.IsNaN(EFT_gradient)
+!        EFT_HaveNan = IsNaN(eft_cache%EFTAT).or.IsNaN(eft_cache%EFTpiA1).or.IsNaN(eft_cache%EFTpiA2).or.IsNaN(eft_cache%EFTpiB1).or.IsNaN(eft_cache%EFTpiB2)&
+!            & .or.IsNaN(eft_cache%EFTpiC).or.IsNaN(eft_cache%EFTpiD1).or.IsNaN(eft_cache%EFTpiD2).or.IsNaN(eft_cache%EFT_kinetic).or.IsNaN(eft_cache%EFT_gradient)
 !
 !        if (EFT_HaveNan) then
 !            EFTStabilityComputation = .false.
@@ -197,14 +197,14 @@ contains
 !            !    consistency of the pi field equation.
 !
 !            !    The first condition is A1/=0. Implemented by detecting sign changes in A1.
-!            if ( EFTpiA1*PastA1 < 0._dl ) then
+!            if ( eft_cache%EFTpiA1*PastA1 < 0._dl ) then
 !                EFTStabilityComputation = .false.
 !                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, A is zero in time.'
 !            end if
-!            PastA1 = EFTpiA1
+!            PastA1 = eft_cache%EFTpiA1
 !            !    The second one is the condition on k.
-!            if ( (EFTpiA1 > 0 .and. EFTpiA1 + kmax**2*EFTpiA2 < 0) .or. &
-!                &(EFTpiA1 < 0 .and. EFTpiA1 + kmax**2*EFTpiA2 > 0) ) then
+!            if ( (eft_cache%EFTpiA1 > 0 .and. eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 < 0) .or. &
+!                &(eft_cache%EFTpiA1 < 0 .and. eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 > 0) ) then
 !                EFTStabilityComputation = .false.
 !                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, A is zero in k.'
 !            end if
@@ -213,11 +213,11 @@ contains
 !            !    This is the second stronger stability constraint since violating it would
 !            !    violate the mathematical consistency of the tensor perturbation equation.
 !            !    Implemented by detecting sign changes in AT.
-!            if ( EFTAT*PastAT < 0._dl ) then
+!            if ( eft_cache%EFTAT*PastAT < 0._dl ) then
 !                EFTStabilityComputation = .false.
 !                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, AT is zero in time.'
 !            end if
-!            PastAT = EFTAT
+!            PastAT = eft_cache%EFTAT
 !
 !            ! 3- we do not want (fast) growing exponential modes.
 !            !    This condition prevents the pi field from growing exponentially and destroying everything.
@@ -235,9 +235,9 @@ contains
 !                ! kmode to test. Linear sampling. Should suffice... (??)
 !                tempk = 0._dl + REAL(ind-1)*(kmax)/REAL(ind_max-1)
 !                ! vaule that discriminates between different cases:
-!                temp1 = (EFTpiB1 +EFTpiB2*tempk**2)
-!                temp2 = (EFTpiA1 +EFTpiA2*tempk**2)
-!                temp3 = temp1**2 -4._dl*temp2*(EFTpiC +EFTpiD1*tempk**2 + EFTpiD2*tempk**4)
+!                temp1 = (eft_cache%EFTpiB1 +eft_cache%EFTpiB2*tempk**2)
+!                temp2 = (eft_cache%EFTpiA1 +eft_cache%EFTpiA2*tempk**2)
+!                temp3 = temp1**2 -4._dl*temp2*(eft_cache%EFTpiC +eft_cache%EFTpiD1*tempk**2 + eft_cache%EFTpiD2*tempk**4)
 !
 !                !    case 1:
 !                if (temp3 > 0._dl .and. temp2 /= 0._dl) then
@@ -293,8 +293,8 @@ contains
 !
 !            if ( .not. EFT_old_stability .and. &
 !                & CP%EFTFlag /= 4 .and. ( &
-!                & (EFTGamma6V /= 0._dl) .or.      &
-!                & ((EFTGamma3V + EFTGamma4V) /= 0._dl) ) ) then
+!                & (eft_cache%EFTGamma6V /= 0._dl) .or.      &
+!                & ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) ) then
 !
 !                write(*,*) 'EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
 !                write(*,*) 'It will be added in a future release.'
@@ -305,49 +305,49 @@ contains
 !            end if
 !
 !            ! 1- Positive gravitational constant:
-!            if (1._dl +EFTOmegaV <= 0) then
+!            if (1._dl +eft_cache%EFTOmegaV <= 0) then
 !                EFTStabilityComputation = .false.
-!                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: negative gravitational constant', 1._dl +EFTOmegaV
+!                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: negative gravitational constant', 1._dl +eft_cache%EFTOmegaV
 !            end if
 !
 !            ! 2- Old ghost and gradient conditions:
 !            if ( EFT_old_stability .or. &
-!                & (EFTGamma6V /= 0._dl) .or. &
-!                & ((EFTGamma3V + EFTGamma4V) /= 0._dl) ) then
+!                & (eft_cache%EFTGamma6V /= 0._dl) .or. &
+!                & ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) then
 !
 !                ! Ghost instability:
-!                if (EFTpiA1 < 0 .or. ( EFTpiA1 + kmax**2*EFTpiA2 < 0)) then
+!                if (eft_cache%EFTpiA1 < 0 .or. ( eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 < 0)) then
 !                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: ghost instability', EFTpiA1, EFTpiA1 + kmax**2*EFTpiA2
+!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: ghost instability', eft_cache%EFTpiA1, eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2
 !                end if
 !                ! Gradient instability 1:
-!                if (EFTpiD1 < 0) then
+!                if (eft_cache%EFTpiD1 < 0) then
 !                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: gradient instability k^2', EFTpiD1
+!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: gradient instability k^2', eft_cache%EFTpiD1
 !                end if
 !                ! Gradient instability 2:
-!                if (EFTpiD2 < 0) then
+!                if (eft_cache%EFTpiD2 < 0) then
 !                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: gradient instability k^4', EFTpiD2
+!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: gradient instability k^4', eft_cache%EFTpiD2
 !                end if
 !
 !            else
 !                ! New ghost and gradient conditions:
 !                ! ghost condition:
-!                if ( EFT_kinetic < 0._dl ) then
+!                if ( eft_cache%EFT_kinetic < 0._dl ) then
 !                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB new stability: ghost instability. Kinetic: ', EFT_kinetic
+!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB new stability: ghost instability. Kinetic: ', eft_cache%EFT_kinetic
 !                end if
 !                ! gradient instability:
-!                if ( EFT_gradient < 0._dl ) then
+!                if ( eft_cache%EFT_gradient < 0._dl ) then
 !                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB new stability: gradient instability. Gradient: ', EFT_gradient
+!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB new stability: gradient instability. Gradient: ', eft_cache%EFT_gradient
 !                end if
 !
 !            end if
 !
 !            !5- Positive effective mass of pi:
-!            if (EFTpiC < 0.and.EFTpiMassPrior) then
+!            if (eft_cache%EFTpiC < 0.and.EFTpiMassPrior) then
 !                EFTStabilityComputation = .false.
 !                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: negative mass'
 !            end if
@@ -358,10 +358,10 @@ contains
 !            end if
 !            ! 7- Sub-luminal propagation:
 !            if (EFTlightspeedPrior) then
-!                if (EFTpiA2==0.and.EFTpiD2==0.and.(EFTpiD1/EFTpiA1)>1.001_dl) then
+!                if (eft_cache%EFTpiA2==0.and.eft_cache%EFTpiD2==0.and.(eft_cache%EFTpiD1/eft_cache%EFTpiA1)>1.001_dl) then
 !                    EFTStabilityComputation = .false.
 !                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: tachion perturbations'
-!                else if (EFTpiA2/=0.and.EFTpiD2/=0.and.(EFTpiD2/EFTpiA2)>1.001_dl) then
+!                else if (eft_cache%EFTpiA2/=0.and.eft_cache%EFTpiD2/=0.and.(eft_cache%EFTpiD2/eft_cache%EFTpiA2)>1.001_dl) then
 !                    EFTStabilityComputation = .false.
 !                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: tachion perturbations'
 !                end if
@@ -370,7 +370,7 @@ contains
 !            ! 1) F(R): for this model it is easy to show that the positive mass condition requires that OmegaPrime
 !            !    should be positive. We add this test for this models as it is numerically easier to check.
 !            if (CP%EFTflag==2.and.CP%DesignerEFTmodel==1) then
-!                if (EFTOmega(0.11_dl*EFTturnonpiInitial,1)*EFTOmegaP<0) EFTStabilityComputation = .false.
+!                if (EFTOmega(0.11_dl*EFTturnonpiInitial,1)*eft_cache%EFTOmegaP<0) EFTStabilityComputation = .false.
 !            end if
 !        end if
 !
