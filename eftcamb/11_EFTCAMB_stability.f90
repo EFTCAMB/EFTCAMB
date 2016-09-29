@@ -54,7 +54,7 @@ contains
 
         ! 1) Definitions of variables:
         logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep
-        real(dl) :: a2, adotoa
+        real(dl) :: a2
         real(dl) :: EFT_grhonu, EFT_gpinu, grhormass_t
         real(dl) :: EFT_grhonu_tot, EFT_gpinu_tot, EFT_gpinudot_tot, grho_matter, gpres_matter, EFT_grhonudot, EFT_gpinudot
         real(dl) :: kmax
@@ -104,8 +104,6 @@ contains
            ! and then the EFT functions.
            call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , eft_cache )
        end select
-       ! store adotoa:
-       adotoa   = eft_cache%adotoa  !SP: is this really needed?
        ! compute massive neutrinos stuff:
        ! Massive neutrinos mod:
        if ( CP%Num_Nu_Massive /= 0 ) then
@@ -118,14 +116,14 @@ contains
                call Nu_background(a*nu_masses(nu_i),EFT_grhonu,EFT_gpinu)
                eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
                eft_cache%gpinu_tot  = eft_cache%gpinu_tot  + grhormass_t*EFT_gpinu
-               eft_cache%grhonudot_tot = eft_cache%grhonudot_tot + grhormass_t*(Nu_drho(a*nu_masses(nu_i) ,adotoa, EFT_grhonu)&
-                   & -4._dl*adotoa*EFT_grhonu)
-               eft_cache%gpinudot_tot  = eft_cache%gpinudot_tot  + grhormass_t*(Nu_pidot(a*nu_masses(nu_i),adotoa, EFT_gpinu )&
-                   & -4._dl*adotoa*EFT_gpinu)
+               eft_cache%grhonudot_tot = eft_cache%grhonudot_tot + grhormass_t*(Nu_drho(a*nu_masses(nu_i) ,eft_cache%adotoa, EFT_grhonu)&
+                   & -4._dl*eft_cache%adotoa*EFT_grhonu)
+               eft_cache%gpinudot_tot  = eft_cache%gpinudot_tot  + grhormass_t*(Nu_pidot(a*nu_masses(nu_i),eft_cache%adotoa, EFT_gpinu )&
+                   & -4._dl*eft_cache%adotoa*EFT_gpinu)
            end do
        end if
        ! compute pressure dot:
-       eft_cache%gpresdotm_t = -4._dl*adotoa*( eft_cache%grhog_t +eft_cache%grhor_t )/3._dl +eft_cache%gpinudot_tot
+       eft_cache%gpresdotm_t = -4._dl*eft_cache%adotoa*( eft_cache%grhog_t +eft_cache%grhor_t )/3._dl +eft_cache%gpinudot_tot
        ! compute remaining quantities related to H:
        call CP%EFTCAMB%model%compute_H_derivs( a, CP%eft_par_cache , eft_cache )
        ! compute backgrond EFT functions if model is designer:
@@ -142,7 +140,7 @@ contains
        ! Compute coefficients for the tensor propagation equation
        call CP%EFTCAMB%model%compute_tensor_factors( a, CP%eft_par_cache , eft_cache )
        ! Compute kinetic and gradient terms
-       call CP%EFTCAMB%model%compute_stability_quantities( a, CP%eft_par_cache , eft_cache )
+       call CP%EFTCAMB%model%compute_stability_factors( a, CP%eft_par_cache , eft_cache )
 
 
 

@@ -78,7 +78,7 @@ module EFTCAMB_abstract_model
         procedure :: compute_Einstein_factors    => EFTCAMBModelComputeEinsteinFactors                    !< subroutine that computes the Einstein equations factors. For details refer to the numerical notes.
         procedure :: compute_pi_factors          => EFTCAMBModelComputePiFactors                          !< subroutine that computes the pi field equations factors. For details refer to the numerical notes.
         procedure :: compute_tensor_factors      => EFTCAMBModelComputeTensorFactors                      !< subroutine that computes the factors for the tensor propagation equation. For details refer to the numerical notes.
-        procedure :: compute_stability_quantities=> EFTCAMBModelComputeStabilityQuantities                !< subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
+        procedure :: compute_stability_factors   => EFTCAMBModelComputeStabilityQuantities                !< subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
 
     end type EFTCAMB_model
 
