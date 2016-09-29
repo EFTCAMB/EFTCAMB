@@ -22,7 +22,7 @@
 !> This module contains the stability detection algorithm of EFTCAMB.
 !! This operates on general EFT models but needs CP to be set.
 
-!> @author Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_stability
 
