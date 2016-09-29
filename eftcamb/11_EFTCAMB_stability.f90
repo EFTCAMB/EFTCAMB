@@ -53,7 +53,7 @@ contains
 
 
         ! 1) Definitions of variables:
-        logical :: EFT_HaveNan
+        logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep
         real(dl) :: a2, adotoa
         real(dl) :: EFT_grhonu, EFT_gpinu, grhormass_t
         real(dl) :: EFT_grhonu_tot, EFT_gpinu_tot, EFT_gpinudot_tot, grho_matter, gpres_matter, EFT_grhonudot, EFT_gpinudot
@@ -157,17 +157,27 @@ contains
 !            kmax = CP%Max_eta_k/CP%tau0*exp((int(log(CP%Transfer%kmax/(CP%Max_eta_k/CP%tau0))*(3*AccuracyBoost))+2)/(3*AccuracyBoost))
 !        end if
 !
-!        ! All the coefficients should not be Nan. This can happen for strange values of the parameters
-!        ! for which a division by zero may occur.
-!
-!        EFT_HaveNan = IsNaN(eft_cache%EFTAT).or.IsNaN(eft_cache%EFTpiA1).or.IsNaN(eft_cache%EFTpiA2).or.IsNaN(eft_cache%EFTpiB1).or.IsNaN(eft_cache%EFTpiB2)&
-!            & .or.IsNaN(eft_cache%EFTpiC).or.IsNaN(eft_cache%EFTpiD1).or.IsNaN(eft_cache%EFTpiD2).or.IsNaN(eft_cache%EFT_kinetic).or.IsNaN(eft_cache%EFT_gradient)
-!
-!        if (EFT_HaveNan) then
-!            EFTStabilityComputation = .false.
-!            if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: model has Nan.'
-!            return
-!        end if
+       ! All the coefficients should not be Nan. This can happen for strange values of the parameters for which a division by zero may occur.
+       ! NaN check for the EFTCAMB_timestep_cache
+
+       call eft_cache%is_nan( EFT_HaveNan_timestep )
+
+       if (EFT_HaveNan_timestep) then
+           EFTStabilityComputation = .false.
+           if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: model has Nan in the timestep cache'
+           return
+       end if
+
+       ! NaN chek for the EFTCAMB_parameter_cache
+
+       call eft_par_cache%is_nan( EFT_HaveNan_parameter )
+
+       if (EFT_HaveNan_parameter) then
+           EFTStabilityComputation = .false.
+           if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: model has Nan in the parameter cache'
+           return
+       end if
+
 !
 !        ! Mathematical stability:
 !        if (CP%EFT_mathematical_stability) then
