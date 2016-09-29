@@ -452,9 +452,18 @@ contains
      class(EFTCAMB_parameter_cache), intent(in)  :: self    !< The base class.
      logical, intent(out)                        :: HaveNan !< Logical variable which describes the presence of a Nan variable.
                                                             !< If an element of the EFTCAMB_parameter_cache is Nan, you get HaveNan=.True.
+     logical                                     :: NanMass
+     integer                                     :: i
 
-     HaveNan = IsNaN(self%omegac).or.IsNaN(self%omegab).or.IsNaN(self%omegav).or.IsNaN(self%omegak).or.IsNaN(self%omegan).or.IsNaN(self%omegag).or.IsNaN(self%omegar).or.&
-        & IsNaN(self%h0).or.IsNaN(self%h0_Mpc).or.IsNaN(self%grhog).or.IsNaN(self%grhornomass).or.IsNaN(self%grhoc).or.IsNaN(self%grhob).or.IsNaN(self%grhov).or.IsNaN(self%grhok)
+     HaveNan = IsNaN(self%omegac).or.IsNaN(self%omegab).or.IsNaN(self%omegav).or.IsNaN(self%omegak).or.IsNaN(self%omegan).or.IsNaN(self%omegag).or.IsNaN(self%omegar)&
+        & .or.IsNaN(self%h0).or.IsNaN(self%h0_Mpc).or.IsNaN(self%grhog).or.IsNaN(self%grhornomass).or.IsNaN(self%grhoc).or.IsNaN(self%grhob).or.IsNaN(self%grhov).or.IsNaN(self%grhok)&
+        & .or.IsNaN(self%Num_Nu_Massive*1.0_dl).or.IsNaN(self%Nu_mass_eigenstates*1.0)
+     !
+     do i=1, self%Nu_mass_eigenstates
+       NanMass= IsNaN(self%grhormass(i)).or.IsNaN(self%nu_masses(i))
+     end do
+     !
+     HaveNan= HaveNan.or.NanMass
 
    end subroutine EFTCAMBParameterCacheIsNan
 
