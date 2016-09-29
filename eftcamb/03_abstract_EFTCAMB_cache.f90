@@ -79,6 +79,7 @@ module EFTCAMB_cache
 
         procedure :: initialize => EFTCAMBParameterCacheInit  !< subroutine that initializes to zero all the elements of the parameter cache.
         procedure :: print      => EFTCAMBParameterCachePrint !< subroutine that prints the EFTCAMB parameters cache to screen.
+        procedure :: is_nan     => EFTCAMBParameterCacheIsNan !< Subroutine that check if an element of the EFTCAMB_parameter_cache is Nan.
 
     end type EFTCAMB_parameter_cache
 
@@ -233,6 +234,7 @@ module EFTCAMB_cache
     contains
 
         procedure :: initialize => EFTCAMBTimestepCacheInit  !< subroutine that initializes to zero all the elements of the cache.
+        procedure :: is_nan     => EFTCAMBTimestepCacheIsNan !< Subroutine that check if an element of the EFTCAMB_timestep_cache is Nan.
 
     end type EFTCAMB_timestep_cache
 
@@ -342,6 +344,32 @@ contains
     end subroutine EFTCAMBTimestepCacheInit
 
     ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that check if an element of the EFTCAMB_timestep_cache is Nan.
+    subroutine EFTCAMBTimestepCacheIsNan( self, HaveNan )
+
+      implicit none
+
+      class(EFTCAMB_timestep_cache), intent(in)  :: self    !< The base class.
+      logical, intent(out)                       :: HaveNan !< Logical variable which describes the presence of a Nan variable.
+                                                            !< If an element of the EFTCAMB_timestep_cache is Nan, you get HaveNan=.True.
+
+      HaveNan = IsNaN(self%a).or.IsNaN(self%tau).or.IsNaN(self%k).or.IsNaN(self%adotoa).or.IsNaN(self%Hdot).or.IsNaN(self%Hdotdot).or.IsNaN(self%grhoa2)&
+         & .or.IsNaN(self%grhom_t).or.IsNaN(self%gpresm_t).or.IsNaN(self%gpresdotm_t)   .or.IsNaN(self%grhob_t).or.IsNaN(self%grhoc_t).or.IsNaN(self%grhor_t)&
+         & .or.IsNaN(self%grhog_t).or.IsNaN(self%grhov_t).or.IsNaN(self%gpiv_t).or.IsNaN(self%grhonu_tot).or.IsNaN(self%gpinu_tot).or.IsNaN(self%grhonudot_tot)&
+         & .or.IsNaN(self%gpinudot_tot).or.IsNaN(self%EFTOmegaV).or.IsNaN(self%EFTOmegaP).or.IsNaN(self%EFTOmegaPP).or.IsNaN(self%EFTOmegaPPP).or.IsNaN(self%EFTc)&
+         & .or.IsNaN(self%EFTcdot).or.IsNaN(self%EFTLambda).or.IsNaN(self%EFTLambdadot).or.IsNaN(self%EFTGamma1V).or.IsNaN(self%EFTGamma1P).or.IsNaN(self%EFTGamma2V)&
+         & .or.IsNaN(self%EFTGamma2P).or.IsNaN(self%EFTGamma3V).or.IsNaN(self%EFTGamma3P).or.IsNaN(self%EFTGamma4V).or.IsNaN(self%EFTGamma4P).or.IsNaN(self%EFTGamma4PP)&
+         & .or.IsNaN(self%EFTGamma5V).or.IsNaN(self%EFTGamma5P).or.IsNaN(self%EFTGamma6V).or.IsNaN(self%EFTGamma6P).or.IsNaN(self%grhoq).or.IsNaN(self%gpresq)&
+         & .or.IsNaN(self%grhodotq).or.IsNaN(self%gpresdotq).or.IsNaN(self%EFTeomF).or.IsNaN(self%EFTeomN).or.IsNaN(self%EFTeomNdot).or.IsNaN(self%EFTeomX)&
+         & .or.IsNaN(self%EFTeomXdot).or.IsNaN(self%EFTeomY).or.IsNaN(self%EFTeomG).or.IsNaN(self%EFTeomU).or.IsNaN(self%EFTeomL).or.IsNaN(self%EFTeomM)&
+         & .or.IsNaN(self%EFTeomV).or.IsNaN(self%EFTeomVdot).or.IsNaN(self%EFTpiA1).or.IsNaN(self%EFTpiA2).or.IsNaN(self%EFTpiB1).or.IsNaN(self%EFTpiB2)&
+         & .or.IsNaN(self%EFTpiC).or.IsNaN(self%EFTpiD1).or.IsNaN(self%EFTpiD2).or.IsNaN(self%EFTpiE).or.IsNaN(self%pi).or.IsNaN(self%pidot).or.IsNaN(self%pidotdot)&
+         & .or.IsNaN(self%z).or.IsNaN(self%clxg).or.IsNaN(self%clxr).or.IsNaN(self%dgpnu).or.IsNaN(self%dgrho).or.IsNaN(self%dgq).or.IsNaN(self%EFTAT)&
+         & .or.IsNaN(self%EFTBT).or.IsNaN(self%EFTDT).or.IsNaN(self%EFT_kinetic).or.IsNaN(self%EFT_gradient)
+
+    end subroutine EFTCAMBTimestepCacheIsNan
+
+    ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes to zero all the elements of the parameter cache.
     subroutine EFTCAMBParameterCacheInit( self )
 
@@ -414,6 +442,21 @@ contains
         write(*,'(a)') "***************************************************************"
 
     end subroutine EFTCAMBParameterCachePrint
+
+   ! ---------------------------------------------------------------------------------------------
+   !> Subroutine that check if an element of the EFTCAMB_parameter_cache is Nan.
+   subroutine EFTCAMBParameterCacheIsNan( self, HaveNan )
+
+     implicit none
+
+     class(EFTCAMB_parameter_cache), intent(in)  :: self    !< The base class.
+     logical, intent(out)                        :: HaveNan !< Logical variable which describes the presence of a Nan variable.
+                                                            !< If an element of the EFTCAMB_parameter_cache is Nan, you get HaveNan=.True.
+
+     HaveNan = IsNaN(self%omegac).or.IsNaN(self%omegab).or.IsNaN(self%omegav).or.IsNaN(self%omegak).or.IsNaN(self%omegan).or.IsNaN(self%omegag).or.IsNaN(self%omegar).or.&
+        & IsNaN(self%h0).or.IsNaN(self%h0_Mpc).or.IsNaN(self%grhog).or.IsNaN(self%grhornomass).or.IsNaN(self%grhoc).or.IsNaN(self%grhob).or.IsNaN(self%grhov).or.IsNaN(self%grhok)
+
+   end subroutine EFTCAMBParameterCacheIsNan
 
     ! ---------------------------------------------------------------------------------------------
 
