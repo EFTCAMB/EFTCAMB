@@ -54,7 +54,6 @@ contains
 
         ! 1) Definitions of variables:
         logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep
-        real(dl) :: a2
         real(dl) :: EFT_grhonu, EFT_gpinu, grhormass_t
         real(dl) :: EFT_grhonu_tot, EFT_gpinu_tot, EFT_gpinudot_tot, grho_matter, gpres_matter, EFT_grhonudot, EFT_gpinudot
         real(dl) :: kmax
@@ -65,8 +64,6 @@ contains
 
        ! Stability check initialization
        EFTStabilityComputation = .true.
-       ! prepare:
-       a2 = a*a
        ! initialize the cache:
        call eft_cache%initialize()
        ! start filling:
@@ -74,8 +71,8 @@ contains
        ! compute background densities of different species
        eft_cache%grhob_t = eft_par_cache%grhob/a         ! 8\pi G_N \rho_b a^2: baryons background density
        eft_cache%grhoc_t = eft_par_cache%grhoc/a         ! 8\pi G_N \rho_{cdm} a^2: cold dark matter background density
-       eft_cache%grhor_t = eft_par_cache%grhornomass/a2  ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
-       eft_cache%grhog_t = eft_par_cache%grhog/a2        ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
+       eft_cache%grhor_t = eft_par_cache%grhornomass/a/a ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
+       eft_cache%grhog_t = eft_par_cache%grhog/a/a       ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
        ! Massive neutrinos terms:
        if ( CP%Num_Nu_Massive /= 0 ) then
            do nu_i = 1, CP%Nu_mass_eigenstates
