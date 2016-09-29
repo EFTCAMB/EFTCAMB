@@ -26,7 +26,7 @@
 !! or are used to store partial results when solving the time evolution of perturbations,
 !! in EFTCAMB_timestep_cache.
 
-!> @author Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_cache
 

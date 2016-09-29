@@ -24,7 +24,7 @@
 !! with CAMB. All EFTCAMB models should inherit from this class or the two derived
 !! classes contained in 06p2_abstract_EFTCAMB_full.f90 or 06p3_abstract_EFTCAMB_designer.f90
 
-!> @author Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_abstract_model
 
