@@ -33,6 +33,7 @@ module EFTCAMB_stability
     use EFTCAMB_abstract_model_full
     use EFTCAMB_abstract_model_designer
     use EFTDef
+    use EFTCAMB_cache
 
     implicit none
 
@@ -40,117 +41,108 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes if the stability requirements are fullfilled in a given time.
-    function EFTStabilityComputation(a)
+    function EFTStabilityComputation( self, a, eft_par_cache, eft_cache )
 
         implicit none
 
-        real(dl), intent(in) :: a                       !< Input scale factor
+        class(EFTCAMB_model)                         :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor.
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
         logical              :: EFTStabilityComputation !< Logical value returned by the function. If the model is stable this is True, otherwise False.
 
 
         ! 1) Definitions of variables:
         logical :: EFT_HaveNan
-        real(dl) :: a2,k,k2,grhob_t,grhor_t,grhoc_t,grhog_t,grhov_t, grho, gpres, EFT_H0
-        real(dl) :: adotoa, adotdota, Hdot, Hdotdot
-        real(dl) :: EFTOmegaV, EFTOmegaP,EFTOmegaPP,EFTOmegaPPP, EFTc, EFTLambda, EFTcdot, EFTLambdadot
-        real(dl) :: EFTGamma1V, EFTGamma1P, EFTGamma2V, EFTGamma2P, EFTGamma3V, EFTGamma3P
-        real(dl) :: EFTGamma4V, EFTGamma4P, EFTGamma5V, EFTGamma5P, EFTGamma6V, EFTGamma6P
-        real(dl) :: EFTgrhoq,EFTgpresq,EFTgrhodotq,EFTgpresdotq
-        real(dl) :: EFTpiA1, EFTpiA2, EFTpiB1, EFTpiB2, EFTpiC, EFTpiD, EFTpiD1, EFTpiD2, EFTAT
-        real(dl) :: EFTtemp_H0,  EFTtemp_Omegac, EFTtemp_Omegab, EFTtemp_Omegav, EFTtemp_TCMB, EFTtemp_nu_massless_degeneracy
-        real(dl) :: EFTtemp_grhom, EFTtemp_grhog, EFTtemp_grhor
+        real(dl) :: a2, adotoa
         real(dl) :: EFT_grhonu, EFT_gpinu, grhormass_t
-        real(dl) :: EFT_grhonu_tot, EFT_gpinu_tot, EFT_gpinudot_tot, grho_matter, gpres_matter
+        real(dl) :: EFT_grhonu_tot, EFT_gpinu_tot, EFT_gpinudot_tot, grho_matter, gpres_matter, EFT_grhonudot, EFT_gpinudot
         real(dl) :: kmax
         real(dl) :: temp1, temp2, temp3, temp4, temp5, tempk
         integer  :: nu_i, ind, ind_max
         real(dl) :: EFT_instability_rate
         real(dl) :: EFT_W0, EFT_W1, EFT_W2, EFT_W3, EFT_W6, EFT_W2P, EFT_W3P, EFT_W6P  ! New stability
-        real(dl) :: EFT_kinetic, EFT_gradient                                          ! New stability
 
-!        ! 1) Stability check initialization
-!        EFTStabilityComputation = .true.
-!
-!        ! prepare:
-!        a2 = a*a
-!        ! initialize the cache:
-!        call eft_cache%initialize()
-!        ! start filling:
-!        eft_cache%a = a
-!        ! compute background densities of different species
-!        eft_cache%grhob_t = grhob/a         ! 8\pi G_N \rho_b a^2: baryons background density
-!        eft_cache%grhoc_t = grhoc/a         ! 8\pi G_N \rho_{cdm} a^2: cold dark matter background density
-!        eft_cache%grhor_t = grhornomass/a2  ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
-!        eft_cache%grhog_t = grhog/a2        ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
-!        ! Massive neutrinos terms:
-!        if ( CP%Num_Nu_Massive /= 0 ) then
-!            do nu_i = 1, CP%Nu_mass_eigenstates
-!                EFT_grhonu    = 0._dl
-!                EFT_gpinu     = 0._dl
-!                grhormass_t=grhormass(nu_i)/a**2
-!                call Nu_background(a*nu_masses(nu_i),EFT_grhonu,EFT_gpinu)
-!                eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
-!                eft_cache%gpinu_tot  = eft_cache%gpinu_tot  + grhormass_t*EFT_gpinu
-!            end do
-!        end if
-!        ! assemble total densities and pressure:
-!        eft_cache%grhom_t  = eft_cache%grhob_t +eft_cache%grhoc_t +eft_cache%grhor_t +eft_cache%grhog_t +eft_cache%grhonu_tot
-!        eft_cache%gpresm_t = (+eft_cache%grhor_t +eft_cache%grhog_t)/3._dl +eft_cache%gpinu_tot
-!        ! compute the other things:
-!        select type ( model => CP%EFTCAMB%model )
-!            ! compute the background and the background EFT functions.
-!            class is ( EFTCAMB_full_model )
-!            ! background for full models. Here the expansion history is computed from the
-!            ! EFT functions. Hence compute them first and then compute the expansion history.
-!            call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , eft_cache )
-!            call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , eft_cache )
-!            class is ( EFTCAMB_designer_model )
-!            ! background for designer models. Here the expansion history is parametrized
-!            ! and does not depend on the EFT functions. Hence compute first the expansion history
-!            ! and then the EFT functions.
-!            call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , eft_cache )
-!        end select
-!        ! store adotoa:
-!        adotoa   = eft_cache%adotoa
-!        ! compute massive neutrinos stuff:
-!        ! Massive neutrinos mod:
-!        if ( CP%Num_Nu_Massive /= 0 ) then
-!            do nu_i = 1, CP%Nu_mass_eigenstates
-!                EFT_grhonu    = 0._dl
-!                EFT_gpinu     = 0._dl
-!                EFT_grhonudot = 0._dl
-!                EFT_gpinudot  = 0._dl
-!                grhormass_t=grhormass(nu_i)/a**2
-!                call Nu_background(a*nu_masses(nu_i),EFT_grhonu,EFT_gpinu)
-!                eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
-!                eft_cache%gpinu_tot  = eft_cache%gpinu_tot  + grhormass_t*EFT_gpinu
-!                eft_cache%grhonudot_tot = eft_cache%grhonudot_tot + grhormass_t*(Nu_drho(a*nu_masses(nu_i) ,adotoa, EFT_grhonu)&
-!                    & -4._dl*adotoa*EFT_grhonu)
-!                eft_cache%gpinudot_tot  = eft_cache%gpinudot_tot  + grhormass_t*(Nu_pidot(a*nu_masses(nu_i),adotoa, EFT_gpinu )&
-!                    & -4._dl*adotoa*EFT_gpinu)
-!            end do
-!        end if
-!        ! compute pressure dot:
-!        eft_cache%gpresdotm_t = -4._dl*adotoa*( eft_cache%grhog_t +eft_cache%grhor_t )/3._dl +eft_cache%gpinudot_tot
-!        ! compute remaining quantities related to H:
-!        call CP%EFTCAMB%model%compute_H_derivs( a, CP%eft_par_cache , eft_cache )
-!        ! compute backgrond EFT functions if model is designer:
-!        select type ( model => CP%EFTCAMB%model )
-!            class is ( EFTCAMB_designer_model )
-!            call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , eft_cache )
-!        end select
-!        ! compute all other background stuff:
-!        call CP%EFTCAMB%model%compute_rhoQPQ( a, CP%eft_par_cache , eft_cache )
-!        ! compute second order EFT functions:
-!        call CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, CP%eft_par_cache , eft_cache )
-!
-!        ! Compute pi field equations factors
-!        call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , eft_cache )
-!        ! Compute coefficients for the tensor propagation equation
-!        call CP%EFTCAMB%model%compute_tensor_factors( a, CP%eft_par_cache , eft_cache )
-!
-!        ! Compute kinetic and gradient terms
-!        call CP%EFTCAMB%model%call compute_stability_quantities( a, CP%eft_par_cache , eft_cache )
+       ! Stability check initialization
+       EFTStabilityComputation = .true.
+       ! prepare:
+       a2 = a*a
+       ! initialize the cache:
+       call eft_cache%initialize()
+       ! start filling:
+       eft_cache%a = a
+       ! compute background densities of different species
+       eft_cache%grhob_t = eft_par_cache%grhob/a         ! 8\pi G_N \rho_b a^2: baryons background density
+       eft_cache%grhoc_t = eft_par_cache%grhoc/a         ! 8\pi G_N \rho_{cdm} a^2: cold dark matter background density
+       eft_cache%grhor_t = eft_par_cache%grhornomass/a2  ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
+       eft_cache%grhog_t = eft_par_cache%grhog/a2        ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
+       ! Massive neutrinos terms:
+       if ( CP%Num_Nu_Massive /= 0 ) then
+           do nu_i = 1, CP%Nu_mass_eigenstates
+               EFT_grhonu    = 0._dl
+               EFT_gpinu     = 0._dl
+               grhormass_t=grhormass(nu_i)/a**2
+               call Nu_background(a*nu_masses(nu_i),EFT_grhonu,EFT_gpinu)
+               eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
+               eft_cache%gpinu_tot  = eft_cache%gpinu_tot  + grhormass_t*EFT_gpinu
+           end do
+       end if
+       ! assemble total densities and pressure:
+       eft_cache%grhom_t  = eft_cache%grhob_t +eft_cache%grhoc_t +eft_cache%grhor_t +eft_cache%grhog_t +eft_cache%grhonu_tot
+       eft_cache%gpresm_t = (+eft_cache%grhor_t +eft_cache%grhog_t)/3._dl +eft_cache%gpinu_tot
+       ! compute the other things:
+       select type ( model => CP%EFTCAMB%model )
+           ! compute the background and the background EFT functions.
+           class is ( EFTCAMB_full_model )
+           ! background for full models. Here the expansion history is computed from the
+           ! EFT functions. Hence compute them first and then compute the expansion history.
+           call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , eft_cache )
+           call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , eft_cache )
+           class is ( EFTCAMB_designer_model )
+           ! background for designer models. Here the expansion history is parametrized
+           ! and does not depend on the EFT functions. Hence compute first the expansion history
+           ! and then the EFT functions.
+           call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , eft_cache )
+       end select
+       ! store adotoa:
+       adotoa   = eft_cache%adotoa  !SP: is this really needed?
+       ! compute massive neutrinos stuff:
+       ! Massive neutrinos mod:
+       if ( CP%Num_Nu_Massive /= 0 ) then
+           do nu_i = 1, CP%Nu_mass_eigenstates
+               EFT_grhonu    = 0._dl
+               EFT_gpinu     = 0._dl
+               EFT_grhonudot = 0._dl
+               EFT_gpinudot  = 0._dl
+               grhormass_t=grhormass(nu_i)/a**2
+               call Nu_background(a*nu_masses(nu_i),EFT_grhonu,EFT_gpinu)
+               eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
+               eft_cache%gpinu_tot  = eft_cache%gpinu_tot  + grhormass_t*EFT_gpinu
+               eft_cache%grhonudot_tot = eft_cache%grhonudot_tot + grhormass_t*(Nu_drho(a*nu_masses(nu_i) ,adotoa, EFT_grhonu)&
+                   & -4._dl*adotoa*EFT_grhonu)
+               eft_cache%gpinudot_tot  = eft_cache%gpinudot_tot  + grhormass_t*(Nu_pidot(a*nu_masses(nu_i),adotoa, EFT_gpinu )&
+                   & -4._dl*adotoa*EFT_gpinu)
+           end do
+       end if
+       ! compute pressure dot:
+       eft_cache%gpresdotm_t = -4._dl*adotoa*( eft_cache%grhog_t +eft_cache%grhor_t )/3._dl +eft_cache%gpinudot_tot
+       ! compute remaining quantities related to H:
+       call CP%EFTCAMB%model%compute_H_derivs( a, CP%eft_par_cache , eft_cache )
+       ! compute backgrond EFT functions if model is designer:
+       select type ( model => CP%EFTCAMB%model )
+           class is ( EFTCAMB_designer_model )
+           call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , eft_cache )
+       end select
+       ! compute all other background stuff:
+       call CP%EFTCAMB%model%compute_rhoQPQ( a, CP%eft_par_cache , eft_cache )
+       ! compute second order EFT functions:
+       call CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, CP%eft_par_cache , eft_cache )
+       ! Compute pi field equations factors
+       call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , eft_cache )
+       ! Compute coefficients for the tensor propagation equation
+       call CP%EFTCAMB%model%compute_tensor_factors( a, CP%eft_par_cache , eft_cache )
+       ! Compute kinetic and gradient terms
+       call CP%EFTCAMB%model%compute_stability_quantities( a, CP%eft_par_cache , eft_cache )
 
 
 
