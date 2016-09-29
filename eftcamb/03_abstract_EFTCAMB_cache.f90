@@ -226,7 +226,7 @@ module EFTCAMB_cache
         real(dl) :: EFTAT         !< the value of the tensor equation coefficient A. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTBT         !< the value of the tensor equation coefficient B. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTDT         !< the value of the tensor equation coefficient D. Refer to the Numerical Notes for the definition.
-        ! 12) Kinetic and Gradient quantities
+        ! 12) Kinetic and Gradient quantities for the stability check:
         real(dl) :: EFT_kinetic   !< the value of the kinetic term. Refer to the Numerical Notes for the definition.
         real(dl) :: EFT_gradient  !< the value of the gradient term. Refer to the Numerical Notes for the definition.
 
@@ -335,7 +335,7 @@ contains
         self%EFTAT         = 0._dl
         self%EFTBT         = 0._dl
         self%EFTDT         = 0._dl
-        ! 12) Kinetic and Gradient quantities
+        ! 12) Kinetic and Gradient quantities for the stability check:
         self%EFT_kinetic   = 0._dl
         self%EFT_gradient  = 0._dl
 
