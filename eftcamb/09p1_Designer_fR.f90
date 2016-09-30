@@ -136,7 +136,7 @@ contains
     end subroutine EFTCAMBDesignerFRAllocateModelSelection
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine taht initializes the model parameters based on the values found in an input array.
+    !> Subroutine that initializes the model parameters based on the values found in an input array.
     subroutine EFTCAMBDesignerFRInitModelParameters( self, array )
 
         implicit none
