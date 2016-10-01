@@ -54,13 +54,10 @@ contains
 
         ! 1) Definitions of variables:
         logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep
-        real(dl) :: EFT_grhonu, EFT_gpinu, grhormass_t
-        real(dl) :: EFT_grhonu_tot, EFT_gpinu_tot, EFT_gpinudot_tot, grho_matter, gpres_matter, EFT_grhonudot, EFT_gpinudot
-        real(dl) :: kmax
+        real(dl) :: EFT_grhonu, EFT_gpinu, grhormass_t, EFT_grhonudot, EFT_gpinudot, kmax
         real(dl) :: temp1, temp2, temp3, temp4, temp5, tempk
         integer  :: nu_i, ind, ind_max
         real(dl) :: EFT_instability_rate
-        real(dl) :: EFT_W0, EFT_W1, EFT_W2, EFT_W3, EFT_W6, EFT_W2P, EFT_W3P, EFT_W6P  ! New stability
 
        ! Stability check initialization
        EFTStabilityComputation = .true.
