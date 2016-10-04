@@ -57,6 +57,13 @@ module EFTDef
     logical , parameter :: DebugEFTCAMB = .false.       !< EFTCAMB debug flag.This will turn on printing of many things to aid debugging the code.
 #endif
 
+        !!    Stability flags
+    logical , parameter :: EFT_mathematical_stability = .true. !< Flag for mathematical stability check.
+
+    logical , parameter :: EFTAdditionalPriors = .true.        !< Flag for additional priors in stability check.
+
+
+
 end module EFTDef
 
 !----------------------------------------------------------------------------------------

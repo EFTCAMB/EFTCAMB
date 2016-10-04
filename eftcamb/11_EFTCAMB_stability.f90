@@ -45,17 +45,16 @@ contains
 
         implicit none
 
-        class(EFTCAMB_model)                         :: self          !< the base class
-        real(dl), intent(in)                         :: a             !< the input scale factor.
-        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
-        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
-        logical              :: EFTStabilityComputation !< Logical value returned by the function. If the model is stable this is True, otherwise False.
+        class(EFTCAMB_model)                         :: self                    !< the base class
+        real(dl), intent(in)                         :: a                       !< the input scale factor.
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache           !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache               !< the EFTCAMB timestep cache that contains all the physical values.
+        logical                                      :: EFTStabilityComputation !< Logical value returned by the function. If the model is stable this is True, otherwise False.
 
-
-        ! 1) Definitions of variables:
+        ! Definitions of variables:
         logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep
         real(dl) :: EFT_grhonu, EFT_gpinu, grhormass_t, EFT_grhonudot, EFT_gpinudot, kmax
-        real(dl) :: temp1, temp2, temp3, temp4, temp5, tempk
+        real(dl) :: temp1, temp2, temp3, temp4, temp5, tempk, PastA1, PastAT
         integer  :: nu_i, ind, ind_max
         real(dl) :: EFT_instability_rate
 
@@ -136,19 +135,6 @@ contains
        ! Compute kinetic and gradient terms
        call CP%EFTCAMB%model%compute_stability_factors( a, CP%eft_par_cache , eft_cache )
 
-
-
-!        ! 7) Compute k_max_CAMB. This is slightly overestimated to be safe...
-!
-!        !    This is just to be safe if doing only background stuff. We still require stability of linear scales.
-!        kmax = 0.1_dl
-!        !    This is if we want scalar Cls.
-!        if (CP%WantCls) kmax = CP%Max_eta_k/CP%tau0
-!        !    This is if we want also (or only) transfer functions.
-!        if (CP%WantTransfer) then
-!            kmax = CP%Max_eta_k/CP%tau0*exp((int(log(CP%Transfer%kmax/(CP%Max_eta_k/CP%tau0))*(3*AccuracyBoost))+2)/(3*AccuracyBoost))
-!        end if
-!
        ! All the coefficients should not be Nan. This can happen for strange values of the parameters for which a division by zero may occur.
        ! NaN check for the EFTCAMB_timestep_cache
 
@@ -170,84 +156,91 @@ contains
            return
        end if
 
-!
-!        ! Mathematical stability:
-!        if (CP%EFT_mathematical_stability) then
-!
-!            ! 1- the A coefficient should not change sign in time and in k, i.e. it shall not be zero.
-!            !    This is the stronger stability constraint since violating it would violate the mathematical
-!            !    consistency of the pi field equation.
-!
-!            !    The first condition is A1/=0. Implemented by detecting sign changes in A1.
-!            if ( eft_cache%EFTpiA1*PastA1 < 0._dl ) then
-!                EFTStabilityComputation = .false.
-!                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, A is zero in time.'
-!            end if
-!            PastA1 = eft_cache%EFTpiA1
-!            !    The second one is the condition on k.
-!            if ( (eft_cache%EFTpiA1 > 0 .and. eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 < 0) .or. &
-!                &(eft_cache%EFTpiA1 < 0 .and. eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 > 0) ) then
-!                EFTStabilityComputation = .false.
-!                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, A is zero in k.'
-!            end if
-!
-!            ! 2- the AT coefficient should not change sign in time, i.e. it shall not be zero.
-!            !    This is the second stronger stability constraint since violating it would
-!            !    violate the mathematical consistency of the tensor perturbation equation.
-!            !    Implemented by detecting sign changes in AT.
-!            if ( eft_cache%EFTAT*PastAT < 0._dl ) then
-!                EFTStabilityComputation = .false.
-!                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, AT is zero in time.'
-!            end if
-!            PastAT = eft_cache%EFTAT
-!
-!            ! 3- we do not want (fast) growing exponential modes.
-!            !    This condition prevents the pi field from growing exponentially and destroying everything.
-!            !    Even though this condition is not completely related to physics not mathematics, violating it
-!            !    would completely screw up cosmological observables.
-!
-!            !    This is the maximum allowed rate of instability. Units shall be Mpc^-1.
-!            EFT_instability_rate = 0._dl
-!
-!            !    This condition needs to be tested in k. Sample in k.
-!
-!            ind_max = 10
-!
-!            do ind = 1, ind_max
-!                ! kmode to test. Linear sampling. Should suffice... (??)
-!                tempk = 0._dl + REAL(ind-1)*(kmax)/REAL(ind_max-1)
-!                ! vaule that discriminates between different cases:
-!                temp1 = (eft_cache%EFTpiB1 +eft_cache%EFTpiB2*tempk**2)
-!                temp2 = (eft_cache%EFTpiA1 +eft_cache%EFTpiA2*tempk**2)
-!                temp3 = temp1**2 -4._dl*temp2*(eft_cache%EFTpiC +eft_cache%EFTpiD1*tempk**2 + eft_cache%EFTpiD2*tempk**4)
-!
-!                !    case 1:
-!                if (temp3 > 0._dl .and. temp2 /= 0._dl) then
-!                    temp4 = +0.5_dl*(-temp1 +sqrt(temp3))/temp2
-!                    temp5 = +0.5_dl*(-temp1 -sqrt(temp3))/temp2
-!                    if (temp4>EFT_instability_rate .or. temp5>EFT_instability_rate) then
-!                        EFTStabilityComputation = .false.
-!                        if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4, temp5
-!                        exit
-!                    end if
-!                !    case 2:
-!                else if ( temp2 /= 0._dl ) then
-!                    temp4 = -0.5_dl*temp1/temp2
-!                    if (temp4>EFT_instability_rate) then
-!                        EFTStabilityComputation = .false.
-!                        if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4
-!                        exit
-!                    end if
-!                end if
-!
-!            end do
-!
-!        end if
-!
-!        ! Additional priors:
-!        if (CP%EFTAdditionalPriors) then
-!            if (EFTw(a,0)>-1._dl/3._dl) EFTStabilityComputation = .false.
-!        end if
+       ! Compute k_max_CAMB. This is slightly overestimated to be safe...
+       ! This is just to be safe if doing only background stuff. We still require stability of linear scales.
+       kmax = 0.1_dl
+       !    This is if we want scalar Cls.
+       if (CP%WantCls) kmax = CP%Max_eta_k/CP%tau0
+       !    This is if we want also (or only) transfer functions.
+       if (CP%WantTransfer) then
+           kmax = CP%Max_eta_k/CP%tau0*exp((int(log(CP%Transfer%kmax/(CP%Max_eta_k/CP%tau0))*(3*AccuracyBoost))+2)/(3*AccuracyBoost))
+       end if
+
+       ! Mathematical stability:
+       if (EFT_mathematical_stability) then
+           ! 1- the A coefficient should not change sign in time and in k, i.e. it shall not be zero.
+           !    This is the stronger stability constraint since violating it would violate the mathematical
+           !    consistency of the pi field equation.
+
+           !    The first condition is A1/=0. Implemented by detecting sign changes in A1.
+           if ( eft_cache%EFTpiA1*PastA1 < 0._dl ) then
+               EFTStabilityComputation = .false.
+               if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, A is zero in time.'
+           end if
+           PastA1 = eft_cache%EFTpiA1
+           !    The second one is the condition on k.
+           if ( (eft_cache%EFTpiA1 > 0 .and. eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 < 0) .or. &
+               &(eft_cache%EFTpiA1 < 0 .and. eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 > 0) ) then
+               EFTStabilityComputation = .false.
+               if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, A is zero in k.'
+           end if
+
+           ! 2- the AT coefficient should not change sign in time, i.e. it shall not be zero.
+           !    This is the second stronger stability constraint since violating it would
+           !    violate the mathematical consistency of the tensor perturbation equation.
+           !    Implemented by detecting sign changes in AT.
+           if ( eft_cache%EFTAT*PastAT < 0._dl ) then
+               EFTStabilityComputation = .false.
+               if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, AT is zero in time.'
+           end if
+           PastAT = eft_cache%EFTAT
+
+           ! 3- we do not want (fast) growing exponential modes.
+           !    This condition prevents the pi field from growing exponentially and destroying everything.
+           !    Even though this condition is neither completely related to physics nor mathematics, violating it
+           !    would completely mess up cosmological observables.
+
+           !    This is the maximum allowed rate of instability. Units shall be Mpc^-1.
+           EFT_instability_rate = 0._dl
+
+           !    This condition needs to be tested in k. Sample in k.
+           ind_max = 10
+
+           do ind = 1, ind_max
+               ! kmode to test. Linear sampling. Should suffice... (??)
+               tempk = 0._dl + REAL(ind-1)*(kmax)/REAL(ind_max-1)
+               ! vaule that discriminates between different cases:
+               temp1 = (eft_cache%EFTpiB1 +eft_cache%EFTpiB2*tempk**2)
+               temp2 = (eft_cache%EFTpiA1 +eft_cache%EFTpiA2*tempk**2)
+               temp3 = temp1**2 -4._dl*temp2*(eft_cache%EFTpiC +eft_cache%EFTpiD1*tempk**2 + eft_cache%EFTpiD2*tempk**4)
+
+               ! case 1:
+               if (temp3 > 0._dl .and. temp2 /= 0._dl) then
+                   temp4 = +0.5_dl*(-temp1 +sqrt(temp3))/temp2
+                   temp5 = +0.5_dl*(-temp1 -sqrt(temp3))/temp2
+                   if (temp4>EFT_instability_rate .or. temp5>EFT_instability_rate) then
+                       EFTStabilityComputation = .false.
+                       if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4, temp5
+                       exit
+                   end if
+               ! case 2:
+               else if ( temp2 /= 0._dl ) then
+                   temp4 = -0.5_dl*temp1/temp2
+                   if (temp4>EFT_instability_rate) then
+                       EFTStabilityComputation = .false.
+                       if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4
+                       exit
+                   end if
+               end if
+
+           end do
+
+       end if
+
+       ! Additional priors:
+       if (EFTAdditionalPriors) then
+          !  if (CP%EFTCAMB%model%PureEFTwDE%value(a)>-1._dl/3._dl) EFTStabilityComputation = .false.
+       end if
 !
 !        ! Minkowsky prior: some theories have known stability properties on Minkowsky background:
 !        if (CP%MinkowskyPriors) then

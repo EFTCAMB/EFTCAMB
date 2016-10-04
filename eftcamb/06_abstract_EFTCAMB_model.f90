@@ -78,7 +78,7 @@ module EFTCAMB_abstract_model
         procedure :: compute_Einstein_factors    => EFTCAMBModelComputeEinsteinFactors                    !< subroutine that computes the Einstein equations factors. For details refer to the numerical notes.
         procedure :: compute_pi_factors          => EFTCAMBModelComputePiFactors                          !< subroutine that computes the pi field equations factors. For details refer to the numerical notes.
         procedure :: compute_tensor_factors      => EFTCAMBModelComputeTensorFactors                      !< subroutine that computes the factors for the tensor propagation equation. For details refer to the numerical notes.
-        procedure :: compute_stability_factors   => EFTCAMBModelComputeStabilityQuantities                !< subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
+        procedure :: compute_stability_factors   => EFTCAMBModelComputeStabilityFactors                   !< subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
 
     end type EFTCAMB_model
 
@@ -480,7 +480,7 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
-    subroutine EFTCAMBModelComputeStabilityQuantities( self, a, eft_par_cache, eft_cache )
+    subroutine EFTCAMBModelComputeStabilityFactors( self, a, eft_par_cache, eft_cache )
 
         implicit none
 
@@ -514,7 +514,7 @@ contains
             &4._dl*(1._dl + eft_cache%EFTOmegaV)*(1._dl + 2._dl*a*eft_cache%EFTGamma5P + 4._dl*eft_cache%EFTGamma5V + eft_cache%EFTOmegaV) - a*eft_cache%EFTOmegaP*(3._dl + 2._dl*a*eft_cache%EFTGamma5P &
             &+ 2._dl*eft_cache%EFTGamma5V + 3._dl*eft_cache%EFTOmegaV)) +(1._dl + 2._dl*eft_cache%EFTGamma5V + eft_cache%EFTOmegaV)*(4._dl + a*eft_cache%EFTOmegaP + 4._dl*eft_cache%EFTOmegaV)*eft_cache%Hdot))
 
-    end subroutine EFTCAMBModelComputeStabilityQuantities
+    end subroutine EFTCAMBModelComputeStabilityFactors
 
     ! ---------------------------------------------------------------------------------------------
 
