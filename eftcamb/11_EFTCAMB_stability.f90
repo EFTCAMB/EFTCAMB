@@ -249,8 +249,8 @@ contains
 
        ! Minkowsky prior: some theories have known stability properties on Minkowsky background:
        if (EFT_MinkowskyPriors) then
-      !      if (CP%EFTflag==4) then                                            !< To be added when Horava is implemented
-      !          if (CP%FullMappingEFTmodel==1) then ! Horava gravity
+      !      if (CP%EFTflag==4) then
+      !          if (CP%FullMappingEFTmodel==1) then ! Horava gravity                     !< To be added when Horava is implemented
        !
       !              if ( CP%Horava_lambda > -2._dl/3._dl .and. CP%Horava_lambda < 0._dl ) then
       !                  EFTStabilityComputation = .false.
@@ -265,96 +265,94 @@ contains
       !          end if
       !      end if
        end if
-!
-!
-!
-!        ! Physical viability:
-!        if (CP%EFT_physical_stability) then
-!
-!            if ( .not. EFT_old_stability .and. &
-!                & CP%EFTFlag /= 4 .and. ( &
-!                & (eft_cache%EFTGamma6V /= 0._dl) .or.      &
-!                & ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) ) then
-!
-!                write(*,*) 'EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
-!                write(*,*) 'It will be added in a future release.'
-!                write(*,*) 'If you want to run this model disable EFT_physical_stability.'
-!
-!                EFTStabilityComputation = .false.
-!                return
-!            end if
-!
-!            ! 1- Positive gravitational constant:
-!            if (1._dl +eft_cache%EFTOmegaV <= 0) then
-!                EFTStabilityComputation = .false.
-!                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: negative gravitational constant', 1._dl +eft_cache%EFTOmegaV
-!            end if
-!
-!            ! 2- Old ghost and gradient conditions:
-!            if ( EFT_old_stability .or. &
-!                & (eft_cache%EFTGamma6V /= 0._dl) .or. &
-!                & ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) then
-!
-!                ! Ghost instability:
-!                if (eft_cache%EFTpiA1 < 0 .or. ( eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 < 0)) then
-!                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: ghost instability', eft_cache%EFTpiA1, eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2
-!                end if
-!                ! Gradient instability 1:
-!                if (eft_cache%EFTpiD1 < 0) then
-!                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: gradient instability k^2', eft_cache%EFTpiD1
-!                end if
-!                ! Gradient instability 2:
-!                if (eft_cache%EFTpiD2 < 0) then
-!                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: gradient instability k^4', eft_cache%EFTpiD2
-!                end if
-!
-!            else
-!                ! New ghost and gradient conditions:
-!                ! ghost condition:
-!                if ( eft_cache%EFT_kinetic < 0._dl ) then
-!                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB new stability: ghost instability. Kinetic: ', eft_cache%EFT_kinetic
-!                end if
-!                ! gradient instability:
-!                if ( eft_cache%EFT_gradient < 0._dl ) then
-!                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB new stability: gradient instability. Gradient: ', eft_cache%EFT_gradient
-!                end if
-!
-!            end if
-!
-!            !5- Positive effective mass of pi:
-!            if (eft_cache%EFTpiC < 0.and.EFTpiMassPrior) then
-!                EFTStabilityComputation = .false.
-!                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: negative mass'
-!            end if
-!            ! 6- No tensor ghosts:
-!            if (EFTAT < 0) then
-!                EFTStabilityComputation = .false.
-!                if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: tensor ghost instability'
-!            end if
-!            ! 7- Sub-luminal propagation:
-!            if (EFTlightspeedPrior) then
-!                if (eft_cache%EFTpiA2==0.and.eft_cache%EFTpiD2==0.and.(eft_cache%EFTpiD1/eft_cache%EFTpiA1)>1.001_dl) then
-!                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: tachion perturbations'
-!                else if (eft_cache%EFTpiA2/=0.and.eft_cache%EFTpiD2/=0.and.(eft_cache%EFTpiD2/eft_cache%EFTpiA2)>1.001_dl) then
-!                    EFTStabilityComputation = .false.
-!                    if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: tachion perturbations'
-!                end if
-!            end if
-!            ! 8- Every theory has it's own peculiarities...
-!            ! 1) F(R): for this model it is easy to show that the positive mass condition requires that OmegaPrime
-!            !    should be positive. We add this test for this models as it is numerically easier to check.
-!            if (CP%EFTflag==2.and.CP%DesignerEFTmodel==1) then
-!                if (EFTOmega(0.11_dl*EFTturnonpiInitial,1)*eft_cache%EFTOmegaP<0) EFTStabilityComputation = .false.
-!            end if
-!        end if
-!
-!        return
+
+       ! Physical viability:
+       if ( EFT_physical_stability ) then
+
+           if ( .not. EFT_old_stability .and. &
+               & CP%EFTCAMB%EFTflag /= 4 .and. ( &
+               & (eft_cache%EFTGamma6V /= 0._dl) .or.      &
+               & ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) ) then
+
+               write(*,*) 'EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
+               write(*,*) 'It will be added in a future release.'
+               write(*,*) 'If you want to run this model disable EFT_physical_stability.'
+
+               EFTStabilityComputation = .false.
+               return
+           end if
+
+           ! 1- Positive gravitational constant:
+           if ( 1._dl +eft_cache%EFTOmegaV <= 0 ) then
+               EFTStabilityComputation = .false.
+               if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: negative gravitational constant', 1._dl +eft_cache%EFTOmegaV
+           end if
+
+           ! 2- Old ghost and gradient conditions:
+           if ( EFT_old_stability .or. &
+               & (eft_cache%EFTGamma6V /= 0._dl) .or. &
+               & ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) then
+
+               ! Ghost instability:
+               if ( eft_cache%EFTpiA1 < 0 .or. ( eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 < 0) ) then
+                   EFTStabilityComputation = .false.
+                   if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: ghost instability', eft_cache%EFTpiA1, eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2
+               end if
+               ! Gradient instability 1:
+               if ( eft_cache%EFTpiD1 < 0 ) then
+                   EFTStabilityComputation = .false.
+                   if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: gradient instability k^2', eft_cache%EFTpiD1
+               end if
+               ! Gradient instability 2:
+               if ( eft_cache%EFTpiD2 < 0 ) then
+                   EFTStabilityComputation = .false.
+                   if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: gradient instability k^4', eft_cache%EFTpiD2
+               end if
+
+           else
+               ! New ghost and gradient conditions:
+               ! ghost condition:
+               if ( eft_cache%EFT_kinetic < 0._dl ) then
+                   EFTStabilityComputation = .false.
+                   if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB new stability: ghost instability. Kinetic: ', eft_cache%EFT_kinetic
+               end if
+               ! gradient instability:
+               if ( eft_cache%EFT_gradient < 0._dl ) then
+                   EFTStabilityComputation = .false.
+                   if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB new stability: gradient instability. Gradient: ', eft_cache%EFT_gradient
+               end if
+
+           end if
+
+           !5- Positive effective mass of pi:
+           if ( eft_cache%EFTpiC < 0 .and. EFT_piMassPrior ) then
+               EFTStabilityComputation = .false.
+               if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: negative mass'
+           end if
+           ! 6- No tensor ghosts:
+           if ( eft_cache%EFTAT < 0 ) then
+               EFTStabilityComputation = .false.
+               if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: tensor ghost instability'
+           end if
+           ! 7- Sub-luminal propagation:
+           if ( EFT_lightspeedPrior ) then
+               if (eft_cache%EFTpiA2==0.and.eft_cache%EFTpiD2==0.and.(eft_cache%EFTpiD1/eft_cache%EFTpiA1)>1.001_dl) then
+                   EFTStabilityComputation = .false.
+                   if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: tachion perturbations'
+               else if (eft_cache%EFTpiA2/=0.and.eft_cache%EFTpiD2/=0.and.(eft_cache%EFTpiD2/eft_cache%EFTpiA2)>1.001_dl) then
+                   EFTStabilityComputation = .false.
+                   if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: tachion perturbations'
+               end if
+           end if
+           ! 8- Every theory has it's own peculiarities...
+           ! 1) F(R): for this model it is easy to show that the positive mass condition requires that OmegaPrime
+           !    should be positive. We add this test for this models as it is numerically easier to check.
+          !  if (CP%EFTflag==2.and.CP%DesignerEFTmodel==1) then
+          !      if (EFTOmega(0.11_dl*EFTturnonpiInitial,1)*eft_cache%EFTOmegaP<0) EFTStabilityComputation = .false.
+          !  end if
+       end if
+
+       return
 
     end function EFTStabilityComputation
 

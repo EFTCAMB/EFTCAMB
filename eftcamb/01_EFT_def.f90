@@ -58,11 +58,19 @@ module EFTDef
 #endif
 
         !!    Stability flags
-    logical , parameter :: EFT_mathematical_stability = .true. !< Flag for mathematical stability check.
+    logical , parameter :: EFT_mathematical_stability = .true. !< Flag for mathematical stability in stability check.
 
     logical , parameter :: EFT_AdditionalPriors       = .true. !< Flag for additional priors in stability check.
 
-    logical , parameter :: EFT_MinkowskyPriors        = .true. !< Flag for Minkowsky priors in stability check
+    logical , parameter :: EFT_MinkowskyPriors        = .true. !< Flag for Minkowsky priors in stability check.
+
+    logical , parameter :: EFT_physical_stability     = .true. !< Flag for physical stability in stability check.
+
+    logical , parameter :: EFT_old_stability          = .true. !< Flag for old ghost stability check.
+
+    logical , parameter :: EFT_piMassPrior            = .true. !< Flag for checking effective mass of pi in stability check.
+
+    logical , parameter :: EFT_lightspeedPrior        = .true. !< Flag for light speed prior in stability check.
 
 
 
