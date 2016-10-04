@@ -144,7 +144,7 @@ contains
            return
        end if
 
-       ! NaN chek for the EFTCAMB_parameter_cache
+       ! NaN check for the EFTCAMB_parameter_cache
        call eft_par_cache%is_nan( EFT_HaveNan_parameter )
        if ( EFT_HaveNan_parameter ) then
            EFTStabilityComputation = .false.
@@ -164,9 +164,9 @@ contains
 
        ! Mathematical stability:
        if ( EFT_mathematical_stability ) then
-         
+
            ! 1- the A coefficient should not change sign in time and in k, i.e. it shall not be zero.
-           !    This is the stronger stability constraint since violating it would violate the mathematical
+           !    This is the strongest stability constraint since violating it would violate the mathematical
            !    consistency of the pi field equation.
            !    The first condition is A1/=0. Implemented by detecting sign changes in A1.
            if ( eft_cache%EFTpiA1*PastA1 < 0._dl ) then
@@ -182,7 +182,7 @@ contains
            end if
 
            ! 2- the AT coefficient should not change sign in time, i.e. it shall not be zero.
-           !    This is the second stronger stability constraint since violating it would
+           !    This is the second strongest stability constraint since violating it would
            !    violate the mathematical consistency of the tensor perturbation equation.
            !    Implemented by detecting sign changes in AT.
            if ( eft_cache%EFTAT*PastAT < 0._dl ) then
@@ -219,6 +219,7 @@ contains
                        if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4, temp5
                        exit
                    end if
+
                ! case 2:
                else if ( temp2 /= 0._dl ) then
                    temp4 = -0.5_dl*temp1/temp2
@@ -243,7 +244,7 @@ contains
          end select
        end if
 
-       ! Minkowsky prior: some theories have known stability properties on Minkowsky background:
+       ! Minkowsky priors: some theories have known stability properties on Minkowsky background:
        if ( EFT_MinkowskyPriors ) then
           !  if ( CP%EFTflag==4 ) then
           !      if ( CP%FullMappingEFTmodel==1)  then ! Horava gravity                     !< To be added when Horava is implemented
