@@ -140,9 +140,9 @@ contains
 
        call eft_cache%is_nan( EFT_HaveNan_timestep )
 
-       if (EFT_HaveNan_timestep) then
+       if ( EFT_HaveNan_timestep ) then
            EFTStabilityComputation = .false.
-           if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: model has Nan in the timestep cache'
+           if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: model has Nan in the timestep cache'
            return
        end if
 
@@ -150,9 +150,9 @@ contains
 
        call eft_par_cache%is_nan( EFT_HaveNan_parameter )
 
-       if (EFT_HaveNan_parameter) then
+       if ( EFT_HaveNan_parameter ) then
            EFTStabilityComputation = .false.
-           if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: model has Nan in the parameter cache'
+           if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: model has Nan in the parameter cache'
            return
        end if
 
@@ -160,14 +160,14 @@ contains
        ! This is just to be safe if doing only background stuff. We still require stability of linear scales.
        kmax = 0.1_dl
        !    This is if we want scalar Cls.
-       if (CP%WantCls) kmax = CP%Max_eta_k/CP%tau0
+       if ( CP%WantCls ) kmax = CP%Max_eta_k/CP%tau0
        !    This is if we want also (or only) transfer functions.
-       if (CP%WantTransfer) then
+       if ( CP%WantTransfer ) then
            kmax = CP%Max_eta_k/CP%tau0*exp((int(log(CP%Transfer%kmax/(CP%Max_eta_k/CP%tau0))*(3*AccuracyBoost))+2)/(3*AccuracyBoost))
        end if
 
        ! Mathematical stability:
-       if (EFT_mathematical_stability) then
+       if ( EFT_mathematical_stability ) then
            ! 1- the A coefficient should not change sign in time and in k, i.e. it shall not be zero.
            !    This is the stronger stability constraint since violating it would violate the mathematical
            !    consistency of the pi field equation.
@@ -175,14 +175,14 @@ contains
            !    The first condition is A1/=0. Implemented by detecting sign changes in A1.
            if ( eft_cache%EFTpiA1*PastA1 < 0._dl ) then
                EFTStabilityComputation = .false.
-               if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, A is zero in time.'
+               if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: mathematical instability, A is zero in time.'
            end if
            PastA1 = eft_cache%EFTpiA1
            !    The second one is the condition on k.
            if ( (eft_cache%EFTpiA1 > 0 .and. eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 < 0) .or. &
                &(eft_cache%EFTpiA1 < 0 .and. eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 > 0) ) then
                EFTStabilityComputation = .false.
-               if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, A is zero in k.'
+               if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: mathematical instability, A is zero in k.'
            end if
 
            ! 2- the AT coefficient should not change sign in time, i.e. it shall not be zero.
@@ -191,7 +191,7 @@ contains
            !    Implemented by detecting sign changes in AT.
            if ( eft_cache%EFTAT*PastAT < 0._dl ) then
                EFTStabilityComputation = .false.
-               if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability, AT is zero in time.'
+               if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: mathematical instability, AT is zero in time.'
            end if
            PastAT = eft_cache%EFTAT
 
@@ -215,20 +215,20 @@ contains
                temp3 = temp1**2 -4._dl*temp2*(eft_cache%EFTpiC +eft_cache%EFTpiD1*tempk**2 + eft_cache%EFTpiD2*tempk**4)
 
                ! case 1:
-               if (temp3 > 0._dl .and. temp2 /= 0._dl) then
+               if ( temp3 > 0._dl .and. temp2 /= 0._dl ) then
                    temp4 = +0.5_dl*(-temp1 +sqrt(temp3))/temp2
                    temp5 = +0.5_dl*(-temp1 -sqrt(temp3))/temp2
-                   if (temp4>EFT_instability_rate .or. temp5>EFT_instability_rate) then
+                   if ( temp4>EFT_instability_rate .or. temp5>EFT_instability_rate ) then
                        EFTStabilityComputation = .false.
-                       if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4, temp5
+                       if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4, temp5
                        exit
                    end if
                ! case 2:
                else if ( temp2 /= 0._dl ) then
                    temp4 = -0.5_dl*temp1/temp2
-                   if (temp4>EFT_instability_rate) then
+                   if ( temp4>EFT_instability_rate ) then
                        EFTStabilityComputation = .false.
-                       if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4
+                       if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4
                        exit
                    end if
                end if
@@ -238,17 +238,17 @@ contains
        end if
 
        ! Additional priors:
-       if (EFT_AdditionalPriors) then
-         select type ( self => CP%EFTCAMB%model )
+       if ( EFT_AdditionalPriors ) then
+         select type ( self )
          class is ( EFTCAMB_std_pure_EFT )
-             if (self%PureEFTwDE%value(a)>-1._dl/3._dl) EFTStabilityComputation = .false.
+             if ( self%PureEFTwDE%value(a)>-1._dl/3._dl ) EFTStabilityComputation = .false.
            class is ( EFTCAMB_fR_designer )
-             if (self%PureEFTwDE%value(a)>-1._dl/3._dl) EFTStabilityComputation = .false.
+             if ( self%PureEFTwDE%value(a)>-1._dl/3._dl ) EFTStabilityComputation = .false.
          end select
        end if
 
        ! Minkowsky prior: some theories have known stability properties on Minkowsky background:
-       if (EFT_MinkowskyPriors) then
+       if ( EFT_MinkowskyPriors ) then
       !      if (CP%EFTflag==4) then
       !          if (CP%FullMappingEFTmodel==1) then ! Horava gravity                     !< To be added when Horava is implemented
        !
@@ -273,11 +273,9 @@ contains
                & CP%EFTCAMB%EFTflag /= 4 .and. ( &
                & (eft_cache%EFTGamma6V /= 0._dl) .or.      &
                & ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) ) then
-
                write(*,*) 'EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
                write(*,*) 'It will be added in a future release.'
                write(*,*) 'If you want to run this model disable EFT_physical_stability.'
-
                EFTStabilityComputation = .false.
                return
            end if
@@ -285,14 +283,13 @@ contains
            ! 1- Positive gravitational constant:
            if ( 1._dl +eft_cache%EFTOmegaV <= 0 ) then
                EFTStabilityComputation = .false.
-               if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: negative gravitational constant', 1._dl +eft_cache%EFTOmegaV
+               if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: negative gravitational constant', 1._dl +eft_cache%EFTOmegaV
            end if
 
            ! 2- Old ghost and gradient conditions:
            if ( EFT_old_stability .or. &
                & (eft_cache%EFTGamma6V /= 0._dl) .or. &
                & ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) then
-
                ! Ghost instability:
                if ( eft_cache%EFTpiA1 < 0 .or. ( eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 < 0) ) then
                    EFTStabilityComputation = .false.
@@ -308,7 +305,6 @@ contains
                    EFTStabilityComputation = .false.
                    if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: gradient instability k^4', eft_cache%EFTpiD2
                end if
-
            else
                ! New ghost and gradient conditions:
                ! ghost condition:
@@ -321,9 +317,7 @@ contains
                    EFTStabilityComputation = .false.
                    if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB new stability: gradient instability. Gradient: ', eft_cache%EFT_gradient
                end if
-
            end if
-
            !5- Positive effective mass of pi:
            if ( eft_cache%EFTpiC < 0 .and. EFT_piMassPrior ) then
                EFTStabilityComputation = .false.
@@ -336,12 +330,12 @@ contains
            end if
            ! 7- Sub-luminal propagation:
            if ( EFT_lightspeedPrior ) then
-               if (eft_cache%EFTpiA2==0.and.eft_cache%EFTpiD2==0.and.(eft_cache%EFTpiD1/eft_cache%EFTpiA1)>1.001_dl) then
+               if ( eft_cache%EFTpiA2==0.and.eft_cache%EFTpiD2==0.and.(eft_cache%EFTpiD1/eft_cache%EFTpiA1)>1.001_dl ) then
                    EFTStabilityComputation = .false.
-                   if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: tachion perturbations'
-               else if (eft_cache%EFTpiA2/=0.and.eft_cache%EFTpiD2/=0.and.(eft_cache%EFTpiD2/eft_cache%EFTpiA2)>1.001_dl) then
+                   if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: tachion perturbations'
+               else if ( eft_cache%EFTpiA2/=0.and.eft_cache%EFTpiD2/=0.and.(eft_cache%EFTpiD2/eft_cache%EFTpiA2)>1.001_dl ) then
                    EFTStabilityComputation = .false.
-                   if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: tachion perturbations'
+                   if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: tachion perturbations'
                end if
            end if
            ! 8- Every theory has it's own peculiarities...
