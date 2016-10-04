@@ -238,7 +238,7 @@ contains
        end if
 
        ! Additional priors:
-       if (EFTAdditionalPriors) then
+       if (EFT_AdditionalPriors) then
          select type ( self => CP%EFTCAMB%model )
          class is ( EFTCAMB_std_pure_EFT )
              if (self%PureEFTwDE%value(a)>-1._dl/3._dl) EFTStabilityComputation = .false.
@@ -246,25 +246,25 @@ contains
              if (self%PureEFTwDE%value(a)>-1._dl/3._dl) EFTStabilityComputation = .false.
          end select
        end if
-!
-!        ! Minkowsky prior: some theories have known stability properties on Minkowsky background:
-!        if (CP%MinkowskyPriors) then
-!            if (CP%EFTflag==4) then
-!                if (CP%FullMappingEFTmodel==1) then ! Horava gravity
-!
-!                    if ( CP%Horava_lambda > -2._dl/3._dl .and. CP%Horava_lambda < 0._dl ) then
-!                        EFTStabilityComputation = .false.
-!                        if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: Instability on Minkowsky backgound'
-!                    end if
-!
-!                    if ( CP%Horava_eta < 0._dl .or. CP%Horava_eta > 2._dl*CP%Horava_xi +2._dl ) then
-!                        EFTStabilityComputation = .false.
-!                        if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: Instability on Minkowsky backgound'
-!                    end if
-!
-!                end if
-!            end if
-!        end if
+
+       ! Minkowsky prior: some theories have known stability properties on Minkowsky background:
+       if (EFT_MinkowskyPriors) then
+      !      if (CP%EFTflag==4) then                                            !< To be added when Horava is implemented
+      !          if (CP%FullMappingEFTmodel==1) then ! Horava gravity
+       !
+      !              if ( CP%Horava_lambda > -2._dl/3._dl .and. CP%Horava_lambda < 0._dl ) then
+      !                  EFTStabilityComputation = .false.
+      !                  if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: Instability on Minkowsky backgound'
+      !              end if
+       !
+      !              if ( CP%Horava_eta < 0._dl .or. CP%Horava_eta > 2._dl*CP%Horava_xi +2._dl ) then
+      !                  EFTStabilityComputation = .false.
+      !                  if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: Instability on Minkowsky backgound'
+      !              end if
+       !
+      !          end if
+      !      end if
+       end if
 !
 !
 !

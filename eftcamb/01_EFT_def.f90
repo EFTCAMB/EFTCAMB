@@ -60,7 +60,9 @@ module EFTDef
         !!    Stability flags
     logical , parameter :: EFT_mathematical_stability = .true. !< Flag for mathematical stability check.
 
-    logical , parameter :: EFTAdditionalPriors = .true.        !< Flag for additional priors in stability check.
+    logical , parameter :: EFT_AdditionalPriors       = .true. !< Flag for additional priors in stability check.
+
+    logical , parameter :: EFT_MinkowskyPriors        = .true. !< Flag for Minkowsky priors in stability check
 
 
 
