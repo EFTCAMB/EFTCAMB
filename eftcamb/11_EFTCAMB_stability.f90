@@ -193,8 +193,8 @@ contains
 
            ! 3- we do not want (fast) growing exponential modes.
            !    This condition prevents the pi field from growing exponentially and destroying everything.
-           !    Even though this condition is neither completely related to physics nor mathematics, violating it
-           !    would completely mess up cosmological observables.
+           !    Even though this condition is neither completely related to physics nor mathematics,
+           !    violating it would completely mess up cosmological observables.
 
            !    This is the maximum allowed rate of instability. Units shall be Mpc^-1.
            EFT_instability_rate = 0._dl
@@ -247,7 +247,7 @@ contains
        ! Minkowsky priors: some theories have known stability properties on Minkowsky background:
        if ( EFT_MinkowskyPriors ) then
           !  if ( CP%EFTflag==4 ) then
-          !      if ( CP%FullMappingEFTmodel==1)  then ! Horava gravity                     !< To be added when Horava is implemented
+          !      if ( CP%FullMappingEFTmodel==1)  then ! Horava gravity SP:To be added when Horava is implemented.
            !
           !          if ( CP%Horava_lambda > -2._dl/3._dl .and. CP%Horava_lambda < 0._dl ) then
           !              EFTStabilityComputation = .false.
@@ -342,6 +342,7 @@ contains
            ! 8- Every theory has it's own peculiarities...
            ! 1) F(R): for this model it is easy to show that the positive mass condition requires that OmegaPrime
            !    should be positive. We add this test for this models as it is numerically easier to check.
+          !     SP: to be added when designer f(R) is implemented.
           !  if ( CP%EFTflag==2.and.CP%DesignerEFTmodel==1 ) then
           !      if ( EFTOmega(0.11_dl*EFTturnonpiInitial,1)*eft_cache%EFTOmegaP<0 ) EFTStabilityComputation = .false.
           !  end if
