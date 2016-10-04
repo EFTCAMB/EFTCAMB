@@ -239,7 +239,12 @@ contains
 
        ! Additional priors:
        if (EFTAdditionalPriors) then
-          !  if (CP%EFTCAMB%model%PureEFTwDE%value(a)>-1._dl/3._dl) EFTStabilityComputation = .false.
+         select type ( self => CP%EFTCAMB%model )
+         class is ( EFTCAMB_std_pure_EFT )
+             if (self%PureEFTwDE%value(a)>-1._dl/3._dl) EFTStabilityComputation = .false.
+           class is ( EFTCAMB_fR_designer )
+             if (self%PureEFTwDE%value(a)>-1._dl/3._dl) EFTStabilityComputation = .false.
+         end select
        end if
 !
 !        ! Minkowsky prior: some theories have known stability properties on Minkowsky background:
