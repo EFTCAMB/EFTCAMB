@@ -134,6 +134,7 @@ $(OUTPUT_DIR)/01_EFT_def.o :  \
 	$(OUTPUT_DIR)/constants.o
 
 $(OUTPUT_DIR)/11_EFTCAMB_stability.o :  \
+	$(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(OUTPUT_DIR)/06_abstract_EFTCAMB_model.o \
 	$(OUTPUT_DIR)/06p2_abstract_EFTCAMB_full.o \
 	$(OUTPUT_DIR)/constants.o \
@@ -293,6 +294,7 @@ $(DLL_DIR)/01_EFT_def.o :  \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/11_EFTCAMB_stability.o :  \
+	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/06_abstract_EFTCAMB_model.o \
 	$(DLL_DIR)/06p2_abstract_EFTCAMB_full.o \
 	$(DLL_DIR)/constants.o \
