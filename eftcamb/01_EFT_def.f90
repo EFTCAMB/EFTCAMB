@@ -60,7 +60,7 @@ module EFTDef
         !!    Stability flags
     logical , parameter :: EFT_mathematical_stability = .true. !< Flag for mathematical stability in stability check.
 
-    logical , parameter :: EFT_physical_stability     = .true. !< Flag for physical stability in stability check.
+    logical , parameter :: EFT_physical_stability     = .true. !< Flag for physical viability in stability check.
 
     logical , parameter :: EFT_old_stability          = .true. !< Flag for old ghost stability check.
 

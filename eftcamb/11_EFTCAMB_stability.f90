@@ -137,9 +137,7 @@ contains
 
        ! All the coefficients should not be Nan. This can happen for strange values of the parameters for which a division by zero may occur.
        ! NaN check for the EFTCAMB_timestep_cache
-
        call eft_cache%is_nan( EFT_HaveNan_timestep )
-
        if ( EFT_HaveNan_timestep ) then
            EFTStabilityComputation = .false.
            if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: model has Nan in the timestep cache'
@@ -147,9 +145,7 @@ contains
        end if
 
        ! NaN chek for the EFTCAMB_parameter_cache
-
        call eft_par_cache%is_nan( EFT_HaveNan_parameter )
-
        if ( EFT_HaveNan_parameter ) then
            EFTStabilityComputation = .false.
            if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: model has Nan in the parameter cache'
@@ -168,10 +164,10 @@ contains
 
        ! Mathematical stability:
        if ( EFT_mathematical_stability ) then
+         
            ! 1- the A coefficient should not change sign in time and in k, i.e. it shall not be zero.
            !    This is the stronger stability constraint since violating it would violate the mathematical
            !    consistency of the pi field equation.
-
            !    The first condition is A1/=0. Implemented by detecting sign changes in A1.
            if ( eft_cache%EFTpiA1*PastA1 < 0._dl ) then
                EFTStabilityComputation = .false.
@@ -237,7 +233,7 @@ contains
 
        end if
 
-       ! Additional priors:
+       ! Additional priors --> Implement for every different class of models:
        if ( EFT_AdditionalPriors ) then
          select type ( self )
          class is ( EFTCAMB_std_pure_EFT )
@@ -249,21 +245,21 @@ contains
 
        ! Minkowsky prior: some theories have known stability properties on Minkowsky background:
        if ( EFT_MinkowskyPriors ) then
-      !      if (CP%EFTflag==4) then
-      !          if (CP%FullMappingEFTmodel==1) then ! Horava gravity                     !< To be added when Horava is implemented
-       !
-      !              if ( CP%Horava_lambda > -2._dl/3._dl .and. CP%Horava_lambda < 0._dl ) then
-      !                  EFTStabilityComputation = .false.
-      !                  if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: Instability on Minkowsky backgound'
-      !              end if
-       !
-      !              if ( CP%Horava_eta < 0._dl .or. CP%Horava_eta > 2._dl*CP%Horava_xi +2._dl ) then
-      !                  EFTStabilityComputation = .false.
-      !                  if (Feedbacklevel > 0) write(*,*) 'EFTCAMB: Instability on Minkowsky backgound'
-      !              end if
-       !
-      !          end if
-      !      end if
+          !  if ( CP%EFTflag==4 ) then
+          !      if ( CP%FullMappingEFTmodel==1)  then ! Horava gravity                     !< To be added when Horava is implemented
+           !
+          !          if ( CP%Horava_lambda > -2._dl/3._dl .and. CP%Horava_lambda < 0._dl ) then
+          !              EFTStabilityComputation = .false.
+          !              if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: Instability on Minkowsky backgound'
+          !          end if
+           !
+          !          if ( CP%Horava_eta < 0._dl .or. CP%Horava_eta > 2._dl*CP%Horava_xi +2._dl ) then
+          !              EFTStabilityComputation = .false.
+          !              if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: Instability on Minkowsky backgound'
+          !          end if
+           !
+          !      end if
+          !  end if
        end if
 
        ! Physical viability:
@@ -318,16 +314,19 @@ contains
                    if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB new stability: gradient instability. Gradient: ', eft_cache%EFT_gradient
                end if
            end if
+
            !5- Positive effective mass of pi:
            if ( eft_cache%EFTpiC < 0 .and. EFT_piMassPrior ) then
                EFTStabilityComputation = .false.
                if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: negative mass'
            end if
+
            ! 6- No tensor ghosts:
            if ( eft_cache%EFTAT < 0 ) then
                EFTStabilityComputation = .false.
                if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: tensor ghost instability'
            end if
+
            ! 7- Sub-luminal propagation:
            if ( EFT_lightspeedPrior ) then
                if ( eft_cache%EFTpiA2==0.and.eft_cache%EFTpiD2==0.and.(eft_cache%EFTpiD1/eft_cache%EFTpiA1)>1.001_dl ) then
@@ -338,12 +337,14 @@ contains
                    if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: tachion perturbations'
                end if
            end if
+
            ! 8- Every theory has it's own peculiarities...
            ! 1) F(R): for this model it is easy to show that the positive mass condition requires that OmegaPrime
            !    should be positive. We add this test for this models as it is numerically easier to check.
-          !  if (CP%EFTflag==2.and.CP%DesignerEFTmodel==1) then
-          !      if (EFTOmega(0.11_dl*EFTturnonpiInitial,1)*eft_cache%EFTOmegaP<0) EFTStabilityComputation = .false.
+          !  if ( CP%EFTflag==2.and.CP%DesignerEFTmodel==1 ) then
+          !      if ( EFTOmega(0.11_dl*EFTturnonpiInitial,1)*eft_cache%EFTOmegaP<0 ) EFTStabilityComputation = .false.
           !  end if
+
        end if
 
        return
