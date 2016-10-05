@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04p2_linear_parametrizations.f90
+!> @file 04p2_linear_parametrizations_1D.f90
 !! This file contains the definition of the linear parametrization, inheriting from
 !! parametrized_function_1D.
 
