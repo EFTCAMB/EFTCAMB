@@ -34,6 +34,7 @@ module EFTCAMB_stability
     use EFTCAMB_abstract_model_designer
     use EFTDef
     use EFTCAMB_cache
+    use EFTCAMB_main
 
     implicit none
 
@@ -163,7 +164,7 @@ contains
        end if
 
        ! Mathematical stability:
-       if ( EFT_mathematical_stability ) then
+       if ( CP%EFTCAMB%EFT_mathematical_stability ) then
 
            ! 1- the A coefficient should not change sign in time and in k, i.e. it shall not be zero.
            !    This is the strongest stability constraint since violating it would violate the mathematical
@@ -235,7 +236,7 @@ contains
        end if
 
        ! Additional priors --> Implement for every different class of models:
-       if ( EFT_AdditionalPriors ) then
+       if ( CP%EFTCAMB%EFT_AdditionalPriors ) then
          select type ( self )
          class is ( EFTCAMB_std_pure_EFT )
              if ( self%PureEFTwDE%value(a)>-1._dl/3._dl ) EFTStabilityComputation = .false.
@@ -245,7 +246,7 @@ contains
        end if
 
        ! Minkowsky priors: some theories have known stability properties on Minkowsky background:
-       if ( EFT_MinkowskyPriors ) then
+       if ( CP%EFTCAMB%EFT_MinkowskyPriors ) then
           !  if ( CP%EFTflag==4 ) then
           !      if ( CP%FullMappingEFTmodel==1)  then ! Horava gravity SP:To be added when Horava is implemented.
            !
@@ -264,9 +265,9 @@ contains
        end if
 
        ! Physical viability:
-       if ( EFT_physical_stability ) then
+       if ( CP%EFTCAMB%EFT_physical_stability ) then
 
-           if ( .not. EFT_old_stability .and. &
+           if ( .not. CP%EFTCAMB%EFT_old_stability .and. &
                & CP%EFTCAMB%EFTflag /= 4 .and. ( &
                & (eft_cache%EFTGamma6V /= 0._dl) .or.      &
                & ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) ) then
@@ -284,7 +285,7 @@ contains
            end if
 
            ! 2- Old ghost and gradient conditions:
-           if ( EFT_old_stability .or. &
+           if ( CP%EFTCAMB%EFT_old_stability .or. &
                & (eft_cache%EFTGamma6V /= 0._dl) .or. &
                & ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) then
                ! Ghost instability:
@@ -317,7 +318,7 @@ contains
            end if
 
            !5- Positive effective mass of pi:
-           if ( eft_cache%EFTpiC < 0 .and. EFT_piMassPrior ) then
+           if ( CP%EFTCAMB%EFT_piMassPrior .and. eft_cache%EFTpiC < 0 ) then
                EFTStabilityComputation = .false.
                if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: negative mass'
            end if
@@ -329,7 +330,7 @@ contains
            end if
 
            ! 7- Sub-luminal propagation:
-           if ( EFT_lightspeedPrior ) then
+           if ( CP%EFTCAMB%EFT_lightspeedPrior ) then
                if ( eft_cache%EFTpiA2==0.and.eft_cache%EFTpiD2==0.and.(eft_cache%EFTpiD1/eft_cache%EFTpiA1)>1.001_dl ) then
                    EFTStabilityComputation = .false.
                    if ( Feedbacklevel > 0 ) write(*,*) 'EFTCAMB: tachion perturbations'

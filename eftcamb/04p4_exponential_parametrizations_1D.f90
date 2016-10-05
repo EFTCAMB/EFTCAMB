@@ -42,8 +42,8 @@ module EFTCAMB_exponential_parametrizations_1D
     !> Type containing the exponential function parametrization. Inherits from parametrized_function_1D.
     type, extends ( parametrized_function_1D ) :: exponential_parametrization_1D
 
-        real(dl) :: exponential_value_1
-        real(dl) :: exponential_value_2
+        real(dl) :: coefficient
+        real(dl) :: exponent
 
     contains
 
@@ -58,7 +58,7 @@ module EFTCAMB_exponential_parametrizations_1D
         procedure :: first_derivative      => ExponentialParametrized1DFirstDerivative     !< function that returns the first derivative of the exponential function.
         procedure :: second_derivative     => ExponentialParametrized1DSecondDerivative    !< function that returns the second derivative of the exponential function.
         procedure :: third_derivative      => ExponentialParametrized1DThirdDerivative     !< function that returns the third derivative of the exponential function.
-        procedure :: integral              => ExponentialParametrized1DIntegral               !< function that returns the strange integral that we need for w_DE.
+        procedure :: integral              => ExponentialParametrized1DIntegral            !< function that returns the strange integral that we need for w_DE.
 
     end type exponential_parametrization_1D
 
@@ -90,8 +90,8 @@ contains
         class(exponential_parametrization_1D)                   :: self   !< the base class.
         real(dl), dimension(self%parameter_number), intent(in)  :: array  !< input array with the values of the parameters.
 
-        self%exponential_value_1 = array(1)
-        self%exponential_value_2 = array(2)
+        self%coefficient = array(1)
+        self%exponent = array(2)
 
     end subroutine ExponentialParametrized1DInitParams
 
@@ -107,9 +107,9 @@ contains
 
         select case (i)
             case(1)
-                value = self%exponential_value_1
+                value = self%coefficient
             case(2)
-                value = self%exponential_value_2
+                value = self%exponent
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
@@ -150,7 +150,7 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: ExponentialParametrized1DValue                      !< the output value
 
-        ExponentialParametrized1DValue = Exp(self%exponential_value_1*x**self%exponential_value_2) -1._dl
+        ExponentialParametrized1DValue = Exp(self%coefficient*x**self%exponent) -1._dl
     end function ExponentialParametrized1DValue
 
     ! ---------------------------------------------------------------------------------------------
@@ -164,7 +164,7 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: ExponentialParametrized1DFirstDerivative            !< the output value
 
-        ExponentialParametrized1DFirstDerivative = self%exponential_value_1*self%exponential_value_2*x**(self%exponential_value_2-1._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2)
+        ExponentialParametrized1DFirstDerivative = self%coefficient*self%exponent*x**(self%exponent-1._dl)*Exp(self%coefficient*x**self%exponent)
 
     end function ExponentialParametrized1DFirstDerivative
 
@@ -179,8 +179,8 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: ExponentialParametrized1DSecondDerivative           !< the output value
 
-        ExponentialParametrized1DSecondDerivative = self%exponential_value_1*self%exponential_value_2*(self%exponential_value_2-1._dl)*x**(self%exponential_value_2-2._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2) &
-                 & +self%exponential_value_1**2*self%exponential_value_2**2*x**(2._dl*self%exponential_value_2 -2._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2)
+        ExponentialParametrized1DSecondDerivative = self%coefficient*self%exponent*(self%exponent-1._dl)*x**(self%exponent-2._dl)*Exp(self%coefficient*x**self%exponent) &
+                 & +self%coefficient**2*self%exponent**2*x**(2._dl*self%exponent -2._dl)*Exp(self%coefficient*x**self%exponent)
 
     end function ExponentialParametrized1DSecondDerivative
 
@@ -195,10 +195,10 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: ExponentialParametrized1DThirdDerivative            !< the output value
 
-        ExponentialParametrized1DThirdDerivative = self%exponential_value_1*self%exponential_value_2*(self%exponential_value_2-1._dl)*(self%exponential_value_2-2._dl)*x**(self%exponential_value_2-3._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2) &
-                 & +self%exponential_value_1**2*self%exponential_value_2**2*(self%exponential_value_2 -1._dl)*x**(2._dl*self%exponential_value_2 -3._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2) &
-                 & +self%exponential_value_1**2*self%exponential_value_2**2*x**(3._dl*self%exponential_value_2 -3._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2) &
-                 & +self%exponential_value_1**2*self%exponential_value_2**2*2._dl*(self%exponential_value_2 -1._dl)*x**(2._dl*self%exponential_value_2 -3._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2)
+        ExponentialParametrized1DThirdDerivative = self%coefficient*self%exponent*(self%exponent-1._dl)*(self%exponent-2._dl)*x**(self%exponent-3._dl)*Exp(self%coefficient*x**self%exponent) &
+                 & +self%coefficient**2*self%exponent**2*(self%exponent -1._dl)*x**(2._dl*self%exponent -3._dl)*Exp(self%coefficient*x**self%exponent) &
+                 & +self%coefficient**2*self%exponent**2*x**(3._dl*self%exponent -3._dl)*Exp(self%coefficient*x**self%exponent) &
+                 & +self%coefficient**2*self%exponent**2*2._dl*(self%exponent -1._dl)*x**(2._dl*self%exponent -3._dl)*Exp(self%coefficient*x**self%exponent)
 
     end function ExponentialParametrized1DThirdDerivative
 

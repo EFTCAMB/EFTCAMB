@@ -42,8 +42,8 @@ module EFTCAMB_power_law_parametrizations_1D
     !> Type containing the power law function parametrization. Inherits from parametrized_function_1D.
     type, extends ( parametrized_function_1D ) :: power_law_parametrization_1D
 
-        real(dl) :: power_law_value_1
-        real(dl) :: power_law_value_2
+        real(dl) :: coefficient
+        real(dl) :: exponent
 
     contains
 
@@ -90,8 +90,8 @@ contains
         class(power_law_parametrization_1D)                     :: self   !< the base class.
         real(dl), dimension(self%parameter_number), intent(in)  :: array  !< input array with the values of the parameters.
 
-        self%power_law_value_1 = array(1)
-        self%power_law_value_2 = array(2)
+        self%coefficient = array(1)
+        self%exponent = array(2)
 
     end subroutine PowerLawParametrized1DInitParams
 
@@ -107,9 +107,9 @@ contains
 
         select case (i)
             case(1)
-                value = self%power_law_value_1
+                value = self%coefficient
             case(2)
-                value = self%power_law_value_2
+                value = self%exponent
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
@@ -150,7 +150,7 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: PowerLawParametrized1DValue                         !< the output value
 
-        PowerLawParametrized1DValue = self%power_law_value_1*x**self%power_law_value_2
+        PowerLawParametrized1DValue = self%coefficient*x**self%exponent
 
     end function PowerLawParametrized1DValue
 
@@ -165,7 +165,7 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: PowerLawParametrized1DFirstDerivative               !< the output value
 
-        PowerLawParametrized1DFirstDerivative = self%power_law_value_1*self%power_law_value_2*x**(self%power_law_value_2-1._dl)
+        PowerLawParametrized1DFirstDerivative = self%coefficient*self%exponent*x**(self%exponent-1._dl)
 
     end function PowerLawParametrized1DFirstDerivative
 
@@ -180,7 +180,7 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: PowerLawParametrized1DSecondDerivative              !< the output value
 
-        PowerLawParametrized1DSecondDerivative = self%power_law_value_1*self%power_law_value_2*(self%power_law_value_2-1._dl)*x**(self%power_law_value_2-2._dl)
+        PowerLawParametrized1DSecondDerivative = self%coefficient*self%exponent*(self%exponent-1._dl)*x**(self%exponent-2._dl)
 
     end function PowerLawParametrized1DSecondDerivative
 
@@ -195,7 +195,7 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: PowerLawParametrized1DThirdDerivative               !< the output value
 
-        PowerLawParametrized1DThirdDerivative = self%power_law_value_1*self%power_law_value_2*(self%power_law_value_2-1._dl)*(self%power_law_value_2-2._dl)*x**(self%power_law_value_2-3._dl)
+        PowerLawParametrized1DThirdDerivative = self%coefficient*self%exponent*(self%exponent-1._dl)*(self%exponent-2._dl)*x**(self%exponent-3._dl)
 
     end function PowerLawParametrized1DThirdDerivative
 
@@ -210,10 +210,10 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: PowerLawParametrized1DIntegral                      !< the output value
 
-        if ( self%power_law_value_2 == -1.0 ) then
-          PowerLawParametrized1DIntegral = self%power_law_value_1*log(x)
+        if ( self%exponent == -1.0 ) then
+          PowerLawParametrized1DIntegral = self%coefficient*log(x)
         else
-          PowerLawParametrized1DIntegral = self%power_law_value_1*x**(self%power_law_value_2 +1._dl)/(self%power_law_value_2 +1._dl)
+          PowerLawParametrized1DIntegral = self%coefficient*x**(self%exponent +1._dl)/(self%exponent +1._dl)
         end if
 
     end function PowerLawParametrized1DIntegral

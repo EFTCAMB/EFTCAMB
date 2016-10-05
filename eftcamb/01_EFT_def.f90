@@ -20,7 +20,7 @@
 !----------------------------------------------------------------------------------------
 !> This module contains the definitions of all the EFTCAMB compile time flags.
 
-!> @author Bin Hu, Marco Raveri, Simone Peirone
+!> @author Bin Hu, Marco Raveri
 
 module EFTDef
 
@@ -56,23 +56,6 @@ module EFTDef
 #else
     logical , parameter :: DebugEFTCAMB = .false.       !< EFTCAMB debug flag.This will turn on printing of many things to aid debugging the code.
 #endif
-
-        !!    Stability flags
-    logical , parameter :: EFT_mathematical_stability = .true. !< Flag for mathematical stability in stability check.
-
-    logical , parameter :: EFT_physical_stability     = .true. !< Flag for physical viability in stability check.
-
-    logical , parameter :: EFT_old_stability          = .true. !< Flag for old ghost stability check.
-
-    logical , parameter :: EFT_AdditionalPriors       = .true. !< Flag for additional priors in stability check.
-
-    logical , parameter :: EFT_MinkowskyPriors        = .true. !< Flag for Minkowsky priors in stability check.
-
-    logical , parameter :: EFT_piMassPrior            = .true. !< Flag for checking effective mass of pi in stability check.
-
-    logical , parameter :: EFT_lightspeedPrior        = .true. !< Flag for light speed prior in stability check.
-
-
 
 end module EFTDef
 

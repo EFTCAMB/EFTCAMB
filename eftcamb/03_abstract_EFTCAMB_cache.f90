@@ -519,7 +519,6 @@ contains
      class(EFTCAMB_parameter_cache), intent(in)  :: self    !< The base class.
      logical, intent(out)                        :: HaveNan !< Logical variable which describes the presence of a Nan variable.
                                                             !< If an element of the EFTCAMB_parameter_cache is Nan, you get HaveNan=.True.
-     logical                                     :: NanMass
      integer                                     :: i
 
      HaveNan = .False.
@@ -541,12 +540,9 @@ contains
      HaveNan = HaveNan.or.IsNaN(self%Num_Nu_Massive*1.0_dl)
      HaveNan = HaveNan.or.IsNaN(self%Nu_mass_eigenstates*1.0)
      !
-     NanMass= .False.
      do i=1, self%Nu_mass_eigenstates
-       NanMass= NanMass.or.IsNaN(self%grhormass(i)).or.IsNaN(self%nu_masses(i))
+       HaveNan = HaveNan.or.IsNaN(self%grhormass(i)).or.IsNaN(self%nu_masses(i))
      end do
-     !
-     HaveNan= HaveNan.or.NanMass
 
    end subroutine EFTCAMBParameterCacheIsNan
 
