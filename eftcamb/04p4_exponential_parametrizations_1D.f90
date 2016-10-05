@@ -58,6 +58,7 @@ module EFTCAMB_exponential_parametrizations_1D
         procedure :: first_derivative      => ExponentialParametrized1DFirstDerivative     !< function that returns the first derivative of the exponential function.
         procedure :: second_derivative     => ExponentialParametrized1DSecondDerivative    !< function that returns the second derivative of the exponential function.
         procedure :: third_derivative      => ExponentialParametrized1DThirdDerivative     !< function that returns the third derivative of the exponential function.
+        procedure :: integral              => ExponentialParametrized1DIntegral               !< function that returns the strange integral that we need for w_DE.
 
     end type exponential_parametrization_1D
 
@@ -140,7 +141,7 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the function in the scale factor.
-    function ExponentialParametrized1DFeedback( self, x, eft_cache )
+    function ExponentialParametrized1DValue( self, x, eft_cache )
 
         implicit none
 
@@ -150,7 +151,7 @@ contains
         real(dl) :: ExponentialParametrized1DValue                      !< the output value
 
         ExponentialParametrized1DValue = Exp(self%exponential_value_1*x**self%exponential_value_2) -1._dl
-    end function ExponentialParametrized1DFeedback
+    end function ExponentialParametrized1DValue
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the first derivative, wrt scale factor, of the function.
@@ -178,7 +179,7 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: ExponentialParametrized1DSecondDerivative           !< the output value
 
-        ExponentialParametrized1DSecondDerivative = self%_value_1*self%exponential_value_2*(self%exponential_value_2-1._dl)*x**(self%exponential_value_2-2._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2) &
+        ExponentialParametrized1DSecondDerivative = self%exponential_value_1*self%exponential_value_2*(self%exponential_value_2-1._dl)*x**(self%exponential_value_2-2._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2) &
                  & +self%exponential_value_1**2*self%exponential_value_2**2*x**(2._dl*self%exponential_value_2 -2._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2)
 
     end function ExponentialParametrized1DSecondDerivative
@@ -192,7 +193,7 @@ contains
         class(exponential_parametrization_1D)              :: self      !< the base class
         real(dl), intent(in)                               :: x         !< the input scale factor
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
-        real(dl) :: ExponentialParametrized1DThirdDerivative               !< the output value
+        real(dl) :: ExponentialParametrized1DThirdDerivative            !< the output value
 
         ExponentialParametrized1DThirdDerivative = self%exponential_value_1*self%exponential_value_2*(self%exponential_value_2-1._dl)*(self%exponential_value_2-2._dl)*x**(self%exponential_value_2-3._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2) &
                  & +self%exponential_value_1**2*self%exponential_value_2**2*(self%exponential_value_2 -1._dl)*x**(2._dl*self%exponential_value_2 -3._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2) &
@@ -200,6 +201,21 @@ contains
                  & +self%exponential_value_1**2*self%exponential_value_2**2*2._dl*(self%exponential_value_2 -1._dl)*x**(2._dl*self%exponential_value_2 -3._dl)*Exp(self%exponential_value_1*x**self%exponential_value_2)
 
     end function ExponentialParametrized1DThirdDerivative
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the integral of the function
+    function ExponentialParametrized1DIntegral( self, x, eft_cache )
+
+        implicit none
+
+        class(exponential_parametrization_1D)              :: self      !< the base class
+        real(dl), intent(in)                               :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: ExponentialParametrized1DIntegral                   !< the output value
+
+        !< No analytic solution >!
+
+    end function ExponentialParametrized1DIntegral
 
     ! ---------------------------------------------------------------------------------------------
 

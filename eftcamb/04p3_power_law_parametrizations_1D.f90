@@ -141,7 +141,7 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the function in the scale factor.
-    function PowerLawParametrized1DFeedback( self, x, eft_cache )
+    function PowerLawParametrized1DValue( self, x, eft_cache )
 
         implicit none
 
@@ -152,7 +152,7 @@ contains
 
         PowerLawParametrized1DValue = self%power_law_value_1*x**self%power_law_value_2
 
-    end function PowerLawParametrized1DFeedback
+    end function PowerLawParametrized1DValue
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that returns the value of the first derivative, wrt scale factor, of the function.
