@@ -90,8 +90,8 @@ contains
         class(power_law_parametrization_1D)                     :: self   !< the base class.
         real(dl), dimension(self%parameter_number), intent(in)  :: array  !< input array with the values of the parameters.
 
-        self%power_law_value_1 = array(1)         ! Today value of the function
-        self%power_law_value_2 = array(2)         ! Exponent of the power law function
+        self%power_law_value_1 = array(1)
+        self%power_law_value_2 = array(2)
 
     end subroutine PowerLawParametrized1DInitParams
 
@@ -130,7 +130,7 @@ contains
         real(dl)                            :: param_value
         character(len=EFT_names_max_length) :: param_name
 
-        write(*,*)     'Linear function: ', self%name
+        write(*,*)     'Power Law function: ', self%name
         do i=1, self%parameter_number
             call self%parameter_names( i, param_name  )
             call self%parameter_value( i, param_value )
