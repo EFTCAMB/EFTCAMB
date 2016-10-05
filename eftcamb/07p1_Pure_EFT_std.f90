@@ -33,6 +33,8 @@ module EFTCAMB_pure_EFT_std
     use EFTCAMB_neutral_parametrization_1D
     use EFTCAMB_constant_parametrization_1D
     use EFTCAMB_linear_parametrizations_1D
+    use EFTCAMB_power_law_parametrizations_1D
+    use EFTCAMB_exponential_parametrizations_1D
     use EFTCAMB_abstract_model_designer
 
     implicit none
@@ -134,6 +136,10 @@ contains
                 allocate( constant_parametrization_1D::self%PureEFTOmega )
             case(2)
                 allocate( linear_parametrization_1D::self%PureEFTOmega )
+            case(3)
+                allocate( power_law_parametrization_1D::self%PureEFTOmega )
+            case(4)
+                allocate( exponential_parametrization_1D::self%PureEFTOmega )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelOmega =', self%PureEFTmodelOmega
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -156,6 +162,12 @@ contains
                 allocate( zero_parametrization_1D::self%PureEFTGamma1 )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTGamma1 )
+            case(2)
+                allocate( linear_parametrization_1D::self%PureEFTGamma1 )
+            case(3)
+                allocate( power_law_parametrization_1D::self%PureEFTGamma1 )
+            case(4)
+                allocate( exponential_parametrization_1D::self%PureEFTGamma1 )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma1 =', self%PureEFTmodelGamma1
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -167,6 +179,12 @@ contains
                 allocate( zero_parametrization_1D::self%PureEFTGamma2 )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTGamma2 )
+            case(2)
+                allocate( linear_parametrization_1D::self%PureEFTGamma2 )
+            case(3)
+                allocate( power_law_parametrization_1D::self%PureEFTGamma2 )
+            case(4)
+                allocate( exponential_parametrization_1D::self%PureEFTGamma2 )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma2 =', self%PureEFTmodelGamma2
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -178,6 +196,12 @@ contains
                 allocate( zero_parametrization_1D::self%PureEFTGamma3 )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTGamma3 )
+            case(2)
+                allocate( linear_parametrization_1D::self%PureEFTGamma3 )
+            case(3)
+                allocate( power_law_parametrization_1D::self%PureEFTGamma3 )
+            case(4)
+                allocate( exponential_parametrization_1D::self%PureEFTGamma3 )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma3 =', self%PureEFTmodelGamma3
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -191,6 +215,12 @@ contains
                     allocate( zero_parametrization_1D::self%PureEFTGamma4 )
                 case(1)
                     allocate( constant_parametrization_1D::self%PureEFTGamma4 )
+                case(2)
+                    allocate( linear_parametrization_1D::self%PureEFTGamma4 )
+                case(3)
+                    allocate( power_law_parametrization_1D::self%PureEFTGamma4 )
+                case(4)
+                    allocate( exponential_parametrization_1D::self%PureEFTGamma4 )
                 case default
                     write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma4 =', self%PureEFTmodelGamma4
                     write(*,'(a)')    'Please select an appropriate model.'
@@ -202,6 +232,12 @@ contains
                     allocate( zero_parametrization_1D::self%PureEFTGamma5 )
                 case(1)
                     allocate( constant_parametrization_1D::self%PureEFTGamma5 )
+                case(2)
+                    allocate( linear_parametrization_1D::self%PureEFTGamma5 )
+                case(3)
+                    allocate( power_law_parametrization_1D::self%PureEFTGamma5 )
+                case(4)
+                    allocate( exponential_parametrization_1D::self%PureEFTGamma5 )
                 case default
                     write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma5 =', self%PureEFTmodelGamma5
                     write(*,'(a)')    'Please select an appropriate model.'
@@ -213,6 +249,12 @@ contains
                     allocate( zero_parametrization_1D::self%PureEFTGamma6 )
                 case(1)
                     allocate( constant_parametrization_1D::self%PureEFTGamma6 )
+                case(2)
+                    allocate( linear_parametrization_1D::self%PureEFTGamma6 )
+                case(3)
+                    allocate( power_law_parametrization_1D::self%PureEFTGamma6 )
+                case(4)
+                    allocate( exponential_parametrization_1D::self%PureEFTGamma6 ) 
                 case default
                     write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma6 =', self%PureEFTmodelGamma6
                     write(*,'(a)')    'Please select an appropriate model.'
