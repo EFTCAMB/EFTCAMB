@@ -75,7 +75,7 @@ module EFTCAMB_pure_EFT_std
         ! initialization of the model:
         procedure :: read_model_selection            => EFTCAMBPureEFTstdReadModelSelectionFromFile  !< subroutine that reads the parameters of the model from file
         procedure :: allocate_model_selection        => EFTCAMBPureEFTstdAllocateModelSelection      !< subroutine that allocates the model selection.
-        procedure :: init_model_parameters           => EFTCAMBPureEFTstdInitModelParameters         !< subroutine taht initializes the model parameters based on the values found in an input array.
+        procedure :: init_model_parameters           => EFTCAMBPureEFTstdInitModelParameters         !< subroutine that initializes the model parameters based on the values found in an input array.
         procedure :: init_model_parameters_from_file => EFTCAMBPureEFTstdInitModelParametersFromFile !< subroutine that reads the parameters of the model from file.
         ! utility functions:
         procedure :: compute_param_number  => EFTCAMBPureEFTstdComputeParametersNumber    !< subroutine that computes the number of parameters of the model.
@@ -277,15 +277,96 @@ contains
     end subroutine EFTCAMBPureEFTstdAllocateModelSelection
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine taht initializes the model parameters based on the values found in an input array.
+    !> Subroutine that initializes the model parameters based on the values found in an input array.
     subroutine EFTCAMBPureEFTstdInitModelParameters( self, array )
 
         implicit none
 
-        class(EFTCAMB_std_pure_EFT) :: self   !< the base class
-        real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
+        class(EFTCAMB_std_pure_EFT)                            :: self   !< the base class
+        real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters of the model.
+        integer                                                :: NOmega, Nw, N1, N2, N3, N4, N5, N6, j, dim
+        real(dl), allocatable, dimension(:)                    :: temp
 
-        stop 'IW'
+        !SP: tried one solution. There is probably a smarter way to do so..
+
+        NOmega = self%PureEFTOmega%parameter_number
+        Nw = NOmega + self%PureEFTwDE%parameter_number
+        N1 = Nw + self%PureEFTGamma1%parameter_number
+        N2 = N1 + self%PureEFTGamma2%parameter_number
+        N3 = N2 + self%PureEFTGamma3%parameter_number
+        if ( .not. self%PureEFTHorndeski ) then
+          N4 = N3 + self%PureEFTGamma4%parameter_number
+          N4 = N4 + self%PureEFTGamma5%parameter_number
+          N6 = N5 + self%PureEFTGamma6%parameter_number
+        end if
+
+        dim = self%PureEFTOmega%parameter_number
+        allocate(temp(dim))
+        do j = 1, dim
+          temp(j) = array(j)
+        end do
+        call self%PureEFTOmega%init_parameters(temp)
+        deallocate(temp)
+
+        dim = self%PureEFTwDE%parameter_number
+        allocate(temp(dim))
+        do j = 1, dim
+          temp(j) = array( j + NOmega )
+        end do
+        call self%PureEFTwDE%init_parameters(temp)
+        deallocate(temp)
+
+        dim = self%PureEFTGamma1%parameter_number
+        allocate(temp(dim))
+        do j = 1, dim
+          temp(j) = array( j + Nw )
+        end do
+        call self%PureEFTGamma1%init_parameters(temp)
+        deallocate(temp)
+
+        dim = self%PureEFTGamma2%parameter_number
+        allocate(temp(dim))
+        do j = 1, dim
+          temp(j) = array( j + N1 )
+        end do
+        call self%PureEFTGamma2%init_parameters(temp)
+        deallocate(temp)
+
+        dim = self%PureEFTGamma3%parameter_number
+        allocate(temp(dim))
+        do j = 1, dim
+          temp(j) = array( j + N2 )
+        end do
+        call self%PureEFTGamma3%init_parameters(temp)
+        deallocate(temp)
+
+        if ( .not. self%PureEFTHorndeski ) then
+
+          dim = self%PureEFTGamma4%parameter_number
+          allocate(temp(dim))
+          do j = 1, dim
+            temp(j) = array( j + N3 )
+          end do
+          call self%PureEFTGamma4%init_parameters(temp)
+          deallocate(temp)
+
+          dim = self%PureEFTGamma5%parameter_number
+          allocate(temp(dim))
+          do j = 1, dim
+            temp(j) = array( j + N4 )
+          end do
+          call self%PureEFTGamma5%init_parameters(temp)
+          deallocate(temp)
+
+          dim = self%PureEFTGamma6%parameter_number
+          allocate(temp(dim))
+          do j = 1, dim
+            temp(j) = array( j + N5 )
+          end do
+          call self%PureEFTGamma6%init_parameters(temp)
+          deallocate(temp)
+
+        end if
 
     end subroutine EFTCAMBPureEFTstdInitModelParameters
 
