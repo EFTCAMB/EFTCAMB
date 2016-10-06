@@ -394,9 +394,11 @@ contains
         N1 = Nw + self%PureEFTGamma1%parameter_number
         N2 = N1 + self%PureEFTGamma2%parameter_number
         N3 = N2 + self%PureEFTGamma3%parameter_number
-        N4 = N3 + self%PureEFTGamma4%parameter_number
-        N4 = N4 + self%PureEFTGamma5%parameter_number
-        N6 = N5 + self%PureEFTGamma6%parameter_number
+        if ( .not. self%PureEFTHorndeski ) then
+          N4 = N3 + self%PureEFTGamma4%parameter_number
+          N4 = N4 + self%PureEFTGamma5%parameter_number
+          N6 = N5 + self%PureEFTGamma6%parameter_number
+        end if
 
         if ( i > self%parameter_number .or. i <= 0) then
           write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ',i
@@ -438,21 +440,21 @@ contains
           end do
           return
 
-        else if ( i <= N4 ) then
+        else if ( .not. self%PureEFTHorndeski .and. i <= N4 ) then
           !parameter from Gamma4 function
           do j = 1, self%PureEFTGamma4%parameter_number
             if ( i-N3 == j ) call self%PureEFTGamma4%parameter_names( j, name )
           end do
           return
 
-        else if ( i <= N5 ) then
+        else if ( .not. self%PureEFTHorndeski .and. i <= N5 ) then
           !parameter from Gamma5 function
           do j = 1, self%PureEFTGamma5%parameter_number
             if ( i-N4 == j ) call self%PureEFTGamma5%parameter_names( j, name )
           end do
           return
 
-        else if ( i <= N6 ) then
+        else if ( .not. self%PureEFTHorndeski .and. i <= N6 ) then
           !parameter from Gamma6 function
           do j = 1, self%PureEFTGamma6%parameter_number
             if ( i-N5 == j ) call self%PureEFTGamma6%parameter_names( j, name )
@@ -481,9 +483,11 @@ contains
         N1 = Nw + self%PureEFTGamma1%parameter_number
         N2 = N1 + self%PureEFTGamma2%parameter_number
         N3 = N2 + self%PureEFTGamma3%parameter_number
-        N4 = N3 + self%PureEFTGamma4%parameter_number
-        N4 = N4 + self%PureEFTGamma5%parameter_number
-        N6 = N5 + self%PureEFTGamma6%parameter_number
+        if ( .not. self%PureEFTHorndeski ) then
+          N4 = N3 + self%PureEFTGamma4%parameter_number
+          N4 = N4 + self%PureEFTGamma5%parameter_number
+          N6 = N5 + self%PureEFTGamma6%parameter_number
+        end if
 
         if ( i > self%parameter_number .or. i <= 0) then
           write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ',i
@@ -525,21 +529,21 @@ contains
           end do
           return
 
-        else if ( i <= N4 ) then
+        else if ( .not. self%PureEFTHorndeski .and. i <= N4 ) then
           !parameter from Gamma4 function
           do j = 1, self%PureEFTGamma4%parameter_number
             if ( i-N3 == j ) call self%PureEFTGamma4%parameter_names_latex( j, latexname )
           end do
           return
 
-        else if ( i <= N5 ) then
+        else if ( .not. self%PureEFTHorndeski .and. i <= N5 ) then
           !parameter from Gamma5 function
           do j = 1, self%PureEFTGamma5%parameter_number
             if ( i-N4 == j ) call self%PureEFTGamma5%parameter_names_latex( j, latexname )
           end do
           return
 
-        else if ( i <= N6 ) then
+        else if ( .not. self%PureEFTHorndeski .and. i <= N6 ) then
           !parameter from Gamma6 function
           do j = 1, self%PureEFTGamma6%parameter_number
             if ( i-N5 == j ) call self%PureEFTGamma6%parameter_names_latex( j, latexname )
@@ -568,9 +572,11 @@ contains
         N1 = Nw + self%PureEFTGamma1%parameter_number
         N2 = N1 + self%PureEFTGamma2%parameter_number
         N3 = N2 + self%PureEFTGamma3%parameter_number
-        N4 = N3 + self%PureEFTGamma4%parameter_number
-        N4 = N4 + self%PureEFTGamma5%parameter_number
-        N6 = N5 + self%PureEFTGamma6%parameter_number
+        if ( .not. self%PureEFTHorndeski ) then
+          N4 = N3 + self%PureEFTGamma4%parameter_number
+          N4 = N4 + self%PureEFTGamma5%parameter_number
+          N6 = N5 + self%PureEFTGamma6%parameter_number
+        end if
 
         if ( i > self%parameter_number .or. i <= 0) then
           write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ',i
@@ -612,21 +618,21 @@ contains
           end do
           return
 
-        else if ( i <= N4 ) then
+        else if ( .not. self%PureEFTHorndeski .and. i <= N4 ) then
           !parameter from Gamma4 function
           do j = 1, self%PureEFTGamma4%parameter_number
             if ( i-N3 == j ) call self%PureEFTGamma4%parameter_value( j, value )
           end do
           return
 
-        else if ( i <= N5 ) then
+        else if ( .not. self%PureEFTHorndeski .and. i <= N5 ) then
           !parameter from Gamma5 function
           do j = 1, self%PureEFTGamma5%parameter_number
             if ( i-N4 == j ) call self%PureEFTGamma5%parameter_value( j, value )
           end do
           return
 
-        else if ( i <= N6 ) then
+        else if ( .not. self%PureEFTHorndeski .and. i <= N6 ) then
           !parameter from Gamma6 function
           do j = 1, self%PureEFTGamma6%parameter_number
             if ( i-N5 == j ) call self%PureEFTGamma6%parameter_value( j, value )
