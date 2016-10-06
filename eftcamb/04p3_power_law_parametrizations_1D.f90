@@ -200,7 +200,7 @@ contains
     end function PowerLawParametrized1DThirdDerivative
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the integral of the function
+    !> Function that returns the integral of the function, as defined in the notes.
     function PowerLawParametrized1DIntegral( self, x, eft_cache )
 
         implicit none
@@ -210,10 +210,10 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: PowerLawParametrized1DIntegral                      !< the output value
 
-        if ( self%exponent == -1.0 ) then
-          PowerLawParametrized1DIntegral = self%coefficient*log(x)
+        if ( self%exponent == 0. ) then
+          PowerLawParametrized1DIntegral = x**(-1._dl -3._dl*self%coefficient)
         else
-          PowerLawParametrized1DIntegral = self%coefficient*x**(self%exponent +1._dl)/(self%exponent +1._dl)
+          PowerLawParametrized1DIntegral = 1._dl/(x*exp((3._dl*(-1._dl + x**self%exponent)*self%coefficient)/self%exponent))
         end if
 
     end function PowerLawParametrized1DIntegral

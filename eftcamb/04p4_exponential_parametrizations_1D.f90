@@ -179,8 +179,7 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: ExponentialParametrized1DSecondDerivative           !< the output value
 
-        ExponentialParametrized1DSecondDerivative = self%coefficient*self%exponent*(self%exponent-1._dl)*x**(self%exponent-2._dl)*Exp(self%coefficient*x**self%exponent) &
-                 & +self%coefficient**2*self%exponent**2*x**(2._dl*self%exponent -2._dl)*Exp(self%coefficient*x**self%exponent)
+        ExponentialParametrized1DSecondDerivative = self%coefficient*self%exponent*(self%exponent -1._dl +x**self%exponent*self%coefficient*self%exponent)*x**(self%exponent-2._dl)*Exp(self%coefficient*x**self%exponent)
 
     end function ExponentialParametrized1DSecondDerivative
 
@@ -195,15 +194,13 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: ExponentialParametrized1DThirdDerivative            !< the output value
 
-        ExponentialParametrized1DThirdDerivative = self%coefficient*self%exponent*(self%exponent-1._dl)*(self%exponent-2._dl)*x**(self%exponent-3._dl)*Exp(self%coefficient*x**self%exponent) &
-                 & +self%coefficient**2*self%exponent**2*(self%exponent -1._dl)*x**(2._dl*self%exponent -3._dl)*Exp(self%coefficient*x**self%exponent) &
-                 & +self%coefficient**2*self%exponent**2*x**(3._dl*self%exponent -3._dl)*Exp(self%coefficient*x**self%exponent) &
-                 & +self%coefficient**2*self%exponent**2*2._dl*(self%exponent -1._dl)*x**(2._dl*self%exponent -3._dl)*Exp(self%coefficient*x**self%exponent)
+        ExponentialParametrized1DThirdDerivative = self%coefficient*self%exponent*Exp(self%coefficient*x**self%exponent)*x**(self%exponent-3._dl)&
+                 & *(2._dl +self%exponent*(-3._dl +self%exponent +x**self%exponent*self%coefficient*(-3._dl +self%exponent*(3._dl +x**self%exponent*self%coefficient))))
 
     end function ExponentialParametrized1DThirdDerivative
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the integral of the function
+    !> Function that returns the integral of the function, as defined in the notes.
     function ExponentialParametrized1DIntegral( self, x, eft_cache )
 
         implicit none
