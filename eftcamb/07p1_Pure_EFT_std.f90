@@ -22,7 +22,7 @@
 !> This module contains the definition of the Pure EFT model in which the EFT is described
 !! by six functions of time and w_DE. Please refer to the numerical notes for details.
 
-!> @author Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_pure_EFT_std
 
