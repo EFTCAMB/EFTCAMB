@@ -144,7 +144,7 @@ contains
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelOmega =', self%PureEFTmodelOmega
                 write(*,'(a)')    'Please select an appropriate model.'
         end select
-        ! allocate wDE:
+        ! allocate wDE:  IW: need to add the other parametrizations
         if ( allocated(self%PureEFTwDE) ) deallocate(self%PureEFTwDE)
         select case ( self%EFTwDE )
             case(0)
@@ -385,8 +385,81 @@ contains
         class(EFTCAMB_std_pure_EFT) :: self   !< the base class
         integer     , intent(in)    :: i      !< the index of the parameter
         character(*), intent(out)   :: name   !< the output name of the i-th parameter
+        integer                     :: NOmega, Nw, N1, N2, N3, N4, N5, N6, j
 
-        stop 'IW: EFTCAMBPureEFTstdParameterNames'
+        !SP: tried one solution. There is probably a smarter way to do so..
+
+        NOmega = self%PureEFTOmega%parameter_number
+        Nw = NOmega + self%PureEFTwDE%parameter_number
+        N1 = Nw + self%PureEFTGamma1%parameter_number
+        N2 = N1 + self%PureEFTGamma2%parameter_number
+        N3 = N2 + self%PureEFTGamma3%parameter_number
+        N4 = N3 + self%PureEFTGamma4%parameter_number
+        N4 = N4 + self%PureEFTGamma5%parameter_number
+        N6 = N5 + self%PureEFTGamma6%parameter_number
+
+        if ( i > self%parameter_number .or. i <= 0) then
+          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ',i
+          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+          return
+
+        else if ( i <= NOmega ) then
+          ! parameter from Omega function
+          do j = 1, self%PureEFTOmega%parameter_number
+            if ( i == j ) call self%PureEFTOmega%parameter_names( j, name )
+          end do
+          return
+
+        else if ( i <= Nw ) then
+          ! parameter from wDE function
+          do j = 1, self%PureEFTwDE%parameter_number
+            if ( i-NOmega == j ) call self%PureEFTwDE%parameter_names( j, name )
+          end do
+          return
+
+        else if ( i <= N1) then
+          ! parameter from Gamma1 function
+          do j = 1, self%PureEFTGamma1%parameter_number
+            if ( i-Nw == j ) call self%PureEFTGamma1%parameter_names( j, name )
+          end do
+          return
+
+        else if ( i <= N2 ) then
+          !parameter from Gamma2 function
+          do j = 1, self%PureEFTGamma2%parameter_number
+            if ( i-N1 == j ) call self%PureEFTGamma2%parameter_names( j, name )
+          end do
+          return
+
+        else if ( i <= N3 ) then
+          !parameter from Gamma3 function
+          do j = 1, self%PureEFTGamma3%parameter_number
+            if ( i-N2 == j ) call self%PureEFTGamma3%parameter_names( j, name )
+          end do
+          return
+
+        else if ( i <= N4 ) then
+          !parameter from Gamma4 function
+          do j = 1, self%PureEFTGamma4%parameter_number
+            if ( i-N3 == j ) call self%PureEFTGamma4%parameter_names( j, name )
+          end do
+          return
+
+        else if ( i <= N5 ) then
+          !parameter from Gamma5 function
+          do j = 1, self%PureEFTGamma5%parameter_number
+            if ( i-N4 == j ) call self%PureEFTGamma5%parameter_names( j, name )
+          end do
+          return
+
+        else if ( i <= N6 ) then
+          !parameter from Gamma6 function
+          do j = 1, self%PureEFTGamma6%parameter_number
+            if ( i-N5 == j ) call self%PureEFTGamma6%parameter_names( j, name )
+          end do
+          return
+
+        end if
 
     end subroutine EFTCAMBPureEFTstdParameterNames
 
@@ -399,8 +472,81 @@ contains
         class(EFTCAMB_std_pure_EFT) :: self       !< the base class
         integer     , intent(in)    :: i          !< The index of the parameter
         character(*), intent(out)   :: latexname  !< the output latex name of the i-th parameter
+        integer                     :: NOmega, Nw, N1, N2, N3, N4, N5, N6, j
 
-        stop 'IW: EFTCAMBPureEFTstdParameterNamesLatex'
+        !SP: tried one solution. There is probably a smarter way to do so..
+
+        NOmega = self%PureEFTOmega%parameter_number
+        Nw = NOmega + self%PureEFTwDE%parameter_number
+        N1 = Nw + self%PureEFTGamma1%parameter_number
+        N2 = N1 + self%PureEFTGamma2%parameter_number
+        N3 = N2 + self%PureEFTGamma3%parameter_number
+        N4 = N3 + self%PureEFTGamma4%parameter_number
+        N4 = N4 + self%PureEFTGamma5%parameter_number
+        N6 = N5 + self%PureEFTGamma6%parameter_number
+
+        if ( i > self%parameter_number .or. i <= 0) then
+          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ',i
+          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+          return
+
+        else if ( i <= NOmega ) then
+          ! parameter from Omega function
+          do j = 1, self%PureEFTOmega%parameter_number
+            if ( i == j ) call self%PureEFTOmega%parameter_names_latex( j, latexname )
+          end do
+          return
+
+        else if ( i <= Nw ) then
+          ! parameter from wDE function
+          do j = 1, self%PureEFTwDE%parameter_number
+            if ( i-NOmega == j ) call self%PureEFTwDE%parameter_names_latex( j, latexname )
+          end do
+          return
+
+        else if ( i <= N1) then
+          ! parameter from Gamma1 function
+          do j = 1, self%PureEFTGamma1%parameter_number
+            if ( i-Nw == j ) call self%PureEFTGamma1%parameter_names_latex( j, latexname )
+          end do
+          return
+
+        else if ( i <= N2 ) then
+          !parameter from Gamma2 function
+          do j = 1, self%PureEFTGamma2%parameter_number
+            if ( i-N1 == j ) call self%PureEFTGamma2%parameter_names_latex( j, latexname )
+          end do
+          return
+
+        else if ( i <= N3 ) then
+          !parameter from Gamma3 function
+          do j = 1, self%PureEFTGamma3%parameter_number
+            if ( i-N2 == j ) call self%PureEFTGamma3%parameter_names_latex( j, latexname )
+          end do
+          return
+
+        else if ( i <= N4 ) then
+          !parameter from Gamma4 function
+          do j = 1, self%PureEFTGamma4%parameter_number
+            if ( i-N3 == j ) call self%PureEFTGamma4%parameter_names_latex( j, latexname )
+          end do
+          return
+
+        else if ( i <= N5 ) then
+          !parameter from Gamma5 function
+          do j = 1, self%PureEFTGamma5%parameter_number
+            if ( i-N4 == j ) call self%PureEFTGamma5%parameter_names_latex( j, latexname )
+          end do
+          return
+
+        else if ( i <= N6 ) then
+          !parameter from Gamma6 function
+          do j = 1, self%PureEFTGamma6%parameter_number
+            if ( i-N5 == j ) call self%PureEFTGamma6%parameter_names_latex( j, latexname )
+          end do
+          return
+
+        end if
 
     end subroutine EFTCAMBPureEFTstdParameterNamesLatex
 
@@ -415,7 +561,7 @@ contains
         real(dl), intent(out)       :: value  !< the output value of the i-th parameter
         integer                     :: NOmega, Nw, N1, N2, N3, N4, N5, N6, j
 
-        !SP: tried one solutions. There is probably a smarter way to do so..
+        !SP: tried one solution. There is probably a smarter way to do so..
 
         NOmega = self%PureEFTOmega%parameter_number
         Nw = NOmega + self%PureEFTwDE%parameter_number
