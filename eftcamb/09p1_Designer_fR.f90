@@ -842,8 +842,7 @@ contains
           name = TRIM('B0')
           return
         else
-          i=i-1
-          call self%PureEFTwDE%parameter_names( i, name )
+          call self%PureEFTwDE%parameter_names( i-1, name )
           return
         end if
 
@@ -867,8 +866,7 @@ contains
           latexname = TRIM('B_0')
           return
         else
-          i=i-1
-          call self%PureEFTwDE%parameter_names_latex( i, latexname )
+          call self%PureEFTwDE%parameter_names_latex( i-1, latexname )
           return
         end if
 
@@ -881,10 +879,20 @@ contains
         implicit none
 
         class(EFTCAMB_fR_designer) :: self   !< the base class
-        integer , intent(in)        :: i      !< The index of the parameter
-        real(dl), intent(out)       :: value  !< the output value of the i-th parameter
+        integer , intent(in)        :: i     !< The index of the parameter
+        real(dl), intent(out)       :: value !< the output value of the i-th parameter
 
-        stop 'IW: EFTCAMBDesignerFRParameterValues'
+        if ( i<=0 .or. i>self%parameter_number ) then
+          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
+          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+          return
+        else if ( i==1 ) then
+          value = self%B0
+          return
+        else
+          call self%PureEFTwDE%parameter_value( i-1, value )
+          return
+        end if
 
     end subroutine EFTCAMBDesignerFRParameterValues
 
@@ -894,7 +902,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                  :: self          !< the base class
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
@@ -920,7 +928,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                  :: self          !< the base class
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
@@ -948,7 +956,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                  :: self          !< the base class
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
@@ -968,7 +976,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                  :: self          !< the base class
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
@@ -984,7 +992,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                  :: self          !< the base class
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
