@@ -20,7 +20,7 @@
 !----------------------------------------------------------------------------------------
 !> This module contains the relevant code for designer f(R) models.
 
-!> @author Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_designer_fR
 
@@ -834,7 +834,18 @@ contains
         integer     , intent(in)    :: i      !< the index of the parameter
         character(*), intent(out)   :: name   !< the output name of the i-th parameter
 
-        stop 'IW: EFTCAMBDesignerFRParameterNames'
+        if ( i<=0 .or. i>self%parameter_number ) then
+          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
+          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+          return
+        else if ( i==1 ) then
+          name = TRIM('B0')
+          return
+        else
+          i=i-1
+          call self%PureEFTwDE%parameter_names( i, name )
+          return
+        end if
 
     end subroutine EFTCAMBDesignerFRParameterNames
 
@@ -845,10 +856,21 @@ contains
         implicit none
 
         class(EFTCAMB_fR_designer) :: self       !< the base class
-        integer     , intent(in)    :: i          !< The index of the parameter
-        character(*), intent(out)   :: latexname  !< the output latex name of the i-th parameter
+        integer     , intent(in)    :: i         !< The index of the parameter
+        character(*), intent(out)   :: latexname !< the output latex name of the i-th parameter
 
-        stop 'IW: EFTCAMBDesignerFRParameterNamesLatex'
+        if ( i<=0 .or. i>self%parameter_number ) then
+          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
+          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+          return
+        else if ( i==1 ) then
+          latexname = TRIM('B_0')
+          return
+        else
+          i=i-1
+          call self%PureEFTwDE%parameter_names_latex( i, latexname )
+          return
+        end if
 
     end subroutine EFTCAMBDesignerFRParameterNamesLatex
 
