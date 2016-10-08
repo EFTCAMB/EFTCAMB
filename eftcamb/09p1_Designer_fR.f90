@@ -141,10 +141,17 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)  :: self   !< the base class
+        class(EFTCAMB_fR_designer)                             :: self   !< the base class
         real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
+        real(dl), dimension(self%parameter_number -1)          :: temp
+        integer                                                :: i
 
-        stop 'IW'
+        self%B0 = array(1)
+
+        do i = 1, self%parameter_number -1
+          temp(i) = array(i+1)
+        end do
+        call self%PureEFTwDE%init_parameters(temp)
 
     end subroutine EFTCAMBDesignerFRInitModelParameters
 
