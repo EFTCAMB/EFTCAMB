@@ -26,7 +26,7 @@
 !! or are used to store partial results when solving the time evolution of perturbations,
 !! in EFTCAMB_timestep_cache.
 
-!> @author Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_cache
 
@@ -79,6 +79,7 @@ module EFTCAMB_cache
 
         procedure :: initialize => EFTCAMBParameterCacheInit  !< subroutine that initializes to zero all the elements of the parameter cache.
         procedure :: print      => EFTCAMBParameterCachePrint !< subroutine that prints the EFTCAMB parameters cache to screen.
+        procedure :: is_nan     => EFTCAMBParameterCacheIsNan !< Subroutine that check if an element of the EFTCAMB_parameter_cache is Nan.
 
     end type EFTCAMB_parameter_cache
 
@@ -149,8 +150,8 @@ module EFTCAMB_cache
         real(dl) :: grhoc_t       !< the value of \f$ \rho_{cdm} a^2 / m_0^2 \f$
         real(dl) :: grhor_t       !< the value of \f$ \rho_{\nu} a^2 / m_0^2 \f$
         real(dl) :: grhog_t       !< the value of \f$ \rho_{\gamma} a^2 / m_0^2 \f$
-        real(dl) :: grhov_t       !< the value of \f$ \rho_{\Lambda} a^2 / m_0^2 \f$. Used if neede, especially by designer models.
-        real(dl) :: gpiv_t        !< the value of \f$ \P_{\Lambda} a^2 / m_0^2 \f$. Used if neede, especially by designer models.
+        real(dl) :: grhov_t       !< the value of \f$ \rho_{\Lambda} a^2 / m_0^2 \f$. Used if needed, especially by designer models.
+        real(dl) :: gpiv_t        !< the value of \f$ \P_{\Lambda} a^2 / m_0^2 \f$. Used if needed, especially by designer models.
         real(dl) :: grhonu_tot    !< the value of \f$ \sum_\nu \rho_{m\nu} a^2 / m_0^2 \f$
         real(dl) :: gpinu_tot     !< the value of \f$ \sum_\nu P_{m\nu} a^2 / m_0^2 \f$
         real(dl) :: grhonudot_tot !< the value of \f$ \sum_\nu \dot{\rho}_{m\nu} a^2 / m_0^2 \f$
@@ -226,10 +227,14 @@ module EFTCAMB_cache
         real(dl) :: EFTAT         !< the value of the tensor equation coefficient A. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTBT         !< the value of the tensor equation coefficient B. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTDT         !< the value of the tensor equation coefficient D. Refer to the Numerical Notes for the definition.
+        ! 12) Kinetic and Gradient quantities for the stability check:
+        real(dl) :: EFT_kinetic   !< the value of the kinetic term. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFT_gradient  !< the value of the gradient term. Refer to the Numerical Notes for the definition.
 
     contains
 
         procedure :: initialize => EFTCAMBTimestepCacheInit  !< subroutine that initializes to zero all the elements of the cache.
+        procedure :: is_nan     => EFTCAMBTimestepCacheIsNan !< Subroutine that check if an element of the EFTCAMB_timestep_cache is Nan.
 
     end type EFTCAMB_timestep_cache
 
@@ -332,8 +337,104 @@ contains
         self%EFTAT         = 0._dl
         self%EFTBT         = 0._dl
         self%EFTDT         = 0._dl
+        ! 12) Kinetic and Gradient quantities for the stability check:
+        self%EFT_kinetic   = 0._dl
+        self%EFT_gradient  = 0._dl
 
     end subroutine EFTCAMBTimestepCacheInit
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that check if an element of the EFTCAMB_timestep_cache is Nan.
+    subroutine EFTCAMBTimestepCacheIsNan( self, HaveNan )
+
+      implicit none
+
+      class(EFTCAMB_timestep_cache), intent(in)  :: self    !< The base class.
+      logical, intent(out)                       :: HaveNan !< Logical variable which describes the presence of a Nan variable.
+                                                            !< If an element of the EFTCAMB_timestep_cache is Nan, you get HaveNan=.True.
+
+      HaveNan = .False.
+      HaveNan = HaveNan.or.IsNaN(self%a)
+      HaveNan = HaveNan.or.IsNaN(self%tau)
+      HaveNan = HaveNan.or.IsNaN(self%k)
+      HaveNan = HaveNan.or.IsNaN(self%adotoa)
+      HaveNan = HaveNan.or.IsNaN(self%Hdot)
+      HaveNan = HaveNan.or.IsNaN(self%Hdotdot)
+      HaveNan = HaveNan.or.IsNaN(self%grhoa2)
+      HaveNan = HaveNan.or.IsNaN(self%grhom_t)
+      HaveNan = HaveNan.or.IsNaN(self%gpresm_t)
+      HaveNan = HaveNan.or.IsNaN(self%gpresdotm_t)
+      HaveNan = HaveNan.or.IsNaN(self%grhob_t)
+      HaveNan = HaveNan.or.IsNaN(self%grhoc_t)
+      HaveNan = HaveNan.or.IsNaN(self%grhor_t)
+      HaveNan = HaveNan.or.IsNaN(self%grhog_t)
+      HaveNan = HaveNan.or.IsNaN(self%grhov_t)
+      HaveNan = HaveNan.or.IsNaN(self%gpiv_t)
+      HaveNan = HaveNan.or.IsNaN(self%grhonu_tot)
+      HaveNan = HaveNan.or.IsNaN(self%gpinu_tot)
+      HaveNan = HaveNan.or.IsNaN(self%grhonudot_tot)
+      HaveNan = HaveNan.or.IsNaN(self%gpinudot_tot)
+      HaveNan = HaveNan.or.IsNaN(self%EFTOmegaV)
+      HaveNan = HaveNan.or.IsNaN(self%EFTOmegaP)
+      HaveNan = HaveNan.or.IsNaN(self%EFTOmegaPP)
+      HaveNan = HaveNan.or.IsNaN(self%EFTOmegaPPP)
+      HaveNan = HaveNan.or.IsNaN(self%EFTc)
+      HaveNan = HaveNan.or.IsNaN(self%EFTcdot)
+      HaveNan = HaveNan.or.IsNaN(self%EFTLambda)
+      HaveNan = HaveNan.or.IsNaN(self%EFTLambdadot)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma1V)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma1P)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma2V)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma2P)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma3V)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma3P)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma4V)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma4P)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma4PP)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma5V)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma5P)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma6V)
+      HaveNan = HaveNan.or.IsNaN(self%EFTGamma6P)
+      HaveNan = HaveNan.or.IsNaN(self%grhoq)
+      HaveNan = HaveNan.or.IsNaN(self%gpresq)
+      HaveNan = HaveNan.or.IsNaN(self%grhodotq)
+      HaveNan = HaveNan.or.IsNaN(self%gpresdotq)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomF)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomN)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomNdot)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomX)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomXdot)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomY)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomG)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomU)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomL)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomM)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomV)
+      HaveNan = HaveNan.or.IsNaN(self%EFTeomVdot)
+      HaveNan = HaveNan.or.IsNaN(self%EFTpiA1)
+      HaveNan = HaveNan.or.IsNaN(self%EFTpiA2)
+      HaveNan = HaveNan.or.IsNaN(self%EFTpiB1)
+      HaveNan = HaveNan.or.IsNaN(self%EFTpiB2)
+      HaveNan = HaveNan.or.IsNaN(self%EFTpiC)
+      HaveNan = HaveNan.or.IsNaN(self%EFTpiD1)
+      HaveNan = HaveNan.or.IsNaN(self%EFTpiD2)
+      HaveNan = HaveNan.or.IsNaN(self%EFTpiE)
+      HaveNan = HaveNan.or.IsNaN(self%pi)
+      HaveNan = HaveNan.or.IsNaN(self%pidot)
+      HaveNan = HaveNan.or.IsNaN(self%pidotdot)
+      HaveNan = HaveNan.or.IsNaN(self%z)
+      HaveNan = HaveNan.or.IsNaN(self%clxg)
+      HaveNan = HaveNan.or.IsNaN(self%clxr)
+      HaveNan = HaveNan.or.IsNaN(self%dgpnu)
+      HaveNan = HaveNan.or.IsNaN(self%dgrho)
+      HaveNan = HaveNan.or.IsNaN(self%dgq)
+      HaveNan = HaveNan.or.IsNaN(self%EFTAT)
+      HaveNan = HaveNan.or.IsNaN(self%EFTBT)
+      HaveNan = HaveNan.or.IsNaN(self%EFTDT)
+      HaveNan = HaveNan.or.IsNaN(self%EFT_kinetic)
+      HaveNan = HaveNan.or.IsNaN(self%EFT_gradient)
+
+    end subroutine EFTCAMBTimestepCacheIsNan
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes to zero all the elements of the parameter cache.
@@ -408,6 +509,42 @@ contains
         write(*,'(a)') "***************************************************************"
 
     end subroutine EFTCAMBParameterCachePrint
+
+   ! ---------------------------------------------------------------------------------------------
+   !> Subroutine that check if an element of the EFTCAMB_parameter_cache is Nan.
+   subroutine EFTCAMBParameterCacheIsNan( self, HaveNan )
+
+     implicit none
+
+     class(EFTCAMB_parameter_cache), intent(in)  :: self    !< The base class.
+     logical, intent(out)                        :: HaveNan !< Logical variable which describes the presence of a Nan variable.
+                                                            !< If an element of the EFTCAMB_parameter_cache is Nan, you get HaveNan=.True.
+     integer                                     :: i
+
+     HaveNan = .False.
+     HaveNan = HaveNan.or.IsNaN(self%omegac)
+     HaveNan = HaveNan.or.IsNaN(self%omegab)
+     HaveNan = HaveNan.or.IsNaN(self%omegav)
+     HaveNan = HaveNan.or.IsNaN(self%omegak)
+     HaveNan = HaveNan.or.IsNaN(self%omegan)
+     HaveNan = HaveNan.or.IsNaN(self%omegag)
+     HaveNan = HaveNan.or.IsNaN(self%omegar)
+     HaveNan = HaveNan.or.IsNaN(self%h0)
+     HaveNan = HaveNan.or.IsNaN(self%h0_Mpc)
+     HaveNan = HaveNan.or.IsNaN(self%grhog)
+     HaveNan = HaveNan.or.IsNaN(self%grhornomass)
+     HaveNan = HaveNan.or.IsNaN(self%grhoc)
+     HaveNan = HaveNan.or.IsNaN(self%grhob)
+     HaveNan = HaveNan.or.IsNaN(self%grhov)
+     HaveNan = HaveNan.or.IsNaN(self%grhok)
+     HaveNan = HaveNan.or.IsNaN(self%Num_Nu_Massive*1.0_dl)
+     HaveNan = HaveNan.or.IsNaN(self%Nu_mass_eigenstates*1.0)
+     !
+     do i=1, self%Nu_mass_eigenstates
+       HaveNan = HaveNan.or.IsNaN(self%grhormass(i)).or.IsNaN(self%nu_masses(i))
+     end do
+
+   end subroutine EFTCAMBParameterCacheIsNan
 
     ! ---------------------------------------------------------------------------------------------
 

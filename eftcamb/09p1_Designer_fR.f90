@@ -20,7 +20,7 @@
 !----------------------------------------------------------------------------------------
 !> This module contains the relevant code for designer f(R) models.
 
-!> @author Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_designer_fR
 
@@ -136,15 +136,22 @@ contains
     end subroutine EFTCAMBDesignerFRAllocateModelSelection
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine taht initializes the model parameters based on the values found in an input array.
+    !> Subroutine that initializes the model parameters based on the values found in an input array.
     subroutine EFTCAMBDesignerFRInitModelParameters( self, array )
 
         implicit none
 
-        class(EFTCAMB_fR_designer)  :: self   !< the base class
+        class(EFTCAMB_fR_designer)                             :: self   !< the base class
         real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
+        real(dl), dimension(self%parameter_number -1)          :: temp
+        integer                                                :: i
 
-        stop 'IW'
+        self%B0 = array(1)
+
+        do i = 1, self%parameter_number -1
+          temp(i) = array(i+1)
+        end do
+        call self%PureEFTwDE%init_parameters(temp)
 
     end subroutine EFTCAMBDesignerFRInitModelParameters
 
@@ -834,7 +841,17 @@ contains
         integer     , intent(in)    :: i      !< the index of the parameter
         character(*), intent(out)   :: name   !< the output name of the i-th parameter
 
-        stop 'IW: EFTCAMBDesignerFRParameterNames'
+        if ( i<=0 .or. i>self%parameter_number ) then
+          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
+          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+          return
+        else if ( i==1 ) then
+          name = TRIM('B0')
+          return
+        else
+          call self%PureEFTwDE%parameter_names( i-1, name )
+          return
+        end if
 
     end subroutine EFTCAMBDesignerFRParameterNames
 
@@ -845,10 +862,20 @@ contains
         implicit none
 
         class(EFTCAMB_fR_designer) :: self       !< the base class
-        integer     , intent(in)    :: i          !< The index of the parameter
-        character(*), intent(out)   :: latexname  !< the output latex name of the i-th parameter
+        integer     , intent(in)    :: i         !< The index of the parameter
+        character(*), intent(out)   :: latexname !< the output latex name of the i-th parameter
 
-        stop 'IW: EFTCAMBDesignerFRParameterNamesLatex'
+        if ( i<=0 .or. i>self%parameter_number ) then
+          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
+          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+          return
+        else if ( i==1 ) then
+          latexname = TRIM('B_0')
+          return
+        else
+          call self%PureEFTwDE%parameter_names_latex( i-1, latexname )
+          return
+        end if
 
     end subroutine EFTCAMBDesignerFRParameterNamesLatex
 
@@ -859,10 +886,20 @@ contains
         implicit none
 
         class(EFTCAMB_fR_designer) :: self   !< the base class
-        integer , intent(in)        :: i      !< The index of the parameter
-        real(dl), intent(out)       :: value  !< the output value of the i-th parameter
+        integer , intent(in)        :: i     !< The index of the parameter
+        real(dl), intent(out)       :: value !< the output value of the i-th parameter
 
-        stop 'IW: EFTCAMBDesignerFRParameterValues'
+        if ( i<=0 .or. i>self%parameter_number ) then
+          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
+          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+          return
+        else if ( i==1 ) then
+          value = self%B0
+          return
+        else
+          call self%PureEFTwDE%parameter_value( i-1, value )
+          return
+        end if
 
     end subroutine EFTCAMBDesignerFRParameterValues
 
@@ -872,7 +909,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                  :: self          !< the base class
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
@@ -898,7 +935,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                  :: self          !< the base class
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
@@ -926,7 +963,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                  :: self          !< the base class
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
@@ -946,7 +983,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                  :: self          !< the base class
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
@@ -962,7 +999,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                  :: self          !< the base class
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.

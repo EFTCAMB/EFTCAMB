@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04p2_linear_parametrizations.f90
+!> @file 04p2_linear_parametrizations_1D.f90
 !! This file contains the definition of the linear parametrization, inheriting from
 !! parametrized_function_1D.
 
@@ -196,7 +196,7 @@ contains
     end function LinearParametrized1DThirdDerivative
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that returns the integral of the linear function, as defined in the notes
+    !> Function that returns the integral of the linear function, as defined in the notes.
     function LinearParametrized1DIntegral( self, x, eft_cache )
 
         implicit none

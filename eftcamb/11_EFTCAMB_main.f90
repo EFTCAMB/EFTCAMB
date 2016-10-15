@@ -22,7 +22,7 @@
 !> This module contains the general EFTCAMB driver. We have a type that encapsulate all
 !! EFTCAMB parameters and stuff and this is owned by CAMB to do all EFT calculations.
 
-!> @author Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_main
 
@@ -53,8 +53,11 @@ module EFTCAMB_main
         ! EFTCAMB stability flags:
         logical   :: EFT_mathematical_stability  !< Flag that extablishes wether to use mathematical stability.
         logical   :: EFT_physical_stability      !< Flag that extablishes wether to use physical stability.
-        logical   :: EFTAdditionalPriors         !< Flag that extablishes wether to use some additional parameters prior.
-        logical   :: MinkowskyPriors             !< Flag that extablishes wether to use physical stability.
+        logical   :: EFT_old_stability           !< Flag for old ghost stability check.
+        logical   :: EFT_AdditionalPriors        !< Flag that extablishes wether to use some additional parameters prior.
+        logical   :: EFT_MinkowskyPriors         !< Flag that extablishes wether to use physical stability.
+        logical   :: EFT_piMassPrior             !< Flag for checking effective mass of pi in stability check.
+        logical   :: EFT_lightspeedPrior         !< Flag for light speed prior in stability check.
 
         ! EFTCAMB model:
         class(EFTCAMB_model), allocatable :: model !< This is the EFTCAMB model in the main class.
@@ -101,8 +104,12 @@ contains
         ! read the stability flags:
         self%EFT_mathematical_stability = Ini_Read_Logical_File( Ini, 'EFT_mathematical_stability', .true. )
         self%EFT_physical_stability     = Ini_Read_Logical_File( Ini, 'EFT_physical_stability'    , .true. )
-        self%EFTAdditionalPriors        = Ini_Read_Logical_File( Ini, 'EFTAdditionalPriors'       , .true. )
-        self%MinkowskyPriors            = Ini_Read_Logical_File( Ini, 'MinkowskyPriors'           , .true. )
+        self%EFT_old_stability          = Ini_Read_Logical_File( Ini, 'EFT_old_stability'         , .true. )
+        self%EFT_AdditionalPriors       = Ini_Read_Logical_File( Ini, 'EFT_AdditionalPriors'      , .true. )
+        self%EFT_MinkowskyPriors        = Ini_Read_Logical_File( Ini, 'EFT_MinkowskyPriors'       , .true. )
+        self%EFT_piMassPrior            = Ini_Read_Logical_File( Ini, 'EFT_piMassPrior'           , .true. )
+        self%EFT_lightspeedPrior        = Ini_Read_Logical_File( Ini, 'EFT_lightspeedPrior'       , .true. )
+
         ! EFTCAMB working stuff:
         self%EFTCAMB_feedback_level     = Ini_Read_Int_File( Ini, 'feedback_level', 1 )
         self%EFTCAMB_turn_on_time       = Ini_Read_Double_File( Ini, 'EFTCAMB_turn_on_time', EFTturnonpiInitial )
@@ -185,8 +192,11 @@ contains
 
         write(*,*) ' Mathematical stability = ', self%EFT_mathematical_stability
         write(*,*) ' Physical stability     = ', self%EFT_physical_stability
-        write(*,*) ' Additional priors      = ', self%EFTAdditionalPriors
-        write(*,*) ' Minkowsky priors       = ', self%MinkowskyPriors
+        write(*,*) ' Old ghost stability    = ', self%EFT_old_stability
+        write(*,*) ' Additional priors      = ', self%EFT_AdditionalPriors
+        write(*,*) ' Minkowsky priors       = ', self%EFT_MinkowskyPriors
+        write(*,*) ' Pi mass priors         = ', self%EFT_piMassPrior
+        write(*,*) ' Light speed priors     = ', self%EFT_lightspeedPrior
         write(*,*)
         ! print model selection flags:
         write(*,*)              'EFTCAMB model flags:'

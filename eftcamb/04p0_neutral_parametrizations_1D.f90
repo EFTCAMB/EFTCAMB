@@ -13,9 +13,9 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04p0_neutral_parametrizations.f90
+!> @file 04p0_neutral_parametrizations_1D.f90
 !! This file contains the definition of neutral parametrizations that can be used when
-!! parametrized functions should take their GR value.
+!! parametrized 1D functions should take their GR value.
 
 
 !----------------------------------------------------------------------------------------
