@@ -308,7 +308,14 @@ program driver
 
     P%MassiveNuMethod  = Ini_Read_Int('massive_nu_approx',Nu_best)
 
+    ! EFTCAMB MOD START: suppress parallelization in debug
+#ifdef DEBUG
+    ThreadNum      = 1
+#else
     ThreadNum      = Ini_Read_Int('number_of_threads',ThreadNum)
+#endif
+    ! EFTCAMB MOD END.
+
     use_spline_template = Ini_Read_Logical('use_spline_template',use_spline_template)
 
     if (do_bispectrum) then

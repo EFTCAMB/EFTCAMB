@@ -380,9 +380,9 @@ contains
                 & -3._dl*Omegavac_EFT*EFT_E_gfunp*exp(-3._dl*EFT_E_gfun) +EFT_EP_nu
 
             ! Compute everything of massive nu again to get the time derivatives:
-            rhonu_tot  = 0._dl
-            presnu_tot = 0._dl
-            presnudot_tot = 0._dl
+            rhonu_tot        = 0._dl
+            presnu_tot       = 0._dl
+            presnudot_tot    = 0._dl
             presnudotdot_tot = 0._dl
             EFT_E_nu   = 0._dl
             EFT_EP_nu  = 0._dl
@@ -517,9 +517,9 @@ contains
                 & -3._dl*Omegavac_EFT*EFT_E_gfunp*exp(-3._dl*EFT_E_gfun) +EFT_EP_nu
 
             ! Compute everything of massive nu again to get the time derivatives:
-            rhonu_tot  = 0._dl
-            presnu_tot = 0._dl
-            presnudot_tot = 0._dl
+            rhonu_tot        = 0._dl
+            presnu_tot       = 0._dl
+            presnudot_tot    = 0._dl
             presnudotdot_tot = 0._dl
             EFT_E_nu   = 0._dl
             EFT_EP_nu  = 0._dl
@@ -531,12 +531,12 @@ contains
                     adotoa = +a*params_cache%h0_Mpc*sqrt(EFunction)
                     Hdot   = +0.5_dl*params_cache%h0_Mpc**2*a**2*EFunPrime +adotoa**2
 
-                    rhonu  = 0._dl
-                    presnu = 0._dl
-                    presnudot = 0._dl
+                    rhonu        = 0._dl
+                    presnu       = 0._dl
+                    presnudot    = 0._dl
                     presnudotdot = 0._dl
 
-                    grhormass_t = params_cache%grhormass(nu_i)/a**2
+                    grhormass_t  = params_cache%grhormass(nu_i)/a**2
 
                     call params_cache%Nu_background(a*params_cache%nu_masses(nu_i),rhonu,presnu)
                     presnudot = params_cache%Nu_pidot(a*params_cache%nu_masses(nu_i),adotoa,presnu)
@@ -599,7 +599,7 @@ contains
                 & +12._dl*EFunction**2*(EFunPrime2*(-2._dl*Edepp+4._dl*Edep-ydot(1))&
                 & +EFunPrime*(-8._dl*Edepp+16._dl*Edep +ydot(1)))&
                 & +3._dl*EFunPrime**2*(EFunPrime*(ydot(1)-4._dl*(6._dl*Ede +y(1)))-EFunPrime2*(6._dl*Ede +y(1))))
-            self%EFTLambda%y(ind)   = 0.5_dl*params_cache%h0_Mpc**2*( y(1) -f_sub_R*Ricci)*Exp(x)**2
+            self%EFTLambda%y(ind)   = 0.5_dl*params_cache%h0_Mpc**2*( y(1) -f_sub_R*Ricci )*Exp(x)**2
             self%EFTLambda%yp(ind)  = -1.5_dl*params_cache%h0_Mpc**3*Sqrt(EFunction)*(Exp(x)**4*self%EFTOmega%yp(ind)*(4._dl*EFunction+EFunPrime))
 
         end subroutine
@@ -699,8 +699,8 @@ contains
         end if
 
         ! 3) Bracket the vertical asyntote
-        ATemp1=-10._dl
-        ATemp2=10._dl
+        ATemp1 = -10._dl
+        ATemp2 = 10._dl
         call zbrac(DesFR_BfuncA,ATemp1,ATemp2,success,HorizAsyntB)
         if (.not.success) then
             write(*,*) 'f(R) designer: failure of vert asynt bracketing'

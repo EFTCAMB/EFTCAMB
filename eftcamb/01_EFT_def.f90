@@ -51,7 +51,7 @@ module EFTDef
 
     integer , parameter :: EFT_RGR_num_points   = 1000  !< number of points to sample logaritmically the time in the return to GR module.
 
-#ifdef COSMICFISH_EFTCAMB
+#ifdef DEBUG
     logical , parameter :: DebugEFTCAMB = .true.        !< EFTCAMB debug flag.This will turn on printing of many things to aid debugging the code.
 #else
     logical , parameter :: DebugEFTCAMB = .false.       !< EFTCAMB debug flag.This will turn on printing of many things to aid debugging the code.
