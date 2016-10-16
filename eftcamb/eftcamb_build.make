@@ -18,8 +18,8 @@
 #
 
 # get the eftcamb sources:
-EFTCAMB_SOURCES_FILES := $(wildcard $(EFTCAMB_DIR)/*.f90)
-EFTCAMB_SOURCES_FILES +=$(wildcard $(EFTCAMB_DIR)/*.f)
+EFTCAMB_SOURCES_FILES := $(wildcard $(EFTCAMB_DIR)/*.f90) $(wildcard $(EFTCAMB_DIR)/*/*.f90)
+EFTCAMB_SOURCES_FILES += $(wildcard $(EFTCAMB_DIR)/*.f) $(wildcard $(EFTCAMB_DIR)/*/*.f)
 
 # replace the relevant suffix:
 EFT_TEMP_1 := $(patsubst %.f90,%,$(EFTCAMB_SOURCES_FILES))
@@ -33,16 +33,24 @@ EFT_SOJ = $(addprefix $(DLL_DIR)/, $(EFT_FILES))
 
 # how to build EFTCAMB files:
 $(OUTPUT_DIR)/%.o: $(EFTCAMB_DIR)/%.f90
-	$(F90C) $(F90FLAGS) -c $(EFTCAMB_DIR)/$*.f90 -o $(OUTPUT_DIR)/$*.o
+	$(F90C) $(F90FLAGS) -c $< -o $(OUTPUT_DIR)/$*.o
+$(OUTPUT_DIR)/%.o: $(EFTCAMB_DIR)/*/%.f90
+	$(F90C) $(F90FLAGS) -c $< -o $(OUTPUT_DIR)/$*.o
 
 $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.f90
-	$(F90C) $(SF90FLAGS) -c $(EFTCAMB_DIR)/$*.f90 -o $(DLL_DIR)/$*.o
+	$(F90C) $(SF90FLAGS) -c $< -o $(DLL_DIR)/$*.o
+$(DLL_DIR)/%.o: $(EFTCAMB_DIR)/*/%.f90
+	$(F90C) $(SF90FLAGS) -c $< -o $(DLL_DIR)/$*.o
 
 $(OUTPUT_DIR)/%.o: $(EFTCAMB_DIR)/%.f
-	$(F90C) $(F90FLAGS) -c $(EFTCAMB_DIR)/$*.f -o $(OUTPUT_DIR)/$*.o
+	$(F90C) $(F90FLAGS) -c $< -o $(OUTPUT_DIR)/$*.o
+$(OUTPUT_DIR)/%.o: $(EFTCAMB_DIR)/*/%.f
+	$(F90C) $(F90FLAGS) -c $< -o $(OUTPUT_DIR)/$*.o
 
 $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.f
-	$(F90C) $(SF90FLAGS) -c $(EFTCAMB_DIR)/$*.f -o $(DLL_DIR)/$*.o
+	$(F90C) $(SF90FLAGS) -c $< -o $(DLL_DIR)/$*.o
+$(DLL_DIR)/%.o: $(EFTCAMB_DIR)/*/%.f
+	$(F90C) $(SF90FLAGS) -c $< -o $(DLL_DIR)/$*.o
 
 # add the EFTCAMB files to the standard ones:
 CAMBOBJ += $(EFT_OBJ)

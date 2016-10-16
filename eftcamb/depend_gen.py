@@ -39,7 +39,14 @@ def run( verbose=True, overwrite=None, outdir=None ):
     camb_dir    = os.path.abspath(os.path.join( eftcamb_dir, os.pardir ))
 
     # get the EFTCAMB/CAMB files:
-    eftcamb_files = os.listdir(eftcamb_dir)
+    eftcamb_files = []
+    for root, dirs, files in os.walk(eftcamb_dir):
+        for file in files:
+            if root != eftcamb_dir:
+                eftcamb_files.append( os.path.join(os.path.basename(root),file) )
+            else:
+                eftcamb_files.append( file )
+    
     camb_files    = os.listdir(camb_dir)
 
     # filter them to get only the fortran files:
