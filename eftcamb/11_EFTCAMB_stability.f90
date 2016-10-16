@@ -45,15 +45,74 @@ module EFTCAMB_stability
 contains
 
     ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that tests the stability of a theory in a time range.
+    !! To ensure best time coverage scans with three different strategies.
+    subroutine EFTCAMB_Stability_Check( success, astart, aend )
+
+        implicit none
+
+        logical , intent(out) :: success  !< Output of the subroutine. Tells whether the model is found stable or not.
+        real(dl), intent(in)  :: astart   !< Initial scale factor.
+        real(dl), intent(in)  :: aend     !< Final scale factor.
+
+        ! parameters of the stability sampler:
+        integer , parameter :: indMax            = 10000   ! Number of points sampled.
+        real(dl), parameter :: LogSamplingScale  = -10._dl ! Where to start with the log sampling
+
+        real(dl) :: Atest, y
+        integer  :: ind
+
+        if ( CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,*) 'EFTCAMB: checking stability of the theory'
+
+        ! 1) stability code:
+        success = .true.
+
+        ! linear sampling:
+        call EFTStability_cleanup()
+        do ind=1, indMax
+            Atest = astart + REAL(ind-1)*(aend-astart)/REAL(indMax-1)
+            if ( .not. EFTTestStability( CP%EFTCAMB, Atest, CP%eft_par_cache ) ) then
+                success = .false.
+                if ( CP%EFTCAMB%EFTCAMB_feedback_level > 2 ) write(*,*) 'EFTCAMB: instability detected at a=', Atest
+                return
+            end if
+        end do
+
+        ! log sampling close to astart:
+        call EFTStability_cleanup()
+        do ind=1, indMax
+            y = LogSamplingScale + REAL(ind-1)*(0._dl-LogSamplingScale)/REAL(indMax-1)
+            Atest = astart +(aend-astart)*10._dl**y
+            if ( .not. EFTTestStability( CP%EFTCAMB, Atest, CP%eft_par_cache ) ) then
+                success = .false.
+                if ( CP%EFTCAMB%EFTCAMB_feedback_level > 2 ) write(*,*) 'EFTCAMB: instability detected at a=', Atest
+                return
+            end if
+        end do
+
+        ! log sampling close to aend:
+        call EFTStability_cleanup()
+        do ind=1, indMax
+            Atest = aend +(astart-aend)*10._dl**y
+            if ( .not. EFTTestStability( CP%EFTCAMB, Atest, CP%eft_par_cache ) ) then
+                success = .false.
+                if ( CP%EFTCAMB%EFTCAMB_feedback_level > 2 ) write(*,*) 'EFTCAMB: instability detected at a=', Atest
+                return
+            end if
+        end do
+
+    end subroutine EFTCAMB_Stability_Check
+
+    ! ---------------------------------------------------------------------------------------------
     !> Function that fills the caches to check the stability of the theory.
-    function EFTStabilityCheck( EFTCAMB_in, a, eft_par_cache )
+    function EFTTestStability( EFTCAMB_in, a, eft_par_cache )
 
         implicit none
 
         type(EFTCAMB)                                :: EFTCAMB_in              !< the input EFTCAMB.
         real(dl), intent(in)                         :: a                       !< the input scale factor.
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache           !< the EFTCAMB parameter cache that contains all the physical parameters.
-        logical                                      :: EFTStabilityCheck       !< Logical value returned by the function. If the model is stable this is True, otherwise False.
+        logical                                      :: EFTTestStability       !< Logical value returned by the function. If the model is stable this is True, otherwise False.
 
         ! Definitions of variables:
         type(EFTCAMB_timestep_cache ) :: eft_cache
@@ -62,7 +121,7 @@ contains
         integer  :: ind_max, ind
 
         ! Stability check initialization
-        EFTStabilityCheck = .true.
+        EFTTestStability = .true.
         ! reset the time-step cache:
         call eft_cache%initialize()
         ! fill it:
@@ -82,14 +141,14 @@ contains
         ! 1) everything inside the parameter cache should not be a NaN:
         call eft_par_cache%is_nan( EFT_HaveNan_parameter )
         if ( EFT_HaveNan_parameter ) then
-            EFTStabilityCheck = .false.
+            EFTTestStability = .false.
             if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: model has Nan in the parameter cache'
             return
         end if
         ! 2) everything inside the time-step cache should not be a NaN:
         call eft_cache%is_nan( EFT_HaveNan_timestep )
         if ( EFT_HaveNan_timestep ) then
-            EFTStabilityCheck = .false.
+            EFTTestStability = .false.
             if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: model has Nan in the timestep cache'
             return
         end if
@@ -101,14 +160,14 @@ contains
             !    consistency of the pi field equation.
             !    The first condition is A1/=0. Implemented by detecting sign changes in A1.
             if ( eft_cache%EFTpiA1*PastA1 < 0._dl ) then
-                EFTStabilityCheck = .false.
+                EFTTestStability = .false.
                 if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: mathematical instability, A is zero in time.'
             end if
             PastA1 = eft_cache%EFTpiA1
             !    The second one is the condition on k.
             if ( (eft_cache%EFTpiA1 > 0 .and. eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 < 0) .or. &
                 &(eft_cache%EFTpiA1 < 0 .and. eft_cache%EFTpiA1 + kmax**2*eft_cache%EFTpiA2 > 0) ) then
-                EFTStabilityCheck = .false.
+                EFTTestStability = .false.
                 if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: mathematical instability, A is zero in k.'
             end if
 
@@ -117,7 +176,7 @@ contains
             !    violate the mathematical consistency of the tensor perturbation equation.
             !    Implemented by detecting sign changes in AT.
             if ( eft_cache%EFTAT*PastAT < 0._dl ) then
-                EFTStabilityCheck = .false.
+                EFTTestStability = .false.
                 if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: mathematical instability, AT is zero in time.'
             end if
             PastAT = eft_cache%EFTAT
@@ -146,7 +205,7 @@ contains
                     temp4 = +0.5_dl*(-temp1 +sqrt(temp3))/temp2
                     temp5 = +0.5_dl*(-temp1 -sqrt(temp3))/temp2
                     if ( temp4>EFT_instability_rate .or. temp5>EFT_instability_rate ) then
-                        EFTStabilityCheck = .false.
+                        EFTTestStability = .false.
                         if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4, temp5
                         exit
                     end if
@@ -155,7 +214,7 @@ contains
                 else if ( temp2 /= 0._dl ) then
                     temp4 = -0.5_dl*temp1/temp2
                     if ( temp4>EFT_instability_rate ) then
-                        EFTStabilityCheck = .false.
+                        EFTTestStability = .false.
                         if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: mathematical instability. Growing exponential at k', tempk, temp4
                         exit
                     end if
@@ -166,8 +225,8 @@ contains
         end if
         ! 4) enforce model specific priors:
         if ( EFTCAMB_in%EFT_additional_priors ) then
-            EFTStabilityCheck = EFTCAMB_in%model%additional_model_stability( a, eft_par_cache, eft_cache )
-            if ( .not. EFTStabilityCheck ) then
+            EFTTestStability = EFTCAMB_in%model%additional_model_stability( a, eft_par_cache, eft_cache )
+            if ( .not. EFTTestStability ) then
                 if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: model specific stability criteria are not met.'
             end if
         end if
@@ -180,43 +239,43 @@ contains
                 write(*,*) 'EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
                 write(*,*) 'It will be added in a future release.'
                 write(*,*) 'If you want to run this model disable EFT_physical_stability.'
-                EFTStabilityCheck = .false.
+                EFTTestStability = .false.
                 return
             end if
 
             ! 1- Positive gravitational constant:
             if ( 1._dl +eft_cache%EFTOmegaV <= 0 ) then
-                EFTStabilityCheck = .false.
+                EFTTestStability = .false.
                 if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: negative gravitational constant', 1._dl +eft_cache%EFTOmegaV
             end if
 
             ! 2- Ghost condition:
             if ( eft_cache%EFT_kinetic < 0._dl ) then
-                EFTStabilityCheck = .false.
+                EFTTestStability = .false.
                 if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: ghost instability. Kinetic term: ', eft_cache%EFT_kinetic
             end if
 
             ! 3- Gradient instability:
             if ( eft_cache%EFT_gradient < 0._dl ) then
-                EFTStabilityCheck = .false.
+                EFTTestStability = .false.
                 if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: gradient instability. Gradient term: ', eft_cache%EFT_gradient
             end if
 
             ! 4- No tensor ghosts:
             if ( eft_cache%EFTAT < 0 ) then
-                EFTStabilityCheck = .false.
+                EFTTestStability = .false.
                 if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: tensor ghost instability'
             end if
 
             ! 5- No tensor gradient:
             if ( eft_cache%EFTDT < 0 ) then
-                EFTStabilityCheck = .false.
+                EFTTestStability = .false.
                 if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: tensor gradient instability'
             end if
 
         end if
 
-    end function
+    end function EFTTestStability
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that restores the values stored in the module to the default.
