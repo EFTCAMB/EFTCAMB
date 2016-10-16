@@ -165,7 +165,7 @@ contains
 
         end if
         ! 4) enforce model specific priors:
-        if ( EFTCAMB_in%EFT_AdditionalPriors ) then
+        if ( EFTCAMB_in%EFT_additional_priors ) then
             EFTStabilityCheck = EFTCAMB_in%model%additional_model_stability( a, eft_par_cache, eft_cache )
             if ( .not. EFTStabilityCheck ) then
                 if ( EFTCAMB_in%EFTCAMB_feedback_level > 0 ) write(*,*) 'EFTCAMB: model specific stability criteria are not met.'

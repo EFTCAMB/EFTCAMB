@@ -57,7 +57,7 @@ module EFTCAMB_main
         ! EFTCAMB stability flags:
         logical   :: EFT_mathematical_stability  !< Flag that extablishes wether to use mathematical stability.
         logical   :: EFT_physical_stability      !< Flag that extablishes wether to use physical stability.
-        logical   :: EFT_AdditionalPriors        !< Flag that extablishes wether to use some additional priors that are related to the specific model.
+        logical   :: EFT_additional_priors       !< Flag that extablishes wether to use some additional priors that are related to the specific model.
 
         ! EFTCAMB model:
         class(EFTCAMB_model), allocatable :: model !< This is the EFTCAMB model in the main class.
@@ -104,7 +104,7 @@ contains
         ! read the stability flags:
         self%EFT_mathematical_stability = Ini_Read_Logical_File( Ini, 'EFT_mathematical_stability', .true. )
         self%EFT_physical_stability     = Ini_Read_Logical_File( Ini, 'EFT_physical_stability'    , .true. )
-        self%EFT_AdditionalPriors       = Ini_Read_Logical_File( Ini, 'EFT_AdditionalPriors'      , .true. )
+        self%EFT_additional_priors      = Ini_Read_Logical_File( Ini, 'EFT_additional_priors'     , .true. )
 
         ! EFTCAMB working stuff:
         self%EFTCAMB_feedback_level     = Ini_Read_Int_File( Ini, 'feedback_level', 1 )
@@ -188,7 +188,7 @@ contains
 
         write(*,*) ' Mathematical stability = ', self%EFT_mathematical_stability
         write(*,*) ' Physical stability     = ', self%EFT_physical_stability
-        write(*,*) ' Additional priors      = ', self%EFT_AdditionalPriors
+        write(*,*) ' Additional priors      = ', self%EFT_additional_priors
         write(*,*)
         ! print model selection flags:
         write(*,*)              'EFTCAMB model flags:'
