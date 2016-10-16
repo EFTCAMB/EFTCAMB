@@ -28,6 +28,7 @@ module EFTCAMB_pure_EFT_std
 
     use precision
     use IniFile
+    use AMLutils
     use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_neutral_parametrization_1D
@@ -284,88 +285,98 @@ contains
 
         class(EFTCAMB_std_pure_EFT)                            :: self   !< the base class
         real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters of the model.
-        integer                                                :: NOmega, Nw, N1, N2, N3, N4, N5, N6, j, dim
+
         real(dl), allocatable, dimension(:)                    :: temp
+        integer :: num_params_function, num_params_temp, i
 
-        !SP: tried one solution. There is probably a smarter way to do so..
+        num_params_temp     = 1
 
-        NOmega = self%PureEFTOmega%parameter_number
-        Nw = NOmega + self%PureEFTwDE%parameter_number
-        N1 = Nw + self%PureEFTGamma1%parameter_number
-        N2 = N1 + self%PureEFTGamma2%parameter_number
-        N3 = N2 + self%PureEFTGamma3%parameter_number
-        if ( .not. self%PureEFTHorndeski ) then
-          N4 = N3 + self%PureEFTGamma4%parameter_number
-          N4 = N4 + self%PureEFTGamma5%parameter_number
-          N6 = N5 + self%PureEFTGamma6%parameter_number
-        end if
-
-        dim = self%PureEFTOmega%parameter_number
-        allocate(temp(dim))
-        do j = 1, dim
-          temp(j) = array(j)
+        ! first elements are Omega parameters:
+        num_params_function = self%PureEFTOmega%parameter_number
+        allocate( temp(num_params_function) )
+        do i = 1, num_params_function
+            temp(i)         = array(num_params_temp)
+            num_params_temp = num_params_temp +1
         end do
         call self%PureEFTOmega%init_parameters(temp)
-        deallocate(temp)
-
-        dim = self%PureEFTwDE%parameter_number
-        allocate(temp(dim))
-        do j = 1, dim
-          temp(j) = array( j + NOmega )
+        deallocate( temp )
+        ! then w_DE parameters:
+        num_params_function = self%PureEFTwDE%parameter_number
+        allocate( temp(num_params_function) )
+        do i = 1, num_params_function
+            temp(i)         = array(num_params_temp)
+            num_params_temp = num_params_temp +1
         end do
         call self%PureEFTwDE%init_parameters(temp)
         deallocate(temp)
-
-        dim = self%PureEFTGamma1%parameter_number
-        allocate(temp(dim))
-        do j = 1, dim
-          temp(j) = array( j + Nw )
+        ! then gamma1:
+        num_params_function = self%PureEFTGamma1%parameter_number
+        allocate( temp(num_params_function) )
+        do i = 1, num_params_function
+            temp(i)         = array(num_params_temp)
+            num_params_temp = num_params_temp +1
         end do
         call self%PureEFTGamma1%init_parameters(temp)
         deallocate(temp)
-
-        dim = self%PureEFTGamma2%parameter_number
-        allocate(temp(dim))
-        do j = 1, dim
-          temp(j) = array( j + N1 )
+        ! then gamma2:
+        num_params_function = self%PureEFTGamma2%parameter_number
+        allocate( temp(num_params_function) )
+        do i = 1, num_params_function
+            temp(i)         = array(num_params_temp)
+            num_params_temp = num_params_temp +1
         end do
         call self%PureEFTGamma2%init_parameters(temp)
         deallocate(temp)
-
-        dim = self%PureEFTGamma3%parameter_number
-        allocate(temp(dim))
-        do j = 1, dim
-          temp(j) = array( j + N2 )
+        ! then gamma3:
+        num_params_function = self%PureEFTGamma3%parameter_number
+        allocate( temp(num_params_function) )
+        do i = 1, num_params_function
+            temp(i)         = array(num_params_temp)
+            num_params_temp = num_params_temp +1
         end do
         call self%PureEFTGamma3%init_parameters(temp)
         deallocate(temp)
 
+        ! then beyond Horndeski parameters:
         if ( .not. self%PureEFTHorndeski ) then
 
-          dim = self%PureEFTGamma4%parameter_number
-          allocate(temp(dim))
-          do j = 1, dim
-            temp(j) = array( j + N3 )
-          end do
-          call self%PureEFTGamma4%init_parameters(temp)
-          deallocate(temp)
+            ! gamma4:
+            num_params_function = self%PureEFTGamma4%parameter_number
+            allocate( temp(num_params_function) )
+            do i = 1, num_params_function
+                temp(i)         = array(num_params_temp)
+                num_params_temp = num_params_temp +1
+            end do
+            call self%PureEFTGamma4%init_parameters(temp)
+            deallocate(temp)
+            ! gamma5:
+            num_params_function = self%PureEFTGamma5%parameter_number
+            allocate( temp(num_params_function) )
+            do i = 1, num_params_function
+                temp(i)         = array(num_params_temp)
+                num_params_temp = num_params_temp +1
+            end do
+            call self%PureEFTGamma5%init_parameters(temp)
+            deallocate(temp)
+            ! gamma6:
+            num_params_function = self%PureEFTGamma6%parameter_number
+            allocate( temp(num_params_function) )
+            do i = 1, num_params_function
+                temp(i)         = array(num_params_temp)
+                num_params_temp = num_params_temp +1
+            end do
+            call self%PureEFTGamma6%init_parameters(temp)
+            deallocate(temp)
 
-          dim = self%PureEFTGamma5%parameter_number
-          allocate(temp(dim))
-          do j = 1, dim
-            temp(j) = array( j + N4 )
-          end do
-          call self%PureEFTGamma5%init_parameters(temp)
-          deallocate(temp)
+        end if
 
-          dim = self%PureEFTGamma6%parameter_number
-          allocate(temp(dim))
-          do j = 1, dim
-            temp(j) = array( j + N5 )
-          end do
-          call self%PureEFTGamma6%init_parameters(temp)
-          deallocate(temp)
-
+        ! now check the length of the parameters:
+        if ( num_params_temp-1 /= self%parameter_number ) then
+            write(*,*) 'In EFTCAMBPureEFTstdInitModelParameters:'
+            write(*,*) 'Length of num_params_temp and self%parameter_number do not coincide.'
+            write(*,*) 'num_params_temp:', num_params_temp-1
+            write(*,*) 'self%parameter_number:', self%parameter_number
+            call MpiStop('EFTCAMB error')
         end if
 
     end subroutine EFTCAMBPureEFTstdInitModelParameters
@@ -423,12 +434,14 @@ contains
 
         class(EFTCAMB_std_pure_EFT)  :: self   !< the base class
 
+        ! print general model informations:
         write(*,*)
         write(*,'(a,a)')    '   Model               =  ', self%name
         if ( self%PureEFTHorndeski ) then
             write(*,"(a)")  '   Pure EFT Horndeski'
         end if
         write(*,'(a,I3)')   '   Number of params    ='  , self%parameter_number
+
         ! print model functions informations:
         write(*,*)
         if ( self%PureEFTmodelOmega  /= 0 ) write(*,'(a,I3)') '   PureEFTmodelOmega   =', self%PureEFTmodelOmega
@@ -443,7 +456,7 @@ contains
         end if
 
         write(*,*)
-
+        ! print functions informations:
         call self%PureEFTOmega%feedback()
         call self%PureEFTwDE%feedback()
         call self%PureEFTGamma1%feedback()
@@ -466,81 +479,87 @@ contains
         class(EFTCAMB_std_pure_EFT) :: self   !< the base class
         integer     , intent(in)    :: i      !< the index of the parameter
         character(*), intent(out)   :: name   !< the output name of the i-th parameter
-        integer                     :: NOmega, Nw, N1, N2, N3, N4, N5, N6, j
 
-        !SP: tried one solution. There is probably a smarter way to do so..
+        integer  :: NOmega, Nw, N1, N2, N3, N4, N5, N6
+        integer  :: j
 
+        ! compute the incremental number of parameters:
         NOmega = self%PureEFTOmega%parameter_number
-        Nw = NOmega + self%PureEFTwDE%parameter_number
-        N1 = Nw + self%PureEFTGamma1%parameter_number
-        N2 = N1 + self%PureEFTGamma2%parameter_number
-        N3 = N2 + self%PureEFTGamma3%parameter_number
+        Nw     = NOmega + self%PureEFTwDE%parameter_number
+        N1     = Nw + self%PureEFTGamma1%parameter_number
+        N2     = N1 + self%PureEFTGamma2%parameter_number
+        N3     = N2 + self%PureEFTGamma3%parameter_number
         if ( .not. self%PureEFTHorndeski ) then
-          N4 = N3 + self%PureEFTGamma4%parameter_number
-          N4 = N4 + self%PureEFTGamma5%parameter_number
-          N6 = N5 + self%PureEFTGamma6%parameter_number
+            N4 = N3 + self%PureEFTGamma4%parameter_number
+            N4 = N4 + self%PureEFTGamma5%parameter_number
+            N6 = N5 + self%PureEFTGamma6%parameter_number
         end if
 
-        if ( i > self%parameter_number .or. i <= 0) then
-          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ',i
-          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
-          return
+        ! check validity of input:
+        if ( i > self%parameter_number .or. i <= 0 ) then
+            write(*,'(a,I3)') 'No parameter corresponding to: ', i
+            write(*,'(a,I3)') 'Total number of parameters is: ', self%parameter_number
+            call MpiStop('EFTCAMB error')
 
+        ! parameter from Omega function
         else if ( i <= NOmega ) then
-          ! parameter from Omega function
-          do j = 1, self%PureEFTOmega%parameter_number
-            if ( i == j ) call self%PureEFTOmega%parameter_names( j, name )
-          end do
-          return
+            do j = 1, self%PureEFTOmega%parameter_number
+                if ( i == j ) call self%PureEFTOmega%parameter_names( j, name )
+            end do
+            return
 
+        ! parameter from wDE function
         else if ( i <= Nw ) then
-          ! parameter from wDE function
-          do j = 1, self%PureEFTwDE%parameter_number
-            if ( i-NOmega == j ) call self%PureEFTwDE%parameter_names( j, name )
-          end do
-          return
+            do j = 1, self%PureEFTwDE%parameter_number
+                if ( i-NOmega == j ) call self%PureEFTwDE%parameter_names( j, name )
+            end do
+            return
 
+        ! parameter from Gamma1 function
         else if ( i <= N1) then
-          ! parameter from Gamma1 function
-          do j = 1, self%PureEFTGamma1%parameter_number
-            if ( i-Nw == j ) call self%PureEFTGamma1%parameter_names( j, name )
-          end do
-          return
+            do j = 1, self%PureEFTGamma1%parameter_number
+                if ( i-Nw == j ) call self%PureEFTGamma1%parameter_names( j, name )
+            end do
+            return
 
+        !parameter from Gamma2 function
         else if ( i <= N2 ) then
-          !parameter from Gamma2 function
-          do j = 1, self%PureEFTGamma2%parameter_number
-            if ( i-N1 == j ) call self%PureEFTGamma2%parameter_names( j, name )
-          end do
-          return
+            do j = 1, self%PureEFTGamma2%parameter_number
+                if ( i-N1 == j ) call self%PureEFTGamma2%parameter_names( j, name )
+            end do
+            return
 
+        !parameter from Gamma3 function
         else if ( i <= N3 ) then
-          !parameter from Gamma3 function
-          do j = 1, self%PureEFTGamma3%parameter_number
-            if ( i-N2 == j ) call self%PureEFTGamma3%parameter_names( j, name )
-          end do
-          return
 
+            do j = 1, self%PureEFTGamma3%parameter_number
+                if ( i-N2 == j ) call self%PureEFTGamma3%parameter_names( j, name )
+            end do
+            return
+
+        !parameter from Gamma4 function
         else if ( .not. self%PureEFTHorndeski .and. i <= N4 ) then
-          !parameter from Gamma4 function
-          do j = 1, self%PureEFTGamma4%parameter_number
-            if ( i-N3 == j ) call self%PureEFTGamma4%parameter_names( j, name )
-          end do
-          return
 
+            do j = 1, self%PureEFTGamma4%parameter_number
+                if ( i-N3 == j ) call self%PureEFTGamma4%parameter_names( j, name )
+            end do
+            return
+
+        !parameter from Gamma5 function
         else if ( .not. self%PureEFTHorndeski .and. i <= N5 ) then
-          !parameter from Gamma5 function
-          do j = 1, self%PureEFTGamma5%parameter_number
-            if ( i-N4 == j ) call self%PureEFTGamma5%parameter_names( j, name )
-          end do
-          return
 
+            do j = 1, self%PureEFTGamma5%parameter_number
+                if ( i-N4 == j ) call self%PureEFTGamma5%parameter_names( j, name )
+            end do
+            return
+
+        !parameter from Gamma6 function
         else if ( .not. self%PureEFTHorndeski .and. i <= N6 ) then
-          !parameter from Gamma6 function
-          do j = 1, self%PureEFTGamma6%parameter_number
-            if ( i-N5 == j ) call self%PureEFTGamma6%parameter_names( j, name )
-          end do
-          return
+
+            do j = 1, self%PureEFTGamma6%parameter_number
+                if ( i-N5 == j ) call self%PureEFTGamma6%parameter_names( j, name )
+            end do
+            return
 
         end if
 
@@ -555,81 +574,83 @@ contains
         class(EFTCAMB_std_pure_EFT) :: self       !< the base class
         integer     , intent(in)    :: i          !< The index of the parameter
         character(*), intent(out)   :: latexname  !< the output latex name of the i-th parameter
-        integer                     :: NOmega, Nw, N1, N2, N3, N4, N5, N6, j
 
-        !SP: tried one solution. There is probably a smarter way to do so..
+        integer  :: NOmega, Nw, N1, N2, N3, N4, N5, N6
+        integer  :: j
 
+        ! compute the incremental number of parameters:
         NOmega = self%PureEFTOmega%parameter_number
         Nw = NOmega + self%PureEFTwDE%parameter_number
         N1 = Nw + self%PureEFTGamma1%parameter_number
         N2 = N1 + self%PureEFTGamma2%parameter_number
         N3 = N2 + self%PureEFTGamma3%parameter_number
         if ( .not. self%PureEFTHorndeski ) then
-          N4 = N3 + self%PureEFTGamma4%parameter_number
-          N4 = N4 + self%PureEFTGamma5%parameter_number
-          N6 = N5 + self%PureEFTGamma6%parameter_number
+            N4 = N3 + self%PureEFTGamma4%parameter_number
+            N4 = N4 + self%PureEFTGamma5%parameter_number
+            N6 = N5 + self%PureEFTGamma6%parameter_number
         end if
 
+        ! check validity of input:
         if ( i > self%parameter_number .or. i <= 0) then
-          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ',i
-          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
-          return
+            write(*,'(a,I3)') 'No parameter corresponding to: ', i
+            write(*,'(a,I3)') 'Total number of parameters is: ', self%parameter_number
+            call MpiStop('EFTCAMB error')
 
+        ! parameter from Omega function
         else if ( i <= NOmega ) then
-          ! parameter from Omega function
-          do j = 1, self%PureEFTOmega%parameter_number
-            if ( i == j ) call self%PureEFTOmega%parameter_names_latex( j, latexname )
-          end do
-          return
+            do j = 1, self%PureEFTOmega%parameter_number
+                if ( i == j ) call self%PureEFTOmega%parameter_names_latex( j, latexname )
+            end do
+            return
 
+        ! parameter from wDE function
         else if ( i <= Nw ) then
-          ! parameter from wDE function
-          do j = 1, self%PureEFTwDE%parameter_number
-            if ( i-NOmega == j ) call self%PureEFTwDE%parameter_names_latex( j, latexname )
-          end do
-          return
+            do j = 1, self%PureEFTwDE%parameter_number
+                if ( i-NOmega == j ) call self%PureEFTwDE%parameter_names_latex( j, latexname )
+            end do
+            return
 
+        ! parameter from Gamma1 function
         else if ( i <= N1) then
-          ! parameter from Gamma1 function
-          do j = 1, self%PureEFTGamma1%parameter_number
-            if ( i-Nw == j ) call self%PureEFTGamma1%parameter_names_latex( j, latexname )
-          end do
-          return
+            do j = 1, self%PureEFTGamma1%parameter_number
+                if ( i-Nw == j ) call self%PureEFTGamma1%parameter_names_latex( j, latexname )
+            end do
+            return
 
+        !parameter from Gamma2 function
         else if ( i <= N2 ) then
-          !parameter from Gamma2 function
-          do j = 1, self%PureEFTGamma2%parameter_number
-            if ( i-N1 == j ) call self%PureEFTGamma2%parameter_names_latex( j, latexname )
-          end do
-          return
+            do j = 1, self%PureEFTGamma2%parameter_number
+                if ( i-N1 == j ) call self%PureEFTGamma2%parameter_names_latex( j, latexname )
+            end do
+            return
 
+        !parameter from Gamma3 function
         else if ( i <= N3 ) then
-          !parameter from Gamma3 function
-          do j = 1, self%PureEFTGamma3%parameter_number
-            if ( i-N2 == j ) call self%PureEFTGamma3%parameter_names_latex( j, latexname )
-          end do
-          return
+            do j = 1, self%PureEFTGamma3%parameter_number
+                if ( i-N2 == j ) call self%PureEFTGamma3%parameter_names_latex( j, latexname )
+            end do
+            return
 
+            !parameter from Gamma4 function
         else if ( .not. self%PureEFTHorndeski .and. i <= N4 ) then
-          !parameter from Gamma4 function
-          do j = 1, self%PureEFTGamma4%parameter_number
-            if ( i-N3 == j ) call self%PureEFTGamma4%parameter_names_latex( j, latexname )
-          end do
-          return
+            do j = 1, self%PureEFTGamma4%parameter_number
+                if ( i-N3 == j ) call self%PureEFTGamma4%parameter_names_latex( j, latexname )
+            end do
+            return
 
+        !parameter from Gamma5 function
         else if ( .not. self%PureEFTHorndeski .and. i <= N5 ) then
-          !parameter from Gamma5 function
-          do j = 1, self%PureEFTGamma5%parameter_number
-            if ( i-N4 == j ) call self%PureEFTGamma5%parameter_names_latex( j, latexname )
-          end do
-          return
+            do j = 1, self%PureEFTGamma5%parameter_number
+                if ( i-N4 == j ) call self%PureEFTGamma5%parameter_names_latex( j, latexname )
+            end do
+            return
 
+        !parameter from Gamma6 function
         else if ( .not. self%PureEFTHorndeski .and. i <= N6 ) then
-          !parameter from Gamma6 function
-          do j = 1, self%PureEFTGamma6%parameter_number
-            if ( i-N5 == j ) call self%PureEFTGamma6%parameter_names_latex( j, latexname )
-          end do
-          return
+            do j = 1, self%PureEFTGamma6%parameter_number
+                if ( i-N5 == j ) call self%PureEFTGamma6%parameter_names_latex( j, latexname )
+            end do
+            return
 
         end if
 
@@ -644,81 +665,83 @@ contains
         class(EFTCAMB_std_pure_EFT) :: self   !< the base class
         integer , intent(in)        :: i      !< The index of the parameter
         real(dl), intent(out)       :: value  !< the output value of the i-th parameter
-        integer                     :: NOmega, Nw, N1, N2, N3, N4, N5, N6, j
 
-        !SP: tried one solution. There is probably a smarter way to do so..
+        integer  :: NOmega, Nw, N1, N2, N3, N4, N5, N6
+        integer  :: j
 
+        ! compute the incremental number of parameters:
         NOmega = self%PureEFTOmega%parameter_number
         Nw = NOmega + self%PureEFTwDE%parameter_number
         N1 = Nw + self%PureEFTGamma1%parameter_number
         N2 = N1 + self%PureEFTGamma2%parameter_number
         N3 = N2 + self%PureEFTGamma3%parameter_number
         if ( .not. self%PureEFTHorndeski ) then
-          N4 = N3 + self%PureEFTGamma4%parameter_number
-          N4 = N4 + self%PureEFTGamma5%parameter_number
-          N6 = N5 + self%PureEFTGamma6%parameter_number
+            N4 = N3 + self%PureEFTGamma4%parameter_number
+            N4 = N4 + self%PureEFTGamma5%parameter_number
+            N6 = N5 + self%PureEFTGamma6%parameter_number
         end if
 
+        ! check validity of input:
         if ( i > self%parameter_number .or. i <= 0) then
-          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ',i
-          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
-          return
+            write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ',i
+            write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+            call MpiStop('EFTCAMB error')
 
+        ! parameter from Omega function
         else if ( i <= NOmega ) then
-          ! parameter from Omega function
-          do j = 1, self%PureEFTOmega%parameter_number
-            if ( i == j ) call self%PureEFTOmega%parameter_value( j, value )
-          end do
-          return
+            do j = 1, self%PureEFTOmega%parameter_number
+                if ( i == j ) call self%PureEFTOmega%parameter_value( j, value )
+            end do
+            return
 
+        ! parameter from wDE function
         else if ( i <= Nw ) then
-          ! parameter from wDE function
-          do j = 1, self%PureEFTwDE%parameter_number
-            if ( i-NOmega == j ) call self%PureEFTwDE%parameter_value( j, value )
-          end do
-          return
+            do j = 1, self%PureEFTwDE%parameter_number
+                if ( i-NOmega == j ) call self%PureEFTwDE%parameter_value( j, value )
+            end do
+            return
 
+        ! parameter from Gamma1 function
         else if ( i <= N1) then
-          ! parameter from Gamma1 function
-          do j = 1, self%PureEFTGamma1%parameter_number
-            if ( i-Nw == j ) call self%PureEFTGamma1%parameter_value( j, value )
-          end do
-          return
+            do j = 1, self%PureEFTGamma1%parameter_number
+                if ( i-Nw == j ) call self%PureEFTGamma1%parameter_value( j, value )
+            end do
+            return
 
+        !parameter from Gamma2 function
         else if ( i <= N2 ) then
-          !parameter from Gamma2 function
-          do j = 1, self%PureEFTGamma2%parameter_number
-            if ( i-N1 == j ) call self%PureEFTGamma2%parameter_value( j, value )
-          end do
-          return
+            do j = 1, self%PureEFTGamma2%parameter_number
+                if ( i-N1 == j ) call self%PureEFTGamma2%parameter_value( j, value )
+            end do
+            return
 
+        !parameter from Gamma3 function
         else if ( i <= N3 ) then
-          !parameter from Gamma3 function
-          do j = 1, self%PureEFTGamma3%parameter_number
-            if ( i-N2 == j ) call self%PureEFTGamma3%parameter_value( j, value )
-          end do
-          return
+            do j = 1, self%PureEFTGamma3%parameter_number
+                if ( i-N2 == j ) call self%PureEFTGamma3%parameter_value( j, value )
+            end do
+            return
 
+        !parameter from Gamma4 function
         else if ( .not. self%PureEFTHorndeski .and. i <= N4 ) then
-          !parameter from Gamma4 function
-          do j = 1, self%PureEFTGamma4%parameter_number
-            if ( i-N3 == j ) call self%PureEFTGamma4%parameter_value( j, value )
-          end do
-          return
+            do j = 1, self%PureEFTGamma4%parameter_number
+                if ( i-N3 == j ) call self%PureEFTGamma4%parameter_value( j, value )
+            end do
+            return
 
+        !parameter from Gamma5 function
         else if ( .not. self%PureEFTHorndeski .and. i <= N5 ) then
-          !parameter from Gamma5 function
-          do j = 1, self%PureEFTGamma5%parameter_number
-            if ( i-N4 == j ) call self%PureEFTGamma5%parameter_value( j, value )
-          end do
-          return
+            do j = 1, self%PureEFTGamma5%parameter_number
+                if ( i-N4 == j ) call self%PureEFTGamma5%parameter_value( j, value )
+            end do
+            return
 
+        !parameter from Gamma6 function
         else if ( .not. self%PureEFTHorndeski .and. i <= N6 ) then
-          !parameter from Gamma6 function
-          do j = 1, self%PureEFTGamma6%parameter_number
-            if ( i-N5 == j ) call self%PureEFTGamma6%parameter_value( j, value )
-          end do
-          return
+            do j = 1, self%PureEFTGamma6%parameter_number
+                if ( i-N5 == j ) call self%PureEFTGamma6%parameter_value( j, value )
+            end do
+            return
 
         end if
 
@@ -853,9 +876,9 @@ contains
         !    & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
 
         eft_cache%Hdotdot = 2._dl*eft_cache%adotoa*eft_cache%Hdot &
-                & + 0.5_dl*eft_cache%adotoa*(eft_cache%grhob_t + eft_cache%grhoc_t + 8._dl*(eft_cache%grhog_t+eft_cache%grhor_t)/3._dl)&
-                & + 0.5_dl*eft_cache%adotoa*eft_cache%grhov_t*( (1._dl+self%PureEFTwDE%value(a) )*(1._dl+3._dl*self%PureEFTwDE%value(a)) -a*self%PureEFTwDE%first_derivative(a))&
-                & + eft_cache%adotoa/6._dl*eft_cache%grhonu_tot -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
+            & + 0.5_dl*eft_cache%adotoa*(eft_cache%grhob_t + eft_cache%grhoc_t + 8._dl*(eft_cache%grhog_t+eft_cache%grhor_t)/3._dl)&
+            & + 0.5_dl*eft_cache%adotoa*eft_cache%grhov_t*( (1._dl+self%PureEFTwDE%value(a) )*(1._dl+3._dl*self%PureEFTwDE%value(a)) -a*self%PureEFTwDE%first_derivative(a))&
+            & + eft_cache%adotoa/6._dl*eft_cache%grhonu_tot -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
 
     end subroutine EFTCAMBPureEFTstdComputeHubbleDer
 

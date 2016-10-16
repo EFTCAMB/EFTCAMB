@@ -80,6 +80,9 @@ module EFTCAMB_abstract_model
         procedure :: compute_tensor_factors      => EFTCAMBModelComputeTensorFactors                      !< subroutine that computes the factors for the tensor propagation equation. For details refer to the numerical notes.
         procedure :: compute_stability_factors   => EFTCAMBModelComputeStabilityFactors                   !< subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
 
+        ! stability procedures:
+        procedure :: additional_model_stability  => EFTCAMBModelAdditionalModelStability                  !< function that computes model specific stability requirements.
+
     end type EFTCAMB_model
 
     ! ---------------------------------------------------------------------------------------------
@@ -477,7 +480,6 @@ contains
 
     end subroutine EFTCAMBModelComputeTensorFactors
 
-
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
     subroutine EFTCAMBModelComputeStabilityFactors( self, a, eft_par_cache, eft_cache )
@@ -515,6 +517,21 @@ contains
             &+ 2._dl*eft_cache%EFTGamma5V + 3._dl*eft_cache%EFTOmegaV)) +(1._dl + 2._dl*eft_cache%EFTGamma5V + eft_cache%EFTOmegaV)*(4._dl + a*eft_cache%EFTOmegaP + 4._dl*eft_cache%EFTOmegaV)*eft_cache%Hdot))
 
     end subroutine EFTCAMBModelComputeStabilityFactors
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that computes model specific stability requirements.
+    function EFTCAMBModelAdditionalModelStability( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_model)                         :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor.
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        logical :: EFTCAMBModelAdditionalModelStability               !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
+
+    end function EFTCAMBModelAdditionalModelStability
 
     ! ---------------------------------------------------------------------------------------------
 

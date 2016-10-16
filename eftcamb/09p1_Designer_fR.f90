@@ -26,13 +26,13 @@ module EFTCAMB_designer_fR
 
     use precision
     use IniFile
+    use AMLutils
     use equispaced_linear_interpolation_1D
     use EFTCAMB_rootfind
     use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_neutral_parametrization_1D
     use EFTCAMB_constant_parametrization_1D
-    use EFTCAMB_linear_parametrizations_1D
     use EFTCAMB_abstract_model_designer
 
     implicit none
@@ -42,7 +42,8 @@ module EFTCAMB_designer_fR
     public EFTCAMB_fR_designer
 
     !----------------------------------------------------------------------------------------
-    !> This is the designer f(R) model.
+    !> This is the designer f(R) model. Inherits from the abstract designer model and has the
+    !! freedom of defining the expansion history.
     type, extends ( EFTCAMB_designer_model ) :: EFTCAMB_fR_designer
 
         ! theory parameters:
@@ -131,7 +132,7 @@ contains
         end select
 
         ! initialize the names:
-        call self%PureEFTwDE%set_name( 'EFTw'     , 'w'            )
+        call self%PureEFTwDE%set_name( 'EFTw', 'w' )
 
     end subroutine EFTCAMBDesignerFRAllocateModelSelection
 
@@ -164,10 +165,10 @@ contains
         class(EFTCAMB_fR_designer)  :: self   !< the base class
         type(TIniFile)              :: Ini    !< Input ini file
 
-        ! read w_DE parameters:
-        call self%PureEFTwDE%init_from_file( Ini )
         ! read B0:
         self%B0 = Ini_Read_Double_File( Ini, 'EFTB0', 0._dl )
+        ! read w_DE parameters:
+        call self%PureEFTwDE%init_from_file( Ini )
 
     end subroutine EFTCAMBDesignerFRInitModelParametersFromFile
 
@@ -841,13 +842,16 @@ contains
         integer     , intent(in)    :: i      !< the index of the parameter
         character(*), intent(out)   :: name   !< the output name of the i-th parameter
 
+        ! check validity of input:
         if ( i<=0 .or. i>self%parameter_number ) then
           write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
           write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
-          return
+          call MpiStop('EFTCAMB error')
+        ! the first parameter is B0:
         else if ( i==1 ) then
           name = TRIM('B0')
           return
+        ! the other parameters are the w_DE parameters:
         else
           call self%PureEFTwDE%parameter_names( i-1, name )
           return
@@ -865,13 +869,16 @@ contains
         integer     , intent(in)    :: i         !< The index of the parameter
         character(*), intent(out)   :: latexname !< the output latex name of the i-th parameter
 
+        ! check validity of input:
         if ( i<=0 .or. i>self%parameter_number ) then
           write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
           write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
-          return
+          call MpiStop('EFTCAMB error')
+        ! the first parameter is B0:
         else if ( i==1 ) then
           latexname = TRIM('B_0')
           return
+        ! the other parameters are the w_DE parameters:
         else
           call self%PureEFTwDE%parameter_names_latex( i-1, latexname )
           return
@@ -889,13 +896,16 @@ contains
         integer , intent(in)        :: i     !< The index of the parameter
         real(dl), intent(out)       :: value !< the output value of the i-th parameter
 
+        ! check validity of input:
         if ( i<=0 .or. i>self%parameter_number ) then
           write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
           write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
-          return
+          call MpiStop('EFTCAMB error')
+        ! the first parameter is B0:
         else if ( i==1 ) then
           value = self%B0
           return
+        ! the other parameters are the w_DE parameters:
         else
           call self%PureEFTwDE%parameter_value( i-1, value )
           return

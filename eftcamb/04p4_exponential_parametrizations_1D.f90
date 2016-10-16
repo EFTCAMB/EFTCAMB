@@ -195,7 +195,7 @@ contains
         real(dl) :: ExponentialParametrized1DThirdDerivative            !< the output value
 
         ExponentialParametrized1DThirdDerivative = self%coefficient*self%exponent*Exp(self%coefficient*x**self%exponent)*x**(self%exponent-3._dl)&
-                 & *(2._dl +self%exponent*(-3._dl +self%exponent +x**self%exponent*self%coefficient*(-3._dl +self%exponent*(3._dl +x**self%exponent*self%coefficient))))
+            & *(2._dl +self%exponent*(-3._dl +self%exponent +x**self%exponent*self%coefficient*(-3._dl +self%exponent*(3._dl +x**self%exponent*self%coefficient))))
 
     end function ExponentialParametrized1DThirdDerivative
 
@@ -211,6 +211,9 @@ contains
         real(dl) :: ExponentialParametrized1DIntegral                   !< the output value
 
         !< No analytic solution >!
+        write(*,*) 'ExponentialParametrized1DIntegral is not implemented.'
+        write(*,*) 'Calculations cannot proceed.'
+        call MpiStop('EFTCAMB error')
 
     end function ExponentialParametrized1DIntegral
 

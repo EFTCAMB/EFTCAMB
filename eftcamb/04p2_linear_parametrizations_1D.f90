@@ -22,7 +22,7 @@
 !> This module contains the definition of the linear parametrization, inheriting from
 !! parametrized_function_1D.
 
-!> @author Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_linear_parametrizations_1D
 

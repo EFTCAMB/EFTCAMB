@@ -22,7 +22,7 @@
 !> This module contains the definition of neutral parametrizations that can be used when
 !! parametrized functions should take their GR value.
 
-!> @author Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_neutral_parametrization_1D
 
