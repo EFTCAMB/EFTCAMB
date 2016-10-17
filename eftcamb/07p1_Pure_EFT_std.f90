@@ -224,7 +224,7 @@ contains
                 param_names_latex(1) = TRIM('w_0')
                 param_names_latex(2) = TRIM('w_a')
                 param_names_latex(3) = TRIM('w_2')
-                param_names_latex(3) = TRIM('w_3')
+                param_names_latex(4) = TRIM('w_3')
                 call self%PureEFTwDE%set_param_names(param_names, param_names_latex)
                 deallocate(param_names)
                 deallocate(param_names_latex)
