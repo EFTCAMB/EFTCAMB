@@ -130,7 +130,8 @@ contains
 
         implicit none
 
-        class(EFTCAMB_std_pure_EFT) :: self   !< the base class
+        class(EFTCAMB_std_pure_EFT)                       :: self              !< the base class
+        character, allocatable, dimension(:)              :: param_names       !< an array of strings containing the names of the function parameters
 
         ! allocate Omega:
         if ( allocated(self%PureEFTOmega) ) deallocate(self%PureEFTOmega)
@@ -143,13 +144,23 @@ contains
                 allocate( linear_parametrization_1D::self%PureEFTOmega )
             case(3)
                 allocate( power_law_parametrization_1D::self%PureEFTOmega )
+                allocate( param_names(self%PureEFTOmega%parameter_number) )
+                param_names(1) = TRIM('EFTOmega0')
+                param_names(2) = TRIM('EFTOmegaExp')
+                call self%PureEFTOmega%set_param_names(param_names)
+                deallocate(param_names)
             case(4)
                 allocate( exponential_parametrization_1D::self%PureEFTOmega )
+                allocate( param_names(self%PureEFTOmega%parameter_number) )
+                param_names(1) = TRIM('EFTOmega0')
+                param_names(2) = TRIM('EFTOmegaExp')
+                call self%PureEFTOmega%set_param_names(param_names)
+                deallocate(param_names)
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelOmega =', self%PureEFTmodelOmega
                 write(*,'(a)')    'Please select an appropriate model.'
         end select
-        ! allocate wDE: 
+        ! allocate wDE:
         if ( allocated(self%PureEFTwDE) ) deallocate(self%PureEFTwDE)
         select case ( self%EFTwDE )
             case(0)
@@ -158,12 +169,36 @@ contains
                 allocate( constant_parametrization_1D::self%PureEFTwDE )
             case(2)
                 allocate( CPL_parametrization_1D::self%PureEFTwDE )
+                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                param_names(1) = TRIM('EFTw0')
+                param_names(2) = TRIM('EFTwa')
+                call self%PureEFTwDE%set_param_names(param_names)
+                deallocate(param_names)
             case(3)
                 allocate( JBP_parametrization_1D::self%PureEFTwDE )
+                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                param_names(1) = TRIM('EFTw0')
+                param_names(2) = TRIM('EFTwa')
+                param_names(3) = TRIM('EFTwn')
+                call self%PureEFTwDE%set_param_names(param_names)
+                deallocate(param_names)
             case(4)
                 allocate( turning_point_parametrization_1D::self%PureEFTwDE )
+                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                param_names(1) = TRIM('EFTw0' )
+                param_names(2) = TRIM('EFTwa' )
+                param_names(3) = TRIM('EFTwat')
+                call self%PureEFTwDE%set_param_names(param_names)
+                deallocate(param_names)
             case(5)
                 allocate( taylor_parametrization_1D::self%PureEFTwDE )
+                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                param_names(1) = TRIM('EFTw0')
+                param_names(2) = TRIM('EFTwa')
+                param_names(3) = TRIM('EFTw2')
+                param_names(4) = TRIM('EFTw3')
+                call self%PureEFTwDE%set_param_names(param_names)
+                deallocate(param_names)
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -179,8 +214,18 @@ contains
                 allocate( linear_parametrization_1D::self%PureEFTGamma1 )
             case(3)
                 allocate( power_law_parametrization_1D::self%PureEFTGamma1 )
+                allocate( param_names(self%PureEFTGamma1%parameter_number) )
+                param_names(1) = TRIM('EFTGamma10'  )
+                param_names(2) = TRIM('EFTGamma1Exp')
+                call self%PureEFTGamma1%set_param_names(param_names)
+                deallocate(param_names)
             case(4)
                 allocate( exponential_parametrization_1D::self%PureEFTGamma1 )
+                allocate( param_names(self%PureEFTGamma1%parameter_number) )
+                param_names(1) = TRIM('EFTGamma10'  )
+                param_names(2) = TRIM('EFTGamma1Exp')
+                call self%PureEFTGamma1%set_param_names(param_names)
+                deallocate(param_names)
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma1 =', self%PureEFTmodelGamma1
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -196,8 +241,18 @@ contains
                 allocate( linear_parametrization_1D::self%PureEFTGamma2 )
             case(3)
                 allocate( power_law_parametrization_1D::self%PureEFTGamma2 )
+                allocate( param_names(self%PureEFTGamma2%parameter_number) )
+                param_names(1) = TRIM('EFTGamma20'  )
+                param_names(2) = TRIM('EFTGamma2Exp')
+                call self%PureEFTGamma2%set_param_names(param_names)
+                deallocate(param_names)
             case(4)
                 allocate( exponential_parametrization_1D::self%PureEFTGamma2 )
+                allocate( param_names(self%PureEFTGamma2%parameter_number) )
+                param_names(1) = TRIM('EFTGamma20'  )
+                param_names(2) = TRIM('EFTGamma2Exp')
+                call self%PureEFTGamma2%set_param_names(param_names)
+                deallocate(param_names)
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma2 =', self%PureEFTmodelGamma2
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -213,8 +268,18 @@ contains
                 allocate( linear_parametrization_1D::self%PureEFTGamma3 )
             case(3)
                 allocate( power_law_parametrization_1D::self%PureEFTGamma3 )
+                allocate( param_names(self%PureEFTGamma3%parameter_number) )
+                param_names(1) = TRIM('EFTGamma30'  )
+                param_names(2) = TRIM('EFTGamma3Exp')
+                call self%PureEFTGamma3%set_param_names(param_names)
+                deallocate(param_names)
             case(4)
                 allocate( exponential_parametrization_1D::self%PureEFTGamma3 )
+                allocate( param_names(self%PureEFTGamma3%parameter_number) )
+                param_names(1) = TRIM('EFTGamma30'  )
+                param_names(2) = TRIM('EFTGamma3Exp')
+                call self%PureEFTGamma3%set_param_names(param_names)
+                deallocate(param_names)
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma3 =', self%PureEFTmodelGamma3
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -232,8 +297,18 @@ contains
                     allocate( linear_parametrization_1D::self%PureEFTGamma4 )
                 case(3)
                     allocate( power_law_parametrization_1D::self%PureEFTGamma4 )
+                    allocate( param_names(self%PureEFTGamma4%parameter_number) )
+                    param_names(1) = TRIM('EFTGamma40'  )
+                    param_names(2) = TRIM('EFTGamma4Exp')
+                    call self%PureEFTGamma4%set_param_names(param_names)
+                    deallocate(param_names)
                 case(4)
                     allocate( exponential_parametrization_1D::self%PureEFTGamma4 )
+                    allocate( param_names(self%PureEFTGamma4%parameter_number) )
+                    param_names(1) = TRIM('EFTGamma40'  )
+                    param_names(2) = TRIM('EFTGamma4Exp')
+                    call self%PureEFTGamma4%set_param_names(param_names)
+                    deallocate(param_names)
                 case default
                     write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma4 =', self%PureEFTmodelGamma4
                     write(*,'(a)')    'Please select an appropriate model.'
@@ -249,8 +324,18 @@ contains
                     allocate( linear_parametrization_1D::self%PureEFTGamma5 )
                 case(3)
                     allocate( power_law_parametrization_1D::self%PureEFTGamma5 )
+                    allocate( param_names(self%PureEFTGamma5%parameter_number) )
+                    param_names(1) = TRIM('EFTGamma50'  )
+                    param_names(2) = TRIM('EFTGamma5Exp')
+                    call self%PureEFTGamma5%set_param_names(param_names)
+                    deallocate(param_names)
                 case(4)
                     allocate( exponential_parametrization_1D::self%PureEFTGamma5 )
+                    allocate( param_names(self%PureEFTGamma5%parameter_number) )
+                    param_names(1) = TRIM('EFTGamma50'  )
+                    param_names(2) = TRIM('EFTGamma5Exp')
+                    call self%PureEFTGamma5%set_param_names(param_names)
+                    deallocate(param_names)
                 case default
                     write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma5 =', self%PureEFTmodelGamma5
                     write(*,'(a)')    'Please select an appropriate model.'
@@ -266,8 +351,18 @@ contains
                     allocate( linear_parametrization_1D::self%PureEFTGamma6 )
                 case(3)
                     allocate( power_law_parametrization_1D::self%PureEFTGamma6 )
+                    allocate( param_names(self%PureEFTGamma6%parameter_number) )
+                    param_names(1) = TRIM('EFTGamma60'  )
+                    param_names(2) = TRIM('EFTGamma6Exp')
+                    call self%PureEFTGamma6%set_param_names(param_names)
+                    deallocate(param_names)
                 case(4)
                     allocate( exponential_parametrization_1D::self%PureEFTGamma6 )
+                    allocate( param_names(self%PureEFTGamma6%parameter_number) )
+                    param_names(1) = TRIM('EFTGamma60'  )
+                    param_names(2) = TRIM('EFTGamma6Exp')
+                    call self%PureEFTGamma6%set_param_names(param_names)
+                    deallocate(param_names)
                 case default
                     write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma6 =', self%PureEFTmodelGamma6
                     write(*,'(a)')    'Please select an appropriate model.'
