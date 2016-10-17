@@ -121,7 +121,9 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)  :: self   !< the base class
+        class(EFTCAMB_fR_designer)                        :: self              !< the base class
+        character, allocatable, dimension(:)              :: param_names       !< an array of strings containing the names of the function parameters
+        character, allocatable, dimension(:)              :: param_names_latex !< an array of strings containing the names of the function parameters
 
         ! allocate wDE:
         if ( allocated(self%PureEFTwDE) ) deallocate(self%PureEFTwDE)
@@ -135,7 +137,9 @@ contains
                 allocate( param_names(self%PureEFTwDE%parameter_number) )
                 param_names(1) = TRIM('EFTw0')
                 param_names(2) = TRIM('EFTwa')
-                call self%PureEFTwDE%set_param_names(param_names)
+                param_names_latex(1) = TRIM('w_0')
+                param_names_latex(2) = TRIM('w_a')
+                call self%PureEFTwDE%set_param_names(param_names, param_names_latex)
                 deallocate(param_names)
             case(3)
                 allocate( JBP_parametrization_1D::self%PureEFTwDE )
@@ -143,7 +147,10 @@ contains
                 param_names(1) = TRIM('EFTw0')
                 param_names(2) = TRIM('EFTwa')
                 param_names(3) = TRIM('EFTwn')
-                call self%PureEFTwDE%set_param_names(param_names)
+                param_names_latex(1) = TRIM('w_0')
+                param_names_latex(2) = TRIM('w_a')
+                param_names_latex(3) = TRIM('n')
+                call self%PureEFTwDE%set_param_names(param_names, param_names_latex)
                 deallocate(param_names)
             case(4)
                 allocate( turning_point_parametrization_1D::self%PureEFTwDE )
@@ -151,7 +158,10 @@ contains
                 param_names(1) = TRIM('EFTw0' )
                 param_names(2) = TRIM('EFTwa' )
                 param_names(3) = TRIM('EFTwat')
-                call self%PureEFTwDE%set_param_names(param_names)
+                param_names_latex(1) = TRIM('w_0')
+                param_names_latex(2) = TRIM('w_a')
+                param_names_latex(3) = TRIM('a_t')
+                call self%PureEFTwDE%set_param_names(param_names, param_names_latex)
                 deallocate(param_names)
             case(5)
                 allocate( taylor_parametrization_1D::self%PureEFTwDE )
@@ -160,7 +170,11 @@ contains
                 param_names(2) = TRIM('EFTwa')
                 param_names(3) = TRIM('EFTw2')
                 param_names(4) = TRIM('EFTw3')
-                call self%PureEFTwDE%set_param_names(param_names)
+                param_names_latex(1) = TRIM('w_0')
+                param_names_latex(2) = TRIM('w_a')
+                param_names_latex(3) = TRIM('w_2')
+                param_names_latex(3) = TRIM('w_3')
+                call self%PureEFTwDE%set_param_names(param_names, param_names_latex)
                 deallocate(param_names)
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
