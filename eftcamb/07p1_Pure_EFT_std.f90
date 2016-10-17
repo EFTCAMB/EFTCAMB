@@ -152,6 +152,14 @@ contains
                 allocate( wDE_LCDM_parametrization_1D::self%PureEFTwDE )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTwDE )
+            case(2)
+                allocate( CPL_parametrization_1D::self%PureEFTwDE )
+            case(3)
+                allocate( JBP_parametrization_1D::self%PureEFTwDE )
+            case(4)
+                allocate( turning_point_parametrization_1D::self%PureEFTwDE )
+            case(5)
+                allocate( taylor_parametrization_1D::self%PureEFTwDE )
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
