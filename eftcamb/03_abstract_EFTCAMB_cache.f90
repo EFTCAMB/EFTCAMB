@@ -82,8 +82,8 @@ module EFTCAMB_cache
     contains
 
         procedure :: initialize => EFTCAMBParameterCacheInit  !< subroutine that initializes to zero all the elements of the parameter cache.
-        procedure :: print      => EFTCAMBParameterCachePrint !< subroutine that prints the EFTCAMB parameters cache to screen.
         procedure :: is_nan     => EFTCAMBParameterCacheIsNan !< Subroutine that check if an element of the EFTCAMB_parameter_cache is Nan.
+        procedure :: print      => EFTCAMBParameterCachePrint !< subroutine that prints the EFTCAMB parameters cache to screen.
 
     end type EFTCAMB_parameter_cache
 
@@ -240,8 +240,8 @@ module EFTCAMB_cache
         procedure :: initialize        => EFTCAMBTimestepCacheInit      !< subroutine that initializes to zero all the elements of the cache.
         procedure :: is_nan            => EFTCAMBTimestepCacheIsNan     !< Subroutine that check if an element of the EFTCAMB_timestep_cache is Nan.
         procedure :: open_cache_files  => EFTCAMBTimestepCacheOpenFile  !< subroutine that opens the files to dump the cache to file.
-        procedure :: close_cache_files => EFTCAMBTimestepCacheCloseFile !< subroutine that closes the files where the cache has benn dumped.
         procedure :: dump_cache_files  => EFTCAMBTimestepCacheDumpFile  !< subroutine that dumps the cache to the files.
+        procedure :: close_cache_files => EFTCAMBTimestepCacheCloseFile !< subroutine that closes the files where the cache has benn dumped.
 
     end type EFTCAMB_timestep_cache
 
@@ -452,26 +452,70 @@ contains
         class(EFTCAMB_timestep_cache)  :: self    !< the base class.
         character(len=*), intent(in)   :: outroot !< output root of the file.
 
+        logical :: is_open
+
         ! print some feedback:
         write(*,'(a)') "***************************************************************"
         write(*,'(a)') 'EFTCAMB cache opening print files:'
         write(*,'(a)') "***************************************************************"
 
+        ! test whether the files are already open:
+        call test_open( 111  )
+        call test_open( 222  )
+        call test_open( 333  )
+        call test_open( 444  )
+        call test_open( 555  )
+        call test_open( 666  )
+        call test_open( 777  )
+        call test_open( 888  )
+        call test_open( 999  )
+        call test_open( 1111 )
+        call test_open( 2222 )
+
         ! open the files:
-        call CreateTxtFile( TRIM(outroot)//'_cache_FRW.dat'           ,111 )
-        call CreateTxtFile( TRIM(outroot)//'_cache_BDens.dat'         ,222 )
-        call CreateTxtFile( TRIM(outroot)//'_cache_BPres.dat'         ,333 )
-        call CreateTxtFile( TRIM(outroot)//'_cache_BackgroundEFT.dat' ,444 )
-        call CreateTxtFile( TRIM(outroot)//'_cache_SecondOrdEFT.dat'  ,555 )
-        call CreateTxtFile( TRIM(outroot)//'_cache_BackgroundQ.dat'   ,666 )
-        call CreateTxtFile( TRIM(outroot)//'_cache_EinsteinCoeff.dat' ,777 )
-        call CreateTxtFile( TRIM(outroot)//'_cache_PiCoeff.dat'       ,888 )
-        call CreateTxtFile( TRIM(outroot)//'_cache_PiSolution.dat'    ,999 )
-        call CreateTxtFile( TRIM(outroot)//'_cache_EinsteinSol.dat'   ,1111)
-        call CreateTxtFile( TRIM(outroot)//'_cache_TensorCoeff.dat'   ,2222)
+        call CreateTxtFile( TRIM(outroot)//'cache_FRW.dat'           ,111 )
+        call CreateTxtFile( TRIM(outroot)//'cache_BDens.dat'         ,222 )
+        call CreateTxtFile( TRIM(outroot)//'cache_BPres.dat'         ,333 )
+        call CreateTxtFile( TRIM(outroot)//'cache_BackgroundEFT.dat' ,444 )
+        call CreateTxtFile( TRIM(outroot)//'cache_SecondOrdEFT.dat'  ,555 )
+        call CreateTxtFile( TRIM(outroot)//'cache_BackgroundQ.dat'   ,666 )
+        call CreateTxtFile( TRIM(outroot)//'cache_EinsteinCoeff.dat' ,777 )
+        call CreateTxtFile( TRIM(outroot)//'cache_PiCoeff.dat'       ,888 )
+        call CreateTxtFile( TRIM(outroot)//'cache_PiSolution.dat'    ,999 )
+        call CreateTxtFile( TRIM(outroot)//'cache_EinsteinSol.dat'   ,1111)
+        call CreateTxtFile( TRIM(outroot)//'cache_TensorCoeff.dat'   ,2222)
 
         ! write the headers:
-        write (111,'(10a)')  '#', 'a', 'tau', 'adotoa', 'Hdot', 'Hdotdot'
+        write (111 ,'(12a)')  '#', 'a', 'tau', 'k', 'adotoa', 'Hdot', 'Hdotdot'
+        write (222 ,'(12a)')  '#', 'a', 'tau', 'k', 'grhom_t', 'grhob_t', 'grhoc_t', 'grhor_t', 'grhog_t', 'grhov_t', 'grhonu_tot', 'grhonudot_tot'
+        write (333 ,'(12a)')  '#', 'a', 'tau', 'k', 'gpresm_t', 'gpresdotm_t', 'gpiv_t', 'gpinu_tot', 'gpinudot_tot'
+        write (444 ,'(20a)')  '#', 'a', 'tau', 'k', 'EFTOmegaV', 'EFTOmegaP', 'EFTOmegaPP', 'EFTOmegaPPP', 'EFTc', 'EFTcdot', 'EFTLambda', 'EFTLambdadot'
+        write (555 ,'(16a)')  '#', 'a', 'tau', 'k', 'EFTGamma1V', 'EFTGamma1P', 'EFTGamma2V', 'EFTGamma2P', 'EFTGamma3V', 'EFTGamma3P', 'EFTGamma4V', 'EFTGamma4P', 'EFTGamma4PP', 'EFTGamma5V', 'EFTGamma5P', 'EFTGamma6V', 'EFTGamma6P'
+        write (666 ,'(12a)')  '#', 'a', 'tau', 'k', 'grhoq', 'gpresq', 'grhodotq', 'gpresdotq'
+        write (777 ,'(18a)')  '#', 'a', 'tau', 'k', 'EFTeomF', 'EFTeomN', 'EFTeomNdot', 'EFTeomX', 'EFTeomXdot', 'EFTeomY', 'EFTeomG', 'EFTeomU', 'EFTeomL', 'EFTeomM', 'EFTeomV', 'EFTeomVdot'
+        write (888 ,'(14a)')  '#', 'a', 'tau', 'k', 'EFTpiA1', 'EFTpiA2', 'EFTpiB1', 'EFTpiB2', 'EFTpiC', 'EFTpiD1', 'EFTpiD2', 'EFTpiE'
+        write (999 ,'(12a)')  '#', 'a', 'tau', 'k', 'pi', 'pidot', 'pidotdot'
+        write (1111,'(12a)')  '#', 'a', 'tau', 'k', 'z', 'clxg', 'clxr', 'dgpnu', 'dgrho', 'dgq'
+        write (2222,'(12a)')  '#', 'a', 'tau', 'k', 'EFTAT', 'EFTBT', 'EFTDT'
+
+    contains
+
+        ! Temporary subroutine that tests wether a debug file is open.
+        subroutine test_open( number )
+
+            implicit none
+
+            integer, intent(in) :: number
+            logical             :: is_open
+
+            inquire( unit=number, opened=is_open )
+            if ( is_open ) then
+                write(*,*) 'EFTCAMB ERROR: Oputput unit', number, 'is already open.'
+                write(*,*) 'EFTCAMB debug code cannot use it and cannot proceed.'
+                call MpiStop('EFTCAMB error')
+            end if
+
+        end subroutine test_open
 
     end subroutine EFTCAMBTimestepCacheOpenFile
 
@@ -483,6 +527,18 @@ contains
 
         class(EFTCAMB_timestep_cache)  :: self !< the base class.
 
+        ! test wether the files can be closed:
+        call test_close( 111  )
+        call test_close( 222  )
+        call test_close( 333  )
+        call test_close( 444  )
+        call test_close( 555  )
+        call test_close( 666  )
+        call test_close( 777  )
+        call test_close( 888  )
+        call test_close( 999  )
+        call test_close( 1111 )
+        call test_close( 2222 )
         ! close the files:
         close( 111  )
         close( 222  )
@@ -500,6 +556,25 @@ contains
         write(*,'(a)') 'EFTCAMB cache printing done.'
         write(*,'(a)') "***************************************************************"
 
+    contains
+
+        ! Temporary subroutine that tests wether a debug file is open.
+        subroutine test_close( number )
+
+            implicit none
+
+            integer, intent(in) :: number
+            logical             :: is_open
+
+            inquire( unit=number, opened=is_open )
+            if ( .not. is_open ) then
+                write(*,*) 'EFTCAMB ERROR: Oputput unit', number, 'is not open.'
+                write(*,*) 'EFTCAMB is trying to close it and cannot proceed.'
+                call MpiStop('EFTCAMB error')
+            end if
+
+        end subroutine test_close
+
     end subroutine EFTCAMBTimestepCacheCloseFile
 
     ! ---------------------------------------------------------------------------------------------
@@ -511,27 +586,27 @@ contains
         class(EFTCAMB_timestep_cache)  :: self !< the base class.
 
         ! write the background expansion history:
-        write (111 ,'(10'//cache_output_format//')')  self%a, self%tau, self%adotoa, self%Hdot, self%Hdotdot
+        write (111 ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%adotoa, self%Hdot, self%Hdotdot
         ! write the background densities:
-        write (222 ,'(12'//cache_output_format//')')  self%a, self%tau, self%grhom_t, self%grhob_t, self%grhoc_t, self%grhor_t, self%grhog_t, self%grhov_t, self%grhonu_tot, self%grhonudot_tot
+        write (222 ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%grhom_t, self%grhob_t, self%grhoc_t, self%grhor_t, self%grhog_t, self%grhov_t, self%grhonu_tot, self%grhonudot_tot
         ! write the background pressure:
-        write (333 ,'(10'//cache_output_format//')')  self%a, self%tau, self%gpresm_t, self%gpresdotm_t, self%gpiv_t, self%gpinu_tot, self%gpinudot_tot
+        write (333 ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%gpresm_t, self%gpresdotm_t, self%gpiv_t, self%gpinu_tot, self%gpinudot_tot
         ! write background EFT functions:
-        write (444 ,'(12'//cache_output_format//')')  self%a, self%tau, self%EFTOmegaV, self%EFTOmegaP, self%EFTOmegaPP, self%EFTOmegaPPP, self%EFTc, self%EFTcdot, self%EFTLambda, self%EFTLambdadot
+        write (444 ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTOmegaV, self%EFTOmegaP, self%EFTOmegaPP, self%EFTOmegaPPP, self%EFTc, self%EFTcdot, self%EFTLambda, self%EFTLambdadot
         ! write second order EFT functions:
-        write (555 ,'(16'//cache_output_format//')')  self%a, self%tau, self%EFTGamma1V, self%EFTGamma1P, self%EFTGamma2V, self%EFTGamma2P, self%EFTGamma3V, self%EFTGamma3P, self%EFTGamma4V, self%EFTGamma4P, self%EFTGamma4PP, self%EFTGamma5V, self%EFTGamma5P, self%EFTGamma6V, self%EFTGamma6P
+        write (555 ,'(18'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTGamma1V, self%EFTGamma1P, self%EFTGamma2V, self%EFTGamma2P, self%EFTGamma3V, self%EFTGamma3P, self%EFTGamma4V, self%EFTGamma4P, self%EFTGamma4PP, self%EFTGamma5V, self%EFTGamma5P, self%EFTGamma6V, self%EFTGamma6P
         ! write background EFT auxiliary quantities:
-        write (666 ,'(10'//cache_output_format//')')  self%a, self%tau, self%grhoq, self%gpresq, self%grhodotq, self%gpresdotq
+        write (666 ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%grhoq, self%gpresq, self%grhodotq, self%gpresdotq
         ! write Einstein equations coefficients:
-        write (777 ,'(16'//cache_output_format//')')  self%a, self%tau, self%EFTeomF, self%EFTeomN, self%EFTeomNdot, self%EFTeomX, self%EFTeomXdot, self%EFTeomY, self%EFTeomG, self%EFTeomU, self%EFTeomL, self%EFTeomM, self%EFTeomV, self%EFTeomVdot
+        write (777 ,'(18'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTeomF, self%EFTeomN, self%EFTeomNdot, self%EFTeomX, self%EFTeomXdot, self%EFTeomY, self%EFTeomG, self%EFTeomU, self%EFTeomL, self%EFTeomM, self%EFTeomV, self%EFTeomVdot
         ! write pi field coefficients:
-        write (888 ,'(12'//cache_output_format//')')  self%a, self%tau, self%EFTpiA1, self%EFTpiA2, self%EFTpiB1, self%EFTpiB2, self%EFTpiC, self%EFTpiD1, self%EFTpiD2, self%EFTpiE
+        write (888 ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTpiA1, self%EFTpiA2, self%EFTpiB1, self%EFTpiB2, self%EFTpiC, self%EFTpiD1, self%EFTpiD2, self%EFTpiE
         ! write pi field solution:
-        write (999 ,'(10'//cache_output_format//')')  self%a, self%tau, self%pi, self%pidot, self%pidotdot
+        write (999 ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%pi, self%pidot, self%pidotdot
         ! write some perturbations:
-        write (1111,'(10'//cache_output_format//')')  self%a, self%tau, self%z, self%clxg, self%clxr, self%dgpnu, self%dgrho, self%dgq
+        write (1111,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%z, self%clxg, self%clxr, self%dgpnu, self%dgrho, self%dgq
         ! write tensor coefficients:
-        write (2222,'(10'//cache_output_format//')')  self%a, self%tau, self%EFTAT, self%EFTBT, self%EFTDT
+        write (2222,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTAT, self%EFTBT, self%EFTDT
 
     end subroutine EFTCAMBTimestepCacheDumpFile
 
@@ -618,6 +693,7 @@ contains
         class(EFTCAMB_parameter_cache), intent(in)  :: self    !< The base class.
         logical, intent(out)                        :: HaveNan !< Logical variable which describes the presence of a Nan variable.
                                                                !< If an element of the EFTCAMB_parameter_cache is Nan, you get HaveNan=.True.
+
         integer                                     :: i
 
         HaveNan = .False.
@@ -638,7 +714,7 @@ contains
         HaveNan = HaveNan.or.IsNaN(self%grhok)
         HaveNan = HaveNan.or.IsNaN(self%Num_Nu_Massive*1.0_dl)
         HaveNan = HaveNan.or.IsNaN(self%Nu_mass_eigenstates*1.0)
-        !
+
         do i=1, self%Nu_mass_eigenstates
             HaveNan = HaveNan.or.IsNaN(self%grhormass(i)).or.IsNaN(self%nu_masses(i))
         end do

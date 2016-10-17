@@ -158,6 +158,7 @@ module GaugeInterface
     use Transfer
 
     ! EFTCAMB MOD START: use EFTCAMB modules
+    use EFTDef
     use EFTCAMB_abstract_model_full
     use EFTCAMB_abstract_model_designer
     ! EFTCAMB MOD END.
@@ -1608,6 +1609,12 @@ contains
                 sources(3) = 0
             end if
         end if
+
+        ! EFTCAMB MOD START: dump to file the cache if in debug mode.
+        if ( DebugEFTCAMB ) then
+            call EV%eft_cache%dump_cache_files()
+        end if
+        ! EFTCAMB MOD END.
 
     end subroutine output
 

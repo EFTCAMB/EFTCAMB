@@ -188,6 +188,12 @@
     !***note that !$ is the prefix for conditional multi-processor compilation***
     !$ if (ThreadNum /=0) call OMP_SET_NUM_THREADS(ThreadNum)
 
+    ! EFTCAMB MOD START: open files for EFTCAMB debug structure
+    if ( DebugEFTCAMB ) then
+        call EV%eft_cache%open_cache_files( CP%EFTCAMB%outroot )
+    end if
+    ! EFTCAMB MOD END.
+
     if (CP%WantCls) then
         if (DebugMsgs .and. Feedbacklevel > 0) write(*,*) 'Set ',Evolve_q%npoints,' source k values'
 
@@ -217,6 +223,12 @@
         end if
 
     endif !WantCls
+
+    ! EFTCAMB MOD START: close files for EFTCAMB debug structure
+    if ( DebugEFTCAMB ) then
+        call EV%eft_cache%close_cache_files( )
+    end if
+    ! EFTCAMB MOD END.
 
     ! If transfer functions are requested, set remaining k values and output
     if (CP%WantTransfer .and. global_error_flag==0) then

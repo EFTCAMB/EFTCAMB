@@ -47,6 +47,9 @@ module EFTCAMB_main
     !! in EFTCAMB.
     type EFTCAMB
 
+        ! EFTCAMB output root:
+        character(LEN=:), allocatable :: outroot !< The root for auxiliary EFTCAMB output.
+
         ! EFTCAMB model selection flags:
         integer   :: EFTflag              !< Main EFTCAMB model selection flag. Decides one of the four modes to run EFTCAMB.
         integer   :: PureEFTmodel         !< Model selection flag for pure EFT models.

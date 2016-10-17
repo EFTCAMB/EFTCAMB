@@ -127,6 +127,8 @@ program driver
     if ( P%EFTCAMB%EFTFlag /= 0 ) then
         ! print the EFTCAMB header:
         call P%EFTCAMB%EFTCAMB_print_header()
+        ! initialize the output root name:
+        P%EFTCAMB%outroot = TRIM( outroot )
         ! initialize the model from file:
         call P%EFTCAMB%EFTCAMB_init_model_from_file( DefIni )
         ! print feedback:
@@ -310,8 +312,10 @@ program driver
 
     ! EFTCAMB MOD START: suppress parallelization in debug
 #ifdef DEBUG
+    ! set serial execution, problems creating the files otherwise.
     ThreadNum      = 1
 #else
+    ! normal operations:
     ThreadNum      = Ini_Read_Int('number_of_threads',ThreadNum)
 #endif
     ! EFTCAMB MOD END.
