@@ -149,7 +149,7 @@ contains
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelOmega =', self%PureEFTmodelOmega
                 write(*,'(a)')    'Please select an appropriate model.'
         end select
-        ! allocate wDE:  IW: need to add the other parametrizations
+        ! allocate wDE: 
         if ( allocated(self%PureEFTwDE) ) deallocate(self%PureEFTwDE)
         select case ( self%EFTwDE )
             case(0)
