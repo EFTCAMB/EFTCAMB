@@ -123,7 +123,7 @@ contains
 
         class(EFTCAMB_fR_designer)                        :: self              !< the base class
         character, allocatable, dimension(:)              :: param_names       !< an array of strings containing the names of the function parameters
-        character, allocatable, dimension(:)              :: param_names_latex !< an array of strings containing the names of the function parameters
+        character, allocatable, dimension(:)              :: param_names_latex !< an array of strings containing the latex names of the function parameters
 
         ! allocate wDE:
         if ( allocated(self%PureEFTwDE) ) deallocate(self%PureEFTwDE)
@@ -133,17 +133,20 @@ contains
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTwDE )
             case(2)
-                allocate( CPL_parametrization_1D::self%PureEFTwDE )
-                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                allocate( CPL_parametrization_1D::self%PureEFTwDE             )
+                allocate( param_names(self%PureEFTwDE%parameter_number)       )
+                allocate( param_names_latex(self%PureEFTwDE%parameter_number) )
                 param_names(1) = TRIM('EFTw0')
                 param_names(2) = TRIM('EFTwa')
                 param_names_latex(1) = TRIM('w_0')
                 param_names_latex(2) = TRIM('w_a')
                 call self%PureEFTwDE%set_param_names(param_names, param_names_latex)
                 deallocate(param_names)
+                deallocate(param_names_latex)
             case(3)
-                allocate( JBP_parametrization_1D::self%PureEFTwDE )
-                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                allocate( JBP_parametrization_1D::self%PureEFTwDE             )
+                allocate( param_names(self%PureEFTwDE%parameter_number)       )
+                allocate( param_names_latex(self%PureEFTwDE%parameter_number) )
                 param_names(1) = TRIM('EFTw0')
                 param_names(2) = TRIM('EFTwa')
                 param_names(3) = TRIM('EFTwn')
@@ -152,9 +155,11 @@ contains
                 param_names_latex(3) = TRIM('n')
                 call self%PureEFTwDE%set_param_names(param_names, param_names_latex)
                 deallocate(param_names)
+                deallocate(param_names_latex)
             case(4)
-                allocate( turning_point_parametrization_1D::self%PureEFTwDE )
-                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                allocate( turning_point_parametrization_1D::self%PureEFTwDE   )
+                allocate( param_names(self%PureEFTwDE%parameter_number)       )
+                allocate( param_names_latex(self%PureEFTwDE%parameter_number) )
                 param_names(1) = TRIM('EFTw0' )
                 param_names(2) = TRIM('EFTwa' )
                 param_names(3) = TRIM('EFTwat')
@@ -163,9 +168,11 @@ contains
                 param_names_latex(3) = TRIM('a_t')
                 call self%PureEFTwDE%set_param_names(param_names, param_names_latex)
                 deallocate(param_names)
+                deallocate(param_names_latex)
             case(5)
-                allocate( taylor_parametrization_1D::self%PureEFTwDE )
-                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                allocate( taylor_parametrization_1D::self%PureEFTwDE          )
+                allocate( param_names(self%PureEFTwDE%parameter_number)       )
+                allocate( param_names_latex(self%PureEFTwDE%parameter_number) )
                 param_names(1) = TRIM('EFTw0')
                 param_names(2) = TRIM('EFTwa')
                 param_names(3) = TRIM('EFTw2')
@@ -176,6 +183,7 @@ contains
                 param_names_latex(3) = TRIM('w_3')
                 call self%PureEFTwDE%set_param_names(param_names, param_names_latex)
                 deallocate(param_names)
+                deallocate(param_names_latex)
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
