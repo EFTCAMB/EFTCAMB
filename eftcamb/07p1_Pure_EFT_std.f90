@@ -36,6 +36,10 @@ module EFTCAMB_pure_EFT_std
     use EFTCAMB_linear_parametrizations_1D
     use EFTCAMB_power_law_parametrizations_1D
     use EFTCAMB_exponential_parametrizations_1D
+    use EFTCAMB_CPL_parametrizations_1D
+    use EFTCAMB_JBP_parametrizations_1D
+    use EFTCAMB_turning_point_parametrizations_1D
+    use EFTCAMB_taylor_parametrizations_1D
     use EFTCAMB_abstract_model_designer
 
     implicit none
