@@ -22,7 +22,7 @@
 !> This module contains the definition of the generalized Jassal-Bagla-Padmanabhan (JBP) parametrization,
 !! inheriting from parametrized_function_1D.
 
-!> @author Simone Peirone, Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_JBP_parametrizations_1D
 

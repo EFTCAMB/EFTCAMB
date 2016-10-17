@@ -22,7 +22,7 @@
 !> This module contains the definition of the Taylor expansion parametrization, around a=0,
 !! up to third order, inheriting from parametrized_function_1D.
 
-!> @author Simone Peirone, Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_taylor_parametrizations_1D
 

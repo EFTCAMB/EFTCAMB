@@ -22,7 +22,7 @@
 !> This module contains the definition of the turning point parametrization,
 !! inheriting from parametrized_function_1D.
 
-!> @author Simone Peirone, Bin Hu, Marco Raveri
+!> @author Bin Hu, Marco Raveri, Simone Peirone
 
 module EFTCAMB_turning_point_parametrizations_1D
 
