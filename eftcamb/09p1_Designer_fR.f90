@@ -33,6 +33,10 @@ module EFTCAMB_designer_fR
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_neutral_parametrization_1D
     use EFTCAMB_constant_parametrization_1D
+    use EFTCAMB_CPL_parametrizations_1D
+    use EFTCAMB_JBP_parametrizations_1D
+    use EFTCAMB_turning_point_parametrizations_1D
+    use EFTCAMB_taylor_parametrizations_1D
     use EFTCAMB_abstract_model_designer
 
     implicit none
@@ -126,6 +130,38 @@ contains
                 allocate( wDE_LCDM_parametrization_1D::self%PureEFTwDE )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTwDE )
+            case(2)
+                allocate( CPL_parametrization_1D::self%PureEFTwDE )
+                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                param_names(1) = TRIM('EFTw0')
+                param_names(2) = TRIM('EFTwa')
+                call self%PureEFTwDE%set_param_names(param_names)
+                deallocate(param_names)
+            case(3)
+                allocate( JBP_parametrization_1D::self%PureEFTwDE )
+                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                param_names(1) = TRIM('EFTw0')
+                param_names(2) = TRIM('EFTwa')
+                param_names(3) = TRIM('EFTwn')
+                call self%PureEFTwDE%set_param_names(param_names)
+                deallocate(param_names)
+            case(4)
+                allocate( turning_point_parametrization_1D::self%PureEFTwDE )
+                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                param_names(1) = TRIM('EFTw0' )
+                param_names(2) = TRIM('EFTwa' )
+                param_names(3) = TRIM('EFTwat')
+                call self%PureEFTwDE%set_param_names(param_names)
+                deallocate(param_names)
+            case(5)
+                allocate( taylor_parametrization_1D::self%PureEFTwDE )
+                allocate( param_names(self%PureEFTwDE%parameter_number) )
+                param_names(1) = TRIM('EFTw0')
+                param_names(2) = TRIM('EFTwa')
+                param_names(3) = TRIM('EFTw2')
+                param_names(4) = TRIM('EFTw3')
+                call self%PureEFTwDE%set_param_names(param_names)
+                deallocate(param_names)
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
