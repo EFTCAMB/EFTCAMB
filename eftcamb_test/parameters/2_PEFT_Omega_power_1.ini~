@@ -30,8 +30,8 @@ PureEFTmodel     = 1
 #      PureEFTmodel___ = 4 : Exponential model
 #      PureEFTmodel___ = 5 : User defined
 
-PureEFTmodelOmega  = 0
-PureEFTmodelGamma1 = 1
+PureEFTmodelOmega  = 3
+PureEFTmodelGamma1 = 0
 PureEFTmodelGamma2 = 0
 PureEFTmodelGamma3 = 0
 PureEFTmodelGamma4 = 0
@@ -105,15 +105,16 @@ EFTw0  = -1.0
 EFTwa  = 0.0
 EFTwn  = 2
 EFTwat = 0.8
-EFTw2  = 0.1
+EFtw2  = 0.1
 EFTw3  = 0.1
 
 #  2) Pure EFT parameters:
 
-EFTOmega0 = 0.1
-EFTOmegaExp = 1.0
+EFTOmega0 = 1.0
+EFTOmega1 = 2.0
+#EFTOmegaExp = 2.0
 
-EFTGamma10 = 0.1
+EFTGamma10 = 0
 EFTGamma1Exp = 0
 
 EFTGamma20 = 0.1
@@ -141,6 +142,6 @@ EFTB0 = 0.1
 #Parameters for CAMB
 
 #output_root is prefixed to output file names
-output_root = eftcamb_test/results/Spectra_results/2_PEFT_gamma1_const_2
+output_root = eftcamb_test/results/Spectra_results/2_PEFT_Omega_lin_1
 
 DEFAULT(base_params.ini)

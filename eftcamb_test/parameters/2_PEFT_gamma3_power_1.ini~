@@ -31,9 +31,9 @@ PureEFTmodel     = 1
 #      PureEFTmodel___ = 5 : User defined
 
 PureEFTmodelOmega  = 0
-PureEFTmodelGamma1 = 1
+PureEFTmodelGamma1 = 0
 PureEFTmodelGamma2 = 0
-PureEFTmodelGamma3 = 0
+PureEFTmodelGamma3 = 3
 PureEFTmodelGamma4 = 0
 PureEFTmodelGamma5 = 0
 PureEFTmodelGamma6 = 0
@@ -80,7 +80,7 @@ EFTwDE = 0
 # 2) Pure EFT Horndeski: Restricts pure EFT models to Horndeski. Relevant if EFTflag = 1.
 #    Pure EFT choices for gamma_4, gamma_5, gamma_6 will be ignored and handled internally.
 
-PureEFTHorndeski = F
+PureEFTHorndeski = T
 
 # 3) RPH model selection: select a model for the RPH functions. Relevant if EFTflag = 3 and AltParEFTmodel = 1.
 #
@@ -93,7 +93,6 @@ RPHmassPmodel      = 0
 RPHkineticitymodel = 0
 RPHbraidingmodel   = 0
 RPHtensormodel     = 0
-
 ####### Model parameters for EFTCAMB #######
 
 #	Notice that if the model is not selected via the model selection flags then
@@ -105,7 +104,7 @@ EFTw0  = -1.0
 EFTwa  = 0.0
 EFTwn  = 2
 EFTwat = 0.8
-EFTw2  = 0.1
+EFtw2  = 0.1
 EFTw3  = 0.1
 
 #  2) Pure EFT parameters:
@@ -119,8 +118,9 @@ EFTGamma1Exp = 0
 EFTGamma20 = 0.1
 EFTGamma2Exp = 0
 
-EFTGamma30 = 0.001
-EFTGamma3Exp = 0
+EFTGamma30 = 0.5
+EFTGamma3Exp = 0.1
+
 
 EFTGamma40 = 0.001
 EFTGamma4Exp = 0
@@ -141,6 +141,6 @@ EFTB0 = 0.1
 #Parameters for CAMB
 
 #output_root is prefixed to output file names
-output_root = eftcamb_test/results/Spectra_results/2_PEFT_gamma1_const_2
+output_root = eftcamb_test/results/Spectra_results/2_PEFT_gamma3_power_1
 
 DEFAULT(base_params.ini)

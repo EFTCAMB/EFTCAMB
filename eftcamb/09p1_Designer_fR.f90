@@ -34,6 +34,10 @@ module EFTCAMB_designer_fR
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_neutral_parametrization_1D
     use EFTCAMB_constant_parametrization_1D
+    use EFTCAMB_CPL_parametrizations_1D
+    use EFTCAMB_JBP_parametrizations_1D
+    use EFTCAMB_turning_point_parametrizations_1D
+    use EFTCAMB_taylor_parametrizations_1D
     use EFTCAMB_abstract_model_designer
 
     implicit none
@@ -118,7 +122,9 @@ contains
 
         implicit none
 
-        class(EFTCAMB_fR_designer)  :: self   !< the base class
+        class(EFTCAMB_fR_designer)                        :: self              !< the base class
+        character, allocatable, dimension(:)              :: param_names       !< an array of strings containing the names of the function parameters
+        character, allocatable, dimension(:)              :: param_names_latex !< an array of strings containing the latex names of the function parameters
 
         ! allocate wDE:
         if ( allocated(self%PureEFTwDE) ) deallocate(self%PureEFTwDE)
@@ -127,6 +133,18 @@ contains
                 allocate( wDE_LCDM_parametrization_1D::self%PureEFTwDE )
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTwDE )
+            case(2)
+                allocate( CPL_parametrization_1D::self%PureEFTwDE             )
+                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$') /))
+            case(3)
+                allocate( JBP_parametrization_1D::self%PureEFTwDE             )
+                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa'), TRIM('EFTwn') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$'), TRIM('n') /))
+            case(4)
+                allocate( turning_point_parametrization_1D::self%PureEFTwDE   )
+                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa'), TRIM('EFTwat') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$'), TRIM('a_t') /))
+            case(5)
+                allocate( taylor_parametrization_1D::self%PureEFTwDE          )
+                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa'), TRIM('EFTw2'), TRIM('EFTw3') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$'), TRIM('w_2'), TRIM('w_3') /))
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
