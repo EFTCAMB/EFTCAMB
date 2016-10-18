@@ -44,17 +44,18 @@ module equispaced_linear_interpolation_1D
         integer                             :: num_points   !< number of points of the interpolating function.
 
         ! parameters:
-        real(dl)                            :: x_initial    !< first value of x.
-        real(dl)                            :: x_final      !< last value of x.
-        real(dl)                            :: null_value   !< value that is returned if a point outside the range of interpolation is requested.
-        real(dl)                            :: grid_width   !< the width of the interpolating grid.
+        real(dl)                            :: x_initial      !< first value of x.
+        real(dl)                            :: x_final        !< last value of x.
+        real(dl)                            :: null_value     !< value that is returned if a point outside the range of interpolation is requested.
+        logical                             :: has_null_value !< wether to use the null value outside interpolation range. If no null value is passed to initialization assume that function is constant outside interpolation range.
+        real(dl)                            :: grid_width     !< the width of the interpolating grid.
 
         ! arrays with the values:
-        real(dl), allocatable, dimension(:) :: x            !< array containing the values of x.
-        real(dl), allocatable, dimension(:) :: y            !< array containing the values of the function \f$ y_i=f(x_i) \f$.
-        real(dl), allocatable, dimension(:) :: yp           !< array containing the values of the function derivative \f$ yp_i= \frac{d f(x_i)}{dx} \f$.
-        real(dl), allocatable, dimension(:) :: ypp          !< array containing the values of the function second derivative \f$ ypp_i= \frac{d^2 f(x_i)}{dx^2} \f$.
-        real(dl), allocatable, dimension(:) :: yppp         !< array containing the values of the function third derivative \f$ yppp_i= \frac{d^3 f(x_i)}{dx^3} \f$.
+        real(dl), allocatable, dimension(:) :: x              !< array containing the values of x.
+        real(dl), allocatable, dimension(:) :: y              !< array containing the values of the function \f$ y_i=f(x_i) \f$.
+        real(dl), allocatable, dimension(:) :: yp             !< array containing the values of the function derivative \f$ yp_i= \frac{d f(x_i)}{dx} \f$.
+        real(dl), allocatable, dimension(:) :: ypp            !< array containing the values of the function second derivative \f$ ypp_i= \frac{d^2 f(x_i)}{dx^2} \f$.
+        real(dl), allocatable, dimension(:) :: yppp           !< array containing the values of the function third derivative \f$ yppp_i= \frac{d^3 f(x_i)}{dx^3} \f$.
 
     contains
 
@@ -88,9 +89,11 @@ contains
 
         ! initialize the null value:
         if ( present(null_value) ) then
-            self%null_value = null_value
+            self%has_null_value = .true.
+            self%null_value     = null_value
         else
-            self%null_value = 0._dl
+            self%has_null_value = .false.
+            self%null_value     = 0._dl
         end if
 
         ! allocate the x vector:
@@ -139,8 +142,22 @@ contains
 
         ! initialize to null value:
         EquispacedLinearIntepolateFunction1DValue = self%null_value
-        ! if outside the interpolation range return the null value:
-        if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+        if ( self%has_null_value ) then
+            ! if outside the interpolation range return the null value:
+            if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+        else
+            ! if below the interpolation range return the first value:
+            if ( x .lt. self%x_initial ) then
+                EquispacedLinearIntepolateFunction1DValue = self%y(1)
+                return
+            end if
+            ! if above the interpolation range return the first value:
+            if ( x .gt. self%x_final   ) then
+                EquispacedLinearIntepolateFunction1DValue = self%y(self%num_points)
+                return
+            end if
+        end if
+
         ! return the index of the point:
         ind = int( ( x-self%x_initial)/self%grid_width ) +1
 
@@ -169,9 +186,23 @@ contains
         real(dl) :: x1, x2, y1, y2, mu
 
         ! initialize to null value:
-        EquispacedLinearIntepolateFunction1DFirstDerivative = 0._dl
-        ! if outside the interpolation range return the null value:
-        if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+        EquispacedLinearIntepolateFunction1DFirstDerivative = self%null_value
+        if ( self%has_null_value ) then
+            ! if outside the interpolation range return the null value:
+            if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+        else
+            ! if below the interpolation range return the first value:
+            if ( x .lt. self%x_initial ) then
+                EquispacedLinearIntepolateFunction1DFirstDerivative = self%yp(1)
+                return
+            end if
+            ! if above the interpolation range return the first value:
+            if ( x .gt. self%x_final   ) then
+                EquispacedLinearIntepolateFunction1DFirstDerivative = self%yp(self%num_points)
+                return
+            end if
+        end if
+
         ! return the index of the point:
         ind = int( ( x-self%x_initial)/self%grid_width ) +1
 
@@ -200,9 +231,23 @@ contains
         real(dl) :: x1, x2, y1, y2, mu
 
         ! initialize to null value:
-        EquispacedLinearIntepolateFunction1DSecondDerivative = 0._dl
-        ! if outside the interpolation range return the null value:
-        if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+        EquispacedLinearIntepolateFunction1DSecondDerivative = self%null_value
+        if ( self%has_null_value ) then
+            ! if outside the interpolation range return the null value:
+            if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+        else
+            ! if below the interpolation range return the first value:
+            if ( x .lt. self%x_initial ) then
+                EquispacedLinearIntepolateFunction1DSecondDerivative = self%ypp(1)
+                return
+            end if
+            ! if above the interpolation range return the first value:
+            if ( x .gt. self%x_final   ) then
+                EquispacedLinearIntepolateFunction1DSecondDerivative = self%ypp(self%num_points)
+                return
+            end if
+        end if
+
         ! return the index of the point:
         ind = int( ( x-self%x_initial)/self%grid_width ) +1
 
@@ -232,9 +277,23 @@ contains
         real(dl) :: x1, x2, y1, y2, mu
 
         ! initialize to null value:
-        EquispacedLinearIntepolateFunction1DThirdDerivative = 0._dl
-        ! if outside the interpolation range return the null value:
-        if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+        EquispacedLinearIntepolateFunction1DThirdDerivative = self%null_value
+        if ( self%has_null_value ) then
+            ! if outside the interpolation range return the null value:
+            if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+        else
+            ! if below the interpolation range return the first value:
+            if ( x .lt. self%x_initial ) then
+                EquispacedLinearIntepolateFunction1DThirdDerivative = self%yppp(1)
+                return
+            end if
+            ! if above the interpolation range return the first value:
+            if ( x .gt. self%x_final   ) then
+                EquispacedLinearIntepolateFunction1DThirdDerivative = self%yppp(self%num_points)
+                return
+            end if
+        end if
+
         ! return the index of the point:
         ind = int( ( x-self%x_initial)/self%grid_width ) +1
 

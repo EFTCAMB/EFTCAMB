@@ -62,7 +62,7 @@ module EFTCAMB_designer_fR
         ! some designer parameters:
         integer  :: designer_num_points = 1000                            !< Number of points sampled by the designer code.
         real(dl) :: x_initial           = log(10._dl**(-8._dl))           !< log(a start)
-        real(dl) :: x_final             = 0._dl                           !< log(a final)
+        real(dl) :: x_final             = 0.000_dl                        !< log(a final)
 
     contains
 
@@ -185,8 +185,8 @@ contains
         logical  :: success
 
         ! initialize interpolating functions:
-        call self%EFTOmega%initialize  ( self%designer_num_points, self%x_initial, self%x_final, 0._dl )
-        call self%EFTLambda%initialize ( self%designer_num_points, self%x_initial, self%x_final, 0._dl )
+        call self%EFTOmega%initialize  ( self%designer_num_points, self%x_initial, self%x_final )
+        call self%EFTLambda%initialize ( self%designer_num_points, self%x_initial, self%x_final )
 
         ! call boundary conditions lookup:
         call self%find_initial_conditions( params_cache, A_ini, success )

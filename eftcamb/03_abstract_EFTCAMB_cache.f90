@@ -41,7 +41,7 @@ module EFTCAMB_cache
     public EFTCAMB_parameter_cache, EFTCAMB_timestep_cache
 
     ! some settings:
-    character(*), parameter :: cache_output_format = 'd17.10'
+    character(*), parameter :: cache_output_format = 'e18.10'
 
     !----------------------------------------------------------------------------------------
     !> This is the type that defines the EFTCAMB parameter cache. The idea is to copy in here
@@ -486,17 +486,17 @@ contains
         call CreateTxtFile( TRIM(outroot)//'cache_TensorCoeff.dat'   ,2222)
 
         ! write the headers:
-        write (111 ,'(12a)')  '#', 'a', 'tau', 'k', 'adotoa', 'Hdot', 'Hdotdot'
-        write (222 ,'(12a)')  '#', 'a', 'tau', 'k', 'grhom_t', 'grhob_t', 'grhoc_t', 'grhor_t', 'grhog_t', 'grhov_t', 'grhonu_tot', 'grhonudot_tot'
-        write (333 ,'(12a)')  '#', 'a', 'tau', 'k', 'gpresm_t', 'gpresdotm_t', 'gpiv_t', 'gpinu_tot', 'gpinudot_tot'
-        write (444 ,'(20a)')  '#', 'a', 'tau', 'k', 'EFTOmegaV', 'EFTOmegaP', 'EFTOmegaPP', 'EFTOmegaPPP', 'EFTc', 'EFTcdot', 'EFTLambda', 'EFTLambdadot'
-        write (555 ,'(16a)')  '#', 'a', 'tau', 'k', 'EFTGamma1V', 'EFTGamma1P', 'EFTGamma2V', 'EFTGamma2P', 'EFTGamma3V', 'EFTGamma3P', 'EFTGamma4V', 'EFTGamma4P', 'EFTGamma4PP', 'EFTGamma5V', 'EFTGamma5P', 'EFTGamma6V', 'EFTGamma6P'
-        write (666 ,'(12a)')  '#', 'a', 'tau', 'k', 'grhoq', 'gpresq', 'grhodotq', 'gpresdotq'
-        write (777 ,'(18a)')  '#', 'a', 'tau', 'k', 'EFTeomF', 'EFTeomN', 'EFTeomNdot', 'EFTeomX', 'EFTeomXdot', 'EFTeomY', 'EFTeomG', 'EFTeomU', 'EFTeomL', 'EFTeomM', 'EFTeomV', 'EFTeomVdot'
-        write (888 ,'(14a)')  '#', 'a', 'tau', 'k', 'EFTpiA1', 'EFTpiA2', 'EFTpiB1', 'EFTpiB2', 'EFTpiC', 'EFTpiD1', 'EFTpiD2', 'EFTpiE'
-        write (999 ,'(12a)')  '#', 'a', 'tau', 'k', 'pi', 'pidot', 'pidotdot'
-        write (1111,'(12a)')  '#', 'a', 'tau', 'k', 'z', 'clxg', 'clxr', 'dgpnu', 'dgrho', 'dgq'
-        write (2222,'(12a)')  '#', 'a', 'tau', 'k', 'EFTAT', 'EFTBT', 'EFTDT'
+        write (111 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'adotoa ', 'Hdot ', 'Hdotdot '
+        write (222 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'grhom_t ', 'grhob_t ', 'grhoc_t ', 'grhor_t ', 'grhog_t ', 'grhov_t ', 'grhonu_tot ', 'grhonudot_tot '
+        write (333 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'gpresm_t ', 'gpresdotm_t ', 'gpiv_t ', 'gpinu_tot ', 'gpinudot_tot '
+        write (444 ,'(20a)')  '# ', 'a ', 'tau ', 'k ', 'EFTOmegaV ', 'EFTOmegaP ', 'EFTOmegaPP ', 'EFTOmegaPPP ', 'EFTc ', 'EFTcdot ', 'EFTLambda ', 'EFTLambdadot '
+        write (555 ,'(16a)')  '# ', 'a ', 'tau ', 'k ', 'EFTGamma1V ', 'EFTGamma1P ', 'EFTGamma2V ', 'EFTGamma2P ', 'EFTGamma3V ', 'EFTGamma3P ', 'EFTGamma4V ', 'EFTGamma4P ', 'EFTGamma4PP ', 'EFTGamma5V ', 'EFTGamma5P ', 'EFTGamma6V ', 'EFTGamma6P '
+        write (666 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'grhoq ', 'gpresq ', 'grhodotq ', 'gpresdotq '
+        write (777 ,'(18a)')  '# ', 'a ', 'tau ', 'k ', 'EFTeomF ', 'EFTeomN ', 'EFTeomNdot ', 'EFTeomX ', 'EFTeomXdot ', 'EFTeomY ', 'EFTeomG ', 'EFTeomU ', 'EFTeomL ', 'EFTeomM ', 'EFTeomV ', 'EFTeomVdot '
+        write (888 ,'(14a)')  '# ', 'a ', 'tau ', 'k ', 'EFTpiA1 ', 'EFTpiA2 ', 'EFTpiB1 ', 'EFTpiB2 ', 'EFTpiC ', 'EFTpiD1 ', 'EFTpiD2 ', 'EFTpiE '
+        write (999 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'pi ', 'pidot ', 'pidotdot '
+        write (1111,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'z ', 'clxg ', 'clxr ', 'dgpnu ', 'dgrho ', 'dgq '
+        write (2222,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'EFTAT ', 'EFTBT ', 'EFTDT '
 
     contains
 

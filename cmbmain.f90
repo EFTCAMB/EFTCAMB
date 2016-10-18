@@ -957,6 +957,35 @@
     tau=taustart
     ind=1
 
+    if (fixq/=0._dl) then
+
+        ! EFTCAMB MOD START: debug one k mode
+        if ( DebugEFTCAMB ) then
+            write(*,*) 'EFTCAMB printing evolution of scalar variables at k=', fixq
+        end if
+
+        tol1=tol/exp(AccuracyBoost-1)
+        !do j=1,1000
+        do j=2,TimeSteps%npoints
+
+            !tauend = taustart +REAL(j-1)*(CP%tau0-taustart)/REAL(10000-1)
+            tauend=TimeSteps%points(j)
+
+            call GaugeInterface_EvolveScal(EV,tau,y,tauend,tol1,ind,c,w)
+
+            call output(EV,y,j,tau,sources)
+
+        end do
+
+        if ( DebugEFTCAMB ) then
+            call EV%eft_cache%close_cache_files( )
+        end if
+        ! EFTCAMB MOD END.
+
+        stop
+
+    end if
+
     !     Begin timestep loop.
 
     itf=1
