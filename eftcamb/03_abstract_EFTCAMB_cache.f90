@@ -500,7 +500,7 @@ contains
 
     contains
 
-        ! Temporary subroutine that tests wether a debug file is open.
+        ! Temporary subroutine that tests wether a cache file is open.
         subroutine test_open( number )
 
             implicit none
@@ -511,7 +511,7 @@ contains
             inquire( unit=number, opened=is_open )
             if ( is_open ) then
                 write(*,*) 'EFTCAMB ERROR: Oputput unit', number, 'is already open.'
-                write(*,*) 'EFTCAMB debug code cannot use it and cannot proceed.'
+                write(*,*) 'EFTCAMB cannot use it and cannot proceed.'
                 call MpiStop('EFTCAMB error')
             end if
 
@@ -558,7 +558,7 @@ contains
 
     contains
 
-        ! Temporary subroutine that tests wether a debug file is open.
+        ! Temporary subroutine that tests wether a cahce file is open.
         subroutine test_close( number )
 
             implicit none

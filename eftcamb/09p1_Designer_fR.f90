@@ -28,6 +28,7 @@ module EFTCAMB_designer_fR
     use IniFile
     use AMLutils
     use equispaced_linear_interpolation_1D
+    use EFTDef
     use EFTCAMB_rootfind
     use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_1D
@@ -62,27 +63,27 @@ module EFTCAMB_designer_fR
         ! some designer parameters:
         integer  :: designer_num_points = 1000                            !< Number of points sampled by the designer code.
         real(dl) :: x_initial           = log(10._dl**(-8._dl))           !< log(a start)
-        real(dl) :: x_final             = 0.000_dl                        !< log(a final)
+        real(dl) :: x_final             = 0.0_dl                          !< log(a final)
 
     contains
 
         ! initialization of the model:
-        procedure :: read_model_selection            => EFTCAMBDesignerFRReadModelSelectionFromFile  !< subroutine that reads the parameters of the model from file
-        procedure :: allocate_model_selection        => EFTCAMBDesignerFRAllocateModelSelection      !< subroutine that allocates the model selection.
-        procedure :: init_model_parameters           => EFTCAMBDesignerFRInitModelParameters         !< subroutine taht initializes the model parameters based on the values found in an input array.
-        procedure :: init_model_parameters_from_file => EFTCAMBDesignerFRInitModelParametersFromFile !< subroutine that reads the parameters of the model from file.
+        procedure :: read_model_selection            => EFTCAMBDesignerFRReadModelSelectionFromFile   !< subroutine that reads the parameters of the model from file
+        procedure :: allocate_model_selection        => EFTCAMBDesignerFRAllocateModelSelection       !< subroutine that allocates the model selection.
+        procedure :: init_model_parameters           => EFTCAMBDesignerFRInitModelParameters          !< subroutine taht initializes the model parameters based on the values found in an input array.
+        procedure :: init_model_parameters_from_file => EFTCAMBDesignerFRInitModelParametersFromFile  !< subroutine that reads the parameters of the model from file.
 
         ! background solver:
-        procedure :: initialize_background           => EFTCAMBDesignerFRInitBackground   !< subroutine that initializes the background of designer f(R).
-        procedure :: solve_designer_equations        => EFTCAMBDesignerFRSolveDesignerEquations !< subroutine that solves the designer f(R) background equations.
-        procedure :: find_initial_conditions         => EFTCAMBDesignerFRFindInitialConditions  !< subroutine that solves the background equations several time to determine the values of the initial conditions.
+        procedure :: initialize_background           => EFTCAMBDesignerFRInitBackground               !< subroutine that initializes the background of designer f(R).
+        procedure :: solve_designer_equations        => EFTCAMBDesignerFRSolveDesignerEquations       !< subroutine that solves the designer f(R) background equations.
+        procedure :: find_initial_conditions         => EFTCAMBDesignerFRFindInitialConditions        !< subroutine that solves the background equations several time to determine the values of the initial conditions.
 
         ! utility functions:
-        procedure :: compute_param_number  => EFTCAMBDesignerFRComputeParametersNumber    !< subroutine that computes the number of parameters of the model.
-        procedure :: feedback              => EFTCAMBDesignerFRFeedback                   !< subroutine that prints on the screen feedback information about the model.
-        procedure :: parameter_names       => EFTCAMBDesignerFRParameterNames             !< subroutine that returns the i-th parameter name of the model.
-        procedure :: parameter_names_latex => EFTCAMBDesignerFRParameterNamesLatex        !< subroutine that returns the i-th parameter name of the model.
-        procedure :: parameter_values      => EFTCAMBDesignerFRParameterValues            !< subroutine that returns the i-th parameter value.
+        procedure :: compute_param_number  => EFTCAMBDesignerFRComputeParametersNumber     !< subroutine that computes the number of parameters of the model.
+        procedure :: feedback              => EFTCAMBDesignerFRFeedback                    !< subroutine that prints on the screen feedback information about the model.
+        procedure :: parameter_names       => EFTCAMBDesignerFRParameterNames              !< subroutine that returns the i-th parameter name of the model.
+        procedure :: parameter_names_latex => EFTCAMBDesignerFRParameterNamesLatex         !< subroutine that returns the i-th parameter name of the model.
+        procedure :: parameter_values      => EFTCAMBDesignerFRParameterValues             !< subroutine that returns the i-th parameter value.
 
         ! CAMB related procedures:
         procedure :: compute_background_EFT_functions  => EFTCAMBDesignerFRBackgroundEFTFunctions   !< subroutine that computes the value of the background EFT functions at a given time.
@@ -150,7 +151,7 @@ contains
         self%B0 = array(1)
 
         do i = 1, self%parameter_number -1
-          temp(i) = array(i+1)
+            temp(i) = array(i+1)
         end do
         call self%PureEFTwDE%init_parameters(temp)
 
@@ -183,10 +184,34 @@ contains
 
         real(dl) :: A_ini, B0
         logical  :: success
+        real(dl) :: TempMin, TempMax, debug_A
+        integer  :: Debug_MaxNum, Debug_n
 
         ! initialize interpolating functions:
         call self%EFTOmega%initialize  ( self%designer_num_points, self%x_initial, self%x_final )
         call self%EFTLambda%initialize ( self%designer_num_points, self%x_initial, self%x_final )
+
+        ! debug code:
+        if ( DebugEFTCAMB ) then
+            ! print the function B0(A). This is used to debug the initial conditions part.
+            call CreateTxtFile( './DebugDesignerB.dat', 34 )
+            print*, 'EFTCAMB DEBUG ( f(R) designer ): Printing B(A) results'
+            TempMin      = -10._dl
+            TempMax      = +10._dl
+            Debug_MaxNum = 1000
+            do Debug_n = 1, Debug_MaxNum
+                debug_A = TempMin +REAL(Debug_n-1)*(TempMax-TempMin)/REAL(Debug_MaxNum-1)
+                call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.True. )
+                write(34,*) debug_A, B0
+            end do
+            close(34)
+            ! prints f(R) quantities.
+            print*, 'EFTCAMB DEBUG ( f(R) designer ):  Printing F(R) results'
+            call CreateTxtFile( './DebugDesigner.dat', 33 )
+            debug_A = 1.0_dl
+            call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.False. )
+            close(33)
+        end if
 
         ! call boundary conditions lookup:
         call self%find_initial_conditions( params_cache, A_ini, success )
@@ -296,16 +321,13 @@ contains
 
         ! 5) solve the equations:
         do i=1, self%EFTOmega%num_points-1
+
             ! set the time step:
             t1 = self%EFTOmega%x(i)
             t2 = self%EFTOmega%x(i+1)
             ! solve the system:
-            !call DLSODA ( derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, RWORK, LRW, IWORK, LIW, jacobian, JacobianMode)
+            call DLSODA ( derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, RWORK, LRW, IWORK, LIW, jacobian, JacobianMode)
             ! check istate for LSODA good completion:
-
-
-            call  derivs(num_eq, t1, y, ydot)
-            call  EFT_rk4(num_eq, y, ydot, t1, self%EFTOmega%grid_width, y, derivs)
 
             ! compute output EFT functions if needed:
             if ( .not. only_B0 ) then
@@ -477,6 +499,7 @@ contains
             real(dl) :: EFunction, EFunPrime, adotoa, Hdot, presnudot, presnudotdot
             real(dl) :: EFunPrime2, EFunPrime3, Ricci, f_sub_R, Ede, Edep, Edepp
             integer  :: nu_i
+            logical  :: is_open
 
             ! 1) convert x in a:
             a = Exp(x)
@@ -578,8 +601,8 @@ contains
             call derivs( num_eq, x, y, ydot )
 
             ! Compute the Ricci:
-            Ricci   = 3._dl*(4._dl*EFunction+EFunPrime)
-            f_sub_R = ydot(1)/3._dl/(4._dl*EFunPrime +EFunPrime2)
+            Ricci    = 3._dl*(4._dl*EFunction+EFunPrime)
+            f_sub_R  = ydot(1)/3._dl/(4._dl*EFunPrime +EFunPrime2)
 
             ! compute B:
             B       = 2._dl/3._dl/(1._dl +f_sub_R)*1._dl/(4._dl*EFunPrime +EFunPrime2)*EFunction/EFunPrime*&
@@ -589,7 +612,6 @@ contains
             self%EFTOmega%y(ind)    = f_sub_R
             self%EFTOmega%yp(ind)   = Exp(-x)/(6._dl*EFunction*(EFunPrime2+4._dl*EFunPrime))*(-EFunPrime2*(6._dl*Ede+y(1))&
                 &+EFunPrime*(ydot(1)-4._dl*(6._dl*Ede +y(1)))+2._dl*EFunction*ydot(1))
-
             self%EFTOmega%ypp(ind)  = Exp(-2._dl*x)/(12._dl*EFunction**2*(EFunPrime2+4._dl*EFunPrime))*&
                 &(EFunPrime*(EFunPrime*(24._dl*Ede-ydot(1) +4._dl*y(1))-6._dl*EFunction*(8._dl*Edep +ydot(1)))&
                 &+EFunPrime2*(EFunPrime*(6._dl*Ede +y(1))-12._dl*EFunction*Edep))
@@ -603,59 +625,16 @@ contains
             self%EFTLambda%y(ind)   = 0.5_dl*params_cache%h0_Mpc**2*( y(1) -f_sub_R*Ricci )*Exp(x)**2
             self%EFTLambda%yp(ind)  = -1.5_dl*params_cache%h0_Mpc**3*Sqrt(EFunction)*(Exp(x)**4*self%EFTOmega%yp(ind)*(4._dl*EFunction+EFunPrime))
 
+            if ( DebugEFTCAMB ) then
+                inquire( unit=33, opened=is_open )
+                if ( is_open ) then
+                    write (33,'(20E15.5)') x, Exp(x), Ricci, y(1), &
+                        & self%EFTOmega%y(ind), self%EFTOmega%yp(ind), self%EFTOmega%ypp(ind), self%EFTOmega%yppp(ind), self%EFTLambda%y(ind), self%EFTLambda%yp(ind),&
+                        & B
+                end if
+            end if
+
         end subroutine
-
-        ! ---------------------------------------------------------------------------------------------
-
-        ! -------------------------------------------------------------------------------------------------
-
-        !   5) Fourth order Runge-Kutta.
-        !      This is a very simple algorithm that is used to solve the designer equation.
-        !
-
-        subroutine EFT_rk4(n, y, dydx, x, h, yout, deriv)
-            ! n     = dimensionality of the problem;
-            ! y     = 'position' at t=x;
-            ! dydx  = 'velocity' at t=x;
-            ! x     = initial time;
-            ! h     = time step;
-            ! yout  = 'position' at t=x+h computed using fourth order Runge-Kutta;
-            ! deriv = name of the subroutine that computes dydx.
-            use precision
-            implicit none
-
-            real(dl) :: x, h
-            integer  :: n
-            real(dl), dimension(n) :: y, dydx, yout
-
-            external deriv
-
-            real(dl), dimension(n) :: yt, dyt,dym
-            real(dl) :: hh,h6,xh
-            integer :: i
-
-            hh=h*0.5_dl
-            h6=h/6._dl
-
-            xh=x+hh
-            yt=y+hh*dydx
-
-            call deriv(n, xh, yt, dyt)
-
-            yt=y+hh*dyt
-
-            call deriv(n, xh, yt, dym)
-
-            yt  =y+h*dym
-            dym =dyt+dym
-
-            call deriv(n, x+h, yt, dyt)
-
-            yout=y+h6*(dydx+dyt+2.0*dym)
-
-            return
-        end subroutine EFT_rk4
-
 
     end subroutine EFTCAMBDesignerFRSolveDesignerEquations
 
@@ -844,17 +823,17 @@ contains
 
         ! check validity of input:
         if ( i<=0 .or. i>self%parameter_number ) then
-          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
-          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
-          call MpiStop('EFTCAMB error')
+            write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
+            write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+            call MpiStop('EFTCAMB error')
         ! the first parameter is B0:
         else if ( i==1 ) then
-          name = TRIM('B0')
-          return
+            name = TRIM('B0')
+            return
         ! the other parameters are the w_DE parameters:
         else
-          call self%PureEFTwDE%parameter_names( i-1, name )
-          return
+            call self%PureEFTwDE%parameter_names( i-1, name )
+            return
         end if
 
     end subroutine EFTCAMBDesignerFRParameterNames
@@ -871,17 +850,17 @@ contains
 
         ! check validity of input:
         if ( i<=0 .or. i>self%parameter_number ) then
-          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
-          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
-          call MpiStop('EFTCAMB error')
+            write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
+            write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+            call MpiStop('EFTCAMB error')
         ! the first parameter is B0:
         else if ( i==1 ) then
-          latexname = TRIM('B_0')
-          return
+            latexname = TRIM('B_0')
+            return
         ! the other parameters are the w_DE parameters:
         else
-          call self%PureEFTwDE%parameter_names_latex( i-1, latexname )
-          return
+            call self%PureEFTwDE%parameter_names_latex( i-1, latexname )
+            return
         end if
 
     end subroutine EFTCAMBDesignerFRParameterNamesLatex
@@ -898,17 +877,17 @@ contains
 
         ! check validity of input:
         if ( i<=0 .or. i>self%parameter_number ) then
-          write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
-          write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
-          call MpiStop('EFTCAMB error')
+            write(*,'(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
+            write(*,'(a,I3)') 'Total number of parameters is ', self%parameter_number
+            call MpiStop('EFTCAMB error')
         ! the first parameter is B0:
         else if ( i==1 ) then
-          value = self%B0
-          return
+            value = self%B0
+            return
         ! the other parameters are the w_DE parameters:
         else
-          call self%PureEFTwDE%parameter_value( i-1, value )
-          return
+            call self%PureEFTwDE%parameter_value( i-1, value )
+            return
         end if
 
     end subroutine EFTCAMBDesignerFRParameterValues
