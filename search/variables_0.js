@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['altpareftmodel',['altpareftmodel',['../structeftcamb__main_1_1eftcamb.html#aba8460d08d2db02dad1175eb9ada40bd',1,'eftcamb_main::eftcamb']]]
+  ['debugeftcamb',['debugeftcamb',['../namespaceeftdef.html#a03a61799cd65163332bec80b7371089f',1,'eftdef']]]
 ];

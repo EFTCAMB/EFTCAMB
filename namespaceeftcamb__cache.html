@@ -90,15 +90,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>This module contains the definition of a time step cache for EFTCAMB. To perform EFTCAMB calculations, at any timestep, we need several quantities. Densities, values of the EFT functions and so on. Instead of complicating the interface of the functions we shall define a type that holds all these informations. We also need a cache for cosmological parameters that are used in the calculations.  
+<p>This module contains the definition of the EFTCAMB caches. These are used to store parameters that can be used by EFTCAMB, in EFTCAMB_parameter_cache or are used to store partial results when solving the time evolution of perturbations, in EFTCAMB_timestep_cache.  
 <a href="#details">More...</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Types</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__cache_1_1Nu__pidot__Wrapper.html">Nu_pidot_Wrapper</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper to the function that computes the background massive neutrinos time derivative of pressure.  <a href="interfaceeftcamb__cache_1_1Nu__pidot__Wrapper.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__cache_1_1Nu__pidotdot__Wrapper.html">Nu_pidotdot_Wrapper</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wwrapper to the function that computes the background massive neutrinos second time derivative of pressure.  <a href="interfaceeftcamb__cache_1_1Nu__pidotdot__Wrapper.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceeftcamb__cache_1_1Nu__rho__Wrapper.html">Nu_rho_Wrapper</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper to the subroutine that computes the background massive neutrinos density.  <a href="interfaceeftcamb__cache_1_1Nu__rho__Wrapper.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This module contains the definition of a time step cache for EFTCAMB. To perform EFTCAMB calculations, at any timestep, we need several quantities. Densities, values of the EFT functions and so on. Instead of complicating the interface of the functions we shall define a type that holds all these informations. We also need a cache for cosmological parameters that are used in the calculations. </p>
-<dl class="section author"><dt>Author</dt><dd>Bin Hu, Marco Raveri </dd></dl>
+<div class="textblock"><p>This module contains the definition of the EFTCAMB caches. These are used to store parameters that can be used by EFTCAMB, in EFTCAMB_parameter_cache or are used to store partial results when solving the time evolution of perturbations, in EFTCAMB_timestep_cache. </p>
+<dl class="section author"><dt>Author</dt><dd>Bin Hu, Marco Raveri, Simone Peirone </dd></dl>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 29 2016 15:13:41 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 18 2016 22:08:17 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

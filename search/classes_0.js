@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['eftcamb',['eftcamb',['../structeftcamb__main_1_1eftcamb.html',1,'eftcamb_main']]],
   ['eftcambmodelallocatemodelselection',['EFTCAMBModelAllocateModelSelection',['../interfaceeftcamb__abstract__model_1_1EFTCAMBModelAllocateModelSelection.html',1,'eftcamb_abstract_model']]],
   ['eftcambmodelbackgroundeftfunctions',['EFTCAMBModelBackgroundEFTFunctions',['../interfaceeftcamb__abstract__model_1_1EFTCAMBModelBackgroundEFTFunctions.html',1,'eftcamb_abstract_model']]],
   ['eftcambmodelcomputeadotoa',['EFTCAMBModelComputeAdotoa',['../interfaceeftcamb__abstract__model_1_1EFTCAMBModelComputeAdotoa.html',1,'eftcamb_abstract_model']]],

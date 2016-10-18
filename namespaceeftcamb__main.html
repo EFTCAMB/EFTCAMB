@@ -85,7 +85,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Types</a> &#124;
-<a href="#func-members">Functions/Subroutines</a> &#124;
 <a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
 <div class="title">eftcamb_main Module Reference</div>  </div>
@@ -95,319 +94,33 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>This module contains the general EFTCAMB driver. We have a type that encapsulate all EFTCAMB parameters and stuff and this is owned by CAMB to do all EFT calculations.  
 <a href="#details">More...</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structeftcamb__main_1_1eftcamb.html">eftcamb</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is the main object for EFTCAMB. Get one of these and you can use all the stuff in EFTCAMB.  <a href="structeftcamb__main_1_1eftcamb.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions/Subroutines</h2></td></tr>
-<tr class="memitem:af0d03800312a6fd78693242ff006ea21"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__main.html#af0d03800312a6fd78693242ff006ea21">read_eftcamb_flags_from_file</a> (self, Ini)</td></tr>
-<tr class="memdesc:af0d03800312a6fd78693242ff006ea21"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that reads from file the values of the EFTCAMB flags.  <a href="#af0d03800312a6fd78693242ff006ea21">More...</a><br /></td></tr>
-<tr class="separator:af0d03800312a6fd78693242ff006ea21"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8bfc5180ebebd7bb6482a130157405a8"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__main.html#a8bfc5180ebebd7bb6482a130157405a8">init_eftcamb_model_from_file</a> (self, Ini)</td></tr>
-<tr class="memdesc:a8bfc5180ebebd7bb6482a130157405a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that initializes the selected model from file.  <a href="#a8bfc5180ebebd7bb6482a130157405a8">More...</a><br /></td></tr>
-<tr class="separator:a8bfc5180ebebd7bb6482a130157405a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d0a9d9916f1610f3a14ab7c5643a25f"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__main.html#a5d0a9d9916f1610f3a14ab7c5643a25f">print_eftcamb_header</a> (self)</td></tr>
-<tr class="memdesc:a5d0a9d9916f1610f3a14ab7c5643a25f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that prints to screen the EFTCAMB header.  <a href="#a5d0a9d9916f1610f3a14ab7c5643a25f">More...</a><br /></td></tr>
-<tr class="separator:a5d0a9d9916f1610f3a14ab7c5643a25f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a737bf4f7e31daac4d7a693697a61e075"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__main.html#a737bf4f7e31daac4d7a693697a61e075">print_eftcamb_flags</a> (self)</td></tr>
-<tr class="memdesc:a737bf4f7e31daac4d7a693697a61e075"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that prints to screen informations about the model and the model parameters.  <a href="#a737bf4f7e31daac4d7a693697a61e075">More...</a><br /></td></tr>
-<tr class="separator:a737bf4f7e31daac4d7a693697a61e075"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a89143d4da46841f0e8f237deb04e38c5"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__main.html#a89143d4da46841f0e8f237deb04e38c5">allocate_eftcamb_model</a> (self)</td></tr>
-<tr class="memdesc:a89143d4da46841f0e8f237deb04e38c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that allocates the EFTCAMB model based on the model selection flags. If implementing a new model this is the place to allocate it.  <a href="#a89143d4da46841f0e8f237deb04e38c5">More...</a><br /></td></tr>
-<tr class="separator:a89143d4da46841f0e8f237deb04e38c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42b49dbcc1098a152ab3687a1cdbac5c"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__main.html#a42b49dbcc1098a152ab3687a1cdbac5c">read_eftcamb_model_selection</a> (self, Ini)</td></tr>
-<tr class="memdesc:a42b49dbcc1098a152ab3687a1cdbac5c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that reads the model selection parameters. Just a wrapper to the model specific subroutine.  <a href="#a42b49dbcc1098a152ab3687a1cdbac5c">More...</a><br /></td></tr>
-<tr class="separator:a42b49dbcc1098a152ab3687a1cdbac5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abbeb73d21002a826b318fb5dcabe9c04"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__main.html#abbeb73d21002a826b318fb5dcabe9c04">allocate_eftcamb_model_functions</a> (self)</td></tr>
-<tr class="memdesc:abbeb73d21002a826b318fb5dcabe9c04"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that, based on the model specific selection flags allocates the EFTCAMB model functions. Just a wrapper to the model specific subroutine.  <a href="#abbeb73d21002a826b318fb5dcabe9c04">More...</a><br /></td></tr>
-<tr class="separator:abbeb73d21002a826b318fb5dcabe9c04"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab75ad35d7ff1339bccc399847258e13c"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__main.html#ab75ad35d7ff1339bccc399847258e13c">read_eftcamb_model_parameters</a> (self, Ini)</td></tr>
-<tr class="memdesc:ab75ad35d7ff1339bccc399847258e13c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that reads the model parameters. Just a wrapper to the model specific subroutine.  <a href="#ab75ad35d7ff1339bccc399847258e13c">More...</a><br /></td></tr>
-<tr class="separator:ab75ad35d7ff1339bccc399847258e13c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a58c49fce6eb4cf870db8ceecd168c4be"><td class="memItemLeft" align="right" valign="top">character(len=*), parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__main.html#a58c49fce6eb4cf870db8ceecd168c4be">eftcamb_version</a> = 'V3.0 Aug16'</td></tr>
-<tr class="separator:a58c49fce6eb4cf870db8ceecd168c4be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab745aef751d890a6f120d1c73b70db99"><td class="memItemLeft" align="right" valign="top">character(len=*), parameter, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__main.html#ab745aef751d890a6f120d1c73b70db99">eftcamb_version</a> = 'V3.0 Oct16'</td></tr>
+<tr class="separator:ab745aef751d890a6f120d1c73b70db99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This module contains the general EFTCAMB driver. We have a type that encapsulate all EFTCAMB parameters and stuff and this is owned by CAMB to do all EFT calculations. </p>
-<dl class="section author"><dt>Author</dt><dd>Bin Hu, Marco Raveri </dd></dl>
-</div><h2 class="groupheader">Function/Subroutine Documentation</h2>
-<a class="anchor" id="a89143d4da46841f0e8f237deb04e38c5"></a>
+<dl class="section author"><dt>Author</dt><dd>Bin Hu, Marco Raveri, Simone Peirone </dd></dl>
+</div><h2 class="groupheader">Variable Documentation</h2>
+<a class="anchor" id="ab745aef751d890a6f120d1c73b70db99"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">subroutine eftcamb_main::allocate_eftcamb_model </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__main_1_1eftcamb.html">eftcamb</a>)&#160;</td>
-          <td class="paramname"><em>self</em></td><td>)</td>
-          <td></td>
+          <td class="memname">character(len=*), parameter, public eftcamb_main::eftcamb_version = 'V3.0 Oct16'</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Subroutine that allocates the EFTCAMB model based on the model selection flags. If implementing a new model this is the place to allocate it. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">self</td><td>the base class </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__main_8f90_source.html#l00212">212</a> of file <a class="el" href="11__EFTCAMB__main_8f90_source.html">11_EFTCAMB_main.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="abbeb73d21002a826b318fb5dcabe9c04"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_main::allocate_eftcamb_model_functions </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__main_1_1eftcamb.html">eftcamb</a>)&#160;</td>
-          <td class="paramname"><em>self</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that, based on the model specific selection flags allocates the EFTCAMB model functions. Just a wrapper to the model specific subroutine. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">self</td><td>the base class </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__main_8f90_source.html#l00288">288</a> of file <a class="el" href="11__EFTCAMB__main_8f90_source.html">11_EFTCAMB_main.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="a8bfc5180ebebd7bb6482a130157405a8"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_main::init_eftcamb_model_from_file </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__main_1_1eftcamb.html">eftcamb</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(tinifile)&#160;</td>
-          <td class="paramname"><em>Ini</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that initializes the selected model from file. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramname">ini</td><td>Input ini file </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__main_8f90_source.html#l00114">114</a> of file <a class="el" href="11__EFTCAMB__main_8f90_source.html">11_EFTCAMB_main.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="a737bf4f7e31daac4d7a693697a61e075"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_main::print_eftcamb_flags </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__main_1_1eftcamb.html">eftcamb</a>)&#160;</td>
-          <td class="paramname"><em>self</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that prints to screen informations about the model and the model parameters. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">self</td><td>the base class </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__main_8f90_source.html#l00159">159</a> of file <a class="el" href="11__EFTCAMB__main_8f90_source.html">11_EFTCAMB_main.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="a5d0a9d9916f1610f3a14ab7c5643a25f"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_main::print_eftcamb_header </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__main_1_1eftcamb.html">eftcamb</a>)&#160;</td>
-          <td class="paramname"><em>self</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that prints to screen the EFTCAMB header. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">self</td><td>the base class </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__main_8f90_source.html#l00136">136</a> of file <a class="el" href="11__EFTCAMB__main_8f90_source.html">11_EFTCAMB_main.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="af0d03800312a6fd78693242ff006ea21"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_main::read_eftcamb_flags_from_file </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__main_1_1eftcamb.html">eftcamb</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(tinifile)&#160;</td>
-          <td class="paramname"><em>Ini</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that reads from file the values of the EFTCAMB flags. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramname">ini</td><td>Input ini file </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__main_8f90_source.html#l00087">87</a> of file <a class="el" href="11__EFTCAMB__main_8f90_source.html">11_EFTCAMB_main.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="ab75ad35d7ff1339bccc399847258e13c"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_main::read_eftcamb_model_parameters </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__main_1_1eftcamb.html">eftcamb</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(tinifile)&#160;</td>
-          <td class="paramname"><em>Ini</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that reads the model parameters. Just a wrapper to the model specific subroutine. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramname">ini</td><td>Input ini file </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__main_8f90_source.html#l00308">308</a> of file <a class="el" href="11__EFTCAMB__main_8f90_source.html">11_EFTCAMB_main.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="a42b49dbcc1098a152ab3687a1cdbac5c"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine eftcamb_main::read_eftcamb_model_selection </td>
-          <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structeftcamb__main_1_1eftcamb.html">eftcamb</a>)&#160;</td>
-          <td class="paramname"><em>self</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(tinifile)&#160;</td>
-          <td class="paramname"><em>Ini</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Subroutine that reads the model selection parameters. Just a wrapper to the model specific subroutine. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">self</td><td>the base class</td></tr>
-    <tr><td class="paramname">ini</td><td>Input ini file </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__main_8f90_source.html#l00266">266</a> of file <a class="el" href="11__EFTCAMB__main_8f90_source.html">11_EFTCAMB_main.f90</a>.</p>
-
-</div>
-</div>
-<h2 class="groupheader">Variable Documentation</h2>
-<a class="anchor" id="a58c49fce6eb4cf870db8ceecd168c4be"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">character(len=*), parameter eftcamb_main::eftcamb_version = 'V3.0 Aug16'</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__main_8f90_source.html#l00038">38</a> of file <a class="el" href="11__EFTCAMB__main_8f90_source.html">11_EFTCAMB_main.f90</a>.</p>
+<p>Definition at line <a class="el" href="11__EFTCAMB__main_8f90_source.html#l00043">43</a> of file <a class="el" href="11__EFTCAMB__main_8f90_source.html">11_EFTCAMB_main.f90</a>.</p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 29 2016 15:13:41 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 18 2016 22:08:17 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

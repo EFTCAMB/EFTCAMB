@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['init_5feftcamb_5fmodel_5ffrom_5ffile',['init_eftcamb_model_from_file',['../namespaceeftcamb__main.html#a8bfc5180ebebd7bb6482a130157405a8',1,'eftcamb_main']]],
-  ['integer_5fto_5fstring',['integer_to_string',['../namespaceeftcamb__mixed__algorithms.html#aa50b8f3f1e6b3e1098ba4ce92cd1b6b8',1,'eftcamb_mixed_algorithms']]]
+  ['parametrizedfunction1dparamnumber',['parametrizedfunction1dparamnumber',['../namespaceeftcamb__abstract__parametrizations__1d.html#ab5e36011ccd6693c129fbe5fa860bb9c',1,'eftcamb_abstract_parametrizations_1d']]],
+  ['parametrizedfunction2dparamnumber',['parametrizedfunction2dparamnumber',['../namespaceeftcamb__abstract__parametrizations__2d.html#a1ebf8b0e58b18a57904c68a8d365dd1d',1,'eftcamb_abstract_parametrizations_2d']]],
+  ['polint',['polint',['../namespaceeftcamb__interpolation.html#aee659aa531ddbbc90fa1e320718dbce6',1,'eftcamb_interpolation']]]
 ];

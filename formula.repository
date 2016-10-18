@@ -1,54 +1,63 @@
-\form#0:$ \Omega_{\rm CDM}^0 $
-\form#1:$ \Omega_{\rm b}^0 $
-\form#2:$ \Omega_{\Lambda}^0 $
-\form#3:$ \Omega_{\rm K}^0 $
-\form#4:$ H_0/100 $
-\form#5:$ 10^3 \cdot H_0/c $
-\form#6:$ 8 \pi G_{N} \rho_{\gamma}(t_0) $
-\form#7:$ 8 \pi G_{N} \rho_{\nu}(t_0) $
-\form#8:$ 8 \pi G_{N} \rho_{m\nu}(t_0) $
-\form#9:$ 8 \pi G_{N} \rho_{\rm CDM}(t_0) $
-\form#10:$ 8 \pi G_{N} \rho_{\rm b}(t_0) $
-\form#11:$ 8 \pi G_{N} \rho_{\Lambda}(t_0) $
-\form#12:$ 8 \pi G_{N} \rho_{\rm K}(t_0) $
-\form#13:$ \mbox{Mpc}^{-1} $
-\form#14:$ \sum_m\rho_m / a^2 m_0^2 $
-\form#15:$ \sum_m\rho_m a^2 /m_0^2 $
-\form#16:$ \sum_m P_m a^2 /m_0^2 $
-\form#17:$ \sum_m\dot{P}_m a^2 /m_0^2 $
-\form#18:$ \rho_b a^2 / m_0^2 $
-\form#19:$ \rho_{cdm} a^2 / m_0^2 $
-\form#20:$ \rho_{\nu} a^2 / m_0^2 $
-\form#21:$ \rho_{\gamma} a^2 / m_0^2 $
-\form#22:$ \rho_{\Lambda} a^2 / m_0^2 $
-\form#23:$ \P_{\Lambda} a^2 / m_0^2 $
-\form#24:$ \sum_\nu \rho_{m\nu} a^2 / m_0^2 $
-\form#25:$ \sum_\nu P_{m\nu} a^2 / m_0^2 $
-\form#26:$ \sum_\nu \dot{\rho}_{m\nu} a^2 / m_0^2 $
-\form#27:$ \sum_\nu \dot{P}_{m\nu} a^2 / m_0^2 $
-\form#28:$ \mathcal{H} $
-\form#29:$ d\mathcal{H} /d \tau $
-\form#30:$ d^2 \mathcal{H} / d \tau^2 $
-\form#31:$ \Omega(a) $
-\form#32:$ d \Omega(a) / da $
-\form#33:$ d^2 \Omega(a) / da^2 $
-\form#34:$ d^3 \Omega(a) / da^3 $
-\form#35:$ c a^2/m_0^2 $
-\form#36:$ \dot{c} a^2/m_0^2 $
-\form#37:$ \Lambda a^2/m_0^2 $
-\form#38:$ \dot{\Lambda}a^2/m_0^2 $
-\form#39:$ \Lambda$
-\form#40:$ \gamma_1(a) $
-\form#41:$ d \gamma_1(a) / da $
-\form#42:$ \gamma_2(a) $
-\form#43:$ d \gamma_2(a) / da $
-\form#44:$ \gamma_3(a) $
-\form#45:$ d \gamma_3(a) / da $
-\form#46:$ \gamma_4(a) $
-\form#47:$ d \gamma_4(a) / da $
-\form#48:$ d^2 \gamma_4(a) / da^2 $
-\form#49:$ \gamma_5(a) $
-\form#50:$ d \gamma_5(a) / da $
-\form#51:$ \gamma_6(a) $
-\form#52:$ d \gamma_6(a) / da $
-\form#53:$ k^2 $
+\form#0:$ y_i=f(x_i) $
+\form#1:$ yp_i= \frac{d f(x_i)}{dx} $
+\form#2:$ ypp_i= \frac{d^2 f(x_i)}{dx^2} $
+\form#3:$ yppp_i= \frac{d^3 f(x_i)}{dx^3} $
+\form#4:$ \Omega_{\rm CDM}^0 $
+\form#5:$ \Omega_{\rm b}^0 $
+\form#6:$ \Omega_{\Lambda}^0 $
+\form#7:$ \Omega_{\rm K}^0 $
+\form#8:$ \Omega_{m\nu}^0 $
+\form#9:$ \Omega_{ \gamma }^0 $
+\form#10:$ \Omega_{ \nu }^0 $
+\form#11:$ H_0/100 $
+\form#12:$ 10^3 \cdot H_0/c $
+\form#13:$ 8 \pi G_{N} \rho_{\gamma}(t_0) $
+\form#14:$ 8 \pi G_{N} \rho_{\nu}(t_0) $
+\form#15:$ 8 \pi G_{N} \rho_{\rm CDM}(t_0) $
+\form#16:$ 8 \pi G_{N} \rho_{\rm b}(t_0) $
+\form#17:$ 8 \pi G_{N} \rho_{\Lambda}(t_0) $
+\form#18:$ 8 \pi G_{N} \rho_{\rm K}(t_0) $
+\form#19:$ 8 \pi G_{N} \rho_{ m\nu }(t_0) $
+\form#20:$ \frac{\rho_{\nu} a^2}{m_0^2} $
+\form#21:$ \frac{ P_{\nu} a^2}{m_0^2} $
+\form#22:$ \mbox{Mpc}^{-1} $
+\form#23:$ \sum_m\rho_m / a^2 m_0^2 $
+\form#24:$ \sum_m\rho_m a^2 /m_0^2 $
+\form#25:$ \sum_m P_m a^2 /m_0^2 $
+\form#26:$ \sum_m\dot{P}_m a^2 /m_0^2 $
+\form#27:$ \rho_b a^2 / m_0^2 $
+\form#28:$ \rho_{cdm} a^2 / m_0^2 $
+\form#29:$ \rho_{\nu} a^2 / m_0^2 $
+\form#30:$ \rho_{\gamma} a^2 / m_0^2 $
+\form#31:$ \rho_{\Lambda} a^2 / m_0^2 $
+\form#32:$ \P_{\Lambda} a^2 / m_0^2 $
+\form#33:$ \sum_\nu \rho_{m\nu} a^2 / m_0^2 $
+\form#34:$ \sum_\nu P_{m\nu} a^2 / m_0^2 $
+\form#35:$ \sum_\nu \dot{\rho}_{m\nu} a^2 / m_0^2 $
+\form#36:$ \sum_\nu \dot{P}_{m\nu} a^2 / m_0^2 $
+\form#37:$ \mathcal{H} $
+\form#38:$ d\mathcal{H} /d \tau $
+\form#39:$ d^2 \mathcal{H} / d \tau^2 $
+\form#40:$ \Omega(a) $
+\form#41:$ d \Omega(a) / da $
+\form#42:$ d^2 \Omega(a) / da^2 $
+\form#43:$ d^3 \Omega(a) / da^3 $
+\form#44:$ c a^2/m_0^2 $
+\form#45:$ \dot{c} a^2/m_0^2 $
+\form#46:$ \Lambda a^2/m_0^2 $
+\form#47:$ \dot{\Lambda}a^2/m_0^2 $
+\form#48:$ \Lambda$
+\form#49:$ \gamma_1(a) $
+\form#50:$ d \gamma_1(a) / da $
+\form#51:$ \gamma_2(a) $
+\form#52:$ d \gamma_2(a) / da $
+\form#53:$ \gamma_3(a) $
+\form#54:$ d \gamma_3(a) / da $
+\form#55:$ \gamma_4(a) $
+\form#56:$ d \gamma_4(a) / da $
+\form#57:$ d^2 \gamma_4(a) / da^2 $
+\form#58:$ \gamma_5(a) $
+\form#59:$ d \gamma_5(a) / da $
+\form#60:$ \gamma_6(a) $
+\form#61:$ d \gamma_6(a) / da $
+\form#62:$ k^2 $

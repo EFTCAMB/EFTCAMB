@@ -91,10 +91,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="subdirs"></a>
+Directories</h2></td></tr>
+<tr class="memitem:dir_33955965b3425a34b801dbfc3211ba3b"><td class="memItemLeft" align="right" valign="top">directory &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="dir_33955965b3425a34b801dbfc3211ba3b.html">04f_abstract_parametrizations_1D</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:dir_e3789afc606a07106c31c8d94855e09a"><td class="memItemLeft" align="right" valign="top">directory &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="dir_e3789afc606a07106c31c8d94855e09a.html">05f_abstract_parametrizations_2D</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="files"></a>
 Files</h2></td></tr>
 <tr class="memitem:01__EFT__def_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="01__EFT__def_8f90.html">01_EFT_def.f90</a> <a href="01__EFT__def_8f90_source.html">[code]</a></td></tr>
 <tr class="memdesc:01__EFT__def_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the EFTCAMB compile time options. <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:02__equispaced__interpolation__linear__1D_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="02__equispaced__interpolation__linear__1D_8f90.html">02_equispaced_interpolation_linear_1D.f90</a> <a href="02__equispaced__interpolation__linear__1D_8f90_source.html">[code]</a></td></tr>
+<tr class="memdesc:02__equispaced__interpolation__linear__1D_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the class that can be used for 1D linearly interpolated functions on an equispaced grid. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:02__interpolation_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="02__interpolation_8f90.html">02_interpolation.f90</a> <a href="02__interpolation_8f90_source.html">[code]</a></td></tr>
 <tr class="memdesc:02__interpolation_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the EFTCAMB interpolation algorithms. <br /></td></tr>
@@ -106,30 +116,13 @@ Files</h2></td></tr>
 <tr class="memdesc:02__utilities_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains various generic algorithms that are useful to EFTCAMB. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:03__abstract__EFTCAMB__cache_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="03__abstract__EFTCAMB__cache_8f90.html">03_abstract_EFTCAMB_cache.f90</a> <a href="03__abstract__EFTCAMB__cache_8f90_source.html">[code]</a></td></tr>
-<tr class="memdesc:03__abstract__EFTCAMB__cache_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the definition of a time step cache for EFTCAMB. To perform EFTCAMB calculations, at any timestep, we need several quantities. Densities, values of the EFT functions and so on. Instead of complicating the interface of the functions we shall define a type that holds all these informations. We also need a cache for cosmological parameters that are used in the calculations. <br /></td></tr>
+<tr class="memdesc:03__abstract__EFTCAMB__cache_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the definition of the EFTCAMB caches. These are used to store parameters that can be used by EFTCAMB, in EFTCAMB_parameter_cache or are used to store partial results when solving the time evolution of perturbations, in EFTCAMB_timestep_cache. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:04__abstract__parametrizations__1D_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="04__abstract__parametrizations__1D_8f90.html">04_abstract_parametrizations_1D.f90</a> <a href="04__abstract__parametrizations__1D_8f90_source.html">[code]</a></td></tr>
 <tr class="memdesc:04__abstract__parametrizations__1D_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the abstract class for generic parametrizations for 1D functions that are used by several models in EFTCAMB. When there is a free function in EFT it should be declared as a class inheriting from parametrized_function_1D. This guarantees maximum performances as well as maximum flexibility. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:04p0__neutral__parametrizations_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="04p0__neutral__parametrizations_8f90.html">04p0_neutral_parametrizations.f90</a> <a href="04p0__neutral__parametrizations_8f90_source.html">[code]</a></td></tr>
-<tr class="memdesc:04p0__neutral__parametrizations_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the definition of neutral parametrizations that can be used when parametrized functions should take their GR value. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:04p1__constant__parametrizations_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="04p1__constant__parametrizations_8f90.html">04p1_constant_parametrizations.f90</a> <a href="04p1__constant__parametrizations_8f90_source.html">[code]</a></td></tr>
-<tr class="memdesc:04p1__constant__parametrizations_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the definition of the constant parametrization, inheriting from parametrized_function_1D. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:04p2__linear__parametrizations_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="04p2__linear__parametrizations_8f90.html">04p2_linear_parametrizations.f90</a> <a href="04p2__linear__parametrizations_8f90_source.html">[code]</a></td></tr>
-<tr class="memdesc:04p2__linear__parametrizations_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the definition of the linear parametrization, inheriting from parametrized_function_1D. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:05__abstract__parametrizations__2D_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="05__abstract__parametrizations__2D_8f90.html">05_abstract_parametrizations_2D.f90</a> <a href="05__abstract__parametrizations__2D_8f90_source.html">[code]</a></td></tr>
 <tr class="memdesc:05__abstract__parametrizations__2D_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the abstract class for generic parametrizations for 2D functions that are used by several models in EFTCAMB. When there is a free function in EFT it should be declared as a class inheriting from parametrized_function_2D. This guarantees maximum performances as well as maximum flexibility. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:05p0__neutral__parametrizations__2D_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="05p0__neutral__parametrizations__2D_8f90.html">05p0_neutral_parametrizations_2D.f90</a> <a href="05p0__neutral__parametrizations__2D_8f90_source.html">[code]</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:05p1__constant__parametrizations__2D_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="05p1__constant__parametrizations__2D_8f90.html">05p1_constant_parametrizations_2D.f90</a> <a href="05p1__constant__parametrizations__2D_8f90_source.html">[code]</a></td></tr>
-<tr class="memdesc:05p1__constant__parametrizations__2D_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the definition of the constant parametrization, inheriting from parametrized_function_2D. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:05p2__bilinear__parametrizations__2D_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="05p2__bilinear__parametrizations__2D_8f90.html">05p2_bilinear_parametrizations_2D.f90</a> <a href="05p2__bilinear__parametrizations__2D_8f90_source.html">[code]</a></td></tr>
-<tr class="memdesc:05p2__bilinear__parametrizations__2D_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the definition of the bilinear parametrization, inheriting from parametrized_function_2D. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:06__abstract__EFTCAMB__model_8f90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="06__abstract__EFTCAMB__model_8f90.html">06_abstract_EFTCAMB_model.f90</a> <a href="06__abstract__EFTCAMB__model_8f90_source.html">[code]</a></td></tr>
 <tr class="memdesc:06__abstract__EFTCAMB__model_8f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains the abstract definition of all the places where EFTCAMB interacts with CAMB. All EFTCAMB models should inherit from this class or the two derived classes contained in <a class="el" href="06p2__abstract__EFTCAMB__full_8f90.html" title="This file contains the abstract definition of all the places where EFTCAMB interacts with CAMB in cas...">06p2_abstract_EFTCAMB_full.f90</a> or <a class="el" href="06p3__abstract__EFTCAMB__designer_8f90.html" title="This file contains the abstract definition of all the places where EFTCAMB interacts with CAMB in cas...">06p3_abstract_EFTCAMB_designer.f90</a>. <br /></td></tr>
@@ -164,7 +157,7 @@ Files</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 29 2016 15:13:41 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 18 2016 22:08:17 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

@@ -1,4 +1,6 @@
 var searchData=
 [
-  ['hunt',['hunt',['../namespaceeftcamb__mixed__algorithms.html#a49112db7d349f4c49113e783d76f6f79',1,'eftcamb_mixed_algorithms']]]
+  ['nu_5fpidot_5fwrapper',['Nu_pidot_Wrapper',['../interfaceeftcamb__cache_1_1Nu__pidot__Wrapper.html',1,'eftcamb_cache']]],
+  ['nu_5fpidotdot_5fwrapper',['Nu_pidotdot_Wrapper',['../interfaceeftcamb__cache_1_1Nu__pidotdot__Wrapper.html',1,'eftcamb_cache']]],
+  ['nu_5frho_5fwrapper',['Nu_rho_Wrapper',['../interfaceeftcamb__cache_1_1Nu__rho__Wrapper.html',1,'eftcamb_cache']]]
 ];
