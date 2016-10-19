@@ -33,6 +33,7 @@ module EFTCAMB_main
     use EFTCAMB_abstract_model
     use EFTCAMB_pure_EFT_std
     use EFTCAMB_designer_fR
+    use EFTCAMB_ReturnToGR
 
     implicit none
 

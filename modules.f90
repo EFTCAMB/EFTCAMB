@@ -33,8 +33,9 @@ module ModelParams
     use Errors
 
     ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
-    use EFTCAMB_main
     use EFTCAMB_cache
+    use EFTCAMB_main
+    use EFTCAMB_ReturnToGR
     ! EFTCAMB MOD END.
 
     implicit none
@@ -275,6 +276,10 @@ contains
         real(dl), save :: last_tau0
         !Constants in SI units
 
+        ! EFTCAMB MOD START: add things for EFTCAMB initialization
+        real(dl) :: RGR_time
+        ! EFTCAMB MOD END.
+
         global_error_flag = 0
 
         if ((P%WantTensors .or. P%WantVectors).and. P%WantTransfer .and. .not. P%WantScalars) then
@@ -436,6 +441,11 @@ contains
 
                 ! 2) now run background initialization:
                 call CP%EFTCAMB%model%initialize_background( CP%eft_par_cache )
+
+                ! 3) compute the return to GR of the theory:
+                call EFTCAMBReturnToGR( CP%EFTCAMB%model, CP%eft_par_cache, CP%EFTCAMB%EFTCAMB_turn_on_time, RGR_time )
+                CP%EFTCAMB%EFTCAMB_turn_on_time = RGR_time
+                call EFTCAMBReturnToGR_feedback( CP%EFTCAMB%EFTCAMB_feedback_level, CP%EFTCAMB%model, CP%eft_par_cache, RGR_time )
 
             end if
             ! EFTCAMB MOD END.
@@ -1542,15 +1552,16 @@ contains
         !  then m = Omega_nu/N_nu rho_crit /n
         !  Error due to velocity < 1e-5
 
-
         ! EFTCAMB MOD START: initialize the massive neutrino's wrapper
         if ( associated( CP%eft_par_cache%Nu_background ) ) nullify( CP%eft_par_cache%Nu_background )
         if ( associated( CP%eft_par_cache%Nu_rho        ) ) nullify( CP%eft_par_cache%Nu_rho        )
+        if ( associated( CP%eft_par_cache%Nu_drho       ) ) nullify( CP%eft_par_cache%Nu_drho       )
         if ( associated( CP%eft_par_cache%Nu_pidot      ) ) nullify( CP%eft_par_cache%Nu_pidot      )
         if ( associated( CP%eft_par_cache%Nu_pidotdot   ) ) nullify( CP%eft_par_cache%Nu_pidotdot   )
 
         CP%eft_par_cache%Nu_background  => Nu_background
         CP%eft_par_cache%Nu_rho         => Nu_rho
+        CP%eft_par_cache%Nu_drho        => Nu_drho
         CP%eft_par_cache%Nu_pidot       => Nu_pidot
         CP%eft_par_cache%Nu_pidotdot    => Nu_pidotdot
         ! EFTCAMB MOD END.

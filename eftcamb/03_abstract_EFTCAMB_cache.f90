@@ -76,6 +76,7 @@ module EFTCAMB_cache
         ! 5) massive neutrinos wrapper:
         procedure( Nu_background_Wrapper ), pointer, nopass :: Nu_background => null()  !< wrapper to the subroutine that computes the background massive neutrinos density and pressure.
         procedure( Nu_rho_Wrapper        ), pointer, nopass :: Nu_rho        => null()  !< wrapper to the subroutine that computes the background massive neutrinos density.
+        procedure( Nu_drho_Wrapper       ), pointer, nopass :: Nu_drho       => null()  !< wrapper to the subroutine that computes the time derivative of the background massive neutrinos density.
         procedure( Nu_pidot_Wrapper      ), pointer, nopass :: Nu_pidot      => null()  !< wrapper to the function that computes the background massive neutrinos time derivative of pressure.
         procedure( Nu_pidotdot_Wrapper   ), pointer, nopass :: Nu_pidotdot   => null()  !< wrapper to the function that computes the background massive neutrinos second time derivative of pressure.
 
@@ -108,6 +109,17 @@ module EFTCAMB_cache
             real(dl), intent(in)  :: am     !< input scale factor times the neutrino mass
             real(dl), intent(out) :: rhonu  !< output neutrino density \f$ \frac{\rho_{\nu} a^2}{m_0^2} \f$
         end subroutine Nu_rho_Wrapper
+        !----------------------------------------------------------------------------------------
+        !> Wrapper to the subroutine that computes the time derivative of the background
+        !! massive neutrinos density.
+        function Nu_drho_Wrapper( am, adotoa, rhonu )
+            use precision
+            implicit none
+            real(dl), intent(in)  :: am     !< input scale factor times the neutrino mass
+            real(dl)              :: adotoa !< input conformal Hubble
+            real(dl)              :: rhonu  !< input neutrino density
+            real(dl)              :: Nu_drho_Wrapper  !< output value of the time derivative of neutrino density
+        end function Nu_drho_Wrapper
         !----------------------------------------------------------------------------------------
         !> Wrapper to the function that computes the background massive neutrinos
         !! time derivative of pressure.
