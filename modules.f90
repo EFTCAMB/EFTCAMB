@@ -398,36 +398,46 @@ contains
         if (.not.call_again) then
 
             ! EFTCAMB MOD START: clean up the EFTCAMB parameter cache
-            call CP%eft_par_cache%initialize()
+            if ( CP%EFTCAMB%EFTFlag /= 0 ) then
+                call CP%eft_par_cache%initialize()
+            end if
             ! EFTCAMB MOD END.
 
             call init_massive_nu(CP%omegan /=0)
 
-            ! EFTCAMB MOD START: initialize the EFTCAMB parameter cache
-            ! 1) relative densities:
-            CP%eft_par_cache%omegac      = CP%omegac
-            CP%eft_par_cache%omegab      = CP%omegab
-            CP%eft_par_cache%omegav      = CP%omegav
-            CP%eft_par_cache%omegak      = CP%omegak
-            CP%eft_par_cache%omegan      = CP%omegan
-            CP%eft_par_cache%omegag      = grhog/grhom
-            CP%eft_par_cache%omegar      = grhornomass/grhom
-            ! 2) Hubble constant:
-            CP%eft_par_cache%h0          = CP%h0
-            CP%eft_par_cache%h0_Mpc      = CP%h0/c*1000._dl
-            ! 3) densities:
-            CP%eft_par_cache%grhog       = grhog
-            CP%eft_par_cache%grhornomass = grhornomass
-            CP%eft_par_cache%grhoc       = grhoc
-            CP%eft_par_cache%grhob       = grhob
-            CP%eft_par_cache%grhov       = grhov
-            CP%eft_par_cache%grhok       = grhok
-            ! 4) massive neutrinos:
-            CP%eft_par_cache%Num_Nu_Massive       = CP%Num_Nu_Massive
-            CP%eft_par_cache%Nu_mass_eigenstates  = CP%Nu_mass_eigenstates
-            allocate( CP%eft_par_cache%grhormass(max_nu), CP%eft_par_cache%nu_masses(max_nu) )
-            CP%eft_par_cache%grhormass            = grhormass
-            CP%eft_par_cache%nu_masses            = nu_masses
+            ! EFTCAMB MOD START: initialize the EFTCAMB parameter choice
+            if ( CP%EFTCAMB%EFTFlag /= 0 ) then
+
+                ! 1) parameter cache:
+                !    - relative densities:
+                CP%eft_par_cache%omegac      = CP%omegac
+                CP%eft_par_cache%omegab      = CP%omegab
+                CP%eft_par_cache%omegav      = CP%omegav
+                CP%eft_par_cache%omegak      = CP%omegak
+                CP%eft_par_cache%omegan      = CP%omegan
+                CP%eft_par_cache%omegag      = grhog/grhom
+                CP%eft_par_cache%omegar      = grhornomass/grhom
+                !    - Hubble constant:
+                CP%eft_par_cache%h0          = CP%h0
+                CP%eft_par_cache%h0_Mpc      = CP%h0/c*1000._dl
+                !    - densities:
+                CP%eft_par_cache%grhog       = grhog
+                CP%eft_par_cache%grhornomass = grhornomass
+                CP%eft_par_cache%grhoc       = grhoc
+                CP%eft_par_cache%grhob       = grhob
+                CP%eft_par_cache%grhov       = grhov
+                CP%eft_par_cache%grhok       = grhok
+                !    - massive neutrinos:
+                CP%eft_par_cache%Num_Nu_Massive       = CP%Num_Nu_Massive
+                CP%eft_par_cache%Nu_mass_eigenstates  = CP%Nu_mass_eigenstates
+                allocate( CP%eft_par_cache%grhormass(max_nu), CP%eft_par_cache%nu_masses(max_nu) )
+                CP%eft_par_cache%grhormass            = grhormass
+                CP%eft_par_cache%nu_masses            = nu_masses
+
+                ! 2) now run background initialization:
+                call CP%EFTCAMB%model%initialize_background( CP%eft_par_cache )
+
+            end if
             ! EFTCAMB MOD END.
 
             call init_background

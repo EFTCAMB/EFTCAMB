@@ -134,17 +134,17 @@ contains
             case(1)
                 allocate( constant_parametrization_1D::self%PureEFTwDE )
             case(2)
-                allocate( CPL_parametrization_1D::self%PureEFTwDE             )
-                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$') /))
+                allocate( CPL_parametrization_1D::self%PureEFTwDE )
+                call self%PureEFTwDE%set_param_names( ['EFTw0', 'EFTwa'], ['w_0', 'w_a'] )
             case(3)
-                allocate( JBP_parametrization_1D::self%PureEFTwDE             )
-                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa'), TRIM('EFTwn') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$'), TRIM('n') /))
+                allocate( JBP_parametrization_1D::self%PureEFTwDE )
+                call self%PureEFTwDE%set_param_names( ['EFTw0', 'EFTwa', 'EFTwn'], [ 'w_0', 'w_a', 'n  ' ] )
             case(4)
-                allocate( turning_point_parametrization_1D::self%PureEFTwDE   )
-                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa'), TRIM('EFTwat') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$'), TRIM('a_t') /))
+                allocate( turning_point_parametrization_1D::self%PureEFTwDE )
+                call self%PureEFTwDE%set_param_names( ['EFTw0 ', 'EFTwa ', 'EFTwat'], ['w_0', 'w_a', 'a_t'] )
             case(5)
-                allocate( taylor_parametrization_1D::self%PureEFTwDE          )
-                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa'), TRIM('EFTw2'), TRIM('EFTw3') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$'), TRIM('w_2'), TRIM('w_3') /))
+                allocate( taylor_parametrization_1D::self%PureEFTwDE )
+                call self%PureEFTwDE%set_param_names( ['EFTw0', 'EFTwa', 'EFTw2', 'EFTw3'], ['w_0', 'w_a', 'w_2', 'w_3'] )
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -212,7 +212,7 @@ contains
         ! debug code:
         if ( DebugEFTCAMB ) then
             ! print the function B0(A). This is used to debug the initial conditions part.
-            call CreateTxtFile( './DebugDesignerB.dat', 34 )
+            call CreateTxtFile( './debug_designer_fR_B.dat', 34 )
             print*, 'EFTCAMB DEBUG ( f(R) designer ): Printing B(A) results'
             TempMin      = -10._dl
             TempMax      = +10._dl
@@ -225,7 +225,7 @@ contains
             close(34)
             ! prints f(R) quantities.
             print*, 'EFTCAMB DEBUG ( f(R) designer ):  Printing F(R) results'
-            call CreateTxtFile( './DebugDesigner.dat', 33 )
+            call CreateTxtFile( './debug_designer_fR_solution.dat', 33 )
             debug_A = 1.0_dl
             call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.False. )
             close(33)

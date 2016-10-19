@@ -144,10 +144,10 @@ contains
                 allocate( linear_parametrization_1D::self%PureEFTOmega )
             case(3)
                 allocate( power_law_parametrization_1D::self%PureEFTOmega )
-                call self%PureEFTOmega%set_param_names((/ TRIM('EFTOmega0  '), TRIM('EFTOmegaExp') /), (/ TRIM('\f$ \Omega^0 \f$'), TRIM('\f$ \Omega_{\text{Exp}} \f$') /))
+                call self%PureEFTOmega%set_param_names( ['EFTOmega0  ', 'EFTOmegaExp'], ['\Omega_0^{\rm EFT}', 'n^{\rm EFT}       '] )
             case(4)
                 allocate( exponential_parametrization_1D::self%PureEFTOmega )
-                call self%PureEFTOmega%set_param_names((/ TRIM('EFTOmega0  '), TRIM('EFTOmegaExp') /), (/ TRIM('\f$ \Omega^0 \f$'), TRIM('\f$ \Omega_{\text{Exp}} \f$') /))
+                call self%PureEFTOmega%set_param_names( ['EFTOmega0  ', 'EFTOmegaExp'], ['\Omega_0^{\rm EFT}', 'n^{\rm EFT}       '] )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelOmega =', self%PureEFTmodelOmega
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -161,16 +161,16 @@ contains
                 allocate( constant_parametrization_1D::self%PureEFTwDE )
             case(2)
                 allocate( CPL_parametrization_1D::self%PureEFTwDE )
-                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$') /))
+                call self%PureEFTwDE%set_param_names( ['EFTw0', 'EFTwa'], ['w_0', 'w_a'] )
             case(3)
                 allocate( JBP_parametrization_1D::self%PureEFTwDE )
-                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa'), TRIM('EFTwn') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$'), TRIM('n') /))
+                call self%PureEFTwDE%set_param_names( ['EFTw0', 'EFTwa', 'EFTwn'], [ 'w_0', 'w_a', 'n  ' ] )
             case(4)
                 allocate( turning_point_parametrization_1D::self%PureEFTwDE )
-                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa'), TRIM('EFTwat') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$'), TRIM('a_t') /))
+                call self%PureEFTwDE%set_param_names( ['EFTw0 ', 'EFTwa ', 'EFTwat'], ['w_0', 'w_a', 'a_t'] )
             case(5)
                 allocate( taylor_parametrization_1D::self%PureEFTwDE )
-                call self%PureEFTwDE%set_param_names((/ TRIM('EFTw0'), TRIM('EFTwa'), TRIM('EFTw2'), TRIM('EFTw3') /), (/ TRIM('\f$ w_0 \f$'), TRIM('\f$ w_a \f$'), TRIM('w_2'), TRIM('w_3') /))
+                call self%PureEFTwDE%set_param_names( ['EFTw0', 'EFTwa', 'EFTw2', 'EFTw3'], ['w_0', 'w_a', 'w_2', 'w_3'] )
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -186,10 +186,10 @@ contains
                 allocate( linear_parametrization_1D::self%PureEFTGamma1 )
             case(3)
                 allocate( power_law_parametrization_1D::self%PureEFTGamma1 )
-                call self%PureEFTGamma1%set_param_names((/ TRIM('EFTGamma10  '), TRIM('EFTGamma1Exp') /), (/ TRIM('\f$ \gamma_1^0 \f$'), TRIM('\f$ \gamma_1^{\text{Exp}} \f$') /))
+                call self%PureEFTGamma1%set_param_names( ['EFTGamma10  ', 'EFTGamma1Exp'], ['\gamma_0^{(1) {\rm EFT}}        ', '\gamma_{\rm exp}^{(1) {\rm EFT}}'] )
             case(4)
                 allocate( exponential_parametrization_1D::self%PureEFTGamma1 )
-                call self%PureEFTGamma1%set_param_names((/ TRIM('EFTGamma10  '), TRIM('EFTGamma1Exp') /), (/ TRIM('\f$ \gamma_1^0 \f$'), TRIM('\f$ \gamma_1^{\text{Exp}} \f$') /))
+                call self%PureEFTGamma1%set_param_names( ['EFTGamma10  ', 'EFTGamma1Exp'], ['\gamma_0^{(1) {\rm EFT}}        ', '\gamma_{\rm exp}^{(1) {\rm EFT}}'] )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma1 =', self%PureEFTmodelGamma1
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -205,10 +205,10 @@ contains
                 allocate( linear_parametrization_1D::self%PureEFTGamma2 )
             case(3)
                 allocate( power_law_parametrization_1D::self%PureEFTGamma2 )
-                call self%PureEFTGamma2%set_param_names((/ TRIM('EFTGamma20  '), TRIM('EFTGamma2Exp') /), (/ TRIM('\f$ \gamma_2^0 \f$'), TRIM('\f$ \gamma_2^{\text{Exp}} \f$') /))
+                call self%PureEFTGamma1%set_param_names( ['EFTGamma20  ', 'EFTGamma2Exp'], ['\gamma_0^{(2) {\rm EFT}}        ', '\gamma_{\rm exp}^{(2) {\rm EFT}}'] )
             case(4)
                 allocate( exponential_parametrization_1D::self%PureEFTGamma2 )
-                call self%PureEFTGamma2%set_param_names((/ TRIM('EFTGamma20  '), TRIM('EFTGamma2Exp') /), (/ TRIM('\f$ \gamma_2^0 \f$'), TRIM('\f$ \gamma_2^{\text{Exp}} \f$') /))
+                call self%PureEFTGamma1%set_param_names( ['EFTGamma20  ', 'EFTGamma2Exp'], ['\gamma_0^{(2) {\rm EFT}}        ', '\gamma_{\rm exp}^{(2) {\rm EFT}}'] )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma2 =', self%PureEFTmodelGamma2
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -224,10 +224,10 @@ contains
                 allocate( linear_parametrization_1D::self%PureEFTGamma3 )
             case(3)
                 allocate( power_law_parametrization_1D::self%PureEFTGamma3 )
-                call self%PureEFTGamma3%set_param_names((/ TRIM('EFTGamma30  '), TRIM('EFTGamma3Exp') /), (/ TRIM('\f$ \gamma_3^0 \f$'), TRIM('\f$ \gamma_3^{\text{Exp}} \f$') /))
+                call self%PureEFTGamma1%set_param_names( ['EFTGamma30  ', 'EFTGamma3Exp'], ['\gamma_0^{(3) {\rm EFT}}        ', '\gamma_{\rm exp}^{(3) {\rm EFT}}'] )
             case(4)
                 allocate( exponential_parametrization_1D::self%PureEFTGamma3 )
-                call self%PureEFTGamma3%set_param_names((/ TRIM('EFTGamma30  '), TRIM('EFTGamma3Exp') /), (/ TRIM('\f$ \gamma_3^0 \f$'), TRIM('\f$ \gamma_3^{\text{Exp}} \f$') /))
+                call self%PureEFTGamma1%set_param_names( ['EFTGamma30  ', 'EFTGamma3Exp'], ['\gamma_0^{(3) {\rm EFT}}        ', '\gamma_{\rm exp}^{(3) {\rm EFT}}'] )
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma3 =', self%PureEFTmodelGamma3
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -245,10 +245,10 @@ contains
                     allocate( linear_parametrization_1D::self%PureEFTGamma4 )
                 case(3)
                     allocate( power_law_parametrization_1D::self%PureEFTGamma4 )
-                    call self%PureEFTGamma4%set_param_names((/ TRIM('EFTGamma40  '), TRIM('EFTGamma4Exp') /), (/ TRIM('\f$ \gamma_4^0 \f$'), TRIM('\f$ \gamma_4^{\text{Exp}} \f$') /))
+                    call self%PureEFTGamma1%set_param_names( ['EFTGamma40  ', 'EFTGamma4Exp'], ['\gamma_0^{(4) {\rm EFT}}        ', '\gamma_{\rm exp}^{(4) {\rm EFT}}'] )
                 case(4)
                     allocate( exponential_parametrization_1D::self%PureEFTGamma4 )
-                    call self%PureEFTGamma4%set_param_names((/ TRIM('EFTGamma40  '), TRIM('EFTGamma4Exp') /), (/ TRIM('\f$ \gamma_4^0 \f$'), TRIM('\f$ \gamma_4^{\text{Exp}} \f$') /))
+                    call self%PureEFTGamma1%set_param_names( ['EFTGamma40  ', 'EFTGamma4Exp'], ['\gamma_0^{(4) {\rm EFT}}        ', '\gamma_{\rm exp}^{(4) {\rm EFT}}'] )
                 case default
                     write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma4 =', self%PureEFTmodelGamma4
                     write(*,'(a)')    'Please select an appropriate model.'
@@ -264,10 +264,10 @@ contains
                     allocate( linear_parametrization_1D::self%PureEFTGamma5 )
                 case(3)
                     allocate( power_law_parametrization_1D::self%PureEFTGamma5 )
-                    call self%PureEFTGamma5%set_param_names((/ TRIM('EFTGamma50  '), TRIM('EFTGamma5Exp') /), (/ TRIM('\f$ \gamma_5^0 \f$'), TRIM('\f$ \gamma_5^{\text{Exp}} \f$') /))
+                    call self%PureEFTGamma1%set_param_names( ['EFTGamma50  ', 'EFTGamma5Exp'], ['\gamma_0^{(5) {\rm EFT}}        ', '\gamma_{\rm exp}^{(5) {\rm EFT}}'] )
                 case(4)
                     allocate( exponential_parametrization_1D::self%PureEFTGamma5 )
-                    call self%PureEFTGamma5%set_param_names((/ TRIM('EFTGamma50  '), TRIM('EFTGamma5Exp') /), (/ TRIM('\f$ \gamma_5^0 \f$'), TRIM('\f$ \gamma_5^{\text{Exp}} \f$') /))
+                    call self%PureEFTGamma1%set_param_names( ['EFTGamma50  ', 'EFTGamma5Exp'], ['\gamma_0^{(5) {\rm EFT}}        ', '\gamma_{\rm exp}^{(5) {\rm EFT}}'] )
                 case default
                     write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma5 =', self%PureEFTmodelGamma5
                     write(*,'(a)')    'Please select an appropriate model.'
@@ -283,10 +283,10 @@ contains
                     allocate( linear_parametrization_1D::self%PureEFTGamma6 )
                 case(3)
                     allocate( power_law_parametrization_1D::self%PureEFTGamma6 )
-                    call self%PureEFTGamma6%set_param_names((/ TRIM('EFTGamma60  '), TRIM('EFTGamma6Exp') /), (/ TRIM('\f$ \gamma_6^0 \f$'), TRIM('\f$ \gamma_6^{\text{Exp}} \f$') /))
+                    call self%PureEFTGamma1%set_param_names( ['EFTGamma60  ', 'EFTGamma6Exp'], ['\gamma_0^{(6) {\rm EFT}}        ', '\gamma_{\rm exp}^{(6) {\rm EFT}}'] )
                 case(4)
                     allocate( exponential_parametrization_1D::self%PureEFTGamma6 )
-                    call self%PureEFTGamma6%set_param_names((/ TRIM('EFTGamma60  '), TRIM('EFTGamma6Exp') /), (/ TRIM('\f$ \gamma_6^0 \f$'), TRIM('\f$ \gamma_6^{\text{Exp}} \f$') /))
+                    call self%PureEFTGamma1%set_param_names( ['EFTGamma60  ', 'EFTGamma6Exp'], ['\gamma_0^{(6) {\rm EFT}}        ', '\gamma_{\rm exp}^{(6) {\rm EFT}}'] )
                 case default
                     write(*,'(a,I3)') 'No model corresponding to PureEFTmodelGamma6 =', self%PureEFTmodelGamma6
                     write(*,'(a)')    'Please select an appropriate model.'

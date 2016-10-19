@@ -63,13 +63,6 @@ subroutine init_background
     !It is called before first call to dtauda, but after
     !massive neutrinos are initialized and after GetOmegak
 
-    ! EFTCAMB MOD START: call EFTCAMB model background initialization
-    use ModelParams
-    if ( CP%EFTCAMB%EFTFlag /= 0 ) then
-        call CP%EFTCAMB%model%initialize_background( CP%eft_par_cache )
-    end if
-    ! EFTCAMB MOD END.
-
 end  subroutine init_background
 
 
