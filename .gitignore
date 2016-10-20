@@ -24,3 +24,6 @@ Release
 Releaselib
 Debug
 Debuglib
+
+# ignore parameter files produced by the text editor
+*.ini~
