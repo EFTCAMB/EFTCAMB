@@ -531,6 +531,8 @@ contains
 
         logical :: EFTCAMBModelAdditionalModelStability               !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
 
+        EFTCAMBModelAdditionalModelStability = .True.
+
     end function EFTCAMBModelAdditionalModelStability
 
     ! ---------------------------------------------------------------------------------------------

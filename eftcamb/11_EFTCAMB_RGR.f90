@@ -33,6 +33,10 @@ module EFTCAMB_ReturnToGR
 
     implicit none
 
+    private
+
+    public EFTCAMBReturnToGR_feedback, EFTCAMBReturnToGR, EFTCAMBReturnToGR_functions
+
 contains
 
     ! ---------------------------------------------------------------------------------------------

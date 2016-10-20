@@ -34,8 +34,9 @@ module ModelParams
 
     ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
     use EFTCAMB_cache
-    use EFTCAMB_main
+    use EFTCAMB_stability
     use EFTCAMB_ReturnToGR
+    use EFTCAMB_main
     ! EFTCAMB MOD END.
 
     implicit none
@@ -278,6 +279,8 @@ contains
 
         ! EFTCAMB MOD START: add things for EFTCAMB initialization
         real(dl) :: RGR_time
+        logical  :: success
+        real(dl) :: k_max
         ! EFTCAMB MOD END.
 
         global_error_flag = 0
@@ -447,10 +450,21 @@ contains
                 CP%EFTCAMB%EFTCAMB_turn_on_time = RGR_time
                 call EFTCAMBReturnToGR_feedback( CP%EFTCAMB%EFTCAMB_feedback_level, CP%EFTCAMB%model, CP%eft_par_cache, RGR_time )
 
+                ! 4) compute wether the theory is stable or not:
+                k_max = 10._dl
+                call EFTCAMB_Stability_Check( success, CP%EFTCAMB, CP%eft_par_cache, 1.d-7, 1._dl, k_max )
+
+                if ( .not. success ) then
+                    global_error_flag         = 1
+                    if (present(error)) error = global_error_flag
+                    return
+                end if
+
             end if
             ! EFTCAMB MOD END.
 
             call init_background
+
             if (global_error_flag==0) then
                 CP%tau0=TimeOfz(0._dl)
                 ! print *, 'chi = ',  (CP%tau0 - TimeOfz(0.15_dl)) * CP%h0/100
