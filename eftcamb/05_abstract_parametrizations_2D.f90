@@ -51,8 +51,8 @@ module EFTCAMB_abstract_parametrizations_2D
         integer                                     :: parameter_number  !< number of parameters defining the parametrized function.
         character(len=:), allocatable               :: name              !< name of the function.
         character(len=:), allocatable               :: name_latex        !< latex name of the function.
-        character(len=:), dimension(:), allocatable :: param_names       !< array with the names of the parameters.
-        character(len=:), dimension(:), allocatable :: param_names_latex !< array with the latex version of the parameter names.
+        type(string)    , allocatable, dimension(:) :: param_names       !< array with the names of the parameters.
+        type(string)    , allocatable, dimension(:) :: param_names_latex !< array with the latex version of the parameter names.
 
     contains
 
@@ -266,7 +266,7 @@ contains
         character(*), intent(in), dimension(:)            :: param_names       !< an array of strings containing the names of the function parameters
         character(*), intent(in), dimension(:), optional  :: param_names_latex !< an array of strings containing the latex names of the function parameters
 
-        integer  :: num_params
+        integer  :: num_params, ind
 
         ! ensure that the number of parameters is properly associated:
         call self%set_param_number()
@@ -274,30 +274,38 @@ contains
         ! check the number of parameters:
         num_params = self%param_number()
         if (  num_params /= size(param_names) ) then
-            write(*,*) 'In parametrized_function_2D:', self%name
+            write(*,*) 'In parametrized_function_1D:', self%name
             write(*,*) 'Length of param_names and number of parameters do not coincide.'
             write(*,*) 'Parameter number:', num_params
             write(*,*) 'Size of the param_names array:', size(param_names)
             call MpiStop('EFTCAMB error')
         end if
-
-        ! store the parameter names:
-        self%param_names = param_names
-
-        ! store the latex parameter names:
         if ( present(param_names_latex) ) then
             ! check length:
             if (  num_params /= size(param_names_latex) ) then
-                write(*,*) 'In parametrized_function_2D:', self%name
+                write(*,*) 'In parametrized_function_1D:', self%name
                 write(*,*) 'Length of param_names_latex and number of parameters do not coincide.'
                 write(*,*) 'Parameter number:', self%parameter_number
                 write(*,*) 'Size of the param_names array:', size(param_names_latex)
                 call MpiStop('EFTCAMB error')
             end if
-            self%param_names_latex   = param_names_latex
-        else
-            self%param_names_latex   = self%param_names
         end if
+
+        ! allocate self%param_names and self%param_names_latex:
+        if ( allocated(self%param_names) ) deallocate(self%param_names)
+        allocate( self%param_names(num_params) )
+        if ( allocated(self%param_names_latex) ) deallocate(self%param_names_latex)
+        allocate( self%param_names_latex(num_params) )
+
+        ! store the parameter names and latex param names:
+        do ind=1, num_params
+            self%param_names(ind)%string  = param_names(ind)
+            if ( present(param_names_latex) ) then
+                self%param_names_latex(ind)%string = param_names_latex(ind)
+            else
+                self%param_names_latex(ind)%string = param_names(ind)
+            end if
+        end do
 
     end subroutine ParametrizedFunction2DSetParamNames
 
@@ -370,7 +378,7 @@ contains
         end if
         ! return the parameter name:
         if ( allocated(self%param_names) ) then
-            name = self%param_names(i)
+            name = self%param_names(i)%string
         else
             name = TRIM(self%name)//integer_to_string(i-1)
         end if
@@ -396,7 +404,7 @@ contains
         end if
         ! return the parameter name:
         if ( allocated(self%param_names_latex) ) then
-            latexname = self%param_names_latex(i)
+            latexname = self%param_names_latex(i)%string
         else
             latexname = TRIM(self%name)//'_'//integer_to_string(i-1)
         end if

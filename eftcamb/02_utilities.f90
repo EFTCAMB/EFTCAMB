@@ -30,7 +30,14 @@ module EFTCAMB_mixed_algorithms
 
     private
 
-    public hunt, integer_to_string
+    public hunt, integer_to_string, string
+
+    !----------------------------------------------------------------------------------------
+    !> This is a utility type that allows to handle strings arrays. It is used because
+    !! of partial coverage of these F2003 features that would prevent compiling with gfortran
+    type :: string
+        character(len=:), allocatable :: string
+    end type string
 
 contains
 
