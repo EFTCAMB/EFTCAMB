@@ -33,7 +33,7 @@ module EFTCAMB_main
     use EFTCAMB_abstract_model
     use EFTCAMB_pure_EFT_std
     use EFTCAMB_designer_fR
-    use EFTCAMB_ReturnToGR
+    use EFTCAMB_designer_mc_quintessence
 
     implicit none
 
@@ -253,6 +253,9 @@ contains
                     case(1)
                         allocate( EFTCAMB_fR_designer::self%model )
                         call self%model%init( 'Designer f(R)', 'Designer f(R)' )
+                    case(2)
+                        allocate( EFTCAMB_des_mc_quint::self%model )
+                        call self%model%init( 'Designer minimally coupled quintessence', 'Designer minimally coupled quintessence' )
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and DesignerEFTmodel =', self%DesignerEFTmodel
