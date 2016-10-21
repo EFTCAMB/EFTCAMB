@@ -96,6 +96,9 @@ module EFTCAMB_designer_fR
         procedure :: compute_adotoa                    => EFTCAMBDesignerFRComputeAdotoa            !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
         procedure :: compute_H_derivs                  => EFTCAMBDesignerFRComputeHubbleDer         !< subroutine that computes the two derivatives wrt conformal time of H.
 
+        ! stability procedures:
+        procedure :: additional_model_stability        => EFTCAMBDesignerFRAdditionalModelStability !< function that computes model specific stability requirements.
+
     end type EFTCAMB_fR_designer
 
     ! ---------------------------------------------------------------------------------------------
@@ -1029,6 +1032,24 @@ contains
             & + eft_cache%adotoa/6._dl*eft_cache%grhonu_tot -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
 
     end subroutine EFTCAMBDesignerFRComputeHubbleDer
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that computes model specific stability requirements.
+    function EFTCAMBDesignerFRAdditionalModelStability( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_fR_designer)                   :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor.
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        logical :: EFTCAMBDesignerFRAdditionalModelStability          !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
+
+        EFTCAMBDesignerFRAdditionalModelStability = .True.
+        if ( self%PureEFTwDE%value(a) > -1._dl/3._dl ) EFTCAMBDesignerFRAdditionalModelStability = .False.
+
+    end function EFTCAMBDesignerFRAdditionalModelStability
 
     ! ---------------------------------------------------------------------------------------------
 

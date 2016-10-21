@@ -95,6 +95,8 @@ module EFTCAMB_pure_EFT_std
         procedure :: compute_dtauda                    => EFTCAMBPureEFTstdComputeDtauda            !< function that computes dtauda = 1/sqrt(a^2H^2).
         procedure :: compute_adotoa                    => EFTCAMBPureEFTstdComputeAdotoa            !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
         procedure :: compute_H_derivs                  => EFTCAMBPureEFTstdComputeHubbleDer         !< subroutine that computes the two derivatives wrt conformal time of H.
+        ! stability procedures:
+        procedure :: additional_model_stability        => EFTCAMBPureEFTstdAdditionalModelStability !< function that computes model specific stability requirements.
 
     end type EFTCAMB_std_pure_EFT
 
@@ -912,6 +914,24 @@ contains
             & + eft_cache%adotoa/6._dl*eft_cache%grhonu_tot -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
 
     end subroutine EFTCAMBPureEFTstdComputeHubbleDer
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that computes model specific stability requirements.
+    function EFTCAMBPureEFTstdAdditionalModelStability( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_std_pure_EFT)                  :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor.
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        logical :: EFTCAMBPureEFTstdAdditionalModelStability          !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
+
+        EFTCAMBPureEFTstdAdditionalModelStability = .True.
+        if ( self%PureEFTwDE%value(a) > -1._dl/3._dl ) EFTCAMBPureEFTstdAdditionalModelStability = .False.
+
+    end function EFTCAMBPureEFTstdAdditionalModelStability
 
     ! ---------------------------------------------------------------------------------------------
 
