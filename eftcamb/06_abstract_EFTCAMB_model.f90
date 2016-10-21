@@ -271,13 +271,14 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the background of the model, if needed.
-    subroutine EFTCAMBModelInitBackground( self, params_cache, success )
+    subroutine EFTCAMBModelInitBackground( self, params_cache, feedback_level, success )
 
         implicit none
 
-        class(EFTCAMB_model)                         :: self          !< the base class
-        type(EFTCAMB_parameter_cache), intent(in)    :: params_cache  !< a EFTCAMB parameter cache containing cosmological parameters
-        logical                      , intent(out)   :: success       !< wether the background initialization succeded or not
+        class(EFTCAMB_model)                         :: self           !< the base class
+        type(EFTCAMB_parameter_cache), intent(in)    :: params_cache   !< a EFTCAMB parameter cache containing cosmological parameters
+        integer                      , intent(in)    :: feedback_level !< level of feedback from the background code. 0=none; 1=some; 2=chatty.
+        logical                      , intent(out)   :: success        !< wether the background initialization succeded or not
 
         success = .True.
 

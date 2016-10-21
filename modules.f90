@@ -443,7 +443,7 @@ contains
                 CP%eft_par_cache%nu_masses            = nu_masses
 
                 ! 2) now run background initialization:
-                call CP%EFTCAMB%model%initialize_background( CP%eft_par_cache, success )
+                call CP%EFTCAMB%model%initialize_background( CP%eft_par_cache, CP%EFTCAMB%EFTCAMB_feedback_level, success )
                 if ( .not. success ) then
                     global_error_flag         = 1
                     global_error_message      = 'EFTCAMB: background solver failed'

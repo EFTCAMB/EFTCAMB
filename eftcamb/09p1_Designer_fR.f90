@@ -196,17 +196,25 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the background of designer f(R).
-    subroutine EFTCAMBDesignerFRInitBackground( self, params_cache, success )
+    subroutine EFTCAMBDesignerFRInitBackground( self, params_cache, feedback_level, success )
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                   :: self          !< the base class
-        type(EFTCAMB_parameter_cache), intent(in)    :: params_cache  !< a EFTCAMB parameter cache containing cosmological parameters
-        logical                      , intent(out)   :: success       !< wether the background initialization succeded or not
+        class(EFTCAMB_fR_designer)                   :: self           !< the base class
+        type(EFTCAMB_parameter_cache), intent(in)    :: params_cache   !< a EFTCAMB parameter cache containing cosmological parameters
+        integer                      , intent(in)    :: feedback_level !< level of feedback from the background code. 0=none; 1=some; 2=chatty.
+        logical                      , intent(out)   :: success        !< wether the background initialization succeded or not
 
         real(dl) :: A_ini, B0
         real(dl) :: TempMin, TempMax, debug_A
         integer  :: Debug_MaxNum, Debug_n
+
+        ! some feedback:
+        if ( feedback_level>0 ) then
+            write(*,'(a)') "***************************************************************"
+            write(*,'(a)') ' EFTCAMB designer f(R) background solver'
+            write(*,'(a)')
+        end if
 
         ! initialize interpolating functions:
         call self%EFTOmega%initialize  ( self%designer_num_points, self%x_initial, self%x_final )
@@ -235,7 +243,7 @@ contains
         end if
 
         ! call boundary conditions lookup:
-        call self%find_initial_conditions( params_cache, A_ini, success )
+        call self%find_initial_conditions( params_cache, feedback_level, A_ini, success )
 
         ! solve the background equations and store the solution:
         call self%solve_designer_equations( params_cache, A_ini, B0, only_B0=.False., success=success )
@@ -666,14 +674,15 @@ contains
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that solves the background equations several time to determine the values of
     !! the initial conditions. Maps A at initial times to B0 today.
-    subroutine EFTCAMBDesignerFRFindInitialConditions( self, params_cache, A_ini, success )
+    subroutine EFTCAMBDesignerFRFindInitialConditions( self, params_cache, feedback_level, A_ini, success )
 
         implicit none
 
-        class(EFTCAMB_fR_designer)                   :: self          !< the base class
-        type(EFTCAMB_parameter_cache), intent(in)    :: params_cache  !< a EFTCAMB parameter cache containing cosmological parameters
-        real(dl), intent(out)                        :: A_ini         !< value of A_initial that gives self%B0 today
-        logical , intent(out)                        :: success       !< whether the calculation ended correctly or not
+        class(EFTCAMB_fR_designer)                   :: self           !< the base class
+        type(EFTCAMB_parameter_cache), intent(in)    :: params_cache   !< a EFTCAMB parameter cache containing cosmological parameters
+        integer                      , intent(in)    :: feedback_level !< level of feedback from the background code. 0=none; 1=some; 2=chatty.
+        real(dl)                     , intent(out)   :: A_ini          !< value of A_initial that gives self%B0 today
+        logical                      , intent(out)   :: success        !< whether the calculation ended correctly or not
 
         real(dl) :: ATemp1, ATemp2, BTemp1, BTemp2, HorizAsyntB
         real(dl) :: VertAsyntA, ATemp3, ATemp4, BTemp3, BTemp4, realAp
@@ -695,7 +704,7 @@ contains
         end do
         HorizAsyntB = BTemp2
 
-        write(*,*) 'f(R) designer: horizontal asymptote =',  HorizAsyntB
+        if ( feedback_level>1 ) write(*,'(a,E13.4)') '   horizontal asymptote = ', HorizAsyntB
 
         ! 2) Check that the value of B0 given is not the forbidden one: the one corresponding to the horizontal asynt.
         if ( ABS(HorizAsyntB-self%B0)<1.d-15 ) then
@@ -708,18 +717,18 @@ contains
         ATemp2 = 10._dl
         call zbrac(DesFR_BfuncA,ATemp1,ATemp2,success,HorizAsyntB)
         if (.not.success) then
-            write(*,*) 'f(R) designer: failure of vert asynt bracketing'
+            if ( feedback_level>1 ) write(*,'(a)') '   FAILURE of vertical asymptote bracketing'
             return
         end if
 
         ! 4) Find the vertical asyntote by tricking the root finding algorithm.
         VertAsyntA = zbrent(DesFR_BfuncA,ATemp1,ATemp2,1.d-100,HorizAsyntB,success)
         if (.not.success) then
-            write(*,*) 'f(R) designer: vertical asyntote not found.'
+            if ( feedback_level>1 ) write(*,'(a)') '   FAILURE of vertical asyntote finding'
             return
         end if
 
-        write(*,*) 'f(R) designer: vertical asymptote =',  VertAsyntA
+        if ( feedback_level>1 ) write(*,'(a,E13.4)') '   vertical asymptote   = ', VertAsyntA
 
         ! 5) Find values for A that are on the left and on the right of the asyntote.
         do ind=-10, -1, 1
@@ -741,36 +750,39 @@ contains
             if ((BTemp1-self%B0)*(BTemp3-self%B0)<0.or.(BTemp2-self%B0)*(BTemp4-self%B0)<0) exit
         end do
         if ((BTemp1-self%B0)*(BTemp3-self%B0)<0.and.(BTemp2-self%B0)*(BTemp4-self%B0)<0) then
-            write(*,*) 'f(R) designer: the root is on both side ???'
-            stop
+            if ( feedback_level>1 ) write(*,'(a)') '   FAILURE as the root seems to be on both sides'
+            return
         end if
 
         ! 7) Solve the equation B0(A)=B0_wanted.
         if ((BTemp1-self%B0)*(BTemp3-self%B0)<0) then
             realAp = zbrent(DesFR_BfuncA,ATemp1,ATemp3,1.d-50,self%B0,success)
             if (.not.success) then
-                write(*,*) 'f(R) designer: right side solution not found.'
-                stop
+                if ( feedback_level>1 ) write(*,'(a)') '   FAILURE right side solution not found'
+                return
             end if
         else if ((BTemp2-self%B0)*(BTemp4-self%B0)<0) then
             realAp = zbrent(DesFR_BfuncA,ATemp2,ATemp4,1.d-50,self%B0,success)
             if (.not.success) then
-                write(*,*) 'f(R) designer: right side solution not found'
-                stop
+                if ( feedback_level>1 ) write(*,'(a)') '   FAILURE left side solution not found'
+                return
             end if
         else
-            write(*,*) 'f(R) designer: the root was not on the right side nor the left one...'
-            stop
+            if ( feedback_level>1 ) write(*,'(a)') '   FAILURE the root was not on the right side nor the left one...'
+            return
         end if
 
-        write(*,*) 'f(R) designer: initial condition A =', realAp
+        if ( feedback_level>1 ) write(*,'(a,E13.4)') '   initial condition A  = ', realAp
 
         ! 8) Check if the result found is compatible with the requested one. This is required only for debug.
         BTemp1 = DesFR_BfuncA(realAp)
-        write(*,*) 'f(R) designer: B0 found=', BTemp1, 'B0 given= ',self%B0
+        if ( feedback_level>1 ) then
+            write(*,'(a,E13.4)') '   B0 found = ', BTemp1
+            write(*,'(a,E13.4)') '   B0 given = ', self%B0
+        end if
 
         if (ABS(BTemp1-self%B0)/ABS(self%B0)>0.1_dl.and.ABS(BTemp1-self%B0)>1.d-8.and..false.) then
-            write(*,*)  'EFTCAMB: designer code unable to find appropriate initial conditions'
+            if ( feedback_level>1 ) write(*,'(a)')  '   FAILURE designer code unable to find appropriate initial conditions'
             success = .false.
             return
         end if
