@@ -446,9 +446,15 @@ contains
                 call CP%EFTCAMB%model%initialize_background( CP%eft_par_cache, success )
                 if ( .not. success ) then
                     global_error_flag         = 1
+                    global_error_message      = 'EFTCAMB: background solver failed'
                     if (present(error)) error = global_error_flag
+                    ! 5) final feedback:
+                    if ( CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
+                        write(*,'(a)') '***************************************************************'
+                    end if
                     return
                 end if
+
                 ! 3) compute the return to GR of the theory:
                 call EFTCAMBReturnToGR( CP%EFTCAMB%model, CP%eft_par_cache, CP%EFTCAMB%EFTCAMB_turn_on_time, RGR_time )
                 CP%EFTCAMB%EFTCAMB_turn_on_time = RGR_time
@@ -459,8 +465,18 @@ contains
                 call EFTCAMB_Stability_Check( success, CP%EFTCAMB, CP%eft_par_cache, 1.d-7, 1._dl, k_max )
                 if ( .not. success ) then
                     global_error_flag         = 1
+                    global_error_message      = 'EFTCAMB: theory unstable'
                     if (present(error)) error = global_error_flag
+                    ! 5) final feedback:
+                    if ( CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
+                        write(*,'(a)') '***************************************************************'
+                    end if
                     return
+                end if
+
+                ! 5) final feedback:
+                if ( CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
+                    write(*,'(a)') '***************************************************************'
                 end if
 
             end if
