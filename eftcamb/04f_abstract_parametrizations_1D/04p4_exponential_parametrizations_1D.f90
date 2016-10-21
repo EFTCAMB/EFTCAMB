@@ -27,8 +27,8 @@
 module EFTCAMB_exponential_parametrizations_1D
 
     use precision
-    use EFTDef
     use AMLutils
+    use EFT_def
     use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_1D
 

@@ -29,7 +29,7 @@ module EFTCAMB_main
     use precision
     use IniFile
     use AMLutils
-    use EFTDef
+    use EFT_def
     use EFTCAMB_abstract_model
     use EFTCAMB_pure_EFT_std
     use EFTCAMB_designer_fR
@@ -68,7 +68,7 @@ module EFTCAMB_main
 
         ! EFTCAMB working flags:
         integer   :: EFTCAMB_feedback_level      !< Amount of feedback that is printed to screen.
-        real(dl)  :: EFTCAMB_turn_on_time        !< Scale factor at which EFTCAMB becomes active. Default set to EFTturnonpiInitial in EFTDef.f90.
+        real(dl)  :: EFTCAMB_turn_on_time        !< Scale factor at which EFTCAMB becomes active. Default set to EFTturnonpiInitial in 01_EFT_def.f90.
 
     contains
 

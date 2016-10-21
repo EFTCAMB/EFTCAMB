@@ -151,7 +151,7 @@ module GaugeInterface
     use Transfer
 
     ! EFTCAMB MOD START: use EFTCAMB modules
-    use EFTDef
+    use EFT_def
     use EFTCAMB_abstract_model_full
     use EFTCAMB_abstract_model_designer
     ! EFTCAMB MOD END.

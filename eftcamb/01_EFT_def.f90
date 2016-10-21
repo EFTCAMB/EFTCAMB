@@ -22,7 +22,7 @@
 
 !> @author Bin Hu, Marco Raveri, Simone Peirone
 
-module EFTDef
+module EFT_def
 
     use Precision
 
@@ -39,16 +39,7 @@ module EFTDef
     real(dl), parameter :: EFTtoGR = 1.d-8 !< Return to GR flag:
         !!    This is the threshold at which a theory is considered to be exactly GR.
 
-    logical , parameter :: EarlyTimeStability = .true. !< Early time stability:
-        !!    EFTCAMB checks the stability of the theory at all times making sure that the choosen model
-        !!    is viable during radiation, matter and DE eras.
-        !!    It is possible to enforce stability only at late times (from EFTturnonpiInitial to today)
-        !!    by setting this flag to false.
-        !!    This choice will however make the results dependent on what one calls late time,
-        !!    i.e. the choice of EFTturnonpiInitial, so we advice to state it clearly when reporting results.
-
-    integer , parameter :: EFT_names_max_length = 20          !< maximum length of names for EFT functions and parameters.
-
+    integer , parameter :: EFT_names_max_length       = 20    !< maximum length of names for EFT functions and parameters.
     integer , parameter :: EFT_names_latex_max_length = 40    !< maximum length of latex names for EFT functions and parameters.
 
     integer , parameter :: EFT_RGR_num_points   = 1000        !< number of points to sample logaritmically the time in the return to GR module.
@@ -59,6 +50,6 @@ module EFTDef
     logical , parameter :: DebugEFTCAMB = .false.             !< EFTCAMB debug flag.This will turn on printing of many things to aid debugging the code.
 #endif
 
-end module EFTDef
+end module EFT_def
 
 !----------------------------------------------------------------------------------------

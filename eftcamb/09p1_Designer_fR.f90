@@ -28,7 +28,7 @@ module EFTCAMB_designer_fR
     use IniFile
     use AMLutils
     use equispaced_linear_interpolation_1D
-    use EFTDef
+    use EFT_def
     use EFTCAMB_rootfind
     use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_1D
@@ -193,15 +193,15 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the background of designer f(R).
-    subroutine EFTCAMBDesignerFRInitBackground( self, params_cache )
+    subroutine EFTCAMBDesignerFRInitBackground( self, params_cache, success )
 
         implicit none
 
         class(EFTCAMB_fR_designer)                   :: self          !< the base class
         type(EFTCAMB_parameter_cache), intent(in)    :: params_cache  !< a EFTCAMB parameter cache containing cosmological parameters
+        logical                      , intent(out)   :: success       !< wether the background initialization succeded or not
 
         real(dl) :: A_ini, B0
-        logical  :: success
         real(dl) :: TempMin, TempMax, debug_A
         integer  :: Debug_MaxNum, Debug_n
 
@@ -219,7 +219,7 @@ contains
             Debug_MaxNum = 1000
             do Debug_n = 1, Debug_MaxNum
                 debug_A = TempMin +REAL(Debug_n-1)*(TempMax-TempMin)/REAL(Debug_MaxNum-1)
-                call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.True. )
+                call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.True., success=success )
                 write(34,*) debug_A, B0
             end do
             close(34)
@@ -227,7 +227,7 @@ contains
             print*, 'EFTCAMB DEBUG ( f(R) designer ):  Printing F(R) results'
             call CreateTxtFile( './debug_designer_fR_solution.dat', 33 )
             debug_A = 1.0_dl
-            call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.False. )
+            call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.False., success=success )
             close(33)
         end if
 
@@ -235,13 +235,13 @@ contains
         call self%find_initial_conditions( params_cache, A_ini, success )
 
         ! solve the background equations and store the solution:
-        call self%solve_designer_equations( params_cache, A_ini, B0, only_B0=.False. )
+        call self%solve_designer_equations( params_cache, A_ini, B0, only_B0=.False., success=success )
 
     end subroutine EFTCAMBDesignerFRInitBackground
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that solves the designer f(R) background equations.
-    subroutine EFTCAMBDesignerFRSolveDesignerEquations( self, params_cache, A, B0, only_B0 )
+    subroutine EFTCAMBDesignerFRSolveDesignerEquations( self, params_cache, A, B0, only_B0, success )
 
         implicit none
 
@@ -250,6 +250,7 @@ contains
         real(dl), intent(in)                         :: A             !< the initial value of the A coefficient. Refer to the numerical notes for the details.
         real(dl), intent(out)                        :: B0            !< present day value of B.
         logical , optional                           :: only_B0       !< logical flag that tells the code wether to compute only B0 or also the EFT functions.
+        logical , intent(out)                        :: success       !< whether the calculation ended correctly or not
 
         integer, parameter :: num_eq = 2   !<  Number of equations
 
@@ -346,7 +347,10 @@ contains
             ! solve the system:
             call DLSODA ( derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, RWORK, LRW, IWORK, LIW, jacobian, JacobianMode)
             ! check istate for LSODA good completion:
-
+            if ( istate < 0 ) then
+                success = .False.
+                return
+            end if
             ! compute output EFT functions if needed:
             if ( .not. only_B0 ) then
                 call output( num_eq, i+1, t2, y, B0 )
@@ -666,14 +670,14 @@ contains
         class(EFTCAMB_fR_designer)                   :: self          !< the base class
         type(EFTCAMB_parameter_cache), intent(in)    :: params_cache  !< a EFTCAMB parameter cache containing cosmological parameters
         real(dl), intent(out)                        :: A_ini         !< value of A_initial that gives self%B0 today
-        logical , intent(out)                        :: success       !< wether the calculation ended correctly or not
+        logical , intent(out)                        :: success       !< whether the calculation ended correctly or not
 
         real(dl) :: ATemp1, ATemp2, BTemp1, BTemp2, HorizAsyntB
         real(dl) :: VertAsyntA, ATemp3, ATemp4, BTemp3, BTemp4, realAp
         integer  :: ind
 
         !  Find initial conditions for designer F(R).
-        !  Initial conditions are found solving B0(A)=B0wanted.
+        !  Initial conditions are found solving B0(A) = B0wanted.
         !  The next part of code is complicated by the fact that B0(A) is not continuous and we have to adopt ad-hoc strategies.
 
         ! 1) Find the horizontal asymptote of B0(A)
@@ -785,7 +789,7 @@ contains
             real(dl) :: DesFR_BfuncA !< value of B0
             real(dl) :: B0
 
-            call self%solve_designer_equations( params_cache, A, B0, only_B0=.True. )
+            call self%solve_designer_equations( params_cache, A, B0, only_B0=.True., success=success )
 
             DesFR_BfuncA = B0
 

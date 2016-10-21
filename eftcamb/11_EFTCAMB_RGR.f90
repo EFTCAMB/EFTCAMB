@@ -25,7 +25,7 @@
 module EFTCAMB_ReturnToGR
 
     use precision
-    use EFTDef
+    use EFT_def
     use EFTCAMB_cache
     use EFTCAMB_abstract_model
     use EFTCAMB_abstract_model_full

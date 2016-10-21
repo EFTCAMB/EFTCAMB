@@ -108,7 +108,7 @@ contains
 
         write( integer_to_string, '(i10)' ) number
 
-        integer_to_string = trim(adjustl( integer_to_string ))
+        integer_to_string = TRIM(ADJUSTL( integer_to_string ))
 
     end function integer_to_string
 

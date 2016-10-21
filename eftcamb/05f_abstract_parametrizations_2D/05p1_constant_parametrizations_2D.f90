@@ -27,9 +27,9 @@
 module EFTCAMB_constant_parametrization_2D
 
     use precision
-    use EFTCAMB_cache
     use AMLutils
-    use EFTDef
+    use EFT_def
+    use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_2D
 
     implicit none

@@ -37,45 +37,51 @@ contains
     ! ---------------------------------------------------------------------------------------------
     !> Bracketing subroutine: This subroutine does a outward search for the smallest intervall
     !! containing a root of the equation func=funcZero
-    subroutine zbrac(func,x1,x2,succes,funcZero)
+    subroutine zbrac( func, x1, x2, succes, funcZero )
 
         implicit none
 
-        real(dl) func      !< function to find the root of
-        real(dl) funcZero  !< the value desired func = funcZero
-        real(dl) x1        !< in input lower bound of the interval in which to find the root,
-                           !< in output lower bound of the bracketing interval
-        real(dl) x2        !< in input upper bound of the interval in which to find the root,
-                           !< in output upper bound of the bracketing interval
-        logical  succes    !< true if the algorithm succeeds false if not
+        real(dl) func                         !< function to find the root of
+        real(dl), intent(inout)  :: x1        !< in input lower bound of the interval in which to find the root,
+                                              !< in output lower bound of the bracketing interval
+        real(dl), intent(inout)  :: x2        !< in input upper bound of the interval in which to find the root,
+                                              !< in output upper bound of the bracketing interval
+        logical , intent(out)    :: succes    !< true if the algorithm succeeds false if not
+        real(dl), intent(in)     :: funcZero  !< the value desired func = funcZero
 
-        integer , parameter :: NTRY = 1000     !< number of subsequent enlargement of the intervall
-        real(dl), parameter :: FACTOR = 5._dl  !< factor that is used to expand the intervall
+        integer , parameter      :: ntry = 1000     !< number of subsequent enlargement of the intervall
+        real(dl), parameter      :: FACTOR = 5._dl  !< factor that is used to expand the intervall
 
-        real(dl) delta, temp
-        real(dl) f1,f2
-        integer j
+        real(dl) delta, temp, f1,f2
+        integer  j
         external func
 
-        if (x1.eq.x2) stop 'you have to guess an initial range in zbrac'
+        ! initial check:
+        if ( x1.eq.x2 ) stop 'you have to guess an initial range in zbrac'
+        ! get an ordered interval:
         if (x2<x1) then
             temp=x2
             x2=x1
             x1=temp
         end if
-        f1=func(x1)-funcZero
-        f2=func(x2)-funcZero
-        succes=.true.
-        do 11 j=1,NTRY
-            if(f1*f2.lt.0.)return
-            delta=ABS(x2-x1)
-            x1=x1-FACTOR*delta
-            x2=x2+FACTOR*delta
+        ! compute the function:
+        f1 = func(x1) -funcZero
+        f2 = func(x2) -funcZero
 
-            f1=func(x1)-funcZero
-            f2=func(x2)-funcZero
-11      continue
+        succes=.true.
+        do j=1, ntry
+            ! check wether the interval is bracketing:
+            if ( f1*f2 .lt. 0._dl ) return
+            ! compute the interval and enlarge it:
+            delta=ABS(x2-x1)
+            x1 = x1 -FACTOR*delta
+            x2 = x2 +FACTOR*delta
+            ! recompute the functions:
+            f1 = func(x1) -funcZero
+            f2 = func(x2) -funcZero
+        end do
         succes=.false.
+
         return
 
     end subroutine zbrac

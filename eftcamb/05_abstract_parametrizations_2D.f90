@@ -32,7 +32,7 @@ module EFTCAMB_abstract_parametrizations_2D
     use precision
     use AMLutils
     use IniFile
-    use EFTdef
+    use EFT_def
     use EFTCAMB_mixed_algorithms
     use EFTCAMB_cache
 

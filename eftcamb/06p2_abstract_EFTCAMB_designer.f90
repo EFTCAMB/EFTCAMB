@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 06p3_abstract_EFTCAMB_designer.f90
+!> @file 06p2_abstract_EFTCAMB_designer.f90
 !! This file contains the abstract definition of all the places where EFTCAMB interacts
 !! with CAMB in case of a designer model. All models implementing a model in which
 !! the cosmological background is parametrized  according to some choice of the user

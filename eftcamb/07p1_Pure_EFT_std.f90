@@ -30,7 +30,7 @@ module EFTCAMB_pure_EFT_std
     use IniFile
     use AMLutils
     use EFTCAMB_cache
-    use EFTdef
+    use EFT_def
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_neutral_parametrization_1D
     use EFTCAMB_constant_parametrization_1D
