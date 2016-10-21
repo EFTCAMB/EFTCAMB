@@ -88,14 +88,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#namespaces">Modules</a> &#124;
-<a href="#func-members">Functions/Subroutines</a> &#124;
-<a href="#var-members">Variables</a>  </div>
+<a href="#func-members">Functions/Subroutines</a>  </div>
   <div class="headertitle">
 <div class="title">11_EFTCAMB_stability.f90 File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This file contains the stability detection algorithm of EFTCAMB. This operates on general EFT models but needs CP to be set.  
+<p>This file contains the stability detection algorithm of EFTCAMB.  
 <a href="#details">More...</a></p>
 
 <p><a href="11__EFTCAMB__stability_8f90_source.html">Go to the source code of this file.</a></p>
@@ -103,39 +102,32 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Modules</h2></td></tr>
 <tr class="memitem:namespaceeftcamb__stability"><td class="memItemLeft" align="right" valign="top">module &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html">eftcamb_stability</a></td></tr>
-<tr class="memdesc:namespaceeftcamb__stability"><td class="mdescLeft">&#160;</td><td class="mdescRight">This module contains the stability detection algorithm of EFTCAMB. This operates on general EFT models but needs CP to be set. <br /></td></tr>
+<tr class="memdesc:namespaceeftcamb__stability"><td class="mdescLeft">&#160;</td><td class="mdescRight">This module contains the stability detection algorithm of EFTCAMB. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
-<tr class="memitem:af89b4cd861549e699377c1a1c382c536"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#af89b4cd861549e699377c1a1c382c536">eftcamb_stability::eftcamb_stability_check</a> (success, astart, aend)</td></tr>
-<tr class="memdesc:af89b4cd861549e699377c1a1c382c536"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that tests the stability of a theory in a time range. To ensure best time coverage scans with three different strategies.  <a href="namespaceeftcamb__stability.html#af89b4cd861549e699377c1a1c382c536">More...</a><br /></td></tr>
-<tr class="separator:af89b4cd861549e699377c1a1c382c536"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7781665eed9a684acdb332a930cf7527"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a7781665eed9a684acdb332a930cf7527">eftcamb_stability::eftteststability</a> (EFTCAMB_in, a, eft_par_cache)</td></tr>
-<tr class="memdesc:a7781665eed9a684acdb332a930cf7527"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function that fills the caches to check the stability of the theory.  <a href="namespaceeftcamb__stability.html#a7781665eed9a684acdb332a930cf7527">More...</a><br /></td></tr>
-<tr class="separator:a7781665eed9a684acdb332a930cf7527"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3bb6a64d73f8a7d1636e9fb4f752e3dd"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a3bb6a64d73f8a7d1636e9fb4f752e3dd">eftcamb_stability::eftstability_cleanup</a> ()</td></tr>
-<tr class="memdesc:a3bb6a64d73f8a7d1636e9fb4f752e3dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that restores the values stored in the module to the default. Needed for successive calls.  <a href="namespaceeftcamb__stability.html#a3bb6a64d73f8a7d1636e9fb4f752e3dd">More...</a><br /></td></tr>
-<tr class="separator:a3bb6a64d73f8a7d1636e9fb4f752e3dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adca1f49bbf3f30d559711b9a3350eddb"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#adca1f49bbf3f30d559711b9a3350eddb">eftcamb_stability::eftstabilitycomputation</a> (EFTCAMB_in, a, eft_par_cache, eft_cache)</td></tr>
-<tr class="memdesc:adca1f49bbf3f30d559711b9a3350eddb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that fills the caches to check the stability of the theory.  <a href="namespaceeftcamb__stability.html#adca1f49bbf3f30d559711b9a3350eddb">More...</a><br /></td></tr>
-<tr class="separator:adca1f49bbf3f30d559711b9a3350eddb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
-Variables</h2></td></tr>
-<tr class="memitem:a7ddb98b4adc19cd90cacb39fde1596e5"><td class="memItemLeft" align="right" valign="top">real(dl), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a7ddb98b4adc19cd90cacb39fde1596e5">eftcamb_stability::pasta1</a> = 0._dl</td></tr>
-<tr class="separator:a7ddb98b4adc19cd90cacb39fde1596e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad31335c5b1f0c4923ae0f081d3478687"><td class="memItemLeft" align="right" valign="top">real(dl), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#ad31335c5b1f0c4923ae0f081d3478687">eftcamb_stability::pastat</a> = 0._dl</td></tr>
-<tr class="separator:ad31335c5b1f0c4923ae0f081d3478687"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e7e14928472896b7e275e0f920d207e"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a6e7e14928472896b7e275e0f920d207e">eftcamb_stability::eftcamb_stability_check</a> (success, input_EFTCAMB, params_cache, astart, aend, k_max)</td></tr>
+<tr class="memdesc:a6e7e14928472896b7e275e0f920d207e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that tests the stability of a theory in a time range. To ensure best time coverage scans with three different strategies.  <a href="namespaceeftcamb__stability.html#a6e7e14928472896b7e275e0f920d207e">More...</a><br /></td></tr>
+<tr class="separator:a6e7e14928472896b7e275e0f920d207e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a79351565c16ba72ad6b7a3078f06e5ec"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a79351565c16ba72ad6b7a3078f06e5ec">eftcamb_stability::eftteststability</a> (a, k_max, input_EFTCAMB, params_cache)</td></tr>
+<tr class="memdesc:a79351565c16ba72ad6b7a3078f06e5ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function that fills the caches to check the stability of the theory.  <a href="namespaceeftcamb__stability.html#a79351565c16ba72ad6b7a3078f06e5ec">More...</a><br /></td></tr>
+<tr class="separator:a79351565c16ba72ad6b7a3078f06e5ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab65f38a4fc903c48d1dd3df34c244bc8"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#ab65f38a4fc903c48d1dd3df34c244bc8">eftcamb_stability::eftstability_cleanup</a> ()</td></tr>
+<tr class="memdesc:ab65f38a4fc903c48d1dd3df34c244bc8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that restores the values stored in the module to the default. Needed for successive calls.  <a href="namespaceeftcamb__stability.html#ab65f38a4fc903c48d1dd3df34c244bc8">More...</a><br /></td></tr>
+<tr class="separator:ab65f38a4fc903c48d1dd3df34c244bc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f4c3ffdabc1cd30e5c6472e312c9d2c"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a5f4c3ffdabc1cd30e5c6472e312c9d2c">eftcamb_stability::eftstabilitycomputation</a> (a, input_model, params_cache, eft_cache)</td></tr>
+<tr class="memdesc:a5f4c3ffdabc1cd30e5c6472e312c9d2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that fills the caches to check the stability of the theory.  <a href="namespaceeftcamb__stability.html#a5f4c3ffdabc1cd30e5c6472e312c9d2c">More...</a><br /></td></tr>
+<tr class="separator:a5f4c3ffdabc1cd30e5c6472e312c9d2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This file contains the stability detection algorithm of EFTCAMB. This operates on general EFT models but needs CP to be set. </p>
+<div class="textblock"><p>This file contains the stability detection algorithm of EFTCAMB. </p>
 
 <p>Definition in file <a class="el" href="11__EFTCAMB__stability_8f90_source.html">11_EFTCAMB_stability.f90</a>.</p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Oct 19 2016 22:36:00 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 21 2016 03:00:45 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

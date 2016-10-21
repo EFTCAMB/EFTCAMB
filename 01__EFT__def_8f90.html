@@ -101,33 +101,30 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Modules</h2></td></tr>
-<tr class="memitem:namespaceeftdef"><td class="memItemLeft" align="right" valign="top">module &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftdef.html">eftdef</a></td></tr>
-<tr class="memdesc:namespaceeftdef"><td class="mdescLeft">&#160;</td><td class="mdescRight">This module contains the definitions of all the EFTCAMB compile time flags. <br /></td></tr>
+<tr class="memitem:namespaceeft__def"><td class="memItemLeft" align="right" valign="top">module &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeft__def.html">eft_def</a></td></tr>
+<tr class="memdesc:namespaceeft__def"><td class="mdescLeft">&#160;</td><td class="mdescRight">This module contains the definitions of all the EFTCAMB compile time flags. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a8ec6b8835cd60d76d1c70acca66f8447"><td class="memItemLeft" align="right" valign="top">real(dl), parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftdef.html#a8ec6b8835cd60d76d1c70acca66f8447">eftdef::eftturnonpiinitial</a> = 1.d-2</td></tr>
-<tr class="memdesc:a8ec6b8835cd60d76d1c70acca66f8447"><td class="mdescLeft">&#160;</td><td class="mdescRight">Turn on pi field flag: Sets the scale factor at which the code starts to evolve the pi field. At times earlier than these the code evolves perturbations as in GR. This number is used as a lower bound and is refined if the teory is very close to GR by the EFTreturntoGR module.  <a href="namespaceeftdef.html#a8ec6b8835cd60d76d1c70acca66f8447">More...</a><br /></td></tr>
-<tr class="separator:a8ec6b8835cd60d76d1c70acca66f8447"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a885ae73ef663cd64e8d5aa72bbfbbf44"><td class="memItemLeft" align="right" valign="top">real(dl), parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftdef.html#a885ae73ef663cd64e8d5aa72bbfbbf44">eftdef::efttogr</a> = 1.d-8</td></tr>
-<tr class="memdesc:a885ae73ef663cd64e8d5aa72bbfbbf44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return to GR flag: This is the threshold at which a theory is considered to be exactly GR.  <a href="namespaceeftdef.html#a885ae73ef663cd64e8d5aa72bbfbbf44">More...</a><br /></td></tr>
-<tr class="separator:a885ae73ef663cd64e8d5aa72bbfbbf44"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab5a34ddfef06ff1fb409845100ba4821"><td class="memItemLeft" align="right" valign="top">logical, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftdef.html#ab5a34ddfef06ff1fb409845100ba4821">eftdef::earlytimestability</a> = .true.</td></tr>
-<tr class="memdesc:ab5a34ddfef06ff1fb409845100ba4821"><td class="mdescLeft">&#160;</td><td class="mdescRight">Early time stability: EFTCAMB checks the stability of the theory at all times making sure that the choosen model is viable during radiation, matter and DE eras. It is possible to enforce stability only at late times (from EFTturnonpiInitial to today) by setting this flag to false. This choice will however make the results dependent on what one calls late time, i.e. the choice of EFTturnonpiInitial, so we advice to state it clearly when reporting results.  <a href="namespaceeftdef.html#ab5a34ddfef06ff1fb409845100ba4821">More...</a><br /></td></tr>
-<tr class="separator:ab5a34ddfef06ff1fb409845100ba4821"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afabc483d9c679cd5e08684aa52ef7d0f"><td class="memItemLeft" align="right" valign="top">integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftdef.html#afabc483d9c679cd5e08684aa52ef7d0f">eftdef::eft_names_max_length</a> = 20</td></tr>
-<tr class="memdesc:afabc483d9c679cd5e08684aa52ef7d0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">maximum length of names for EFT functions and parameters.  <a href="namespaceeftdef.html#afabc483d9c679cd5e08684aa52ef7d0f">More...</a><br /></td></tr>
-<tr class="separator:afabc483d9c679cd5e08684aa52ef7d0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae422fc637f70ca1f2b7655c25b21e913"><td class="memItemLeft" align="right" valign="top">integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftdef.html#ae422fc637f70ca1f2b7655c25b21e913">eftdef::eft_names_latex_max_length</a> = 40</td></tr>
-<tr class="memdesc:ae422fc637f70ca1f2b7655c25b21e913"><td class="mdescLeft">&#160;</td><td class="mdescRight">maximum length of latex names for EFT functions and parameters.  <a href="namespaceeftdef.html#ae422fc637f70ca1f2b7655c25b21e913">More...</a><br /></td></tr>
-<tr class="separator:ae422fc637f70ca1f2b7655c25b21e913"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa20f80d06eff182c8e574c6001b1b160"><td class="memItemLeft" align="right" valign="top">integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftdef.html#aa20f80d06eff182c8e574c6001b1b160">eftdef::eft_rgr_num_points</a> = 1000</td></tr>
-<tr class="memdesc:aa20f80d06eff182c8e574c6001b1b160"><td class="mdescLeft">&#160;</td><td class="mdescRight">number of points to sample logaritmically the time in the return to GR module.  <a href="namespaceeftdef.html#aa20f80d06eff182c8e574c6001b1b160">More...</a><br /></td></tr>
-<tr class="separator:aa20f80d06eff182c8e574c6001b1b160"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03a61799cd65163332bec80b7371089f"><td class="memItemLeft" align="right" valign="top">logical, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftdef.html#a03a61799cd65163332bec80b7371089f">eftdef::debugeftcamb</a> = .true.</td></tr>
-<tr class="memdesc:a03a61799cd65163332bec80b7371089f"><td class="mdescLeft">&#160;</td><td class="mdescRight">EFTCAMB debug flag.This will turn on printing of many things to aid debugging the code.  <a href="namespaceeftdef.html#a03a61799cd65163332bec80b7371089f">More...</a><br /></td></tr>
-<tr class="separator:a03a61799cd65163332bec80b7371089f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a92c68835dd53bfef334a92c07ad3d5ac"><td class="memItemLeft" align="right" valign="top">real(dl), parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeft__def.html#a92c68835dd53bfef334a92c07ad3d5ac">eft_def::eftturnonpiinitial</a> = 1.d-2</td></tr>
+<tr class="memdesc:a92c68835dd53bfef334a92c07ad3d5ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Turn on pi field flag: Sets the scale factor at which the code starts to evolve the pi field. At times earlier than these the code evolves perturbations as in GR. This number is used as a lower bound and is refined if the teory is very close to GR by the EFTreturntoGR module.  <a href="namespaceeft__def.html#a92c68835dd53bfef334a92c07ad3d5ac">More...</a><br /></td></tr>
+<tr class="separator:a92c68835dd53bfef334a92c07ad3d5ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0183178c458442c7b1eaecb0934bda5c"><td class="memItemLeft" align="right" valign="top">real(dl), parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeft__def.html#a0183178c458442c7b1eaecb0934bda5c">eft_def::efttogr</a> = 1.d-8</td></tr>
+<tr class="memdesc:a0183178c458442c7b1eaecb0934bda5c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return to GR flag: This is the threshold at which a theory is considered to be exactly GR.  <a href="namespaceeft__def.html#a0183178c458442c7b1eaecb0934bda5c">More...</a><br /></td></tr>
+<tr class="separator:a0183178c458442c7b1eaecb0934bda5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6184ebbdc8222797b6605879780ca9f4"><td class="memItemLeft" align="right" valign="top">integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeft__def.html#a6184ebbdc8222797b6605879780ca9f4">eft_def::eft_names_max_length</a> = 20</td></tr>
+<tr class="memdesc:a6184ebbdc8222797b6605879780ca9f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">maximum length of names for EFT functions and parameters.  <a href="namespaceeft__def.html#a6184ebbdc8222797b6605879780ca9f4">More...</a><br /></td></tr>
+<tr class="separator:a6184ebbdc8222797b6605879780ca9f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc501558ffcc708b8fe41bae5d22d7b4"><td class="memItemLeft" align="right" valign="top">integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeft__def.html#adc501558ffcc708b8fe41bae5d22d7b4">eft_def::eft_names_latex_max_length</a> = 40</td></tr>
+<tr class="memdesc:adc501558ffcc708b8fe41bae5d22d7b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">maximum length of latex names for EFT functions and parameters.  <a href="namespaceeft__def.html#adc501558ffcc708b8fe41bae5d22d7b4">More...</a><br /></td></tr>
+<tr class="separator:adc501558ffcc708b8fe41bae5d22d7b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89be006cca799ab95745d232a7a52a38"><td class="memItemLeft" align="right" valign="top">integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeft__def.html#a89be006cca799ab95745d232a7a52a38">eft_def::eft_rgr_num_points</a> = 1000</td></tr>
+<tr class="memdesc:a89be006cca799ab95745d232a7a52a38"><td class="mdescLeft">&#160;</td><td class="mdescRight">number of points to sample logaritmically the time in the return to GR module.  <a href="namespaceeft__def.html#a89be006cca799ab95745d232a7a52a38">More...</a><br /></td></tr>
+<tr class="separator:a89be006cca799ab95745d232a7a52a38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8c2c2afd60e93208475304c789c2249"><td class="memItemLeft" align="right" valign="top">logical, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeft__def.html#ae8c2c2afd60e93208475304c789c2249">eft_def::debugeftcamb</a> = .true.</td></tr>
+<tr class="memdesc:ae8c2c2afd60e93208475304c789c2249"><td class="mdescLeft">&#160;</td><td class="mdescRight">EFTCAMB debug flag.This will turn on printing of many things to aid debugging the code.  <a href="namespaceeft__def.html#ae8c2c2afd60e93208475304c789c2249">More...</a><br /></td></tr>
+<tr class="separator:ae8c2c2afd60e93208475304c789c2249"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file contains the EFTCAMB compile time options. </p>
@@ -136,7 +133,7 @@ Variables</h2></td></tr>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Oct 19 2016 22:36:00 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 21 2016 03:00:45 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

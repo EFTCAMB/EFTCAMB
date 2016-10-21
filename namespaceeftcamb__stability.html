@@ -84,51 +84,55 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#func-members">Functions/Subroutines</a> &#124;
-<a href="#var-members">Variables</a>  </div>
+<a href="#func-members">Functions/Subroutines</a>  </div>
   <div class="headertitle">
 <div class="title">eftcamb_stability Module Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>This module contains the stability detection algorithm of EFTCAMB. This operates on general EFT models but needs CP to be set.  
+<p>This module contains the stability detection algorithm of EFTCAMB.  
 <a href="#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
-<tr class="memitem:af89b4cd861549e699377c1a1c382c536"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#af89b4cd861549e699377c1a1c382c536">eftcamb_stability_check</a> (success, astart, aend)</td></tr>
-<tr class="memdesc:af89b4cd861549e699377c1a1c382c536"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that tests the stability of a theory in a time range. To ensure best time coverage scans with three different strategies.  <a href="#af89b4cd861549e699377c1a1c382c536">More...</a><br /></td></tr>
-<tr class="separator:af89b4cd861549e699377c1a1c382c536"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7781665eed9a684acdb332a930cf7527"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a7781665eed9a684acdb332a930cf7527">eftteststability</a> (EFTCAMB_in, a, eft_par_cache)</td></tr>
-<tr class="memdesc:a7781665eed9a684acdb332a930cf7527"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function that fills the caches to check the stability of the theory.  <a href="#a7781665eed9a684acdb332a930cf7527">More...</a><br /></td></tr>
-<tr class="separator:a7781665eed9a684acdb332a930cf7527"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3bb6a64d73f8a7d1636e9fb4f752e3dd"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a3bb6a64d73f8a7d1636e9fb4f752e3dd">eftstability_cleanup</a> ()</td></tr>
-<tr class="memdesc:a3bb6a64d73f8a7d1636e9fb4f752e3dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that restores the values stored in the module to the default. Needed for successive calls.  <a href="#a3bb6a64d73f8a7d1636e9fb4f752e3dd">More...</a><br /></td></tr>
-<tr class="separator:a3bb6a64d73f8a7d1636e9fb4f752e3dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adca1f49bbf3f30d559711b9a3350eddb"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#adca1f49bbf3f30d559711b9a3350eddb">eftstabilitycomputation</a> (EFTCAMB_in, a, eft_par_cache, eft_cache)</td></tr>
-<tr class="memdesc:adca1f49bbf3f30d559711b9a3350eddb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that fills the caches to check the stability of the theory.  <a href="#adca1f49bbf3f30d559711b9a3350eddb">More...</a><br /></td></tr>
-<tr class="separator:adca1f49bbf3f30d559711b9a3350eddb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
-Variables</h2></td></tr>
-<tr class="memitem:a7ddb98b4adc19cd90cacb39fde1596e5"><td class="memItemLeft" align="right" valign="top">real(dl), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a7ddb98b4adc19cd90cacb39fde1596e5">pasta1</a> = 0._dl</td></tr>
-<tr class="separator:a7ddb98b4adc19cd90cacb39fde1596e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad31335c5b1f0c4923ae0f081d3478687"><td class="memItemLeft" align="right" valign="top">real(dl), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#ad31335c5b1f0c4923ae0f081d3478687">pastat</a> = 0._dl</td></tr>
-<tr class="separator:ad31335c5b1f0c4923ae0f081d3478687"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e7e14928472896b7e275e0f920d207e"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a6e7e14928472896b7e275e0f920d207e">eftcamb_stability_check</a> (success, input_EFTCAMB, params_cache, astart, aend, k_max)</td></tr>
+<tr class="memdesc:a6e7e14928472896b7e275e0f920d207e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that tests the stability of a theory in a time range. To ensure best time coverage scans with three different strategies.  <a href="#a6e7e14928472896b7e275e0f920d207e">More...</a><br /></td></tr>
+<tr class="separator:a6e7e14928472896b7e275e0f920d207e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a79351565c16ba72ad6b7a3078f06e5ec"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a79351565c16ba72ad6b7a3078f06e5ec">eftteststability</a> (a, k_max, input_EFTCAMB, params_cache)</td></tr>
+<tr class="memdesc:a79351565c16ba72ad6b7a3078f06e5ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function that fills the caches to check the stability of the theory.  <a href="#a79351565c16ba72ad6b7a3078f06e5ec">More...</a><br /></td></tr>
+<tr class="separator:a79351565c16ba72ad6b7a3078f06e5ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab65f38a4fc903c48d1dd3df34c244bc8"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#ab65f38a4fc903c48d1dd3df34c244bc8">eftstability_cleanup</a> ()</td></tr>
+<tr class="memdesc:ab65f38a4fc903c48d1dd3df34c244bc8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that restores the values stored in the module to the default. Needed for successive calls.  <a href="#ab65f38a4fc903c48d1dd3df34c244bc8">More...</a><br /></td></tr>
+<tr class="separator:ab65f38a4fc903c48d1dd3df34c244bc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f4c3ffdabc1cd30e5c6472e312c9d2c"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceeftcamb__stability.html#a5f4c3ffdabc1cd30e5c6472e312c9d2c">eftstabilitycomputation</a> (a, input_model, params_cache, eft_cache)</td></tr>
+<tr class="memdesc:a5f4c3ffdabc1cd30e5c6472e312c9d2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine that fills the caches to check the stability of the theory.  <a href="#a5f4c3ffdabc1cd30e5c6472e312c9d2c">More...</a><br /></td></tr>
+<tr class="separator:a5f4c3ffdabc1cd30e5c6472e312c9d2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This module contains the stability detection algorithm of EFTCAMB. This operates on general EFT models but needs CP to be set. </p>
+<div class="textblock"><p>This module contains the stability detection algorithm of EFTCAMB. </p>
 <dl class="section author"><dt>Author</dt><dd>Bin Hu, Marco Raveri, Simone Peirone </dd></dl>
 </div><h2 class="groupheader">Function/Subroutine Documentation</h2>
-<a class="anchor" id="af89b4cd861549e699377c1a1c382c536"></a>
+<a class="anchor" id="a6e7e14928472896b7e275e0f920d207e"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">subroutine eftcamb_stability::eftcamb_stability_check </td>
+          <td class="memname">subroutine, public eftcamb_stability::eftcamb_stability_check </td>
           <td>(</td>
           <td class="paramtype">logical, intent(out)&#160;</td>
           <td class="paramname"><em>success</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">class(eftcamb), intent(in)&#160;</td>
+          <td class="paramname"><em>input_EFTCAMB</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">type(eftcamb_parameter_cache), intent(inout)&#160;</td>
+          <td class="paramname"><em>params_cache</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -140,7 +144,13 @@ Variables</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">real(dl), intent(in)&#160;</td>
-          <td class="paramname"><em>aend</em>&#160;</td>
+          <td class="paramname"><em>aend</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">real(dl), intent(inout)&#160;</td>
+          <td class="paramname"><em>k_max</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -154,8 +164,11 @@ Variables</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[out]</td><td class="paramname">success</td><td>Output of the subroutine. Tells whether the model is found stable or not.</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input_eftcamb</td><td>the EFTCAMB object for which the code is computing stability.</td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">params_cache</td><td>the EFTCAMB parameter cache that contains all the physical parameters.</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">astart</td><td>Initial scale factor.</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">aend</td><td>Final scale factor. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">aend</td><td>Final scale factor.</td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">k_max</td><td>the input maximum k mode at which stability is computed. </td></tr>
   </table>
   </dd>
 </dl>
@@ -164,12 +177,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a3bb6a64d73f8a7d1636e9fb4f752e3dd"></a>
+<a class="anchor" id="ab65f38a4fc903c48d1dd3df34c244bc8"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">subroutine eftcamb_stability::eftstability_cleanup </td>
+          <td class="memname">subroutine, public eftcamb_stability::eftstability_cleanup </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -179,31 +192,31 @@ Variables</h2></td></tr>
 
 <p>Subroutine that restores the values stored in the module to the default. Needed for successive calls. </p>
 
-<p>Definition at line <a class="el" href="11__EFTCAMB__stability_8f90_source.html#l00284">284</a> of file <a class="el" href="11__EFTCAMB__stability_8f90_source.html">11_EFTCAMB_stability.f90</a>.</p>
+<p>Definition at line <a class="el" href="11__EFTCAMB__stability_8f90_source.html#l00281">281</a> of file <a class="el" href="11__EFTCAMB__stability_8f90_source.html">11_EFTCAMB_stability.f90</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="adca1f49bbf3f30d559711b9a3350eddb"></a>
+<a class="anchor" id="a5f4c3ffdabc1cd30e5c6472e312c9d2c"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">subroutine eftcamb_stability::eftstabilitycomputation </td>
+          <td class="memname">subroutine, public eftcamb_stability::eftstabilitycomputation </td>
           <td>(</td>
-          <td class="paramtype">type(eftcamb)&#160;</td>
-          <td class="paramname"><em>EFTCAMB_in</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">real(dl), intent(in)&#160;</td>
           <td class="paramname"><em>a</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">class(eftcamb_model), intent(in)&#160;</td>
+          <td class="paramname"><em>input_model</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">type(eftcamb_parameter_cache), intent(inout)&#160;</td>
-          <td class="paramname"><em>eft_par_cache</em>, </td>
+          <td class="paramname"><em>params_cache</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -222,39 +235,45 @@ Variables</h2></td></tr>
 <p>Subroutine that fills the caches to check the stability of the theory. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">eftcamb_in</td><td>the EFTCAMB model.</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">a</td><td>the input scale factor.</td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_par_cache</td><td>the EFTCAMB parameter cache that contains all the physical parameters.</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input_model</td><td>the EFTCAMB model for which the code is computing the RGR time.</td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">params_cache</td><td>the EFTCAMB parameter cache that contains all the physical parameters.</td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_cache</td><td>the EFTCAMB timestep cache that contains all the physical values. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="11__EFTCAMB__stability_8f90_source.html#l00295">295</a> of file <a class="el" href="11__EFTCAMB__stability_8f90_source.html">11_EFTCAMB_stability.f90</a>.</p>
+<p>Definition at line <a class="el" href="11__EFTCAMB__stability_8f90_source.html#l00292">292</a> of file <a class="el" href="11__EFTCAMB__stability_8f90_source.html">11_EFTCAMB_stability.f90</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a7781665eed9a684acdb332a930cf7527"></a>
+<a class="anchor" id="a79351565c16ba72ad6b7a3078f06e5ec"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">logical function eftcamb_stability::eftteststability </td>
+          <td class="memname">logical function, public eftcamb_stability::eftteststability </td>
           <td>(</td>
-          <td class="paramtype">type(eftcamb)&#160;</td>
-          <td class="paramname"><em>EFTCAMB_in</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">real(dl), intent(in)&#160;</td>
           <td class="paramname"><em>a</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">real(dl), intent(inout)&#160;</td>
+          <td class="paramname"><em>k_max</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">class(eftcamb), intent(in)&#160;</td>
+          <td class="paramname"><em>input_EFTCAMB</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">type(eftcamb_parameter_cache), intent(inout)&#160;</td>
-          <td class="paramname"><em>eft_par_cache</em>&#160;</td>
+          <td class="paramname"><em>params_cache</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -267,51 +286,23 @@ Variables</h2></td></tr>
 <p>Function that fills the caches to check the stability of the theory. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">eftcamb_in</td><td>the input EFTCAMB.</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">a</td><td>the input scale factor.</td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">eft_par_cache</td><td>the EFTCAMB parameter cache that contains all the physical parameters.</td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">k_max</td><td>the input maximum k mode at which stability is computed.</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input_eftcamb</td><td>the EFTCAMB object for which the code is computing stability.</td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">params_cache</td><td>the EFTCAMB parameter cache that contains all the physical parameters.</td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Logical value returned by the function. If the model is stable this is True, otherwise False. </dd></dl>
 
-<p>Definition at line <a class="el" href="11__EFTCAMB__stability_8f90_source.html#l00109">109</a> of file <a class="el" href="11__EFTCAMB__stability_8f90_source.html">11_EFTCAMB_stability.f90</a>.</p>
-
-</div>
-</div>
-<h2 class="groupheader">Variable Documentation</h2>
-<a class="anchor" id="a7ddb98b4adc19cd90cacb39fde1596e5"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">real(dl), save eftcamb_stability::pasta1 = 0._dl</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__stability_8f90_source.html#l00042">42</a> of file <a class="el" href="11__EFTCAMB__stability_8f90_source.html">11_EFTCAMB_stability.f90</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="ad31335c5b1f0c4923ae0f081d3478687"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">real(dl), save eftcamb_stability::pastat = 0._dl</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Definition at line <a class="el" href="11__EFTCAMB__stability_8f90_source.html#l00043">43</a> of file <a class="el" href="11__EFTCAMB__stability_8f90_source.html">11_EFTCAMB_stability.f90</a>.</p>
+<p>Definition at line <a class="el" href="11__EFTCAMB__stability_8f90_source.html#l00112">112</a> of file <a class="el" href="11__EFTCAMB__stability_8f90_source.html">11_EFTCAMB_stability.f90</a>.</p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Oct 19 2016 22:36:00 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 21 2016 03:00:45 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

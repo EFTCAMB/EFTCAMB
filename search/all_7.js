@@ -17,7 +17,5 @@ var searchData=
   ['parametrizedfunction2dsecondderivativexy',['ParametrizedFunction2DSecondDerivativeXY',['../interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DSecondDerivativeXY.html',1,'eftcamb_abstract_parametrizations_2d']]],
   ['parametrizedfunction2dsecondderivativey',['ParametrizedFunction2DSecondDerivativeY',['../interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DSecondDerivativeY.html',1,'eftcamb_abstract_parametrizations_2d']]],
   ['parametrizedfunction2dvalue',['ParametrizedFunction2DValue',['../interfaceeftcamb__abstract__parametrizations__2d_1_1ParametrizedFunction2DValue.html',1,'eftcamb_abstract_parametrizations_2d']]],
-  ['pasta1',['pasta1',['../namespaceeftcamb__stability.html#a7ddb98b4adc19cd90cacb39fde1596e5',1,'eftcamb_stability']]],
-  ['pastat',['pastat',['../namespaceeftcamb__stability.html#ad31335c5b1f0c4923ae0f081d3478687',1,'eftcamb_stability']]],
   ['polint',['polint',['../namespaceeftcamb__interpolation.html#aee659aa531ddbbc90fa1e320718dbce6',1,'eftcamb_interpolation']]]
 ];

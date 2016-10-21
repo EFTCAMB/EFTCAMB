@@ -119,25 +119,25 @@ Functions/Subroutines</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real(dl)&#160;</td>
+          <td class="paramtype">real(dl), intent(inout)&#160;</td>
           <td class="paramname"><em>x1</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real(dl)&#160;</td>
+          <td class="paramtype">real(dl), intent(inout)&#160;</td>
           <td class="paramname"><em>x2</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">logical&#160;</td>
+          <td class="paramtype">logical, intent(out)&#160;</td>
           <td class="paramname"><em>succes</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real(dl)&#160;</td>
+          <td class="paramtype">real(dl), intent(in)&#160;</td>
           <td class="paramname"><em>funcZero</em>&#160;</td>
         </tr>
         <tr>
@@ -151,11 +151,11 @@ Functions/Subroutines</h2></td></tr>
 <p>Bracketing subroutine: This subroutine does a outward search for the smallest intervall containing a root of the equation func=funcZero. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">func</td><td>function to find the root of</td></tr>
-    <tr><td class="paramname">funczero</td><td>the value desired func = funcZero</td></tr>
-    <tr><td class="paramname">x1</td><td>in input lower bound of the interval in which to find the root, in output lower bound of the bracketing interval</td></tr>
-    <tr><td class="paramname">x2</td><td>in input upper bound of the interval in which to find the root, in output upper bound of the bracketing interval</td></tr>
-    <tr><td class="paramname">succes</td><td>true if the algorithm succeeds false if not </td></tr>
+    <tr><td class="paramdir"></td><td class="paramname">func</td><td>function to find the root of</td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">x1</td><td>in input lower bound of the interval in which to find the root, in output lower bound of the bracketing interval</td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">x2</td><td>in input upper bound of the interval in which to find the root, in output upper bound of the bracketing interval</td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">succes</td><td>true if the algorithm succeeds false if not</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">funczero</td><td>the value desired func = funcZero </td></tr>
   </table>
   </dd>
 </dl>
@@ -226,14 +226,14 @@ Functions/Subroutines</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>returns the value of x at which the function satisfies func = funcZero up to numerical accuracy </dd></dl>
 
-<p>Definition at line <a class="el" href="02__root__finding_8f90_source.html#l00088">88</a> of file <a class="el" href="02__root__finding_8f90_source.html">02_root_finding.f90</a>.</p>
+<p>Definition at line <a class="el" href="02__root__finding_8f90_source.html#l00094">94</a> of file <a class="el" href="02__root__finding_8f90_source.html">02_root_finding.f90</a>.</p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Oct 19 2016 22:36:00 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 21 2016 03:00:45 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>
