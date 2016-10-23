@@ -156,10 +156,10 @@ contains
                 allocate( linear_parametrization_1D::self%RPH_PlanckMass )
             case(3)
                 allocate( power_law_parametrization_1D::self%RPH_PlanckMass )
-                call self%RPH_PlanckMass%set_param_names( ['RPHmassP0  ', 'RPHmassPExp'], ['\tilde{M}_0        ', '\tilde{M}_{\rm exp}^{\rm RPH}'] )
+                call self%RPH_PlanckMass%set_param_names( ['RPHmassP0  ', 'RPHmassPExp'], ['\tilde{M}_0                  ', '\tilde{M}_{\rm exp}^{\rm RPH}'] )
             case(4)
                 allocate( exponential_parametrization_1D::self%RPH_PlanckMass )
-                call self%RPH_PlanckMass%set_param_names( ['RPHmassP0  ', 'RPHmassPExp'], ['\tilde{M}_0        ', '\tilde{M}_{\rm exp}^{\rm RPH}'] )
+                call self%RPH_PlanckMass%set_param_names( ['RPHmassP0  ', 'RPHmassPExp'], ['\tilde{M}_0                  ', '\tilde{M}_{\rm exp}^{\rm RPH}'] )
             case default
                 write(*,'(a,I3)') 'No model corresponding to RPH_PlanckMass =', self%RPHmassPmodel
                 write(*,'(a)')    'Please select an appropriate model.'

@@ -1332,7 +1332,7 @@ contains
         ! Compute it, the ODE integrator does not guarantee that it is evaluated at the desired time.
         ! Notice that in EFTCAMB derivs will fill the cache with all values needed here.
         call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
-        ! tight coupling copying of variables:
+        ! Tight coupling copying of variables:
         if (EV%TightCoupling .or. EV%no_phot_multpoles) then
             pol       = 0._dl
             polprime  = 0._dl
