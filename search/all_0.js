@@ -24,5 +24,7 @@ var searchData=
   ['06p1_5fabstract_5feftcamb_5ffull_5fmap_2ef90',['06p1_abstract_EFTCAMB_full_map.f90',['../06p1__abstract__EFTCAMB__full__map_8f90.html',1,'']]],
   ['06p2_5fabstract_5feftcamb_5fdesigner_2ef90',['06p2_abstract_EFTCAMB_designer.f90',['../06p2__abstract__EFTCAMB__designer_8f90.html',1,'']]],
   ['07p1_5fpure_5feft_5fstd_2ef90',['07p1_Pure_EFT_std.f90',['../07p1__Pure__EFT__std_8f90.html',1,'']]],
-  ['09p1_5fdesigner_5ffr_2ef90',['09p1_Designer_fR.f90',['../09p1__Designer__fR_8f90.html',1,'']]]
+  ['08p1_5frph_2ef90',['08p1_RPH.f90',['../08p1__RPH_8f90.html',1,'']]],
+  ['09p1_5fdesigner_5ffr_2ef90',['09p1_Designer_fR.f90',['../09p1__Designer__fR_8f90.html',1,'']]],
+  ['09p2_5fdesigner_5fmc_5fquintessence_2ef90',['09p2_Designer_mc_quintessence.f90',['../09p2__Designer__mc__quintessence_8f90.html',1,'']]]
 ];
