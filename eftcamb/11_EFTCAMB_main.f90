@@ -32,6 +32,7 @@ module EFTCAMB_main
     use EFT_def
     use EFTCAMB_abstract_model
     use EFTCAMB_pure_EFT_std
+    use EFTCAMB_Reparametrized_Horndeski
     use EFTCAMB_designer_fR
     use EFTCAMB_designer_mc_quintessence
 
@@ -198,13 +199,13 @@ contains
         write(*,*)              'EFTCAMB model flags:'
         write(*,"(A24,I3)")     '   EFTflag             =', self%EFTflag
         if ( self%EFTflag == 1 ) &
-            write(*,"(A24,I3)") '   PureEFTmodel        =', self%DesignerEFTmodel
+            write(*,"(A24,I3)") '   PureEFTmodel        =', self%PureEFTmodel
         if ( self%EFTflag == 2 ) &
-            write(*,"(A24,I3)") '   AltParEFTmodel      =', self%DesignerEFTmodel
+            write(*,"(A24,I3)") '   AltParEFTmodel      =', self%AltParEFTmodel
         if ( self%EFTflag == 3 ) &
             write(*,"(A24,I3)") '   DesignerEFTmodel    =', self%DesignerEFTmodel
         if ( self%EFTflag == 4 ) &
-            write(*,"(A24,I3)") '   FullMappingEFTmodel =', self%DesignerEFTmodel
+            write(*,"(A24,I3)") '   FullMappingEFTmodel =', self%FullMappingEFTmodel
         ! print model informations:
         call self%model%feedback( )
         ! leave one white line:
@@ -244,8 +245,16 @@ contains
 
             case (2)     ! Alternative EFT:
 
-                write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
-                call MpiStop('EFTCAMB error')
+                select case ( self%AltParEFTmodel )
+                    case(1)
+                        allocate( EFTCAMB_RPH::self%model )
+                        call self%model%init( 'RPH', 'RPH' )
+                    case default
+                        write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
+                        write(*,'(a,I3)') 'and AltParEFTmodel =', self%AltParEFTmodel
+                        write(*,'(a)')    'Please select an appropriate model.'
+                        call MpiStop('EFTCAMB error')
+                end select
 
             case (3)     ! Designer mapping EFT:
 

@@ -833,11 +833,11 @@ contains
         eft_cache%EFTGamma3V  = self%PureEFTGamma3%value(a)
         eft_cache%EFTGamma3P  = self%PureEFTGamma3%first_derivative(a)
         if ( self%PureEFTHorndeski ) then
-            eft_cache%EFTGamma4V  = -self%PureEFTGamma3%value(a)
-            eft_cache%EFTGamma4P  = -self%PureEFTGamma3%first_derivative(a)
+            eft_cache%EFTGamma4V  = -eft_cache%EFTGamma3V
+            eft_cache%EFTGamma4P  = -eft_cache%EFTGamma3P
             eft_cache%EFTGamma4PP = -self%PureEFTGamma3%second_derivative(a)
-            eft_cache%EFTGamma5V  = +0.5_dl*self%PureEFTGamma3%value(a)
-            eft_cache%EFTGamma5P  = +0.5_dl*self%PureEFTGamma3%first_derivative(a)
+            eft_cache%EFTGamma5V  = +0.5_dl*eft_cache%EFTGamma3V
+            eft_cache%EFTGamma5P  = +0.5_dl*eft_cache%EFTGamma3P
             eft_cache%EFTGamma6V  = 0._dl
             eft_cache%EFTGamma6P  = 0._dl
         else

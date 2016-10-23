@@ -135,6 +135,8 @@ contains
 
         end do
 
+        RGR_time = 1.1_dl*a_final
+
     end subroutine EFTCAMBReturnToGR
 
     ! ---------------------------------------------------------------------------------------------

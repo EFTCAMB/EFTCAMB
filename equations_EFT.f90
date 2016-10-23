@@ -1324,14 +1324,15 @@ contains
         real(dl) ISW
 
         ! EFTCAMB MOD START: definitions of EFTCAMB quantities
-        real(dl) :: pidotdot, EFTsigmadot, EFTISW, EFTLensing, polterdot
+        real(dl) :: EFTsigmadot, EFTISW, EFTLensing, polterdot
         ! EFTCAMB MOD END.
 
-        ! reset the status vector:
+        ! Reset the derivative vector:
         yprime = 0
-        ! compute it:
+        ! Compute it, the ODE integrator does not guarantee that it is evaluated at the desired time.
+        ! Notice that in EFTCAMB derivs will fill the cache with all values needed here.
         call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
-
+        ! tight coupling copying of variables:
         if (EV%TightCoupling .or. EV%no_phot_multpoles) then
             pol       = 0._dl
             polprime  = 0._dl
@@ -1341,7 +1342,6 @@ contains
             ypolprime => yprime(EV%polind+1:)
             ypol      => y(EV%polind+1:)
         end if
-
         ! copy k value:
         k     = EV%k_buf
         k2    = EV%k2_buf
@@ -1360,7 +1360,7 @@ contains
         grhor_t = grhornomass/a2  ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
         grhog_t = grhog/a2        ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
 
-        ! EFTCAMB MOD START: remove the standard DE term if not needed.
+        ! EFTCAMB MOD START: remove the standard DE term. In EFTCAMB everything is computed starting from the expansion history and not DE density
         if (CP%EFTCAMB%EFTflag==0) then
             grhov_t = grhov*a**(-1-3*w_lam)
         else
@@ -1380,7 +1380,6 @@ contains
         dgpi      = 0._dl
         dgpi_diff = 0._dl
         pidot_sum = 0._dl
-
         if (CP%Num_Nu_Massive /= 0) then
             call MassiveNuVarsOut(EV,y,yprime,a,grho,gpres,dgrho,dgq,dgpi, dgpi_diff,pidot_sum)
         end if
@@ -1405,7 +1404,6 @@ contains
         else if (CP%EFTCAMB%EFTflag/=0.and.EV%EFTCAMBactive) then
             clxq      = EV%eft_cache%pi
             vq        = EV%eft_cache%pidot
-            pidotdot  = EV%eft_cache%pidotdot
             ! re-compute Einstein equations factors:
             call CP%EFTCAMB%model%compute_Einstein_Factors( a, CP%eft_par_cache , EV%eft_cache )
         end if
@@ -1527,9 +1525,14 @@ contains
         if (CP%EFTCAMB%EFTflag==0.or. .not. EV%EFTCAMBactive) then ! Normal CAMB code.
             !Maple's fortran output - see scal_eqs.map
             !2phi' term (\phi' + \psi' in Newtonian gauge)
-            ISW = (4.D0/3.D0*k*EV%Kf(1)*sigma+(-2.D0/3.D0*sigma-2.D0/3.D0*etak/adotoa)*k &
-                -diff_rhopi/k**2-1.D0/adotoa*dgrho/3.D0+(3.D0*gpres+5.D0*grho)*sigma/k/3.D0 &
-                -2.D0/k*adotoa/EV%Kf(1)*etak)*expmmu(j)
+            if ( CP%EFTCAMB%EFTflag /= 0 ) then
+                ISW = -2._dl*sigma*( EV%eft_cache%Hdot -2._dl*adotoa**2 ) -2._dl*adotoa*etak +dgq -diff_rhopi/k
+                ISW = expmmu(j)*(ISW)/k
+            else
+                ISW = (4.D0/3.D0*k*EV%Kf(1)*sigma+(-2.D0/3.D0*sigma-2.D0/3.D0*etak/adotoa)*k &
+                    -diff_rhopi/k**2-1.D0/adotoa*dgrho/3.D0+(3.D0*gpres+5.D0*grho)*sigma/k/3.D0 &
+                    -2.D0/k*adotoa/EV%Kf(1)*etak)*expmmu(j)
+            end if
             !e.g. to get only late-time ISW
             !  if (1/a-1 < 30) ISW=0
             !The rest, note y(9)->octg, yprime(9)->octgprime (octopoles)
