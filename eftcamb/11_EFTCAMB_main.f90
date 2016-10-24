@@ -35,6 +35,7 @@ module EFTCAMB_main
     use EFTCAMB_Reparametrized_Horndeski
     use EFTCAMB_designer_fR
     use EFTCAMB_designer_mc_quintessence
+    use EFTCAMB_LE_Horava
 
     implicit none
 
@@ -239,7 +240,8 @@ contains
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and PureEFTmodel =', self%PureEFTmodel
-                        write(*,'(a)')    'Please select an appropriate model.'
+                        write(*,'(a)')    'Please select an appropriate model:'
+                        write(*,'(a)')    'PureEFTmodel=1  standard Pure EFT'
                         call MpiStop('EFTCAMB error')
                 end select
 
@@ -252,7 +254,8 @@ contains
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and AltParEFTmodel =', self%AltParEFTmodel
-                        write(*,'(a)')    'Please select an appropriate model.'
+                        write(*,'(a)')    'Please select an appropriate model:'
+                        write(*,'(a)')    'AltParEFTmodel=1  reparametrized Horndeski'
                         call MpiStop('EFTCAMB error')
                 end select
 
@@ -268,14 +271,25 @@ contains
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and DesignerEFTmodel =', self%DesignerEFTmodel
-                        write(*,'(a)')    'Please select an appropriate model.'
+                        write(*,'(a)')    'Please select an appropriate model:'
+                        write(*,'(a)')    'DesignerEFTmodel=1  designer f(R)'
+                        write(*,'(a)')    'DesignerEFTmodel=2  designer minimally coupled quintessence'
                         call MpiStop('EFTCAMB error')
                 end select
 
             case (4)     ! Full mapping EFT:
 
-                write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
-                call MpiStop('EFTCAMB error')
+                select case ( self%FullMappingEFTmodel )
+                    case(1)
+                        allocate( EFTCAMB_Horava::self%model )
+                        call self%model%init( 'Horava', 'Horava' )
+                    case default
+                        write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
+                        write(*,'(a,I3)') 'and FullMappingEFTmodel =', self%FullMappingEFTmodel
+                        write(*,'(a)')    'Please select an appropriate model:'
+                        write(*,'(a)')    'FullMappingEFTmodel=1  Horava gravity'
+                        call MpiStop('EFTCAMB error')
+                end select
 
             case default ! not found:
 
