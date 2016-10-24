@@ -185,7 +185,7 @@ contains
         write(*,*)
         write(*,'(a23,a,F12.6)') '   Horava_eta          ', '=', self%Horava_eta
         write(*,'(a23,a,F12.6)') '   Horava_lambda       ', '=', self%Horava_lambda
-        if ( .not. self.HoravaSolarSystem ) then
+        if ( .not. self%HoravaSolarSystem ) then
             write(*,'(a23,a,F12.6)') '   Horava_xi           ', '=', self%Horava_xi
         end if
 
@@ -216,7 +216,7 @@ contains
             name = 'Horava_lambda'
             return
         end if
-        if ( i==3 .and. self.HoravaSolarSystem ) then
+        if ( i==3 .and. self%HoravaSolarSystem ) then
             name = 'Horava_xi'
             return
         end if
@@ -248,7 +248,7 @@ contains
             latexname = '\lambda_{\rm Ho\v rava}'
             return
         end if
-        if ( i==3 .and. self.HoravaSolarSystem ) then
+        if ( i==3 .and. self%HoravaSolarSystem ) then
             latexname = '\xi_{\rm Ho\v rava}'
             return
         end if
@@ -280,7 +280,7 @@ contains
             value = self%Horava_lambda
             return
         end if
-        if ( i==3 .and. self.HoravaSolarSystem ) then
+        if ( i==3 .and. self%HoravaSolarSystem ) then
             value = self%Horava_xi
             return
         end if
