@@ -183,9 +183,11 @@ contains
 
         ! print the values of the parameters:
         write(*,*)
-        write(*,'(a23,a,F12.6)') 'Horava_eta'   , '=', self%Horava_eta
-        write(*,'(a23,a,F12.6)') 'Horava_lambda', '=', self%Horava_lambda
-        write(*,'(a23,a,F12.6)') 'Horava_xi'    , '=', self%Horava_xi
+        write(*,'(a23,a,F12.6)') '   Horava_eta          ', '=', self%Horava_eta
+        write(*,'(a23,a,F12.6)') '   Horava_lambda       ', '=', self%Horava_lambda
+        if ( .not. self.HoravaSolarSystem ) then
+            write(*,'(a23,a,F12.6)') '   Horava_xi           ', '=', self%Horava_xi
+        end if
 
     end subroutine EFTCAMBHoravaFeedback
 
