@@ -22,5 +22,6 @@ camb
 # ignore the compilation folder:
 Release
 Releaselib
+ReleaseMPI
 Debug
 Debuglib
