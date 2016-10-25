@@ -117,6 +117,8 @@ contains
         integer , intent(in)            :: i      !< input number of the parameter
         real(dl), intent(out)           :: value  !< output value of the parameter
 
+        value = 0._dl
+
     end subroutine ZeroParametrized1DParameterValues
 
     ! ---------------------------------------------------------------------------------------------
@@ -232,6 +234,8 @@ contains
         class(wDE_LCDM_parametrization_1D) :: self   !< the base class.
         integer , intent(in)               :: i      !< input number of the parameter
         real(dl), intent(out)              :: value  !< output value of the parameter
+
+        value = -1._dl
 
     end subroutine wDELCDMParametrized1DParameterValues
 
