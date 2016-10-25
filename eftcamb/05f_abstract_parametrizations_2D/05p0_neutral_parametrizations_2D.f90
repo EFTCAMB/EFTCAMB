@@ -98,6 +98,8 @@ contains
         integer , intent(in)            :: i      !< input number of the parameter
         real(dl), intent(out)           :: value  !< output value of the parameter
 
+        value = 0._dl
+
     end subroutine ZeroParametrized2DParameterValues
 
     ! ---------------------------------------------------------------------------------------------

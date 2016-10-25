@@ -210,6 +210,8 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: ExponentialParametrized1DIntegral                   !< the output value
 
+        ExponentialParametrized1DIntegral = 0._dl
+
         !< No analytic solution >!
         write(*,*) 'ExponentialParametrized1DIntegral is not implemented.'
         write(*,*) 'Calculations cannot proceed.'
