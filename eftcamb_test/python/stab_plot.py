@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('Agg')
+
 import CAMB_plots_lib.plot_stability_space as splt
 
 import matplotlib.pyplot as plt

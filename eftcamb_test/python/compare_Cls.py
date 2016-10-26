@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('Agg')
+
 import CAMB_plots_lib.CAMB_comp_plots   as Cplt
 import CAMB_plots_lib.plot_colors       as pltcol
 
