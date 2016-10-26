@@ -235,7 +235,7 @@ contains
             end do
             close(34)
             ! prints f(R) quantities.
-            print*, 'EFTCAMB DEBUG ( f(R) designer ):  Printing F(R) results'
+            print*, 'EFTCAMB DEBUG ( f(R) designer ): Printing F(R) results'
             call CreateTxtFile( './debug_designer_fR_solution.dat', 33 )
             debug_A = 1.0_dl
             call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.False., success=success )

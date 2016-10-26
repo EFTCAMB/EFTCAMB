@@ -95,6 +95,8 @@ $(CAMB_DIR)/%.x: directories $(CAMBOBJ) $(EFTCAMB_APPS)/%.f90
 $(CAMB_DIR)/%.x: directories $(CAMBOBJ) $(EFTCAMB_APPS)/%.F90 
 	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(EFTCAMB_APPS)/$*.F90 $(F90CRLINK) -o $(CAMB_DIR)/$*.x
 
+Debug: eftcamb_apps
+
 # PROFILER: this requires a special target
 ifeq ($(MAKECMDGOALS), profile)
 F90FLAGS += -pg

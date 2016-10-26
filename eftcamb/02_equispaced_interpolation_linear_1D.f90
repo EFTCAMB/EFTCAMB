@@ -144,15 +144,15 @@ contains
         EquispacedLinearIntepolateFunction1DValue = self%null_value
         if ( self%has_null_value ) then
             ! if outside the interpolation range return the null value:
-            if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+            if ( x <= self%x_initial .or. x >= self%x_final ) return
         else
             ! if below the interpolation range return the first value:
-            if ( x .lt. self%x_initial ) then
+            if ( x <= self%x_initial ) then
                 EquispacedLinearIntepolateFunction1DValue = self%y(1)
                 return
             end if
             ! if above the interpolation range return the first value:
-            if ( x .gt. self%x_final   ) then
+            if ( x >= self%x_final   ) then
                 EquispacedLinearIntepolateFunction1DValue = self%y(self%num_points)
                 return
             end if
@@ -189,15 +189,15 @@ contains
         EquispacedLinearIntepolateFunction1DFirstDerivative = self%null_value
         if ( self%has_null_value ) then
             ! if outside the interpolation range return the null value:
-            if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+            if ( x <= self%x_initial .or. x >= self%x_final ) return
         else
             ! if below the interpolation range return the first value:
-            if ( x .lt. self%x_initial ) then
+            if ( x <= self%x_initial ) then
                 EquispacedLinearIntepolateFunction1DFirstDerivative = self%yp(1)
                 return
             end if
             ! if above the interpolation range return the first value:
-            if ( x .gt. self%x_final   ) then
+            if ( x >= self%x_final   ) then
                 EquispacedLinearIntepolateFunction1DFirstDerivative = self%yp(self%num_points)
                 return
             end if
@@ -234,15 +234,15 @@ contains
         EquispacedLinearIntepolateFunction1DSecondDerivative = self%null_value
         if ( self%has_null_value ) then
             ! if outside the interpolation range return the null value:
-            if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+            if ( x <= self%x_initial .or. x >= self%x_final ) return
         else
             ! if below the interpolation range return the first value:
-            if ( x .lt. self%x_initial ) then
+            if ( x <= self%x_initial ) then
                 EquispacedLinearIntepolateFunction1DSecondDerivative = self%ypp(1)
                 return
             end if
             ! if above the interpolation range return the first value:
-            if ( x .gt. self%x_final   ) then
+            if ( x >= self%x_final   ) then
                 EquispacedLinearIntepolateFunction1DSecondDerivative = self%ypp(self%num_points)
                 return
             end if
@@ -280,15 +280,15 @@ contains
         EquispacedLinearIntepolateFunction1DThirdDerivative = self%null_value
         if ( self%has_null_value ) then
             ! if outside the interpolation range return the null value:
-            if ( x .lt. self%x_initial .or. x .gt. self%x_final ) return
+            if ( x <= self%x_initial .or. x >= self%x_final ) return
         else
             ! if below the interpolation range return the first value:
-            if ( x .lt. self%x_initial ) then
+            if ( x <= self%x_initial ) then
                 EquispacedLinearIntepolateFunction1DThirdDerivative = self%yppp(1)
                 return
             end if
             ! if above the interpolation range return the first value:
-            if ( x .gt. self%x_final   ) then
+            if ( x >= self%x_final   ) then
                 EquispacedLinearIntepolateFunction1DThirdDerivative = self%yppp(self%num_points)
                 return
             end if

@@ -155,6 +155,8 @@ program benchmarker
     if ( P%EFTCAMB%EFTFlag /= 0 ) then
         ! print the EFTCAMB header:
         call P%EFTCAMB%EFTCAMB_print_header()
+        ! initialize the output root name:
+        P%EFTCAMB%outroot = TRIM( outroot )
         ! initialize the model from file:
         call P%EFTCAMB%EFTCAMB_init_model_from_file( DefIni )
         ! print feedback:
@@ -346,12 +348,15 @@ program benchmarker
 
     if (.not. CAMB_ValidateParams(P)) stop 'Stopped due to parameter error'
 
+    ! lower all feedback:
     FeedbackLevel = 0
+    P%EFTCAMB%EFTCAMB_feedback_level = 0
 
+    ! small feedback:
     write(*,"(a,a)") 'Model: ', trim(outroot)
-
+    ! allocate:
     allocate( timings(benchmark_count) )
-
+    ! call consecutively camb to get timings and variance:
     do i=1, benchmark_count
 
         t1 = omp_get_wtime()
