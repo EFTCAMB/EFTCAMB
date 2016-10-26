@@ -23,5 +23,7 @@ camb
 Release
 Releaselib
 ReleaseMPI
+ReleaseEFTMPI
 Debug
 Debuglib
+DebugEFT
