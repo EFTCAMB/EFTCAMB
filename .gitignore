@@ -26,4 +26,5 @@ ReleaseMPI
 ReleaseEFTMPI
 Debug
 Debuglib
-DebugEFT
+DebugMPI
+DebugEFTMPI
