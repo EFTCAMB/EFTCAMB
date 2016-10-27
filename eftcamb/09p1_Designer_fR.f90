@@ -827,11 +827,13 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints on the screen feedback information about the model.
-    subroutine EFTCAMBDesignerFRFeedback( self )
+    subroutine EFTCAMBDesignerFRFeedback( self, print_params )
 
         implicit none
 
-        class(EFTCAMB_fR_designer)  :: self   !< the base class
+        class(EFTCAMB_fR_designer)  :: self         !< the base class
+        logical, optional           :: print_params !< optional flag that decised whether to print numerical values
+                                                    !! of the parameters.
 
         write(*,*)
         write(*,'(a,a)')    '   Model               =  ', self%name
@@ -844,7 +846,7 @@ contains
         write(*,*)
         write(*,'(a24,F12.6)') '   B0                  =', self%B0
 
-        call self%PureEFTwDE%feedback()
+        call self%PureEFTwDE%feedback( print_params )
 
     end subroutine EFTCAMBDesignerFRFeedback
 

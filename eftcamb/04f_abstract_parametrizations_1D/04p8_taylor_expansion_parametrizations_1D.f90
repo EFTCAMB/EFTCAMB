@@ -128,22 +128,28 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints to screen the informations about the function.
-    subroutine TaylorParametrized1DFeedback( self )
+    subroutine TaylorParametrized1DFeedback( self, print_params )
 
         implicit none
 
-        class(taylor_parametrization_1D)        :: self         !< the base class
+        class(taylor_parametrization_1D) :: self         !< the base class
+        logical, optional                :: print_params !< optional flag that decised whether to print numerical values
+                                                         !! of the parameters.
 
         integer                                 :: i
         real(dl)                                :: param_value
         character(len=EFT_names_max_length)     :: param_name
 
+        if ( .not. present(print_params) ) print_params = .True.
+
         write(*,*)     'Taylor expansion parametrization: ', self%name
-        do i=1, self%parameter_number
-            call self%parameter_names( i, param_name  )
-            call self%parameter_value( i, param_value )
-            write(*,'(a23,a,F12.6)') param_name, '=', param_value
-        end do
+        if ( print_params ) then
+            do i=1, self%parameter_number
+                call self%parameter_names( i, param_name  )
+                call self%parameter_value( i, param_value )
+                write(*,'(a23,a,F12.6)') param_name, '=', param_value
+            end do
+        end if
 
     end subroutine TaylorParametrized1DFeedback
 

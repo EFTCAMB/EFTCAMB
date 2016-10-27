@@ -166,11 +166,13 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints on the screen feedback information about the model.
-    subroutine EFTCAMBHoravaFeedback( self )
+    subroutine EFTCAMBHoravaFeedback( self, print_params )
 
         implicit none
 
-        class(EFTCAMB_Horava)  :: self   !< the base class
+        class(EFTCAMB_Horava)  :: self         !< the base class
+        logical, optional      :: print_params !< optional flag that decised whether to print numerical values
+                                               !! of the parameters.
 
         ! print general model informations:
         write(*,*)
@@ -182,11 +184,14 @@ contains
         end if
 
         ! print the values of the parameters:
-        write(*,*)
-        write(*,'(a23,a,F12.6)') '   Horava_eta          ', '=', self%Horava_eta
-        write(*,'(a23,a,F12.6)') '   Horava_lambda       ', '=', self%Horava_lambda
-        if ( .not. self%HoravaSolarSystem ) then
-            write(*,'(a23,a,F12.6)') '   Horava_xi           ', '=', self%Horava_xi
+        if ( .not. present(print_params) ) print_params = .True.
+        if ( print_params ) then
+            write(*,*)
+            write(*,'(a23,a,F12.6)') '   Horava_eta          ', '=', self%Horava_eta
+            write(*,'(a23,a,F12.6)') '   Horava_lambda       ', '=', self%Horava_lambda
+            if ( .not. self%HoravaSolarSystem ) then
+                write(*,'(a23,a,F12.6)') '   Horava_xi           ', '=', self%Horava_xi
+            end if
         end if
 
     end subroutine EFTCAMBHoravaFeedback

@@ -130,11 +130,13 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints on the screen feedback information about the model.
-    subroutine EFTCAMBDesMC5eFeedback( self )
+    subroutine EFTCAMBDesMC5eFeedback( self, print_params )
 
         implicit none
 
-        class(EFTCAMB_des_mc_quint)  :: self   !< the base class
+        class(EFTCAMB_des_mc_quint)  :: self         !< the base class
+        logical, optional            :: print_params !< optional flag that decised whether to print numerical values
+                                                     !! of the parameters.
 
         ! print general model informations:
         write(*,*)
@@ -147,7 +149,7 @@ contains
 
         write(*,*)
         ! print functions informations:
-        call self%PureEFTwDE%feedback()
+        call self%PureEFTwDE%feedback( print_params )
 
     end subroutine EFTCAMBDesMC5eFeedback
 

@@ -338,11 +338,13 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints on the screen feedback information about the model.
-    subroutine EFTCAMBRPHFeedback( self )
+    subroutine EFTCAMBRPHFeedback( self, print_params )
 
         implicit none
 
-        class(EFTCAMB_RPH)  :: self   !< the base class
+        class(EFTCAMB_RPH)  :: self         !< the base class
+        logical, optional   :: print_params !< optional flag that decised whether to print numerical values
+                                            !! of the parameters.
 
         ! print general model informations:
         write(*,*)
@@ -359,11 +361,11 @@ contains
 
         write(*,*)
         ! print functions informations:
-        call self%RPH_wDE%feedback()
-        call self%RPH_PlanckMass%feedback()
-        call self%RPH_Kineticity%feedback()
-        call self%RPH_Braiding%feedback()
-        call self%RPH_Tensor%feedback()
+        call self%RPH_wDE%feedback        ( print_params )
+        call self%RPH_PlanckMass%feedback ( print_params )
+        call self%RPH_Kineticity%feedback ( print_params )
+        call self%RPH_Braiding%feedback   ( print_params )
+        call self%RPH_Tensor%feedback     ( print_params )
 
     end subroutine EFTCAMBRPHFeedback
 

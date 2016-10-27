@@ -210,9 +210,9 @@ module EFTCAMB_abstract_parametrizations_2D
             real(dl) :: ParametrizedFunction2DSecondDerivativeXY            !< the output value
         end function ParametrizedFunction2DSecondDerivativeXY
 
-       ! ---------------------------------------------------------------------------------------------
+         ! ---------------------------------------------------------------------------------------------
 
-  end interface
+    end interface
 
     ! ---------------------------------------------------------------------------------------------
 
@@ -338,23 +338,29 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints to screen the informations about the function.
-    subroutine ParametrizedFunction2DFeedback( self )
+    subroutine ParametrizedFunction2DFeedback( self, print_params )
 
         implicit none
 
-        class(parametrized_function_2D)  :: self   !< the base class
+        class(parametrized_function_2D)  :: self         !< the base class
+        logical, optional                :: print_params !< optional flag that decised whether to print numerical values
+                                                         !! of the parameters.
 
         integer                             :: i
         real(dl)                            :: param_value
         character(len=EFT_names_max_length) :: param_name
 
+        if ( .not. present(print_params) ) print_params = .True.
+
         if ( self%parameter_number>0 ) then
             write(*,*)     'Parametrized function 2D: ', self%name
-            do i=1, self%parameter_number
-                call self%parameter_names( i, param_name  )
-                call self%parameter_value( i, param_value )
-                write(*,'(a23,a,F12.6)') param_name, '=', param_value
-            end do
+            if ( print_params ) then
+                do i=1, self%parameter_number
+                    call self%parameter_names( i, param_name  )
+                    call self%parameter_value( i, param_value )
+                    write(*,'(a23,a,F12.6)') param_name, '=', param_value
+                end do
+            end if
         end if
 
     end subroutine ParametrizedFunction2DFeedback

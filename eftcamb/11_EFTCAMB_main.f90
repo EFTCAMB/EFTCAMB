@@ -78,6 +78,7 @@ module EFTCAMB_main
         procedure :: EFTCAMB_init_from_file        => read_EFTCAMB_flags_from_file  !< subroutine that initializes EFTCAMB from an INI file.
         procedure :: EFTCAMB_init_model_from_file  => init_EFTCAMB_model_from_file  !< subroutine that initializes the selected model from file.
         procedure :: EFTCAMB_print_header          => print_EFTCAMB_header          !< subroutine that prints to screen the EFTCAMB header.
+        procedure :: EFTCAMB_print_CosmoMC_header  => print_EFTCosmoMC_header       !< subroutine that prints to screen the EFTCosmoMC header.
         procedure :: EFTCAMB_print_model_feedback  => print_EFTCAMB_flags           !< subroutine that prints to screen the model flags and parameters.
         ! model allocation:
         procedure :: EFTCAMB_allocate_model            => allocate_EFTCAMB_model            !< subroutine that, based on the model selection flags allocates the EFTCAMB model.
@@ -164,12 +165,38 @@ contains
     end subroutine print_EFTCAMB_header
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that prints to screen informations about the model and the model parameters.
-    subroutine print_EFTCAMB_flags( self )
+    !> Subroutine that prints to screen the EFTCosmoMC header.
+    subroutine print_EFTCosmoMC_header( self )
 
         implicit none
 
-        class(EFTCAMB)      :: self       !< the base class
+        class(EFTCAMB) :: self       !< the base class
+
+        ! check feedback level:
+        if ( .not. self%EFTCAMB_feedback_level > 0 ) return
+        ! if GR return:
+        if ( self%EFTflag == 0 ) return
+        ! print the header:
+        write(*,'(a)') "***************************************************************"
+        write(*,'(a)') "     ___________________                    __  ________"
+        write(*,'(a)') "    / __/ __/_  __/ ___/__  ___ __ _  ___  /  |/  / ___/"
+        write(*,'(a)') "   / _// _/  / / / /__/ _ \(_-</  ' \/ _ \/ /|_/ / /__  "
+        write(*,'(a)') "  /___/_/   /_/  \___/\___/___/_/_/_/\___/_/  /_/\___/  "
+        write(*,'(a)') "  "
+        write(*,'(a)') "  "//EFTCAMB_version
+        write(*,'(a)') "***************************************************************"
+
+    end subroutine print_EFTCosmoMC_header
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that prints to screen informations about the model and the model parameters.
+    subroutine print_EFTCAMB_flags( self, print_params )
+
+        implicit none
+
+        class(EFTCAMB)      :: self         !< the base class
+        logical, optional   :: print_params !< optional flag that decised whether to print numerical values
+                                            !! of the parameters.
 
         character(len=500)  :: temp_name
         real(dl)            :: temp_value
@@ -208,7 +235,7 @@ contains
         if ( self%EFTflag == 4 ) &
             write(*,"(A24,I3)") '   FullMappingEFTmodel =', self%FullMappingEFTmodel
         ! print model informations:
-        call self%model%feedback( )
+        call self%model%feedback( print_params )
         ! leave one white line:
         write(*,*)
 

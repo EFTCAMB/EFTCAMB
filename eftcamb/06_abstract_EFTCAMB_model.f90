@@ -140,10 +140,12 @@ module EFTCAMB_abstract_model
 
         ! ---------------------------------------------------------------------------------------------
         !> Subroutine that prints on the screen feedback information about the model.
-        subroutine EFTCAMBModelFeedback( self )
+        subroutine EFTCAMBModelFeedback( self, print_params )
             import EFTCAMB_model
             implicit none
-            class(EFTCAMB_model)       :: self   !< the base class
+            class(EFTCAMB_model)  :: self         !< the base class
+            logical, optional     :: print_params !< optional flag that decised whether to print numerical values
+                                                  !! of the parameters.
         end subroutine EFTCAMBModelFeedback
 
         ! ---------------------------------------------------------------------------------------------

@@ -461,11 +461,13 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints on the screen feedback information about the model.
-    subroutine EFTCAMBPureEFTstdFeedback( self )
+    subroutine EFTCAMBPureEFTstdFeedback( self, print_params )
 
         implicit none
 
-        class(EFTCAMB_std_pure_EFT)  :: self   !< the base class
+        class(EFTCAMB_std_pure_EFT)  :: self         !< the base class
+        logical, optional            :: print_params !< optional flag that decised whether to print numerical values
+                                                     !! of the parameters.
 
         ! print general model informations:
         write(*,*)
@@ -490,15 +492,15 @@ contains
 
         write(*,*)
         ! print functions informations:
-        call self%PureEFTOmega%feedback()
-        call self%PureEFTwDE%feedback()
-        call self%PureEFTGamma1%feedback()
-        call self%PureEFTGamma2%feedback()
-        call self%PureEFTGamma3%feedback()
+        call self%PureEFTOmega%feedback  ( print_params )
+        call self%PureEFTwDE%feedback    ( print_params )
+        call self%PureEFTGamma1%feedback ( print_params )
+        call self%PureEFTGamma2%feedback ( print_params )
+        call self%PureEFTGamma3%feedback ( print_params )
         if ( .not. self%PureEFTHorndeski ) then
-            call self%PureEFTGamma4%feedback()
-            call self%PureEFTGamma5%feedback()
-            call self%PureEFTGamma6%feedback()
+            call self%PureEFTGamma4%feedback( print_params )
+            call self%PureEFTGamma5%feedback( print_params )
+            call self%PureEFTGamma6%feedback( print_params )
         end if
 
     end subroutine EFTCAMBPureEFTstdFeedback
