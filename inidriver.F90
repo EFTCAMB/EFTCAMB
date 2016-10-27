@@ -130,7 +130,7 @@ program driver
         ! initialize the output root name:
         P%EFTCAMB%outroot = TRIM( outroot )
         ! initialize feedback level:
-        P%EFTCAMB%EFTCAMB_feedback_level = feedback_level
+        P%EFTCAMB%EFTCAMB_feedback_level = FeedbackLevel
         ! initialize the model from file:
         call P%EFTCAMB%EFTCAMB_init_model_from_file( DefIni )
         ! print feedback:
