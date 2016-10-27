@@ -526,7 +526,7 @@ contains
         N3     = N2 + self%PureEFTGamma3%parameter_number
         if ( .not. self%PureEFTHorndeski ) then
             N4 = N3 + self%PureEFTGamma4%parameter_number
-            N4 = N4 + self%PureEFTGamma5%parameter_number
+            N5 = N4 + self%PureEFTGamma5%parameter_number
             N6 = N5 + self%PureEFTGamma6%parameter_number
         end if
 
@@ -621,7 +621,7 @@ contains
         N3 = N2 + self%PureEFTGamma3%parameter_number
         if ( .not. self%PureEFTHorndeski ) then
             N4 = N3 + self%PureEFTGamma4%parameter_number
-            N4 = N4 + self%PureEFTGamma5%parameter_number
+            N5 = N4 + self%PureEFTGamma5%parameter_number
             N6 = N5 + self%PureEFTGamma6%parameter_number
         end if
 
@@ -712,7 +712,7 @@ contains
         N3 = N2 + self%PureEFTGamma3%parameter_number
         if ( .not. self%PureEFTHorndeski ) then
             N4 = N3 + self%PureEFTGamma4%parameter_number
-            N4 = N4 + self%PureEFTGamma5%parameter_number
+            N5 = N4 + self%PureEFTGamma5%parameter_number
             N6 = N5 + self%PureEFTGamma6%parameter_number
         end if
 
