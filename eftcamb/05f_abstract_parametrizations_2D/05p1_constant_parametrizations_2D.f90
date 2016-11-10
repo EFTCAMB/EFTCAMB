@@ -107,11 +107,16 @@ contains
         integer                             :: i
         real(dl)                            :: param_value
         character(len=EFT_names_max_length) :: param_name
+        logical                             :: print_params_temp
 
-        if ( .not. present(print_params) ) print_params = .True.
+        if ( present(print_params) ) then
+            print_params_temp = print_params
+        else
+            print_params_temp = .True.
+        end if
 
         write(*,*)     'Constant function: ', self%name
-        if ( print_params ) then
+        if ( print_params_temp ) then
             do i=1, self%parameter_number
                 call self%parameter_names( i, param_name  )
                 call self%parameter_value( i, param_value )

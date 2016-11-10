@@ -174,6 +174,8 @@ contains
         logical, optional      :: print_params !< optional flag that decised whether to print numerical values
                                                !! of the parameters.
 
+        logical                :: print_params_temp
+
         ! print general model informations:
         write(*,*)
         write(*,'(a,a)')    '   Model               =  ', self%name
@@ -184,8 +186,13 @@ contains
         end if
 
         ! print the values of the parameters:
-        if ( .not. present(print_params) ) print_params = .True.
-        if ( print_params ) then
+        if ( present(print_params) ) then
+            print_params_temp = print_params
+        else
+            print_params_temp = .True.
+        end if
+
+        if ( print_params_temp ) then
             write(*,*)
             write(*,'(a23,a,F12.6)') '   Horava_eta          ', '=', self%Horava_eta
             write(*,'(a23,a,F12.6)') '   Horava_lambda       ', '=', self%Horava_lambda
