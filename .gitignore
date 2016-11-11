@@ -28,3 +28,8 @@ Debug
 Debuglib
 DebugMPI
 DebugEFTMPI
+
+# ignore cluster scripts:
+*.sbatch
+*.err
+*.out
