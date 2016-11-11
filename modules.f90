@@ -441,7 +441,6 @@ contains
                 allocate( CP%eft_par_cache%grhormass(max_nu), CP%eft_par_cache%nu_masses(max_nu) )
                 CP%eft_par_cache%grhormass            = grhormass
                 CP%eft_par_cache%nu_masses            = nu_masses
-
                 ! 2) now run background initialization:
                 call CP%EFTCAMB%model%initialize_background( CP%eft_par_cache, CP%EFTCAMB%EFTCAMB_feedback_level, success )
                 if ( .not. success ) then

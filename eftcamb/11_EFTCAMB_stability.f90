@@ -160,14 +160,14 @@ contains
         call params_cache%is_nan( EFT_HaveNan_parameter )
         if ( EFT_HaveNan_parameter ) then
             EFTTestStability = .false.
-            if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a)') '   Model has Nan in the parameter cache'
+            if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') '   Model has Nan in the parameter cache'
             return
         end if
         ! 2) everything inside the time-step cache should not be a NaN:
         call eft_cache%is_nan( EFT_HaveNan_timestep )
         if ( EFT_HaveNan_timestep ) then
             EFTTestStability = .false.
-            if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a)') '   Model has Nan in the timestep cache'
+            if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') '   Model has Nan in the timestep cache'
             return
         end if
         ! 3) enforce mathematical stability:
@@ -179,14 +179,14 @@ contains
             !    The first condition is A1/=0. Implemented by detecting sign changes in A1.
             if ( eft_cache%EFTpiA1*PastA1 < 0._dl ) then
                 EFTTestStability = .false.
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a)') '   Mathematical instability: A is zero in time'
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') '   Mathematical instability: A is zero in time'
             end if
             PastA1 = eft_cache%EFTpiA1
             !    The second one is the condition on k.
             if ( (eft_cache%EFTpiA1 > 0 .and. eft_cache%EFTpiA1 + k_max**2*eft_cache%EFTpiA2 < 0) .or. &
                 &(eft_cache%EFTpiA1 < 0 .and. eft_cache%EFTpiA1 + k_max**2*eft_cache%EFTpiA2 > 0) ) then
                 EFTTestStability = .false.
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a)') '   Mathematical instability: A is zero in k'
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') '   Mathematical instability: A is zero in k'
             end if
 
             ! 2- the AT coefficient should not change sign in time, i.e. it shall not be zero.
@@ -195,7 +195,7 @@ contains
             !    Implemented by detecting sign changes in AT.
             if ( eft_cache%EFTAT*PastAT < 0._dl ) then
                 EFTTestStability = .false.
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a)') '   Mathematical instability:  AT is zero in time'
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') '   Mathematical instability:  AT is zero in time'
             end if
             PastAT = eft_cache%EFTAT
 
@@ -224,7 +224,7 @@ contains
                     temp5 = +0.5_dl*(-temp1 -sqrt(temp3))/temp2
                     if ( temp4>EFT_instability_rate .or. temp5>EFT_instability_rate ) then
                         EFTTestStability = .false.
-                        if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) then
+                        if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) then
                             write(*,'(a,E11.4)')       '   Mathematical instability: growing exponential at k =', tempk
                             write(*,'(a,E11.4,E11.4)') '      Rate of instability: ', temp4, temp5
                         end if
@@ -235,7 +235,7 @@ contains
                     temp4 = -0.5_dl*temp1/temp2
                     if ( temp4>EFT_instability_rate ) then
                         EFTTestStability = .false.
-                        if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) then
+                        if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) then
                             write(*,'(a,E11.4)')       '   Mathematical instability: growing exponential at k =', tempk
                             write(*,'(a,E11.4,E11.4)') '      Rate of instability: ', temp4
                         end if
@@ -250,7 +250,7 @@ contains
         if ( input_EFTCAMB%EFT_additional_priors ) then
             EFTTestStability = input_EFTCAMB%model%additional_model_stability( a, params_cache, eft_cache )
             if ( .not. EFTTestStability ) then
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a)') '   Model specific stability criteria are not met'
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') '   Model specific stability criteria are not met'
             end if
         end if
         ! 5) enforce physical viability:
@@ -269,31 +269,31 @@ contains
             ! 1- Positive gravitational constant:
             if ( 1._dl +eft_cache%EFTOmegaV <= 0 ) then
                 EFTTestStability = .false.
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl +eft_cache%EFTOmegaV
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl +eft_cache%EFTOmegaV
             end if
 
             ! 2- Ghost condition:
             if ( eft_cache%EFT_kinetic < 0._dl ) then
                 EFTTestStability = .false.
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a,E11.4)') '   Physical instability: ghost instability. Kinetic term = ', eft_cache%EFT_kinetic
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: ghost instability. Kinetic term = ', eft_cache%EFT_kinetic
             end if
 
             ! 3- Gradient instability:
             if ( eft_cache%EFT_gradient < 0._dl ) then
                 EFTTestStability = .false.
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a,E11.4)') '   Physical instability: gradient instability. Gradient term = ', eft_cache%EFT_gradient
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: gradient instability. Gradient term = ', eft_cache%EFT_gradient
             end if
 
             ! 4- No tensor ghosts:
             if ( eft_cache%EFTAT < 0 ) then
                 EFTTestStability = .false.
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a,E11.4)') '   Physical instability: tensor ghost instability. Tensor kinetic term = ', eft_cache%EFTAT
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: tensor ghost instability. Tensor kinetic term = ', eft_cache%EFTAT
             end if
 
             ! 5- No tensor gradient:
             if ( eft_cache%EFTDT < 0 ) then
                 EFTTestStability = .false.
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 0 ) write(*,'(a,E11.4)') '   Physical instability: tensor gradient instability. Tensor gradient term = ', eft_cache%EFTDT
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: tensor gradient instability. Tensor gradient term = ', eft_cache%EFTDT
             end if
 
         end if
