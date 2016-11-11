@@ -107,6 +107,7 @@ profile: directories $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90
 
 clean_apps:
 	@rm -f $(CAMB_DIR)/*.x
+	@rm -f gmon.out
 	
 # add the apps targets to the main ones:
 all: eftcamb_apps
