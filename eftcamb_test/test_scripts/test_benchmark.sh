@@ -106,6 +106,28 @@ else
 		printf "********************************************\n${Color_Off}"
 fi
 
+# produce the global benchmark report:
+
+if [ "$SUCCESS" = true ]; then
+
+# create the total summary file:
+log_file="$RESULTS_BENCHMARK_DIR/benchmark.$(date +%Y%m%d_%H%M).log"
+touch $log_file
+
+for i in $RESULTS_BENCHMARK_DIR/*.bench;
+    do
+
+    filename=$(basename "$i")
+    extension="${filename##*.}"
+    filename="${filename%.*}"
+
+    TIMING=$(tail -1 $i)
+    echo $filename $TIMING >> $log_file
+
+done;
+
+fi
+
 # return status:
 
 if [ "$SUCCESS" = true ]; then
