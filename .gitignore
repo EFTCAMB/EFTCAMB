@@ -1,0 +1,26 @@
+# ignore the MAC files:
+*.DS_Store
+
+# ignore the ECLIPSE project file:
+.project
+.pydevproject
+.settings
+
+# ignore compilation products:
+*.mod
+*.o
+*.a
+*.pyc
+
+# ignore the profiler file:
+gmon.out
+
+# ignore the executables:
+camb
+eftbenchmark
+eftprofile
+
+# ignore the compilation folder:
+Release
+Debuglib
+Debug
