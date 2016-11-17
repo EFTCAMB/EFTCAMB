@@ -404,17 +404,11 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        eft_cache%gpiv_t  = - eft_cache%grhov_t
-        eft_cache%Hdot    = -0.5_dl*( eft_cache%adotoa**2 +eft_cache%gpresm_t +eft_cache%gpiv_t )
-
-        ! IW POSSIBLE BUG
-        !eft_cache%Hdotdot = eft_cache%adotoa*( ( eft_cache%grhob_t +eft_cache%grhoc_t)/6._dl +2._dl*( eft_cache%grhor_t +eft_cache%grhog_t)/3._dl ) &
-        !    & +eft_cache%adotoa*eft_cache%grhov_t*( 1._dl/6._dl +self%Horava_wDE%value(a) +1.5_dl*self%Horava_wDE%value(a)**2 -0.5_dl*a*self%Horava_wDE%first_derivative(a) ) &
-        !    & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
-
-        eft_cache%Hdotdot = 2._dl*eft_cache%adotoa*eft_cache%Hdot &
-            & + 0.5_dl*eft_cache%adotoa*(eft_cache%grhob_t + eft_cache%grhoc_t + 8._dl*(eft_cache%grhog_t+eft_cache%grhor_t)/3._dl)&
-            & + eft_cache%adotoa/6._dl*eft_cache%grhonu_tot -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
+        eft_cache%gpiv_t   = -eft_cache%grhov_t
+        eft_cache%Hdot     = -0.5_dl*( eft_cache%adotoa**2 +eft_cache%gpresm_t +eft_cache%gpiv_t )
+        eft_cache%Hdotdot  = eft_cache%adotoa*( ( eft_cache%grhob_t +eft_cache%grhoc_t)/6._dl +2._dl*( eft_cache%grhor_t +eft_cache%grhog_t)/3._dl ) &
+            & +2._dl*eft_cache%adotoa*eft_cache%grhov_t/3._dl &
+            & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
 
         eft_cache%Hdot     = eft_cache%Hdot*sqrt(( 2._dl +2._dl*self%Horava_xi -self%Horava_eta )/(3._dl*self%Horava_lambda +2._dl))
         eft_cache%Hdotdot  = eft_cache%Hdotdot*sqrt(( 2._dl +2._dl*self%Horava_xi -self%Horava_eta )/(3._dl*self%Horava_lambda +2._dl))

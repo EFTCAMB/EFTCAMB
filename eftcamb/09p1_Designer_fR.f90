@@ -58,7 +58,7 @@ module EFTCAMB_designer_fR
         integer  :: EFTwDE                                                !< Model selection flag for designer f(R) w DE.
 
         ! the pure EFT functions:
-        class( parametrized_function_1D ), allocatable :: PureEFTwDE      !< The pure EFT function w_DE.
+        class( parametrized_function_1D ), allocatable :: DesfRwDE      !< The pure EFT function w_DE.
 
         ! the interpolated EFT functions that come out of the background sover:
         type(equispaced_linear_interpolate_function_1D) :: EFTOmega       !< The interpolated function Omega (and derivatives).
@@ -130,31 +130,31 @@ contains
         character, allocatable, dimension(:)              :: param_names_latex !< an array of strings containing the latex names of the function parameters
 
         ! allocate wDE:
-        if ( allocated(self%PureEFTwDE) ) deallocate(self%PureEFTwDE)
+        if ( allocated(self%DesfRwDE) ) deallocate(self%DesfRwDE)
         select case ( self%EFTwDE )
             case(0)
-                allocate( wDE_LCDM_parametrization_1D::self%PureEFTwDE )
+                allocate( wDE_LCDM_parametrization_1D::self%DesfRwDE )
             case(1)
-                allocate( constant_parametrization_1D::self%PureEFTwDE )
+                allocate( constant_parametrization_1D::self%DesfRwDE )
             case(2)
-                allocate( CPL_parametrization_1D::self%PureEFTwDE )
-                call self%PureEFTwDE%set_param_names( ['EFTw0', 'EFTwa'], ['w_0', 'w_a'] )
+                allocate( CPL_parametrization_1D::self%DesfRwDE )
+                call self%DesfRwDE%set_param_names( ['EFTw0', 'EFTwa'], ['w_0', 'w_a'] )
             case(3)
-                allocate( JBP_parametrization_1D::self%PureEFTwDE )
-                call self%PureEFTwDE%set_param_names( ['EFTw0', 'EFTwa', 'EFTwn'], [ 'w_0', 'w_a', 'n  ' ] )
+                allocate( JBP_parametrization_1D::self%DesfRwDE )
+                call self%DesfRwDE%set_param_names( ['EFTw0', 'EFTwa', 'EFTwn'], [ 'w_0', 'w_a', 'n  ' ] )
             case(4)
-                allocate( turning_point_parametrization_1D::self%PureEFTwDE )
-                call self%PureEFTwDE%set_param_names( ['EFTw0 ', 'EFTwa ', 'EFTwat'], ['w_0', 'w_a', 'a_t'] )
+                allocate( turning_point_parametrization_1D::self%DesfRwDE )
+                call self%DesfRwDE%set_param_names( ['EFTw0 ', 'EFTwa ', 'EFTwat'], ['w_0', 'w_a', 'a_t'] )
             case(5)
-                allocate( taylor_parametrization_1D::self%PureEFTwDE )
-                call self%PureEFTwDE%set_param_names( ['EFTw0', 'EFTwa', 'EFTw2', 'EFTw3'], ['w_0', 'w_a', 'w_2', 'w_3'] )
+                allocate( taylor_parametrization_1D::self%DesfRwDE )
+                call self%DesfRwDE%set_param_names( ['EFTw0', 'EFTwa', 'EFTw2', 'EFTw3'], ['w_0', 'w_a', 'w_2', 'w_3'] )
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
         end select
 
         ! initialize the names:
-        call self%PureEFTwDE%set_name( 'EFTw', 'w' )
+        call self%DesfRwDE%set_name( 'EFTw', 'w' )
 
     end subroutine EFTCAMBDesignerFRAllocateModelSelection
 
@@ -174,7 +174,7 @@ contains
         do i = 1, self%parameter_number -1
             temp(i) = array(i+1)
         end do
-        call self%PureEFTwDE%init_parameters(temp)
+        call self%DesfRwDE%init_parameters(temp)
 
     end subroutine EFTCAMBDesignerFRInitModelParameters
 
@@ -190,7 +190,7 @@ contains
         ! read B0:
         self%B0 = Ini_Read_Double_File( Ini, 'EFTB0', 0._dl )
         ! read w_DE parameters:
-        call self%PureEFTwDE%init_from_file( Ini )
+        call self%DesfRwDE%init_from_file( Ini )
 
     end subroutine EFTCAMBDesignerFRInitModelParametersFromFile
 
@@ -297,16 +297,16 @@ contains
         PPlus = 0.5_dl*(-Initial_B_fR + Sqrt(Initial_B_fR**2 - 4._dl*Initial_C_fR))
         yPlus = exp(PPlus*self%x_initial)
         !    Construction of the particolar solution:
-        CoeffA_Part = (-6._dl*Initial_C_fR)/(-3._dl*Exp(self%x_initial)*self%PureEFTwDE%first_derivative( Exp(self%x_initial) )&
-            & +9._dl*self%PureEFTwDE%value( Exp(self%x_initial) )**2&
-            & +(18._dl-3._dl*Initial_B_fR)*self%PureEFTwDE%value( Exp(self%x_initial) )&
+        CoeffA_Part = (-6._dl*Initial_C_fR)/(-3._dl*Exp(self%x_initial)*self%DesfRwDE%first_derivative( Exp(self%x_initial) )&
+            & +9._dl*self%DesfRwDE%value( Exp(self%x_initial) )**2&
+            & +(18._dl-3._dl*Initial_B_fR)*self%DesfRwDE%value( Exp(self%x_initial) )&
             & +9._dl -3._dl*Initial_B_fR +Initial_C_fR)
-        yStar = CoeffA_Part*Omegavac_EFT*Exp(-2._dl*self%x_initial)*self%PureEFTwDE%integral( Exp(self%x_initial) )
+        yStar = CoeffA_Part*Omegavac_EFT*Exp(-2._dl*self%x_initial)*self%DesfRwDE%integral( Exp(self%x_initial) )
 
         ! 3) Set initial conditions:
         x    = self%x_initial
         y(1) = A*yPlus + yStar
-        y(2) = PPlus*A*yPlus - 3._dl*( 1._dl+ self%PureEFTwDE%value(Exp(self%x_initial)) )*yStar
+        y(2) = PPlus*A*yPlus - 3._dl*( 1._dl+ self%DesfRwDE%value(Exp(self%x_initial)) )*yStar
         ydot = 0._dl
 
         ! 4) Initialize DLSODA:
@@ -400,10 +400,10 @@ contains
             a = Exp(x)
 
             ! 2) Compute the function g(x) and its derivatives:
-            EFT_E_gfun    = -(Log( self%PureEFTwDE%integral(a) ) -2._dl*x)/3._dl
-            EFT_E_gfunp   = 1._dl +self%PureEFTwDE%value(a)
-            EFT_E_gfunpp  = Exp(x)*self%PureEFTwDE%first_derivative(a)
-            EFT_E_gfunppp = Exp(x)*self%PureEFTwDE%first_derivative(a) +Exp(2._dl*x)*self%PureEFTwDE%second_derivative(a)
+            EFT_E_gfun    = -(Log( self%DesfRwDE%integral(a) ) -2._dl*x)/3._dl
+            EFT_E_gfunp   = 1._dl +self%DesfRwDE%value(a)
+            EFT_E_gfunpp  = Exp(x)*self%DesfRwDE%first_derivative(a)
+            EFT_E_gfunppp = Exp(x)*self%DesfRwDE%first_derivative(a) +Exp(2._dl*x)*self%DesfRwDE%second_derivative(a)
 
             ! 3) Compute energy and its derivatives:
             ! First compute massive neutrinos contribution:
@@ -538,10 +538,10 @@ contains
             a = Exp(x)
 
             ! 2) Compute the function g(x) and its derivatives:
-            EFT_E_gfun    = -(Log( self%PureEFTwDE%integral(a) ) -2._dl*x)/3._dl
-            EFT_E_gfunp   = 1._dl +self%PureEFTwDE%value(a)
-            EFT_E_gfunpp  = Exp(x)*self%PureEFTwDE%first_derivative(a)
-            EFT_E_gfunppp = Exp(x)*self%PureEFTwDE%first_derivative(a) +Exp(2._dl*x)*self%PureEFTwDE%second_derivative(a)
+            EFT_E_gfun    = -(Log( self%DesfRwDE%integral(a) ) -2._dl*x)/3._dl
+            EFT_E_gfunp   = 1._dl +self%DesfRwDE%value(a)
+            EFT_E_gfunpp  = Exp(x)*self%DesfRwDE%first_derivative(a)
+            EFT_E_gfunppp = Exp(x)*self%DesfRwDE%first_derivative(a) +Exp(2._dl*x)*self%DesfRwDE%second_derivative(a)
 
             ! 3) Compute energy and its derivatives:
             ! First compute massive neutrinos contribution:
@@ -821,7 +821,7 @@ contains
         class(EFTCAMB_fR_designer)  :: self   !< the base class
 
         self%parameter_number = 1
-        self%parameter_number = self%parameter_number +self%PureEFTwDE%parameter_number
+        self%parameter_number = self%parameter_number +self%DesfRwDE%parameter_number
 
     end subroutine EFTCAMBDesignerFRComputeParametersNumber
 
@@ -846,7 +846,7 @@ contains
         write(*,*)
         write(*,'(a24,F12.6)') '   B0                  =', self%B0
 
-        call self%PureEFTwDE%feedback( print_params )
+        call self%DesfRwDE%feedback( print_params )
 
     end subroutine EFTCAMBDesignerFRFeedback
 
@@ -871,7 +871,7 @@ contains
             return
         ! the other parameters are the w_DE parameters:
         else
-            call self%PureEFTwDE%parameter_names( i-1, name )
+            call self%DesfRwDE%parameter_names( i-1, name )
             return
         end if
 
@@ -898,7 +898,7 @@ contains
             return
         ! the other parameters are the w_DE parameters:
         else
-            call self%PureEFTwDE%parameter_names_latex( i-1, latexname )
+            call self%DesfRwDE%parameter_names_latex( i-1, latexname )
             return
         end if
 
@@ -925,7 +925,7 @@ contains
             return
         ! the other parameters are the w_DE parameters:
         else
-            call self%PureEFTwDE%parameter_value( i-1, value )
+            call self%DesfRwDE%parameter_value( i-1, value )
             return
         end if
 
@@ -1000,7 +1000,7 @@ contains
 
         real(dl) :: temp
 
-        temp = eft_cache%grhoa2 +eft_par_cache%grhov*a*a*self%PureEFTwDE%integral(a)
+        temp = eft_cache%grhoa2 +eft_par_cache%grhov*a*a*self%DesfRwDE%integral(a)
         EFTCAMBDesignerFRComputeDtauda = sqrt(3/temp)
 
     end function EFTCAMBDesignerFRComputeDtauda
@@ -1016,7 +1016,7 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        eft_cache%grhov_t = eft_par_cache%grhov*self%PureEFTwDE%integral(a)
+        eft_cache%grhov_t = eft_par_cache%grhov*self%DesfRwDE%integral(a)
         eft_cache%adotoa  = sqrt( ( eft_cache%grhom_t +eft_cache%grhov_t )/3._dl )
 
     end subroutine EFTCAMBDesignerFRComputeAdotoa
@@ -1032,18 +1032,11 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        eft_cache%gpiv_t  = self%PureEFTwDE%value(a)*eft_cache%grhov_t
+        eft_cache%gpiv_t  = self%DesfRwDE%value(a)*eft_cache%grhov_t
         eft_cache%Hdot    = -0.5_dl*( eft_cache%adotoa**2 +eft_cache%gpresm_t +eft_cache%gpiv_t )
-
-        ! IW POSSIBLE BUG
-        !eft_cache%Hdotdot = eft_cache%adotoa*( ( eft_cache%grhob_t +eft_cache%grhoc_t)/6._dl +2._dl*( eft_cache%grhor_t +eft_cache%grhog_t)/3._dl ) &
-        !    & +eft_cache%adotoa*eft_cache%grhov_t*( 1._dl/6._dl +self%PureEFTwDE%value(a) +1.5_dl*self%PureEFTwDE%value(a)**2 -0.5_dl*a*self%PureEFTwDE%first_derivative(a) ) &
-        !    & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
-
-        eft_cache%Hdotdot = 2._dl*eft_cache%adotoa*eft_cache%Hdot &
-            & + 0.5_dl*eft_cache%adotoa*(eft_cache%grhob_t + eft_cache%grhoc_t + 8._dl*(eft_cache%grhog_t+eft_cache%grhor_t)/3._dl)&
-            & + 0.5_dl*eft_cache%adotoa*eft_cache%grhov_t*( (1._dl+self%PureEFTwDE%value(a) )*(1._dl+3._dl*self%PureEFTwDE%value(a)) -a*self%PureEFTwDE%first_derivative(a))&
-            & + eft_cache%adotoa/6._dl*eft_cache%grhonu_tot -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
+        eft_cache%Hdotdot = eft_cache%adotoa*( ( eft_cache%grhob_t +eft_cache%grhoc_t)/6._dl +2._dl*( eft_cache%grhor_t +eft_cache%grhog_t)/3._dl ) &
+            & +eft_cache%adotoa*eft_cache%grhov_t*( 1._dl/6._dl +self%DesfRwDE%value(a) +1.5_dl*self%DesfRwDE%value(a)**2 -0.5_dl*a*self%DesfRwDE%first_derivative(a) ) &
+            & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
 
     end subroutine EFTCAMBDesignerFRComputeHubbleDer
 
@@ -1061,7 +1054,7 @@ contains
         logical :: EFTCAMBDesignerFRAdditionalModelStability          !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
 
         EFTCAMBDesignerFRAdditionalModelStability = .True.
-        if ( self%PureEFTwDE%value(a) > -1._dl/3._dl ) EFTCAMBDesignerFRAdditionalModelStability = .False.
+        if ( self%DesfRwDE%value(a) > -1._dl/3._dl ) EFTCAMBDesignerFRAdditionalModelStability = .False.
 
     end function EFTCAMBDesignerFRAdditionalModelStability
 
