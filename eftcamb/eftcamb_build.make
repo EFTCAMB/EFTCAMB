@@ -103,7 +103,7 @@ F90FLAGS += -pg
 endif
 
 profile: directories $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90 
-	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90 $(F90CRLINK) -o $(CAMB_DIR)/profiler.x
+	$(F90C) $(F90FLAGS) -DPROFILER $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90 $(F90CRLINK) -o $(CAMB_DIR)/profiler.x
 
 clean_apps:
 	@rm -f $(CAMB_DIR)/*.x

@@ -352,6 +352,12 @@ program benchmarker
     FeedbackLevel = 0
     P%EFTCAMB%EFTCAMB_feedback_level = 0
 
+    ! adjust options in case this is the profiler:
+#ifdef PROFILE
+    ThreadNum       = 1
+    benchmark_count = 1
+#endif
+
     ! small feedback:
     write(*,"(a,a)") 'Model: ', trim(outroot)
     ! allocate:

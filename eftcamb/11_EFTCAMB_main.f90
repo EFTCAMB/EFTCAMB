@@ -43,11 +43,12 @@ module EFTCAMB_main
 
     public EFTCAMB_version, EFTCAMB
 
-    character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Oct16'
+    character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Dec16'
 
     !----------------------------------------------------------------------------------------
-    !> This is the main object for EFTCAMB. Get one of these and you can use all the stuff
-    !! in EFTCAMB.
+    !> This is the main object for EFTCAMB and contains all the necessary ingredients to
+    !! perform the EFT calculations. For the physical details of the calculations implemented
+    !! please refer to the Numerical Notes.
     type EFTCAMB
 
         ! EFTCAMB output root:
