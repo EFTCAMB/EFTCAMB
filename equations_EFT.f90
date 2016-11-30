@@ -2225,8 +2225,6 @@ contains
         else if ( CP%EFTCAMB%EFTFlag /= 0 ) then
             ! compute gpres: add radiation and massless neutrinos to massive neutrinos
             gpres = gpres + (grhog_t+grhor_t)/3._dl
-            ! initialize the cache:
-            call EV%eft_cache%initialize()
             ! start to fill the cache:
             EV%eft_cache%a           = a
             EV%eft_cache%tau         = tau
@@ -2256,6 +2254,10 @@ contains
             ! compute massive neutrinos stuff:
             ! Massive neutrinos mod:
             if ( CP%Num_Nu_Massive /= 0 ) then
+                EV%eft_cache%grhonu_tot    = 0._dl
+                EV%eft_cache%gpinu_tot     = 0._dl
+                EV%eft_cache%grhonudot_tot = 0._dl
+                EV%eft_cache%gpinudot_tot  = 0._dl
                 do nu_i = 1, CP%Nu_mass_eigenstates
                     EFT_grhonu    = 0._dl
                     EFT_gpinu     = 0._dl
@@ -2960,8 +2962,6 @@ contains
             end if
         else if ( CP%EFTCAMB%EFTFlag /= 0 ) then
             ! compute gpres: add radiation and massless neutrinos to massive neutrinos
-            ! initialize the cache:
-            call EV%eft_cache%initialize()
             ! start to fill the cache:
             EV%eft_cache%a           = a
             EV%eft_cache%tau         = tau
@@ -2990,6 +2990,10 @@ contains
             ! compute massive neutrinos stuff:
             ! Massive neutrinos mod:
             if (CP%Num_Nu_Massive /= 0) then
+                EV%eft_cache%grhonu_tot    = 0._dl
+                EV%eft_cache%gpinu_tot     = 0._dl
+                EV%eft_cache%grhonudot_tot = 0._dl
+                EV%eft_cache%gpinudot_tot  = 0._dl
                 do nu_i = 1, CP%Nu_mass_eigenstates
                     EFT_grhonu    = 0._dl
                     EFT_gpinu     = 0._dl
