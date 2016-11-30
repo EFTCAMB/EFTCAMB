@@ -297,13 +297,21 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        eft_cache%grhoq     = 2._dl*eft_cache%EFTc -eft_cache%EFTLambda -3._dl*a*eft_cache%adotoa**2*eft_cache%EFTOmegaP
-        eft_cache%gpresq    = eft_cache%EFTLambda + (a*eft_cache%adotoa)**2*eft_cache%EFTOmegaPP&
-            & +a*eft_cache%EFTOmegaP*( eft_cache%Hdot + 2._dl*eft_cache%adotoa**2 )
-        eft_cache%grhodotq  = -3._dl*eft_cache%adotoa*( eft_cache%grhoq +eft_cache%gpresq ) + 3._dl*a*eft_cache%adotoa**3*eft_cache%EFTOmegaP
-        eft_cache%gpresdotq = eft_cache%EFTLambdadot + (a*eft_cache%adotoa)**3*eft_cache%EFTOmegaPPP + 3._dl*a**2*eft_cache%adotoa*eft_cache%Hdot*eft_cache%EFTOmegaPP&
-            & +a*eft_cache%EFTOmegaP*eft_cache%Hdotdot +3._dl*a*eft_cache%adotoa*eft_cache%Hdot*eft_cache%EFTOmegaP +2._dl*a**2*eft_cache%adotoa**3*eft_cache%EFTOmegaPP&
-            & -2._dl*a*eft_cache%adotoa**3*eft_cache%EFTOmegaP
+        real(dl) :: a2, adotoa2, aomegaP
+
+        ! precompute some parts:
+        a2      = a*a
+        adotoa2 = eft_cache%adotoa**2
+        aomegaP = a*eft_cache%EFTOmegaP
+
+        ! do the computations:
+        eft_cache%grhoq     = 2._dl*eft_cache%EFTc -eft_cache%EFTLambda -3._dl*adotoa2*aomegaP
+        eft_cache%gpresq    = eft_cache%EFTLambda + a2*adotoa2*eft_cache%EFTOmegaPP +aomegaP*(eft_cache%Hdot+2._dl*adotoa2)
+        eft_cache%grhodotq  = 3._dl*eft_cache%adotoa*(-eft_cache%grhoq-eft_cache%gpresq+adotoa2*aomegaP )
+        eft_cache%gpresdotq = eft_cache%EFTLambdadot &
+            & +adotoa2*eft_cache%adotoa*(a*a2*eft_cache%EFTOmegaPPP-2._dl*aomegaP+2._dl*a2*eft_cache%EFTOmegaPP) &
+            & +aomegaP*eft_cache%Hdotdot &
+            & +3._dl*eft_cache%adotoa*eft_cache%Hdot*( aomegaP+a2*eft_cache%EFTOmegaPP )
 
     end subroutine EFTCAMBModelComputeRhoQPQ
 
@@ -477,7 +485,7 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-         real(dl) :: one_plus_omega
+        real(dl) :: one_plus_omega
 
         ! precompute some common parts:
         one_plus_omega = 1._dl+eft_cache%EFTOmegaV
