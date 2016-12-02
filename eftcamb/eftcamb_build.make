@@ -105,6 +105,13 @@ endif
 profile: directories $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90 
 	$(F90C) $(F90FLAGS) -DPROFILER $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90 $(F90CRLINK) -o $(CAMB_DIR)/profiler.x
 
+# INTEL PROFILER: this requires special options
+ifeq ($(MAKECMDGOALS), intel_profile)
+F90FLAGS += -g -shared-intel -shared-libgcc -debug inline-debug-info -D TBB_USE_THREADING_TOOLS -qopenmp-link dynamic
+endif
+
+intel_profile: camb eftcamb_apps
+
 clean_apps:
 	@rm -f $(CAMB_DIR)/*.x
 	@rm -f gmon.out

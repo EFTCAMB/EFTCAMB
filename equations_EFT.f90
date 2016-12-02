@@ -75,11 +75,6 @@ function dtauda(a)
     use MassiveNu
     use LambdaGeneral
 
-    ! EFTCAMB MOD START: use EFTCAMB modules
-    use EFTCAMB_abstract_model_full
-    use EFTCAMB_abstract_model_designer
-    ! EFTCAMB MOD END.
-
     implicit none
 
     real(dl) dtauda
@@ -120,19 +115,17 @@ function dtauda(a)
         eft_cache%a      = a
         eft_cache%grhoa2 = grhoa2
         ! compute the background and the background EFT functions.
-        select type ( model => CP%EFTCAMB%model )
-            class is (EFTCAMB_full_model)
+        if ( .not. CP%EFTCAMB%EFTCAMB_model_is_designer ) then
             ! background for full models. Here the expansion history is computed from the
             ! EFT functions. Hence compute them first and then compute the expansion history.
             call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , eft_cache )
             dtauda = CP%EFTCAMB%model%compute_dtauda( a, CP%eft_par_cache , eft_cache )
-            class is (EFTCAMB_designer_model)
+        else if ( CP%EFTCAMB%EFTCAMB_model_is_designer ) then
             ! background for designer models. Here the expansion history is parametrized
             ! and does not depend on the EFT functions. Hence compute first the expansion history
             ! and then the EFT functions.
             dtauda = CP%EFTCAMB%model%compute_dtauda( a, CP%eft_par_cache , eft_cache )
-        end select
-
+        end if
     end if
     ! EFTCAMB MOD END.
 
@@ -2224,7 +2217,7 @@ contains
             end if
         else if ( CP%EFTCAMB%EFTFlag /= 0 ) then
             ! compute gpres: add radiation and massless neutrinos to massive neutrinos
-            gpres = gpres + (grhog_t+grhor_t)/3._dl
+            gpres = gpres +(grhog_t +grhor_t)/3._dl
             ! start to fill the cache:
             EV%eft_cache%a           = a
             EV%eft_cache%tau         = tau
@@ -2236,19 +2229,17 @@ contains
             EV%eft_cache%grhor_t     = grhor_t
             EV%eft_cache%grhog_t     = grhog_t
             ! compute the other things:
-            select type ( model => CP%EFTCAMB%model )
-                ! compute the background and the background EFT functions.
-                class is ( EFTCAMB_full_model )
+            if ( .not. CP%EFTCAMB%EFTCAMB_model_is_designer ) then
                 ! background for full models. Here the expansion history is computed from the
                 ! EFT functions. Hence compute them first and then compute the expansion history.
                 call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
                 call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , EV%eft_cache )
-                class is ( EFTCAMB_designer_model )
+            else if ( CP%EFTCAMB%EFTCAMB_model_is_designer ) then
                 ! background for designer models. Here the expansion history is parametrized
                 ! and does not depend on the EFT functions. Hence compute first the expansion history
                 ! and then the EFT functions.
                 call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , EV%eft_cache )
-            end select
+            end if
             ! store adotoa:
             adotoa   = EV%eft_cache%adotoa
             ! compute massive neutrinos stuff:
@@ -2279,11 +2270,10 @@ contains
             call CP%EFTCAMB%model%compute_H_derivs( a, CP%eft_par_cache , EV%eft_cache )
             ! store:
             adotdota = EV%eft_cache%Hdot +EV%eft_cache%adotoa**2
-            ! compute backgrond EFT functions if model is designer:
-            select type ( model => CP%EFTCAMB%model )
-                class is ( EFTCAMB_designer_model )
+            ! finish computing the background:
+            if ( CP%EFTCAMB%EFTCAMB_model_is_designer ) then
                 call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
-            end select
+            end if
             ! compute all other background stuff:
             call CP%EFTCAMB%model%compute_rhoQPQ( a, CP%eft_par_cache , EV%eft_cache )
             ! compute second order EFT functions:
@@ -2972,24 +2962,22 @@ contains
             EV%eft_cache%grhor_t     = grhor_t
             EV%eft_cache%grhog_t     = grhog_t
             ! compute the other things:
-            select type ( model => CP%EFTCAMB%model )
-                ! compute the background and the background EFT functions.
-                class is (EFTCAMB_full_model)
+            if ( .not. CP%EFTCAMB%EFTCAMB_model_is_designer ) then
                 ! background for full models. Here the expansion history is computed from the
                 ! EFT functions. Hence compute them first and then compute the expansion history.
                 call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
                 call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , EV%eft_cache )
-                class is (EFTCAMB_designer_model)
+            else if ( CP%EFTCAMB%EFTCAMB_model_is_designer ) then
                 ! background for designer models. Here the expansion history is parametrized
                 ! and does not depend on the EFT functions. Hence compute first the expansion history
                 ! and then the EFT functions.
                 call CP%EFTCAMB%model%compute_adotoa( a, CP%eft_par_cache , EV%eft_cache )
-            end select
+            end if
             ! store adotoa:
             adotoa   = EV%eft_cache%adotoa
             ! compute massive neutrinos stuff:
             ! Massive neutrinos mod:
-            if (CP%Num_Nu_Massive /= 0) then
+            if ( CP%Num_Nu_Massive /= 0 ) then
                 EV%eft_cache%grhonu_tot    = 0._dl
                 EV%eft_cache%gpinu_tot     = 0._dl
                 EV%eft_cache%grhonudot_tot = 0._dl
@@ -3009,18 +2997,16 @@ contains
                         & -4._dl*adotoa*EFT_gpinu)
                 end do
             end if
-            ! compute pressure and pressure dot:
-            EV%eft_cache%gpresm_t    = (grhog_t+grhor_t)/3._dl +EV%eft_cache%gpinu_tot
+            ! compute pressure dot:
             EV%eft_cache%gpresdotm_t = -4._dl*adotoa*( grhog_t+grhor_t )/3._dl +EV%eft_cache%gpinudot_tot
             ! compute remaining quantities related to H:
             call CP%EFTCAMB%model%compute_H_derivs( a, CP%eft_par_cache , EV%eft_cache )
             ! store:
             adotdota = EV%eft_cache%Hdot +EV%eft_cache%adotoa**2
-            ! compute backgrond EFT functions if model is designer:
-            select type ( model => CP%EFTCAMB%model )
-                class is (EFTCAMB_designer_model)
+            ! finish computing the background:
+            if ( CP%EFTCAMB%EFTCAMB_model_is_designer ) then
                 call CP%EFTCAMB%model%compute_background_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
-            end select
+            end if
             ! compute all other background stuff:
             call CP%EFTCAMB%model%compute_rhoQPQ( a, CP%eft_par_cache , EV%eft_cache )
             ! compute second order EFT functions:

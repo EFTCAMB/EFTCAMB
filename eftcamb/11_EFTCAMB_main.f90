@@ -31,6 +31,8 @@ module EFTCAMB_main
     use AMLutils
     use EFT_def
     use EFTCAMB_abstract_model
+    use EFTCAMB_abstract_model_full
+    use EFTCAMB_abstract_model_designer
     use EFTCAMB_pure_EFT_std
     use EFTCAMB_Reparametrized_Horndeski
     use EFTCAMB_designer_fR
@@ -72,6 +74,7 @@ module EFTCAMB_main
         ! EFTCAMB working flags:
         integer   :: EFTCAMB_feedback_level      !< Amount of feedback that is printed to screen.
         real(dl)  :: EFTCAMB_turn_on_time        !< Scale factor at which EFTCAMB becomes active. Default set to EFTturnonpiInitial in 01_EFT_def.f90.
+        logical   :: EFTCAMB_model_is_designer   !< Logical flag that establishes whether the model is designer or not.
 
     contains
 
@@ -330,6 +333,14 @@ contains
                 write(*,'(a)') 'EFTFlag=4  full mapping EFT'
                 call MpiStop('EFTCAMB error')
 
+        end select
+
+        ! now store the designer flag:
+        select type ( model => self%model )
+            class is ( EFTCAMB_full_model )
+            self%EFTCAMB_model_is_designer = .False.
+            class is ( EFTCAMB_designer_model )
+            self%EFTCAMB_model_is_designer = .True.
         end select
 
     end subroutine allocate_EFTCAMB_model
