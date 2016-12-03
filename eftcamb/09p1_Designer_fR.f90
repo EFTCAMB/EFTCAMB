@@ -942,18 +942,20 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        real(dl) :: x
+        real(dl) :: x, mu
+        integer  :: ind
 
-        x = log(a)
+        x   = log(a)
+        call self%EFTOmega%precompute(x, ind, mu )
 
-        eft_cache%EFTOmegaV    = self%EFTOmega%value(x)
-        eft_cache%EFTOmegaP    = self%EFTOmega%first_derivative(x)
-        eft_cache%EFTOmegaPP   = self%EFTOmega%second_derivative(x)
-        eft_cache%EFTOmegaPPP  = self%EFTOmega%third_derivative(x)
+        eft_cache%EFTOmegaV    = self%EFTOmega%value( x, index=ind, coeff=mu )
+        eft_cache%EFTOmegaP    = self%EFTOmega%first_derivative( x, index=ind, coeff=mu )
+        eft_cache%EFTOmegaPP   = self%EFTOmega%second_derivative( x, index=ind, coeff=mu )
+        eft_cache%EFTOmegaPPP  = self%EFTOmega%third_derivative( x, index=ind, coeff=mu )
         eft_cache%EFTc         = 0._dl
-        eft_cache%EFTLambda    = self%EFTLambda%value(x)
+        eft_cache%EFTLambda    = self%EFTLambda%value( x, index=ind, coeff=mu )
         eft_cache%EFTcdot      = 0._dl
-        eft_cache%EFTLambdadot = self%EFTLambda%first_derivative(x)
+        eft_cache%EFTLambdadot = self%EFTLambda%first_derivative( x, index=ind, coeff=mu )
 
     end subroutine EFTCAMBDesignerFRBackgroundEFTFunctions
 

@@ -60,6 +60,7 @@ module equispaced_linear_interpolation_1D
     contains
 
         procedure :: initialize             => EquispacedLinearIntepolateFunction1DInit               !< subroutine that initialize the interpolating function.
+        procedure :: precompute             => EquispacedLinearIntepolateFunction1DPrecompute         !< subroutine that does precomputations for the interpolation. Usefull when calling values and derivatives.
         procedure :: value                  => EquispacedLinearIntepolateFunction1DValue              !< function that gives the value of the function at a given coordinate x.
         procedure :: first_derivative       => EquispacedLinearIntepolateFunction1DFirstDerivative    !< function that gives the value of the function first derivative at a given coordinate x.
         procedure :: second_derivative      => EquispacedLinearIntepolateFunction1DSecondDerivative   !< function that gives the value of the function second derivative at a given coordinate x.
@@ -128,15 +129,40 @@ contains
     end subroutine EquispacedLinearIntepolateFunction1DInit
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that gives the value of the function at a given coordinate x.
-    function EquispacedLinearIntepolateFunction1DValue( self, x )
+    !> Function that computes the main interpolation index.
+    !! Usefull when calling value and derivatives in the same place.
+    subroutine EquispacedLinearIntepolateFunction1DPrecompute( self, x, ind, mu )
 
         implicit none
 
         class(equispaced_linear_interpolate_function_1D)  :: self       !< the base class
         real(dl), intent(in)                              :: x          !< the value of x at which the function is required
-        real(dl) :: EquispacedLinearIntepolateFunction1DValue           !< the output value of the function
+        integer , intent(out)                             :: ind        !< the main interpolation index
+        real(dl), intent(out)                             :: mu         !< the interpolation coefficient
 
+        real(dl) :: x1, x2
+
+        ! compute the interpolation index:
+        ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        ! store the x values:
+        x1  = self%x(ind)
+        x2  = self%x(ind+1)
+        ! compute the linear interpolation coefficient:
+        mu  = (x-x1)/(x2-x1)
+
+    end subroutine EquispacedLinearIntepolateFunction1DPrecompute
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that gives the value of the function at a given coordinate x.
+    function EquispacedLinearIntepolateFunction1DValue( self, x, index, coeff )
+
+        implicit none
+
+        class(equispaced_linear_interpolate_function_1D)  :: self       !< the base class
+        real(dl), intent(in)                              :: x          !< the value of x at which the function is required
+        integer , intent(in), optional                    :: index      !< optional precomputed value of the interpolation index
+        real(dl), intent(in), optional                    :: coeff      !< optional precomputed value of the interpolation coefficient
+        real(dl) :: EquispacedLinearIntepolateFunction1DValue           !< the output value of the function
         integer  :: ind
         real(dl) :: x1, x2, y1, y2, mu
 
@@ -159,27 +185,42 @@ contains
         end if
 
         ! return the index of the point:
-        ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        if (present(index) ) then
+            ind = index
+        else
+            ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        end if
 
-        ! store the values:
-        x1  = self%x(ind)
-        x2  = self%x(ind+1)
+        ! get the interpolation coefficient:
+        if (present(coeff) ) then
+            mu = coeff
+        else
+            ! store the x values:
+            x1  = self%x(ind)
+            x2  = self%x(ind+1)
+            ! compute the linear interpolation coefficient:
+            mu  = (x-x1)/(x2-x1)
+        end if
+
+        ! store the y values:
         y1  = self%y(ind)
         y2  = self%y(ind+1)
+
         ! compute the linear interpolation:
-        mu  = (x-x1)/(x2-x1)
         EquispacedLinearIntepolateFunction1DValue = y1*( 1._dl -mu ) +y2*mu
 
     end function EquispacedLinearIntepolateFunction1DValue
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that gives the value of the function first derivative at a given coordinate x.
-    function EquispacedLinearIntepolateFunction1DFirstDerivative( self, x )
+    function EquispacedLinearIntepolateFunction1DFirstDerivative( self, x, index, coeff )
 
         implicit none
 
         class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
         real(dl), intent(in)                              :: x           !< the value of x at which the function derivative is required
+        integer , intent(in), optional                    :: index       !< optional precomputed value of the interpolation index
+        real(dl), intent(in), optional                    :: coeff      !< optional precomputed value of the interpolation coefficient
         real(dl) :: EquispacedLinearIntepolateFunction1DFirstDerivative  !< the output value of the function
 
         integer  :: ind
@@ -204,27 +245,42 @@ contains
         end if
 
         ! return the index of the point:
-        ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        if (present(index) ) then
+            ind = index
+        else
+            ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        end if
 
-        ! store the values:
-        x1  = self%x(ind)
-        x2  = self%x(ind+1)
+        ! get the interpolation coefficient:
+        if (present(coeff) ) then
+            mu = coeff
+        else
+            ! store the x values:
+            x1  = self%x(ind)
+            x2  = self%x(ind+1)
+            ! compute the linear interpolation coefficient:
+            mu  = (x-x1)/(x2-x1)
+        end if
+
+        ! store the y values:
         y1  = self%yp(ind)
         y2  = self%yp(ind+1)
+
         ! compute the linear interpolation:
-        mu  = (x-x1)/(x2-x1)
         EquispacedLinearIntepolateFunction1DFirstDerivative = y1*( 1._dl -mu ) +y2*mu
 
     end function EquispacedLinearIntepolateFunction1DFirstDerivative
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that gives the value of the function second derivative at a given coordinate x.
-    function EquispacedLinearIntepolateFunction1DSecondDerivative( self, x )
+    function EquispacedLinearIntepolateFunction1DSecondDerivative( self, x, index, coeff )
 
         implicit none
 
         class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
         real(dl), intent(in)                              :: x           !< the value of x at which the function derivative is required
+        integer , intent(in), optional                    :: index       !< optional precomputed value of the interpolation index
+        real(dl), intent(in), optional                    :: coeff      !< optional precomputed value of the interpolation coefficient
         real(dl) :: EquispacedLinearIntepolateFunction1DSecondDerivative !< the output value of the function
 
         integer  :: ind
@@ -249,28 +305,42 @@ contains
         end if
 
         ! return the index of the point:
-        ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        if (present(index) ) then
+            ind = index
+        else
+            ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        end if
 
-        ! store the values:
-        x1  = self%x(ind)
-        x2  = self%x(ind+1)
+        ! get the interpolation coefficient:
+        if (present(coeff) ) then
+            mu = coeff
+        else
+            ! store the x values:
+            x1  = self%x(ind)
+            x2  = self%x(ind+1)
+            ! compute the linear interpolation coefficient:
+            mu  = (x-x1)/(x2-x1)
+        end if
+
+        ! store the y values:
         y1  = self%ypp(ind)
         y2  = self%ypp(ind+1)
 
         ! compute the linear interpolation:
-        mu  = (x-x1)/(x2-x1)
         EquispacedLinearIntepolateFunction1DSecondDerivative = y1*( 1._dl -mu ) +y2*mu
 
     end function EquispacedLinearIntepolateFunction1DSecondDerivative
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that gives the value of the function third derivative at a given coordinate x.
-    function EquispacedLinearIntepolateFunction1DThirdDerivative( self, x )
+    function EquispacedLinearIntepolateFunction1DThirdDerivative( self, x, index, coeff )
 
         implicit none
 
         class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
         real(dl), intent(in)                              :: x           !< the value of x at which the function derivative is required
+        integer , intent(in), optional                    :: index       !< optional precomputed value of the interpolation index
+        real(dl), intent(in), optional                    :: coeff      !< optional precomputed value of the interpolation coefficient
         real(dl) :: EquispacedLinearIntepolateFunction1DThirdDerivative  !< the output value of the function
 
         integer  :: ind
@@ -295,15 +365,28 @@ contains
         end if
 
         ! return the index of the point:
-        ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        if (present(index) ) then
+            ind = index
+        else
+            ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        end if
 
-        ! store the values:
-        x1  = self%x(ind)
-        x2  = self%x(ind+1)
+        ! get the interpolation coefficient:
+        if (present(coeff) ) then
+            mu = coeff
+        else
+            ! store the x values:
+            x1  = self%x(ind)
+            x2  = self%x(ind+1)
+            ! compute the linear interpolation coefficient:
+            mu  = (x-x1)/(x2-x1)
+        end if
+
+        ! store the y values:
         y1  = self%yppp(ind)
         y2  = self%yppp(ind+1)
+
         ! compute the linear interpolation:
-        mu  = (x-x1)/(x2-x1)
         EquispacedLinearIntepolateFunction1DThirdDerivative = y1*( 1._dl -mu ) +y2*mu
 
     end function EquispacedLinearIntepolateFunction1DThirdDerivative
