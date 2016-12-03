@@ -13,7 +13,7 @@ F90C     = ifort
 # EFTCAMB MOD START: flags for the latest ifort
 #FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
 #DEBUGFLAGS = -openmp -g -check all -check noarg_temp_created -traceback -fpp -fpe0
-FFLAGS = -qopenmp -O3 -W0 -WB -fpp -qopt-report=0 -ipo -xHOST -no-prec-div -fp-model fast=2 -fno-alias -parallel
+FFLAGS = -qopenmp -O3 -W0 -WB -fpp -qopt-report=0 -ipo -xHOST -no-prec-div
 DEBUGFLAGS = -qopenmp -mkl=parallel -fpp -g -qopt-report=0 -fp-stack-check -O0 -traceback -check all -check bounds -check uninit -check noarg_temp_created -DDEBUG
 # EFTCAMB MOD END.
 SFFLAGS = -shared -fpic
