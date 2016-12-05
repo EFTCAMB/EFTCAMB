@@ -246,6 +246,10 @@ module EFTCAMB_cache
         ! 12) Kinetic and Gradient quantities for the stability check:
         real(dl) :: EFT_kinetic   !< the value of the kinetic term. Refer to the Numerical Notes for the definition.
         real(dl) :: EFT_gradient  !< the value of the gradient term. Refer to the Numerical Notes for the definition.
+        ! 13) The galileon scalar field and its derivatives
+        real(dl) :: phi           !< the value of the galileon field phi
+        real(dl) :: phiP          !< the value of the first derivative of phi w.r.t a
+        real(dl) :: phiPP         !< the value of the second derivative of phi w.r.t a
 
     contains
 
@@ -359,6 +363,10 @@ contains
         ! 12) Kinetic and Gradient quantities for the stability check:
         self%EFT_kinetic   = 0._dl
         self%EFT_gradient  = 0._dl
+        ! 13) galileon field:
+        self%phi           = 0._dl
+        self%phiP          = 0._dl
+        self%phiPP         = 0._dl
 
     end subroutine EFTCAMBTimestepCacheInit
 
@@ -452,6 +460,9 @@ contains
         HaveNan = HaveNan.or.IsNaN(self%EFTDT)
         HaveNan = HaveNan.or.IsNaN(self%EFT_kinetic)
         HaveNan = HaveNan.or.IsNaN(self%EFT_gradient)
+        HaveNan = HaveNan.or.IsNaN(self%phi)
+        HaveNan = HaveNan.or.IsNaN(self%phiP)
+        HaveNan = HaveNan.or.IsNaN(self%phiPP)
 
     end subroutine EFTCAMBTimestepCacheIsNan
 
