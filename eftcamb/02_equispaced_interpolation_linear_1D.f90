@@ -41,7 +41,7 @@ module equispaced_linear_interpolation_1D
     type :: equispaced_linear_interpolate_function_1D
 
         ! options:
-        integer                             :: num_points   !< number of points of the interpolating function.
+        integer                             :: num_points     !< number of points of the interpolating function.
 
         ! parameters:
         real(dl)                            :: x_initial      !< first value of x.
@@ -56,6 +56,7 @@ module equispaced_linear_interpolation_1D
         real(dl), allocatable, dimension(:) :: yp             !< array containing the values of the function derivative \f$ yp_i= \frac{d f(x_i)}{dx} \f$.
         real(dl), allocatable, dimension(:) :: ypp            !< array containing the values of the function second derivative \f$ ypp_i= \frac{d^2 f(x_i)}{dx^2} \f$.
         real(dl), allocatable, dimension(:) :: yppp           !< array containing the values of the function third derivative \f$ yppp_i= \frac{d^3 f(x_i)}{dx^3} \f$.
+        real(dl), allocatable, dimension(:) :: yint           !< array containing the values of the function w DE integral \f$ yint_i= \exp\left(-3\int_1^{x_i} \frac{1+f(x)}{x} \, dx \right) \f$.
 
     contains
 
@@ -65,6 +66,7 @@ module equispaced_linear_interpolation_1D
         procedure :: first_derivative       => EquispacedLinearIntepolateFunction1DFirstDerivative    !< function that gives the value of the function first derivative at a given coordinate x.
         procedure :: second_derivative      => EquispacedLinearIntepolateFunction1DSecondDerivative   !< function that gives the value of the function second derivative at a given coordinate x.
         procedure :: third_derivative       => EquispacedLinearIntepolateFunction1DThirdDerivative    !< function that gives the value of the function third derivative at a given coordinate x.
+        procedure :: integral               => EquispacedLinearIntepolateFunction1DIntegral           !< function that gives the value of the interpolated w DE integral at a given coordinate x.
         procedure :: initialize_derivatives => EquispacedLinearIntepolateFunction1DInitDerivatives    !< subroutine that initializes the derivatives if the derivatives vectors are not initialized. The derivative are inferred from the function itself.
 
     end type equispaced_linear_interpolate_function_1D
@@ -120,11 +122,13 @@ contains
         if ( allocated(self%yp)   ) deallocate( self%yp   )
         if ( allocated(self%ypp)  ) deallocate( self%ypp  )
         if ( allocated(self%yppp) ) deallocate( self%yppp )
+        if ( allocated(self%yint) ) deallocate( self%yint )
 
         allocate( self%y( self%num_points )    )
         allocate( self%yp( self%num_points )   )
         allocate( self%ypp( self%num_points )  )
         allocate( self%yppp( self%num_points ) )
+        allocate( self%yint( self%num_points ) )
 
     end subroutine EquispacedLinearIntepolateFunction1DInit
 
@@ -220,7 +224,7 @@ contains
         class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
         real(dl), intent(in)                              :: x           !< the value of x at which the function derivative is required
         integer , intent(in), optional                    :: index       !< optional precomputed value of the interpolation index
-        real(dl), intent(in), optional                    :: coeff      !< optional precomputed value of the interpolation coefficient
+        real(dl), intent(in), optional                    :: coeff       !< optional precomputed value of the interpolation coefficient
         real(dl) :: EquispacedLinearIntepolateFunction1DFirstDerivative  !< the output value of the function
 
         integer  :: ind
@@ -280,7 +284,7 @@ contains
         class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
         real(dl), intent(in)                              :: x           !< the value of x at which the function derivative is required
         integer , intent(in), optional                    :: index       !< optional precomputed value of the interpolation index
-        real(dl), intent(in), optional                    :: coeff      !< optional precomputed value of the interpolation coefficient
+        real(dl), intent(in), optional                    :: coeff       !< optional precomputed value of the interpolation coefficient
         real(dl) :: EquispacedLinearIntepolateFunction1DSecondDerivative !< the output value of the function
 
         integer  :: ind
@@ -340,7 +344,7 @@ contains
         class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
         real(dl), intent(in)                              :: x           !< the value of x at which the function derivative is required
         integer , intent(in), optional                    :: index       !< optional precomputed value of the interpolation index
-        real(dl), intent(in), optional                    :: coeff      !< optional precomputed value of the interpolation coefficient
+        real(dl), intent(in), optional                    :: coeff       !< optional precomputed value of the interpolation coefficient
         real(dl) :: EquispacedLinearIntepolateFunction1DThirdDerivative  !< the output value of the function
 
         integer  :: ind
@@ -392,6 +396,66 @@ contains
     end function EquispacedLinearIntepolateFunction1DThirdDerivative
 
     ! ---------------------------------------------------------------------------------------------
+    !> Function that gives the value of the interpolated w DE integral at a given coordinate x.
+    function EquispacedLinearIntepolateFunction1DIntegral( self, x, index, coeff )
+
+        implicit none
+
+        class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
+        real(dl), intent(in)                              :: x           !< the value of x at which the function derivative is required
+        integer , intent(in), optional                    :: index       !< optional precomputed value of the interpolation index
+        real(dl), intent(in), optional                    :: coeff       !< optional precomputed value of the interpolation coefficient
+        real(dl) :: EquispacedLinearIntepolateFunction1DIntegral         !< the output value of the function
+
+        integer  :: ind
+        real(dl) :: x1, x2, y1, y2, mu
+
+        ! initialize to null value:
+        EquispacedLinearIntepolateFunction1DIntegral = self%null_value
+        if ( self%has_null_value ) then
+            ! if outside the interpolation range return the null value:
+            if ( x <= self%x_initial .or. x >= self%x_final ) return
+        else
+            ! if below the interpolation range return the first value:
+            if ( x <= self%x_initial ) then
+                EquispacedLinearIntepolateFunction1DIntegral = self%yint(1)
+                return
+            end if
+            ! if above the interpolation range return the first value:
+            if ( x >= self%x_final   ) then
+                EquispacedLinearIntepolateFunction1DIntegral = self%yint(self%num_points)
+                return
+            end if
+        end if
+
+        ! return the index of the point:
+        if (present(index) ) then
+            ind = index
+        else
+            ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        end if
+
+        ! get the interpolation coefficient:
+        if (present(coeff) ) then
+            mu = coeff
+        else
+            ! store the x values:
+            x1  = self%x(ind)
+            x2  = self%x(ind+1)
+            ! compute the linear interpolation coefficient:
+            mu  = (x-x1)/(x2-x1)
+        end if
+
+        ! store the y values:
+        y1  = self%yint(ind)
+        y2  = self%yint(ind+1)
+
+        ! compute the linear interpolation:
+        EquispacedLinearIntepolateFunction1DIntegral = y1*( 1._dl -mu ) +y2*mu
+
+    end function EquispacedLinearIntepolateFunction1DIntegral
+
+    ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the derivatives if the derivatives vectors are not initialized.
     !! The derivative are inferred from the function itself.
     subroutine EquispacedLinearIntepolateFunction1DInitDerivatives( self )
@@ -400,7 +464,7 @@ contains
 
         class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
 
-        write(*,*) 'IW'
+        write(*,*) 'ERROR: not yet implemented'
         stop
 
     end subroutine EquispacedLinearIntepolateFunction1DInitDerivatives
