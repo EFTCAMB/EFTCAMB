@@ -141,8 +141,8 @@ $(OUTPUT_DIR)/04p4_exponential_parametrizations_1D.o :  \
 $(OUTPUT_DIR)/02_utilities.o :  \
 	$(OUTPUT_DIR)/constants.o
 
-$(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o :  \
-	$(OUTPUT_DIR)/inifile.o \
+$(OUTPUT_DIR)/02_equispaced_interpolation_linear_1D.o :  \
+	$(OUTPUT_DIR)/02_utilities.o \
 	$(OUTPUT_DIR)/constants.o \
 	$(OUTPUT_DIR)/utils.o
 
@@ -161,18 +161,10 @@ $(OUTPUT_DIR)/05p1_constant_parametrizations_2D.o :  \
 	$(OUTPUT_DIR)/constants.o \
 	$(OUTPUT_DIR)/utils.o
 
-$(OUTPUT_DIR)/02_equispaced_interpolation_linear_1D.o :  \
-	$(OUTPUT_DIR)/02_utilities.o \
+$(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o :  \
+	$(OUTPUT_DIR)/inifile.o \
 	$(OUTPUT_DIR)/constants.o \
 	$(OUTPUT_DIR)/utils.o
-
-$(OUTPUT_DIR)/12_EFTCAMB_stability_sampler.o :  \
-	$(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o \
-	$(OUTPUT_DIR)/06_abstract_EFTCAMB_model.o \
-	$(OUTPUT_DIR)/06p1_abstract_EFTCAMB_full_map.o \
-	$(OUTPUT_DIR)/11_EFTCAMB_stability.o \
-	$(OUTPUT_DIR)/06p2_abstract_EFTCAMB_designer.o \
-	$(OUTPUT_DIR)/11_EFTCAMB_main.o
 
 $(OUTPUT_DIR)/04p1_constant_parametrizations_1D.o :  \
 	$(OUTPUT_DIR)/01_EFT_def.o \
@@ -187,9 +179,6 @@ $(OUTPUT_DIR)/modules.o :  \
 	$(OUTPUT_DIR)/11_EFTCAMB_RGR.o \
 	$(OUTPUT_DIR)/11_EFTCAMB_main.o
 
-$(OUTPUT_DIR)/01_EFT_def.o :  \
-	$(OUTPUT_DIR)/constants.o
-
 $(OUTPUT_DIR)/11_EFTCAMB_stability.o :  \
 	$(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(OUTPUT_DIR)/06_abstract_EFTCAMB_model.o \
@@ -198,6 +187,9 @@ $(OUTPUT_DIR)/11_EFTCAMB_stability.o :  \
 	$(OUTPUT_DIR)/06p2_abstract_EFTCAMB_designer.o \
 	$(OUTPUT_DIR)/01_EFT_def.o \
 	$(OUTPUT_DIR)/11_EFTCAMB_main.o
+
+$(OUTPUT_DIR)/01_EFT_def.o :  \
+	$(OUTPUT_DIR)/constants.o
 
 $(OUTPUT_DIR)/04p7_turning_point_parametrizations_1D.o :  \
 	$(OUTPUT_DIR)/01_EFT_def.o \
@@ -237,9 +229,11 @@ $(OUTPUT_DIR)/04p2_linear_parametrizations_1D.o :  \
 $(OUTPUT_DIR)/11_EFTCAMB_main.o :  \
 	$(OUTPUT_DIR)/09p1_Designer_fR.o \
 	$(OUTPUT_DIR)/06_abstract_EFTCAMB_model.o \
+	$(OUTPUT_DIR)/06p1_abstract_EFTCAMB_full_map.o \
 	$(OUTPUT_DIR)/inifile.o \
 	$(OUTPUT_DIR)/constants.o \
 	$(OUTPUT_DIR)/utils.o \
+	$(OUTPUT_DIR)/06p2_abstract_EFTCAMB_designer.o \
 	$(OUTPUT_DIR)/09p2_Designer_mc_quintessence.o \
 	$(OUTPUT_DIR)/01_EFT_def.o \
 	$(OUTPUT_DIR)/08p1_RPH.o \
@@ -403,8 +397,8 @@ $(DLL_DIR)/04p4_exponential_parametrizations_1D.o :  \
 $(DLL_DIR)/02_utilities.o :  \
 	$(DLL_DIR)/constants.o
 
-$(DLL_DIR)/03_abstract_EFTCAMB_cache.o :  \
-	$(DLL_DIR)/inifile.o \
+$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o :  \
+	$(DLL_DIR)/02_utilities.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/utils.o
 
@@ -423,18 +417,10 @@ $(DLL_DIR)/05p1_constant_parametrizations_2D.o :  \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/utils.o
 
-$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o :  \
-	$(DLL_DIR)/02_utilities.o \
+$(DLL_DIR)/03_abstract_EFTCAMB_cache.o :  \
+	$(DLL_DIR)/inifile.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/utils.o
-
-$(DLL_DIR)/12_EFTCAMB_stability_sampler.o :  \
-	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
-	$(DLL_DIR)/06_abstract_EFTCAMB_model.o \
-	$(DLL_DIR)/06p1_abstract_EFTCAMB_full_map.o \
-	$(DLL_DIR)/11_EFTCAMB_stability.o \
-	$(DLL_DIR)/06p2_abstract_EFTCAMB_designer.o \
-	$(DLL_DIR)/11_EFTCAMB_main.o
 
 $(DLL_DIR)/04p1_constant_parametrizations_1D.o :  \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -449,9 +435,6 @@ $(DLL_DIR)/modules.o :  \
 	$(DLL_DIR)/11_EFTCAMB_RGR.o \
 	$(DLL_DIR)/11_EFTCAMB_main.o
 
-$(DLL_DIR)/01_EFT_def.o :  \
-	$(DLL_DIR)/constants.o
-
 $(DLL_DIR)/11_EFTCAMB_stability.o :  \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/06_abstract_EFTCAMB_model.o \
@@ -460,6 +443,9 @@ $(DLL_DIR)/11_EFTCAMB_stability.o :  \
 	$(DLL_DIR)/06p2_abstract_EFTCAMB_designer.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/11_EFTCAMB_main.o
+
+$(DLL_DIR)/01_EFT_def.o :  \
+	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p7_turning_point_parametrizations_1D.o :  \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -499,9 +485,11 @@ $(DLL_DIR)/04p2_linear_parametrizations_1D.o :  \
 $(DLL_DIR)/11_EFTCAMB_main.o :  \
 	$(DLL_DIR)/09p1_Designer_fR.o \
 	$(DLL_DIR)/06_abstract_EFTCAMB_model.o \
+	$(DLL_DIR)/06p1_abstract_EFTCAMB_full_map.o \
 	$(DLL_DIR)/inifile.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/utils.o \
+	$(DLL_DIR)/06p2_abstract_EFTCAMB_designer.o \
 	$(DLL_DIR)/09p2_Designer_mc_quintessence.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/08p1_RPH.o \

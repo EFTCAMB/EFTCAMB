@@ -106,16 +106,17 @@ contains
 
         allocate( self%x( self%num_points ) )
 
-        ! fill the x vector:
+        ! store initial and final times:
         self%x_initial  = x_initial
         self%x_final    = x_final
-        ! fill in the equispaced x array:
-        do i=1, self%num_points
-            self%x(i)   = self%x_initial + REAL(i-1)/REAL(self%num_points-1)*( self%x_final-self%x_initial )
-        end do
 
         ! compute the width of the interpolation:
         self%grid_width = ( self%x_final -self%x_initial )/REAL( self%num_points -1 )
+
+        ! fill in the equispaced x array:
+        do i=1, self%num_points
+            self%x(i)   = self%x_initial + REAL(i-1)*self%grid_width
+        end do
 
         ! allocate the other vectors:
         if ( allocated(self%y)    ) deallocate( self%y    )
@@ -189,14 +190,14 @@ contains
         end if
 
         ! return the index of the point:
-        if (present(index) ) then
+        if ( present(index) ) then
             ind = index
         else
             ind = int( ( x-self%x_initial)/self%grid_width ) +1
         end if
 
         ! get the interpolation coefficient:
-        if (present(coeff) ) then
+        if ( present(coeff) ) then
             mu = coeff
         else
             ! store the x values:
@@ -249,14 +250,14 @@ contains
         end if
 
         ! return the index of the point:
-        if (present(index) ) then
+        if ( present(index) ) then
             ind = index
         else
             ind = int( ( x-self%x_initial)/self%grid_width ) +1
         end if
 
         ! get the interpolation coefficient:
-        if (present(coeff) ) then
+        if ( present(coeff) ) then
             mu = coeff
         else
             ! store the x values:
@@ -309,14 +310,14 @@ contains
         end if
 
         ! return the index of the point:
-        if (present(index) ) then
+        if ( present(index) ) then
             ind = index
         else
             ind = int( ( x-self%x_initial)/self%grid_width ) +1
         end if
 
         ! get the interpolation coefficient:
-        if (present(coeff) ) then
+        if ( present(coeff) ) then
             mu = coeff
         else
             ! store the x values:
@@ -369,14 +370,14 @@ contains
         end if
 
         ! return the index of the point:
-        if (present(index) ) then
+        if ( present(index) ) then
             ind = index
         else
             ind = int( ( x-self%x_initial)/self%grid_width ) +1
         end if
 
         ! get the interpolation coefficient:
-        if (present(coeff) ) then
+        if ( present(coeff) ) then
             mu = coeff
         else
             ! store the x values:
@@ -429,14 +430,14 @@ contains
         end if
 
         ! return the index of the point:
-        if (present(index) ) then
+        if ( present(index) ) then
             ind = index
         else
             ind = int( ( x-self%x_initial)/self%grid_width ) +1
         end if
 
         ! get the interpolation coefficient:
-        if (present(coeff) ) then
+        if ( present(coeff) ) then
             mu = coeff
         else
             ! store the x values:
@@ -464,7 +465,7 @@ contains
 
         class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
 
-        write(*,*) 'ERROR: not yet implemented'
+        write(*,*) 'ERROR: not yet implemented (IW)'
         stop
 
     end subroutine EquispacedLinearIntepolateFunction1DInitDerivatives

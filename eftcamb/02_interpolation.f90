@@ -36,16 +36,16 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Neville interpolator: computes polynomial interpolation of a set of points
-    subroutine Polint(n,xa,ya,xpl,ypl,dypl)
+    subroutine Polint( n, xa, ya, xpl, ypl, dypl )
 
         implicit none
 
-        integer , intent(in) :: n     !< number of points in the table
-        real(dl), intent(in) :: xa(n) !< first coordinate of the points to be interpolated
-        real(dl), intent(in) :: ya(n) !< second coordinate of the points to be interpolated y=f(x)
-        real(dl) :: xpl               !< requested value of x
-        real(dl) :: ypl               !< output value of the interpolated function at xpl
-        real(dl) :: dypl              !< output error estimate on the value of the interpolated function at xpl
+        integer , intent(in)  :: n     !< number of points in the table
+        real(dl), intent(in)  :: xa(n) !< first coordinate of the points to be interpolated
+        real(dl), intent(in)  :: ya(n) !< second coordinate of the points to be interpolated y=f(x)
+        real(dl), intent(in)  :: xpl               !< requested value of x
+        real(dl), intent(out) :: ypl               !< output value of the interpolated function at xpl
+        real(dl), intent(out) :: dypl              !< output error estimate on the value of the interpolated function at xpl
 
         integer  :: i,m,ns
         real(dl) :: den,dif,dift,ho,hp,wpl,cc(n),d(n)
