@@ -3,6 +3,7 @@ var searchData=
   ['01_5feft_5fdef_2ef90',['01_EFT_def.f90',['../01__EFT__def_8f90.html',1,'']]],
   ['02_5fequispaced_5finterpolation_5flinear_5f1d_2ef90',['02_equispaced_interpolation_linear_1D.f90',['../02__equispaced__interpolation__linear__1D_8f90.html',1,'']]],
   ['02_5finterpolation_2ef90',['02_interpolation.f90',['../02__interpolation_8f90.html',1,'']]],
+  ['02_5fquadpack_5fdouble_2ef90',['02_quadpack_double.f90',['../02__quadpack__double_8f90.html',1,'']]],
   ['02_5froot_5ffinding_2ef90',['02_root_finding.f90',['../02__root__finding_8f90.html',1,'']]],
   ['02_5futilities_2ef90',['02_utilities.f90',['../02__utilities_8f90.html',1,'']]],
   ['03_5fabstract_5feftcamb_5fcache_2ef90',['03_abstract_EFTCAMB_cache.f90',['../03__abstract__EFTCAMB__cache_8f90.html',1,'']]],

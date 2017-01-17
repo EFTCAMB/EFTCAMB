@@ -128,19 +128,19 @@ Functions/Subroutines</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real(dl)&#160;</td>
+          <td class="paramtype">real(dl), intent(in)&#160;</td>
           <td class="paramname"><em>xpl</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real(dl)&#160;</td>
+          <td class="paramtype">real(dl), intent(out)&#160;</td>
           <td class="paramname"><em>ypl</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real(dl)&#160;</td>
+          <td class="paramtype">real(dl), intent(out)&#160;</td>
           <td class="paramname"><em>dypl</em>&#160;</td>
         </tr>
         <tr>
@@ -157,9 +157,9 @@ Functions/Subroutines</h2></td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">n</td><td>number of points in the table</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">xa</td><td>first coordinate of the points to be interpolated</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">ya</td><td>second coordinate of the points to be interpolated y=f(x)</td></tr>
-    <tr><td class="paramdir"></td><td class="paramname">xpl</td><td>requested value of x</td></tr>
-    <tr><td class="paramdir"></td><td class="paramname">ypl</td><td>output value of the interpolated function at xpl</td></tr>
-    <tr><td class="paramdir"></td><td class="paramname">dypl</td><td>output error estimate on the value of the interpolated function at xpl </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">xpl</td><td>requested value of x</td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">ypl</td><td>output value of the interpolated function at xpl</td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">dypl</td><td>output error estimate on the value of the interpolated function at xpl </td></tr>
   </table>
   </dd>
 </dl>
@@ -171,7 +171,7 @@ Functions/Subroutines</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 27 2016 11:53:06 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jan 17 2017 00:16:53 for EFTCAMB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

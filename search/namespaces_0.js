@@ -24,6 +24,7 @@ var searchData=
   ['eftcamb_5fneutral_5fparametrization_5f2d',['eftcamb_neutral_parametrization_2d',['../namespaceeftcamb__neutral__parametrization__2d.html',1,'']]],
   ['eftcamb_5fpower_5flaw_5fparametrizations_5f1d',['eftcamb_power_law_parametrizations_1d',['../namespaceeftcamb__power__law__parametrizations__1d.html',1,'']]],
   ['eftcamb_5fpure_5feft_5fstd',['eftcamb_pure_eft_std',['../namespaceeftcamb__pure__eft__std.html',1,'']]],
+  ['eftcamb_5fquadpack',['eftcamb_quadpack',['../namespaceeftcamb__quadpack.html',1,'']]],
   ['eftcamb_5freparametrized_5fhorndeski',['eftcamb_reparametrized_horndeski',['../namespaceeftcamb__reparametrized__horndeski.html',1,'']]],
   ['eftcamb_5freturntogr',['eftcamb_returntogr',['../namespaceeftcamb__returntogr.html',1,'']]],
   ['eftcamb_5frootfind',['eftcamb_rootfind',['../namespaceeftcamb__rootfind.html',1,'']]],
