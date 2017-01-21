@@ -35,7 +35,7 @@ source $SCRIPT_PATH/colors.sh
 
 # path of things:
 PLOTTER=$TEST_PYTHON_DIR/compare_Cls.py          # plotter
-PATH_TO_DATA_1=$TEST_LEGACY_DIR/Spectra_results  # legacy reference results
+PATH_TO_DATA_1=$TEST_LEGACY_DIR/spectra_results  # legacy reference results
 PATH_TO_DATA_2=$RESULTS_SPECTRA_RAW              # spectra results
 PATH_TO_RES=$RESULTS_LEGACY_PLOT_DIR/            # plot results, if needed.
 

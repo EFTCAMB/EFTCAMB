@@ -61,8 +61,8 @@ compare_legacy: init_legacy
 # clean target:
 
 clean:
-	@rm -rf $(RESULTS_DIR)/Spectra_results/*
-	@rm -rf $(RESULTS_DIR)/Spectra_Plots/*
-	@rm -rf $(RESULTS_DIR)/Profile/*
-	@rm -rf $(RESULTS_DIR)/Legacy_Spectra_Plot/*
-	@rm -rf $(RESULTS_DIR)/Benchmark_Results/*
+	@rm -rf $(RESULTS_DIR)/spectra_results/*
+	@rm -rf $(RESULTS_DIR)/spectra_plots/*
+	@rm -rf $(RESULTS_DIR)/profile/*
+	@rm -rf $(RESULTS_DIR)/legacy_spectra_plot/*
+	@rm -rf $(RESULTS_DIR)/benchmark_results/*

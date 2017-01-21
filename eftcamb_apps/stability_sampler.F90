@@ -153,6 +153,8 @@ program stability_sampler
     if ( P%EFTCAMB%EFTFlag /= 0 ) then
         ! print the EFTCAMB header:
         call P%EFTCAMB%EFTCAMB_print_header()
+        ! initialize the output root name:
+        P%EFTCAMB%outroot = TRIM( outroot )
         ! initialize the model from file:
         call P%EFTCAMB%EFTCAMB_init_model_from_file( DefIni )
         ! print feedback:
