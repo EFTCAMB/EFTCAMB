@@ -45,7 +45,7 @@ module EFTCAMB_main
 
     public EFTCAMB_version, EFTCAMB
 
-    character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Dec16'
+    character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Jan17'
 
     !----------------------------------------------------------------------------------------
     !> This is the main object for EFTCAMB and contains all the necessary ingredients to
@@ -211,6 +211,9 @@ contains
             write(*,*) 'EFTCAMB WARNING: trying to call EFTCAMB model feedback without allocating the model'
             call MpiStop('EFTCAMB error')
         end if
+
+        print*, 'CIAO MARCO', self%EFTCAMB_feedback_level
+
         ! check feedback level:
         if ( .not. self%EFTCAMB_feedback_level > 0 ) return
         ! if GR return:
