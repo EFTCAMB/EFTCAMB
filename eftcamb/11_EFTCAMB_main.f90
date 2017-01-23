@@ -212,8 +212,6 @@ contains
             call MpiStop('EFTCAMB error')
         end if
 
-        print*, 'CIAO MARCO', self%EFTCAMB_feedback_level
-
         ! check feedback level:
         if ( .not. self%EFTCAMB_feedback_level > 0 ) return
         ! if GR return:

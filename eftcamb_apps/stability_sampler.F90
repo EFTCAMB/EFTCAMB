@@ -18,6 +18,17 @@
 !! EFTCAMB viability conditions, as specified by a parameter file.
 !! Part of this file is taken from the inidriver file of CAMB.
 
+! hardcoded options:
+module hardcoded_options
+
+    use precision
+
+    real(dl), parameter :: log_sampling_value = 1.d-4 ! the value at which the sampler switches from linear to log sampling
+    real(dl), parameter :: log_sampling_min   = 1.d-8 ! the assumed minimum log sampling value
+
+end module hardcoded_options
+
+! the program itself:
 program stability_sampler
 
     use IniFile
@@ -33,6 +44,7 @@ program stability_sampler
 #ifdef NAGF95
     use F90_UNIX
 #endif
+    use hardcoded_options
 
     implicit none
 
@@ -45,7 +57,9 @@ program stability_sampler
     character(LEN=Ini_max_string_len) TransferFileNames(max_transfer_redshifts), &
         MatterPowerFileNames(max_transfer_redshifts), outroot, version_check
     real(dl) output_factor, nmassive
-    real(dl) t1, t2
+    real(dl) t1, t2, param_1_max, param_1_min, param_2_max, param_2_min
+    integer param_number
+    logical do_log_sampling_param_1, do_log_sampling_param_2
 
 #ifdef WRITE_FITS
     character(LEN=Ini_max_string_len) FITSfilename
@@ -56,15 +70,6 @@ program stability_sampler
     InputFile = ''
     if (GetParamCount() /= 0)  InputFile = GetParam(1)
     if (InputFile == '') stop 'No parameter input file'
-
-    ! EFTCAMB BENCHMARK: read from command line the number of times that the command is executed
-    ! for benchmarking. More times means a more accurate measure of its timing.
-    benchmark_count = 10
-    benchmark_buffer = ''
-    if (GetParamCount() > 1) then
-        benchmark_buffer = GetParam(2)
-        read(benchmark_buffer, '(I3)') benchmark_count
-    end if
 
     call Ini_Open(InputFile, 1, bad, .false.)
     if (bad) stop 'Error opening parameter file'
@@ -158,7 +163,7 @@ program stability_sampler
         ! initialize the model from file:
         call P%EFTCAMB%EFTCAMB_init_model_from_file( DefIni )
         ! print feedback:
-        call P%EFTCAMB%EFTCAMB_print_model_feedback()
+        call P%EFTCAMB%EFTCAMB_print_model_feedback( print_params=.False. )
     end if
     ! EFTCAMB MOD END.
 
@@ -342,19 +347,78 @@ program stability_sampler
         lSampleBoost   = Ini_Read_Double('l_sample_boost',lSampleBoost)
     end if
 
+    ! get the number of parameters:
+    param_number = P%EFTCAMB%model%parameter_number
+
+    ! decide the sampling range:
+    ! if the maximum and minimum of a parameter are specified by the user
+    ! then use those. If they are not decide the range based on the
+    ! value of the parameter entered.
+    if ( param_number == 0 ) then
+        ! if there is no parameter to sample exit
+        stop 0
+    else if ( param_number > 0 ) then
+
+        ! get the maximum of the first parameter:
+        if ( Ini_HasKey('param_1_max') ) then
+            param_1_max = Ini_Read_Double( 'param_1_max' )
+        else
+            call P%EFTCAMB%model%parameter_values( 1, value = param_1_max )
+        end if
+
+        ! get the minimum of the first parameter:
+        if ( Ini_HasKey('param_1_min') ) then
+            param_1_min = Ini_Read_Double( 'param_1_min' )
+        else
+            if ( param_1_max < log_sampling_value ) then
+                param_1_min = log_sampling_min
+            else
+                param_1_min = -param_1_max
+            end if
+        end if
+
+        ! get log sampling if wanted:
+        do_log_sampling_param_1 = Ini_Read_Logical( 'do_log_sampling_param_1', .False. )
+
+        if ( param_number > 1 ) then
+
+            ! get the maximum of the second parameter:
+            if ( Ini_HasKey('param_2_max') ) then
+                param_2_max = Ini_Read_Double( 'param_2_max' )
+            else
+                call P%EFTCAMB%model%parameter_values( 2, value = param_2_max )
+            end if
+
+            ! get the minimum of the second parameter:
+            if ( Ini_HasKey('param_2_min') ) then
+                param_2_min = Ini_Read_Double( 'param_2_min' )
+            else
+                if ( param_2_max < log_sampling_value ) then
+                    param_2_min = log_sampling_min
+                else
+                    param_2_min = -param_2_max
+                end if
+            end if
+
+            ! get log sampling if wanted:
+            do_log_sampling_param_2 = Ini_Read_Logical( 'do_log_sampling_param_2', .False. )
+
+        else if ( param_number > 2 ) then
+
+            print*, 'EFTCAMB stability sampler error:'
+            print*, ' The model has more than two parameters.'
+            print*, ' Simple sampling algorithms cannot handle that.'
+            stop 1
+
+        end if
+
+    end if
+
     call Ini_Close
 
     if (.not. CAMB_ValidateParams(P)) stop 'Stopped due to parameter error'
 
     FeedbackLevel = 0
-
-    write(*,"(a,a)") 'Model: ', trim(outroot)
-
-    ! compute the number of parameters:
-
-
-    ! check if the number of parameters is less than 2 for the simple samplers to work:
-
 
     ! do the sampling and save to file:
 
