@@ -66,10 +66,12 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        real(dl) :: EFTCAMBFullModelComputeDtauda                     !< the output dtauda
+        real(dl) :: EFTCAMBFullModelComputeDtauda, a2                 !< the output dtauda
 
-        write(*,*) 'IW'
-        stop
+        a2=a*a
+
+        EFTCAMBFullModelComputeDtauda = 1._dl/sqrt( ( eft_cache%grhoa2/3._dl +2._dl/3._dl*eft_cache%EFTc*a2 + a2*eft_par_cache%h0_Mpc**2*eft_par_cache%omegav*a2*(1._dl +eft_cache%EFTLambda ) )&
+                                      & /( 1._dl +eft_cache%EFTOmegaV +a*eft_cache%EFTOmegaP ) )
 
     end function EFTCAMBFullModelComputeDtauda
 
@@ -84,8 +86,10 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        write(*,*) 'IW'
-        stop
+        real(dl)    :: temp
+
+        temp = 1.0_dl/(1.0_dl + eft_cache%EFTOmegaV+ a*eft_cache%EFTOmegaP)*(eft_cache%grhom_t + 2.0_dl*eft_cache%EFTc -eft_cache%EFTLambda )/3.0_dl
+        eft_cache%adotoa = sqrt(temp)
 
     end subroutine EFTCAMBFullModelComputeAdotoa
 
@@ -100,8 +104,14 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        write(*,*) 'IW'
-        stop
+        real(dl)    :: a2
+
+        a2=a*a
+        eft_cache%Hdot = 1.0_dl/(1.0_dl + eft_cache%EFTOmegaV+ 0.5_dl*a*eft_cache%EFTOmegaP)*( -0.5_dl*( 1.0_dl +eft_cache%EFTOmegaV +2.0_dl*a*eft_cache%EFTOmegaP +a2*eft_cache%EFTOmegaPP )*eft_cache%adotoa**2 &
+                      & -0.5_dl*(eft_cache%gpresm_t ) -0.5_dl*eft_cache%EFTLambda)
+        eft_cache%Hdotdot = 1.0_dl/(1.0_dl + eft_cache%EFTOmegaV+ 0.5_dl*a*eft_cache%EFTOmegaP)*( -0.5_dl*a*eft_cache%adotoa**3*( 3.0_dl*eft_cache%EFTOmegaP +4.0_dl*a*eft_cache%EFTOmegaPP +a2*eft_cache%EFTOmegaPPP )&
+                      & -eft_cache%adotoa*eft_cache%Hdot*( 1.0_dl +eft_cache%EFTOmegaV +3.5_dl*a*eft_cache%EFTOmegaP +1.5_dl*a2*eft_cache%EFTOmegaPP ) &
+                      & -0.5_dl*( eft_cache%gpresdotm_t  +2.0_dl*eft_cache%adotoa*eft_cache%gpresm_t  +eft_cache%EFTLambdadot +2.0_dl*eft_cache%adotoa*eft_cache%EFTLambda ))
 
     end subroutine EFTCAMBFullModelComputeHubbleDer
 
