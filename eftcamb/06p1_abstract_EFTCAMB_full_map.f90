@@ -66,7 +66,9 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        real(dl) :: EFTCAMBFullModelComputeDtauda, a2                 !< the output dtauda
+        real(dl) :: EFTCAMBFullModelComputeDtauda                     !< the output dtauda
+
+        real(dl) :: a2
 
         a2=a*a
 
