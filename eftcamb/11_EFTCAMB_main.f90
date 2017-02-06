@@ -43,9 +43,7 @@ module EFTCAMB_main
 
     private
 
-    public EFTCAMB_version, EFTCAMB
-
-    character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Jan17'
+    public EFTCAMB
 
     !----------------------------------------------------------------------------------------
     !> This is the main object for EFTCAMB and contains all the necessary ingredients to

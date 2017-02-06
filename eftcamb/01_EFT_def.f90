@@ -29,6 +29,7 @@ module EFT_def
     implicit none
 
     ! EFT compile time flags:
+    character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Feb17'
 
     real(dl), parameter :: EFTturnonpiInitial = 1.d-2 !< Turn on pi field flag:
         !!    Sets the scale factor at which the code starts to evolve the pi field.
