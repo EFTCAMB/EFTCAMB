@@ -97,6 +97,16 @@ $(CAMB_DIR)/%.x: directories $(CAMBOBJ) $(EFTCAMB_APPS)/%.F90
 
 Debug: eftcamb_apps
 
+# debug at fixed k mode
+ifeq ($(MAKECMDGOALS), Debug)
+ifdef fixq
+DEBUGFLAGS += -Dfixq=$(fixq)
+endif
+ifdef fixq_array
+DEBUGFLAGS += -D'fixq_array=$(fixq_array)'
+endif
+endif
+
 # PROFILER: this requires a special target
 ifeq ($(MAKECMDGOALS), profile)
 F90FLAGS += -pg

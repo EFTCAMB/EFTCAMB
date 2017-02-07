@@ -1318,6 +1318,7 @@ contains
 
         ! EFTCAMB MOD START: definitions of EFTCAMB quantities
         real(dl) :: EFTsigmadot, EFTISW, EFTLensing, polterdot
+        logical  :: IsNaN
         ! EFTCAMB MOD END.
 
         ! Reset the derivative vector:
@@ -1599,9 +1600,34 @@ contains
             end if
         end if
 
-        ! EFTCAMB MOD START: dump to file the cache if in debug mode.
+        ! EFTCAMB MOD START: compute other quantities and dump to file the cache if in debug mode.
         if ( DebugEFTCAMB ) then
-            call EV%eft_cache%dump_cache_files()
+
+            ! compute other things and save them in cache:
+            EV%eft_cache%clxc          = clxc
+            EV%eft_cache%clxb          = clxb
+            EV%eft_cache%vb            = vb
+
+            EV%eft_cache%EFTISW        = ISW
+            EV%eft_cache%EFTLensing    = sources(3)
+            EV%eft_cache%CMBTSource    = sources(1)
+            EV%eft_cache%Psi           = ( EV%eft_cache%sigmadot +EV%eft_cache%adotoa*EV%eft_cache%sigma )/k
+            EV%eft_cache%Phi           = ( etak -EV%eft_cache%adotoa*EV%eft_cache%sigma )/k
+            EV%eft_cache%mu            = -2._dl*k*( EV%eft_cache%sigmadot +EV%eft_cache%adotoa*EV%eft_cache%sigma)/(dgrho)
+            EV%eft_cache%gamma         = ( etak -EV%eft_cache%adotoa*EV%eft_cache%sigma )/( EV%eft_cache%sigmadot +EV%eft_cache%adotoa*EV%eft_cache%sigma )
+
+            ! check the cache:
+            call EV%eft_cache%is_nan( IsNaN )
+            if ( IsNaN ) then
+                write(*,'(a)') 'Model has Nan in the timestep cache'
+                stop
+            end if
+
+            ! dump the cache to file:
+            if (CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive) then
+                call EV%eft_cache%dump_cache_files()
+            end if
+
         end if
         ! EFTCAMB MOD END.
 

@@ -234,8 +234,11 @@ module EFTCAMB_cache
         real(dl) :: dz            !< Syncronous gauge dot Z perturbation. This is used to store the non-RSA result.
         real(dl) :: sigma         !< Syncronous gauge sigma perturbation. This is used to store the non-RSA result.
         real(dl) :: sigmadot      !< Syncronous gauge dot sigma perturbation. This is used to store the non-RSA result.
+        real(dl) :: clxc          !< Syncronous gauge cdm density perturbation.
+        real(dl) :: clxb          !< Syncronous gauge baryon density perturbation.
         real(dl) :: clxg          !< Syncronous gauge radiation density perturbation.
         real(dl) :: clxr          !< Syncronous gauge massless neutrinos density perturbation.
+        real(dl) :: vb            !< Syncronous gauge baryon velocity.
         real(dl) :: dgpnu         !< Syncronous gauge massive neutrinos pressure perturbation.
         real(dl) :: dgrho         !< Syncronous gauge total density perturbation.
         real(dl) :: dgq           !< Syncronous gauge total velocity perturbation.
@@ -246,6 +249,14 @@ module EFTCAMB_cache
         ! 12) Kinetic and Gradient quantities for the stability check:
         real(dl) :: EFT_kinetic   !< the value of the kinetic term. Refer to the Numerical Notes for the definition.
         real(dl) :: EFT_gradient  !< the value of the gradient term. Refer to the Numerical Notes for the definition.
+        ! 13) other quantities usefull for debug purposes:
+        real(dl) :: EFTISW        !< Source for ISW effect.
+        real(dl) :: EFTLensing    !< Source for lensing effect.
+        real(dl) :: CMBTSource    !< Full source of CMB temperature fluctuations.
+        real(dl) :: Psi           !< Perturbation in the 00 component of the metric in Conformal Newtonian gauge.
+        real(dl) :: Phi           !< Perturbation in the space component of the metric in Conformal Newtonian gauge.
+        real(dl) :: mu            !< Effective perturbation gravitational constant. \f$ k^2\Psi/\Delta_{m} $\f
+        real(dl) :: gamma         !< Ratio between the two gravitational potentials. \f$ \gamma = \Phi/\Psi $\f
 
     contains
 
@@ -347,8 +358,14 @@ contains
         self%pidotdot      = 0._dl
         ! 10) perturbations quantities:
         self%z             = 0._dl
+        self%dz            = 0._dl
+        self%sigma         = 0._dl
+        self%sigmadot      = 0._dl
+        self%clxc          = 0._dl
+        self%clxb          = 0._dl
         self%clxg          = 0._dl
         self%clxr          = 0._dl
+        self%vb            = 0._dl
         self%dgpnu         = 0._dl
         self%dgrho         = 0._dl
         self%dgq           = 0._dl
@@ -359,6 +376,14 @@ contains
         ! 12) Kinetic and Gradient quantities for the stability check:
         self%EFT_kinetic   = 0._dl
         self%EFT_gradient  = 0._dl
+        ! 13) other quantities usefull for debug purposes:
+        self%EFTISW        = 0._dl
+        self%EFTLensing    = 0._dl
+        self%CMBTSource    = 0._dl
+        self%Psi           = 0._dl
+        self%Phi           = 0._dl
+        self%mu            = 0._dl
+        self%gamma         = 0._dl
 
     end subroutine EFTCAMBTimestepCacheInit
 
@@ -442,8 +467,14 @@ contains
         HaveNan = HaveNan.or.IsNaN(self%pidot)
         HaveNan = HaveNan.or.IsNaN(self%pidotdot)
         HaveNan = HaveNan.or.IsNaN(self%z)
+        HaveNan = HaveNan.or.IsNaN(self%dz)
+        HaveNan = HaveNan.or.IsNaN(self%sigma)
+        HaveNan = HaveNan.or.IsNaN(self%sigmadot)
+        HaveNan = HaveNan.or.IsNaN(self%clxc)
+        HaveNan = HaveNan.or.IsNaN(self%clxb)
         HaveNan = HaveNan.or.IsNaN(self%clxg)
         HaveNan = HaveNan.or.IsNaN(self%clxr)
+        HaveNan = HaveNan.or.IsNaN(self%vb)
         HaveNan = HaveNan.or.IsNaN(self%dgpnu)
         HaveNan = HaveNan.or.IsNaN(self%dgrho)
         HaveNan = HaveNan.or.IsNaN(self%dgq)
@@ -452,6 +483,13 @@ contains
         HaveNan = HaveNan.or.IsNaN(self%EFTDT)
         HaveNan = HaveNan.or.IsNaN(self%EFT_kinetic)
         HaveNan = HaveNan.or.IsNaN(self%EFT_gradient)
+        HaveNan = HaveNan.or.IsNaN(self%EFTISW)
+        HaveNan = HaveNan.or.IsNaN(self%EFTLensing)
+        HaveNan = HaveNan.or.IsNaN(self%CMBTSource)
+        HaveNan = HaveNan.or.IsNaN(self%Psi)
+        HaveNan = HaveNan.or.IsNaN(self%Phi)
+        HaveNan = HaveNan.or.IsNaN(self%mu)
+        HaveNan = HaveNan.or.IsNaN(self%gamma)
 
     end subroutine EFTCAMBTimestepCacheIsNan
 
@@ -483,32 +521,41 @@ contains
         call test_open( 999  )
         call test_open( 1111 )
         call test_open( 2222 )
+        call test_open( 3333 )
+        call test_open( 4444 )
+        call test_open( 5555 )
 
         ! open the files:
         call CreateTxtFile( TRIM(outroot)//'cache_FRW.dat'           ,111 )
         call CreateTxtFile( TRIM(outroot)//'cache_BDens.dat'         ,222 )
         call CreateTxtFile( TRIM(outroot)//'cache_BPres.dat'         ,333 )
-        call CreateTxtFile( TRIM(outroot)//'cache_BackgroundEFT.dat' ,444 )
-        call CreateTxtFile( TRIM(outroot)//'cache_SecondOrdEFT.dat'  ,555 )
-        call CreateTxtFile( TRIM(outroot)//'cache_BackgroundQ.dat'   ,666 )
-        call CreateTxtFile( TRIM(outroot)//'cache_EinsteinCoeff.dat' ,777 )
-        call CreateTxtFile( TRIM(outroot)//'cache_PiCoeff.dat'       ,888 )
-        call CreateTxtFile( TRIM(outroot)//'cache_PiSolution.dat'    ,999 )
-        call CreateTxtFile( TRIM(outroot)//'cache_EinsteinSol.dat'   ,1111)
-        call CreateTxtFile( TRIM(outroot)//'cache_TensorCoeff.dat'   ,2222)
+        call CreateTxtFile( TRIM(outroot)//'cache_BOmegas.dat'       ,444 )
+        call CreateTxtFile( TRIM(outroot)//'cache_BackgroundEFT.dat' ,555 )
+        call CreateTxtFile( TRIM(outroot)//'cache_SecondOrdEFT.dat'  ,666 )
+        call CreateTxtFile( TRIM(outroot)//'cache_BackgroundQ.dat'   ,777 )
+        call CreateTxtFile( TRIM(outroot)//'cache_EinsteinCoeff.dat' ,888 )
+        call CreateTxtFile( TRIM(outroot)//'cache_PiCoeff.dat'       ,999 )
+        call CreateTxtFile( TRIM(outroot)//'cache_PiSolution.dat'    ,1111)
+        call CreateTxtFile( TRIM(outroot)//'cache_EinsteinSol.dat'   ,2222)
+        call CreateTxtFile( TRIM(outroot)//'cache_TensorCoeff.dat'   ,3333)
+        call CreateTxtFile( TRIM(outroot)//'cache_Sources.dat'       ,4444)
+        call CreateTxtFile( TRIM(outroot)//'cache_MetricMG.dat'      ,5555)
 
         ! write the headers:
         write (111 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'adotoa ', 'Hdot ', 'Hdotdot '
         write (222 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'grhom_t ', 'grhob_t ', 'grhoc_t ', 'grhor_t ', 'grhog_t ', 'grhov_t ', 'grhonu_tot ', 'grhonudot_tot '
         write (333 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'gpresm_t ', 'gpresdotm_t ', 'gpiv_t ', 'gpinu_tot ', 'gpinudot_tot '
-        write (444 ,'(20a)')  '# ', 'a ', 'tau ', 'k ', 'EFTOmegaV ', 'EFTOmegaP ', 'EFTOmegaPP ', 'EFTOmegaPPP ', 'EFTc ', 'EFTcdot ', 'EFTLambda ', 'EFTLambdadot '
-        write (555 ,'(16a)')  '# ', 'a ', 'tau ', 'k ', 'EFTGamma1V ', 'EFTGamma1P ', 'EFTGamma2V ', 'EFTGamma2P ', 'EFTGamma3V ', 'EFTGamma3P ', 'EFTGamma4V ', 'EFTGamma4P ', 'EFTGamma4PP ', 'EFTGamma5V ', 'EFTGamma5P ', 'EFTGamma6V ', 'EFTGamma6P '
-        write (666 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'grhoq ', 'gpresq ', 'grhodotq ', 'gpresdotq '
-        write (777 ,'(18a)')  '# ', 'a ', 'tau ', 'k ', 'EFTeomF ', 'EFTeomN ', 'EFTeomNdot ', 'EFTeomX ', 'EFTeomXdot ', 'EFTeomY ', 'EFTeomG ', 'EFTeomU ', 'EFTeomL ', 'EFTeomM ', 'EFTeomV ', 'EFTeomVdot '
-        write (888 ,'(14a)')  '# ', 'a ', 'tau ', 'k ', 'EFTpiA1 ', 'EFTpiA2 ', 'EFTpiB1 ', 'EFTpiB2 ', 'EFTpiC ', 'EFTpiD1 ', 'EFTpiD2 ', 'EFTpiE '
-        write (999 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'pi ', 'pidot ', 'pidotdot '
-        write (1111,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'z ', 'clxg ', 'clxr ', 'dgpnu ', 'dgrho ', 'dgq '
-        write (2222,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'EFTAT ', 'EFTBT ', 'EFTDT '
+        write (444 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'omegam ', 'omegab ', 'omegac ', 'omegar ', 'omegag ', 'omegav ', 'omeganu_tot '
+        write (555 ,'(20a)')  '# ', 'a ', 'tau ', 'k ', 'EFTOmegaV ', 'EFTOmegaP ', 'EFTOmegaPP ', 'EFTOmegaPPP ', 'EFTc ', 'EFTcdot ', 'EFTLambda ', 'EFTLambdadot '
+        write (666 ,'(16a)')  '# ', 'a ', 'tau ', 'k ', 'EFTGamma1V ', 'EFTGamma1P ', 'EFTGamma2V ', 'EFTGamma2P ', 'EFTGamma3V ', 'EFTGamma3P ', 'EFTGamma4V ', 'EFTGamma4P ', 'EFTGamma4PP ', 'EFTGamma5V ', 'EFTGamma5P ', 'EFTGamma6V ', 'EFTGamma6P '
+        write (777 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'grhoq ', 'gpresq ', 'grhodotq ', 'gpresdotq '
+        write (888 ,'(18a)')  '# ', 'a ', 'tau ', 'k ', 'EFTeomF ', 'EFTeomN ', 'EFTeomNdot ', 'EFTeomX ', 'EFTeomXdot ', 'EFTeomY ', 'EFTeomG ', 'EFTeomU ', 'EFTeomL ', 'EFTeomM ', 'EFTeomV ', 'EFTeomVdot '
+        write (999 ,'(14a)')  '# ', 'a ', 'tau ', 'k ', 'EFTpiA1 ', 'EFTpiA2 ', 'EFTpiB1 ', 'EFTpiB2 ', 'EFTpiC ', 'EFTpiD1 ', 'EFTpiD2 ', 'EFTpiE '
+        write (1111,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'pi ', 'pidot ', 'pidotdot '
+        write (2222,'(20a)')  '# ', 'a ', 'tau ', 'k ', 'z ', 'sigma', 'clxc ', 'clxb ', 'clxg ', 'clxr ', 'vb ', 'dgpnu ', 'dgrho ', 'dgq '
+        write (3333,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'EFTAT ', 'EFTBT ', 'EFTDT '
+        write (4444,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'EFTISW ', 'EFTLensing ', 'CMBTSource '
+        write (5555,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'Psi ', 'Phi ', 'mu ', 'gamma '
 
     contains
 
@@ -551,6 +598,10 @@ contains
         call test_close( 999  )
         call test_close( 1111 )
         call test_close( 2222 )
+        call test_close( 3333 )
+        call test_close( 4444 )
+        call test_close( 5555 )
+
         ! close the files:
         close( 111  )
         close( 222  )
@@ -563,6 +614,10 @@ contains
         close( 999  )
         close( 1111 )
         close( 2222 )
+        close( 3333 )
+        close( 4444 )
+        close( 5555 )
+
         ! print some feedback:
         write(*,'(a)') "***************************************************************"
         write(*,'(a)') 'EFTCAMB cache printing done.'
@@ -603,22 +658,28 @@ contains
         write (222 ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%grhom_t, self%grhob_t, self%grhoc_t, self%grhor_t, self%grhog_t, self%grhov_t, self%grhonu_tot, self%grhonudot_tot
         ! write the background pressure:
         write (333 ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%gpresm_t, self%gpresdotm_t, self%gpiv_t, self%gpinu_tot, self%gpinudot_tot
+        ! write the background omegas:
+        write (444 ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%grhom_t/(3._dl*self%adotoa**2), self%grhob_t/(3._dl*self%adotoa**2), self%grhoc_t/(3._dl*self%adotoa**2), self%grhor_t/(3._dl*self%adotoa**2), self%grhog_t/(3._dl*self%adotoa**2), self%grhov_t/(3._dl*self%adotoa**2), self%grhonu_tot/(3._dl*self%adotoa**2)
         ! write background EFT functions:
-        write (444 ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTOmegaV, self%EFTOmegaP, self%EFTOmegaPP, self%EFTOmegaPPP, self%EFTc, self%EFTcdot, self%EFTLambda, self%EFTLambdadot
+        write (555 ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTOmegaV, self%EFTOmegaP, self%EFTOmegaPP, self%EFTOmegaPPP, self%EFTc, self%EFTcdot, self%EFTLambda, self%EFTLambdadot
         ! write second order EFT functions:
-        write (555 ,'(18'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTGamma1V, self%EFTGamma1P, self%EFTGamma2V, self%EFTGamma2P, self%EFTGamma3V, self%EFTGamma3P, self%EFTGamma4V, self%EFTGamma4P, self%EFTGamma4PP, self%EFTGamma5V, self%EFTGamma5P, self%EFTGamma6V, self%EFTGamma6P
+        write (666 ,'(18'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTGamma1V, self%EFTGamma1P, self%EFTGamma2V, self%EFTGamma2P, self%EFTGamma3V, self%EFTGamma3P, self%EFTGamma4V, self%EFTGamma4P, self%EFTGamma4PP, self%EFTGamma5V, self%EFTGamma5P, self%EFTGamma6V, self%EFTGamma6P
         ! write background EFT auxiliary quantities:
-        write (666 ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%grhoq, self%gpresq, self%grhodotq, self%gpresdotq
+        write (777 ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%grhoq, self%gpresq, self%grhodotq, self%gpresdotq
         ! write Einstein equations coefficients:
-        write (777 ,'(18'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTeomF, self%EFTeomN, self%EFTeomNdot, self%EFTeomX, self%EFTeomXdot, self%EFTeomY, self%EFTeomG, self%EFTeomU, self%EFTeomL, self%EFTeomM, self%EFTeomV, self%EFTeomVdot
+        write (888 ,'(18'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTeomF, self%EFTeomN, self%EFTeomNdot, self%EFTeomX, self%EFTeomXdot, self%EFTeomY, self%EFTeomG, self%EFTeomU, self%EFTeomL, self%EFTeomM, self%EFTeomV, self%EFTeomVdot
         ! write pi field coefficients:
-        write (888 ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTpiA1, self%EFTpiA2, self%EFTpiB1, self%EFTpiB2, self%EFTpiC, self%EFTpiD1, self%EFTpiD2, self%EFTpiE
+        write (999 ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTpiA1, self%EFTpiA2, self%EFTpiB1, self%EFTpiB2, self%EFTpiC, self%EFTpiD1, self%EFTpiD2, self%EFTpiE
         ! write pi field solution:
-        write (999 ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%pi, self%pidot, self%pidotdot
+        write (1111,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%pi, self%pidot, self%pidotdot
         ! write some perturbations:
-        write (1111,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%z, self%clxg, self%clxr, self%dgpnu, self%dgrho, self%dgq
+        write (2222,'(20'//cache_output_format//')')  self%a, self%tau, self%k, self%z, self%sigma, self%clxc, self%clxb, self%clxg, self%clxr, self%dgpnu, self%dgrho, self%dgq
         ! write tensor coefficients:
-        write (2222,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTAT, self%EFTBT, self%EFTDT
+        write (3333,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTAT, self%EFTBT, self%EFTDT
+        ! write sources:
+        write (4444,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTISW, self%EFTLensing, self%CMBTSource
+        ! write metric potentials:
+        write (5555,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%Psi, self%Phi, self%mu, self%gamma
 
     end subroutine EFTCAMBTimestepCacheDumpFile
 
