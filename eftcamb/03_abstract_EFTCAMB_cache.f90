@@ -234,12 +234,12 @@ module EFTCAMB_cache
         real(dl) :: dz            !< Syncronous gauge dot Z perturbation. This is used to store the non-RSA result.
         real(dl) :: sigma         !< Syncronous gauge sigma perturbation. This is used to store the non-RSA result.
         real(dl) :: sigmadot      !< Syncronous gauge dot sigma perturbation. This is used to store the non-RSA result.
-        real(dl) :: clxc          !< Syncronous gauge cdm density perturbation.
-        real(dl) :: clxb          !< Syncronous gauge baryon density perturbation.
-        real(dl) :: clxg          !< Syncronous gauge radiation density perturbation.
-        real(dl) :: clxr          !< Syncronous gauge massless neutrinos density perturbation.
+        real(dl) :: clxc          !< Syncronous gauge cdm dimensionless density perturbation.
+        real(dl) :: clxb          !< Syncronous gauge baryon dimensionless density perturbation.
+        real(dl) :: clxg          !< Syncronous gauge radiation dimensionless density perturbation.
+        real(dl) :: clxr          !< Syncronous gauge massless dimensionless neutrinos density perturbation.
         real(dl) :: vb            !< Syncronous gauge baryon velocity.
-        real(dl) :: dgpnu         !< Syncronous gauge massive neutrinos pressure perturbation.
+        real(dl) :: dgpnu         !< Syncronous gauge massive neutrinos pressure perturbation. \f$ a^2 \delta P_{\nu} / m_0^2 \f$.
         real(dl) :: dgrho         !< Syncronous gauge total density perturbation.
         real(dl) :: dgq           !< Syncronous gauge total velocity perturbation.
         ! 11) tensor perturbations quantities:
