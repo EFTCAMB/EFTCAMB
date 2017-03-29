@@ -13,10 +13,20 @@ F90C     = ifort
 # EFTCAMB MOD START: flags for the latest ifort
 #FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
 #DEBUGFLAGS = -openmp -g -check all -check noarg_temp_created -traceback -fpp -fpe0
-FFLAGS = -qopenmp -O3 -W0 -WB -fpp -qopt-report=0 -ipo -xHOST -no-prec-div -fp-model fast=2 -fno-alias -parallel
-DEBUGFLAGS = -qopenmp -mkl=parallel -fpp -g -qopt-report=0 -fp-stack-check -O0 -traceback -check all -check bounds -check uninit -check noarg_temp_created -DDEBUG
+FFLAGS = -O3 -W0 -WB -fpp -ipo -xHOST -no-prec-div -fp-model fast=2 -fno-alias -parallel
+DEBUGFLAGS = -mkl=parallel -fpp -g -fp-stack-check -O0 -traceback -check all -check bounds -check uninit -check noarg_temp_created -DDEBUG
 # EFTCAMB MOD END.
 SFFLAGS = -shared -fpic
+
+ifortVer_major = $(shell ifort -v 2>&1 | cut -d " " -f 3 | cut -d. -f 1)
+ifeq ($(shell test $(ifortVer_major) -gt 15; echo $$?),0)
+FFLAGS+= -qopenmp -qopt-report=0
+DEBUGFLAGS+= -qopenmp
+else
+FFLAGS+= -openmp -vec_report0
+DEBUGFLAGS+= -openmp
+endif
+
 ## This is flag is passed to the Fortran compiler allowing it to link C++ if required (not usually):
 F90CRLINK = -cxxlib
 MODOUT = -module $(OUTPUT_DIR)
@@ -34,8 +44,8 @@ ifeq "$(gfortErr)" "0"
 F90C     = gfortran
 SFFLAGS =  -shared -fPIC
 
-FFLAGS =  -O3 -fopenmp -ffast-math -fmax-errors=4 -ffree-line-length-none -funroll-loops -cpp -ffpe-summary=none
-DEBUGFLAGS = -cpp -fopenmp -g -fbounds-check -fbacktrace -ffree-line-length-none -fmax-errors=4 -ffpe-trap=invalid,overflow,zero -DDEBUG
+FFLAGS =  -O3 -fopenmp -ffast-math -fmax-errors=4
+DEBUGFLAGS = -cpp -g -fbounds-check -fbacktrace -ffree-line-length-none -fmax-errors=4 -ffpe-trap=invalid,overflow,zero
 MODOUT =  -J$(OUTPUT_DIR)
 SMODOUT = -J$(DLL_DIR)
 

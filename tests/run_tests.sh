@@ -2,8 +2,9 @@ cd /camb
 make Release
 
 cd pycamb
+pip install setuptools
 python setup.py install
-python setup.py test
+python setup.py test || exit $?
 cd ..
 
 python python/CAMB_test_files.py testfiles --make_ini

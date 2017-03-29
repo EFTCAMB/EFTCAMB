@@ -42,7 +42,7 @@ module ModelParams
     implicit none
     public
 
-    character(LEN=*), parameter :: version = 'May16'
+    character(LEN=*), parameter :: version = 'Jan17'
 
     integer :: FeedbackLevel = 0 !if >0 print out useful information about the model
 
@@ -1533,6 +1533,9 @@ module MassiveNu
     real(dl), parameter  :: zeta5  = 1.0369277551433699263313_dl
     real(dl), parameter  :: zeta7  = 1.0083492773819228268397_dl
 
+    ! zeta3*3/2/pi^2*4/11*((k_B*COBE_CMBTemp/hbar/c)^3* 8*pi*G/3/(100*km/s/megaparsec)^2/(c^2/eV)
+    real(dl), parameter :: neutrino_mass_fac= 94.07_dl !converts omnuh2 into sum m_nu in eV
+
     integer, parameter  :: nrhopn=2000
     real(dl), parameter :: am_min = 0.01_dl  !0.02_dl
     !smallest a*m_nu to integrate distribution function rather than using series
@@ -1559,7 +1562,7 @@ module MassiveNu
 
     ! EFTCAMB MOD START: compatibility with massive neutrinos
     public const,Nu_Init,Nu_background, Nu_rho, Nu_drho,  nqmax0, nqmax, &
-        nu_int_kernel, nu_q, Nu_pidot, Nu_pidotdot
+    	nu_int_kernel, nu_q, sum_mnu_for_m1, neutrino_mass_fac, Nu_pidot, Nu_pidotdot
     ! Original code:
     ! public const,Nu_Init,Nu_background, Nu_rho, Nu_drho,  nqmax0, nqmax, &
     ! nu_int_kernel, nu_q
@@ -1569,8 +1572,20 @@ contains
 
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-    subroutine Nu_init
+    subroutine sum_mnu_for_m1(summnu,dsummnu, m1, targ, sgn)
+        use constants
+        real(dl), intent(in) :: m1, targ, sgn
+        real(dl), intent(out) :: summnu, dsummnu
+        real(dl) :: m2,m3
 
+        m2 = sqrt(m1**2 + delta_mnu21)
+        m3 = sqrt(m1**2 + sgn*delta_mnu31)
+        summnu = m1 + m2 + m3 - targ
+        dsummnu = m1/m2+m1/m3 + 1
+
+    end subroutine sum_mnu_for_m1
+
+    subroutine Nu_init
         !  Initialize interpolation tables for massive neutrinos.
         !  Use cubic splines interpolation of log rhonu and pnu vs. log a*m.
 
@@ -2190,7 +2205,7 @@ contains
                 +(b0**3-b0)*PK%ddmat(lhi,itf))*ho**2/6
         end if
 
-        outpower = exp(max(-30._dl,outpower))
+        outpower = exp(outpower)
 
     end function MatterPowerData_k
 

@@ -140,6 +140,7 @@
     logical :: short_integral_range
     real(dl) range_fac
     logical, parameter :: approx = .false.
+    real(dl) theta_cut(lmax)
 
     !$ integer  OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
     !$ external OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
@@ -186,6 +187,9 @@
         lfacs(l) = real(l*(l+1),dl)
         lfacs2(l) = real((l+2)*(l-1),dl)
         lrootfacs(l) = sqrt(lfacs(l)*lfacs2(l))
+    end do
+    do l=2,lmax
+        theta_cut(l) = 0.244949_dl/sqrt(3._dl*lfacs(l) - 8._dl)
     end do
 
     roots(-1)=0 !just so dipole doesn't screw up
@@ -248,7 +252,7 @@
         !uncomment second line for PGF90 workaround
         !$OMP PARALLEL DO DEFAULT(PRIVATE),  &
         !OMP PRIVATE(P,dP,d11,dm11,d22,d2m2,d20,corrcontribs,ddcontribs),&
-        !$OMP SHARED(lfacs,lfacs2,lrootfacs,Cphil3,CTT,CTE,CEE,lens_contrib, lmax), &
+        !$OMP SHARED(lfacs,lfacs2,lrootfacs,Cphil3,CTT,CTE,CEE,lens_contrib, lmax, theta_cut), &
         !$OMP SHARED(dtheta,CP,lmax_lensed,roots, npoints,interp_fac,jmax,ls,xl,short_integral_range,apodize_point_width)
         do i=1,npoints-1
 
@@ -293,8 +297,14 @@
             d_22(l) = ( ((4*x-8)/fac2 + llp1)*P(l) &
                 + 4*fac*( fac2 + (x - 2)/llp1)*dP(l) )/ lfacs2(l)
 
-            d_2m2(l) = ( (llp1- (4*x+8)/fac1) *P(l) &
-                +4/fac*( -fac1 + (x+2)/llp1) *dP(l) )/lfacs2(l)
+            !For small theta use Taylor expansion for better stability (thanks Pavel Motloch)
+            if (theta > theta_cut(l)) then
+                d_2m2(l) = ( (llp1- (4*x+8)/fac1) *P(l) &
+                    +4/fac*( -fac1 + (x+2)/llp1) *dP(l) )/lfacs2(l)
+            else
+                d_2m2(l) = lfacs(l)*lfacs2(l)*theta**4*(1._dl/384._dl &
+                    - (3._dl*lfacs(l) - 8._dl)/23040._dl*theta**2)
+            endif
 
             d_20(l) = (2*x*dP(l) - llp1*P(l) ) / lrootfacs(l)
 
@@ -534,7 +544,7 @@
     !$ integer OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
     !$ external OMP_GET_THREAD_NUM, OMP_GET_MAX_THREADS
 
-    if (lensing_includes_tensors) call MpiStop('Haven''t implemented tensor lensing')
+    if (lensing_includes_tensors) stop 'Haven''t implemented tensor lensing'
 
     max_lensed_ix = lSamp%l0-1
     do while(lSamp%l(max_lensed_ix) > CP%Max_l -250)
