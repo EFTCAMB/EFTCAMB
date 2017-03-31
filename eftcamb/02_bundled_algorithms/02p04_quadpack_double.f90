@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 02_quadpack_double.f90
+!> @file 02p04_quadpack_double.f90
 !! This file contains the relevant code for the double precision QUADPACK integration library.
 !! This code was developed by many authors that retain the copyright for the following code.
 !! This source file was modified to use it with the EFTCAMB code.
@@ -57,16 +57,16 @@ contains
     end subroutine xerror
 
     !----------------------------------------------------------------------------------------
-        !> DQWGTS defines the weight functions used by DQC25S.
-        !!
-        !!  Modified:
-        !!
-        !!    11 September 2015
-        !!
-        !!  Author:
-        !!
-        !!    Robert Piessens, Elise de Doncker
-        !!
+    !> DQWGTS defines the weight functions used by DQC25S.
+    !!
+    !!  Modified:
+    !!
+    !!    11 September 2015
+    !!
+    !!  Author:
+    !!
+    !!    Robert Piessens, Elise de Doncker
+    !!
     function dqwgts ( x, a, b, alfa, beta, integr )
 
         implicit none
@@ -90,16 +90,16 @@ contains
 end function dqwgts
 
 !----------------------------------------------------------------------------------------
-    !> DQWGTC defines the weight function used by DQC25C.
-    !!
-    !!  Modified:
-    !!
-    !!    11 September 2015
-    !!
-    !!  Author:
-    !!
-    !!    Robert Piessens, Elise de Doncker
-    !!
+!> DQWGTC defines the weight function used by DQC25C.
+!!
+!!  Modified:
+!!
+!!    11 September 2015
+!!
+!!  Author:
+!!
+!!    Robert Piessens, Elise de Doncker
+!!
 function dqwgtc ( x, c, p2, p3, p4, kp )
 
     implicit none
@@ -114,17 +114,17 @@ function dqwgtc ( x, c, p2, p3, p4, kp )
 
 end function dqwgtc
 
-    !----------------------------------------------------------------------------------------
-    !> DQWGTF defines the weight functions used by DQC25F.
-    !!
-    !!  Modified:
-    !!
-    !!    11 September 2015
-    !!
-    !!  Author:
-    !!
-    !!    Robert Piessens, Elise de Doncker
-    !!
+!----------------------------------------------------------------------------------------
+!> DQWGTF defines the weight functions used by DQC25F.
+!!
+!!  Modified:
+!!
+!!    11 September 2015
+!!
+!!  Author:
+!!
+!!    Robert Piessens, Elise de Doncker
+!!
 function dqwgtf( x, omega, p2, p3, p4, integr )
 
     implicit none
