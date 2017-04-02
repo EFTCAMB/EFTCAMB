@@ -64,6 +64,7 @@ contains
 
         real(dl) :: Atest, y
         integer  :: ind
+        type(EFTCAMB_timestep_cache ) :: eft_cache
 
         ! 0) initial feedback:
         if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) then
@@ -74,62 +75,82 @@ contains
             write(*,'(a)')
         end if
 
+        ! debug open cache files:
+        if ( DebugEFTCAMB ) then
+            call eft_cache%open_cache_files( input_EFTCAMB%outroot )
+        end if
+
         ! 1) stability code:
         success = .true.
 
         !    - linear sampling:
-        call EFTStability_cleanup()
-        do ind=1, indMax
-            Atest = astart + REAL(ind-1)*(aend-astart)/REAL(indMax-1)
-            success = EFTTestStability( Atest, k_max, input_EFTCAMB, params_cache )
-            if ( .not. success ) then
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 2 ) then
-                    write(*,*)
-                    write(*,'(a,E14.4)') '   Instability detected at a =', Atest
+        if ( success ) then
+            call EFTStability_cleanup()
+            do ind=1, indMax
+                Atest = astart + REAL(ind-1)*(aend-astart)/REAL(indMax-1)
+                success = EFTTestStability( Atest, k_max, input_EFTCAMB, params_cache, eft_cache )
+                if ( .not. success ) then
+                    if ( input_EFTCAMB%EFTCAMB_feedback_level > 2 ) then
+                        write(*,*)
+                        write(*,'(a,E14.4)') '   Instability detected at a =', Atest
+                    end if
+                    exit
                 end if
-                return
-            end if
-        end do
+            end do
+        end if
 
         !    - log sampling close to astart:
-        call EFTStability_cleanup()
-        do ind=1, indMax
-            y = LogSamplingScale + REAL(ind-1)*(0._dl-LogSamplingScale)/REAL(indMax-1)
-            Atest = astart +(aend-astart)*10._dl**y
-            success = EFTTestStability( Atest, k_max, input_EFTCAMB, params_cache )
-            if ( .not. success ) then
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 2 ) then
-                    write(*,*)
-                    write(*,'(a,E14.4)') '   Instability detected at a =', Atest
+        if ( success ) then
+            call EFTStability_cleanup()
+            do ind=1, indMax
+                y = LogSamplingScale + REAL(ind-1)*(0._dl-LogSamplingScale)/REAL(indMax-1)
+                Atest = astart +(aend-astart)*10._dl**y
+                success = EFTTestStability( Atest, k_max, input_EFTCAMB, params_cache, eft_cache )
+                if ( .not. success ) then
+                    if ( input_EFTCAMB%EFTCAMB_feedback_level > 2 ) then
+                        write(*,*)
+                        write(*,'(a,E14.4)') '   Instability detected at a =', Atest
+                    end if
+                    exit
                 end if
-                return
-            end if
-        end do
+            end do
+        end if
 
         !    - log sampling close to aend:
-        call EFTStability_cleanup()
-        do ind=1, indMax
-            Atest = aend +(astart-aend)*10._dl**y
-            success = EFTTestStability( Atest, k_max, input_EFTCAMB, params_cache )
-            if ( .not. success ) then
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 2 ) then
-                    write(*,*)
-                    write(*,'(a,E14.4)') '   Instability detected at a =', Atest
+        if ( success ) then
+            call EFTStability_cleanup()
+            do ind=1, indMax
+                Atest = aend +(astart-aend)*10._dl**y
+                success = EFTTestStability( Atest, k_max, input_EFTCAMB, params_cache, eft_cache )
+                if ( .not. success ) then
+                    if ( input_EFTCAMB%EFTCAMB_feedback_level > 2 ) then
+                        write(*,*)
+                        write(*,'(a,E14.4)') '   Instability detected at a =', Atest
+                    end if
+                    exit
                 end if
-                return
-            end if
-        end do
+            end do
+        end if
+
+        ! debug close cache files:
+        if ( DebugEFTCAMB ) then
+            call eft_cache%close_cache_files( )
+        end if
 
         ! 2) final feedback:
         if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) then
-            write(*,'(a)') ' EFTCAMB: theory stable'
+            if ( success ) then
+                write(*,'(a)') ' EFTCAMB: theory stable'
+            else
+                write(*,'(a)') ' EFTCAMB: theory unstable'
+            end if
         end if
 
     end subroutine EFTCAMB_Stability_Check
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that fills the caches to check the stability of the theory.
-    function EFTTestStability( a, k_max, input_EFTCAMB, params_cache )
+    function EFTTestStability( a, k_max, input_EFTCAMB, params_cache, eft_cache )
 
         implicit none
 
@@ -137,10 +158,10 @@ contains
         real(dl)                     , intent(inout) :: k_max                   !< the input maximum k mode at which stability is computed.
         class(EFTCAMB)               , intent(in)    :: input_EFTCAMB           !< the EFTCAMB object for which the code is computing stability.
         type(EFTCAMB_parameter_cache), intent(inout) :: params_cache            !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache               !< the EFTCAMB timestep cache that contains all the physical values.
         logical                                      :: EFTTestStability        !< Logical value returned by the function. If the model is stable this is True, otherwise False.
 
         ! Definitions of variables:
-        type(EFTCAMB_timestep_cache ) :: eft_cache
         logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep
         real(dl) :: EFT_instability_rate, tempk, temp1, temp2, temp3, temp4, temp5
         integer  :: ind_max, ind
@@ -399,6 +420,11 @@ contains
         call input_model%compute_tensor_factors( a, params_cache , eft_cache )
         ! Compute kinetic and gradient terms:
         call input_model%compute_stability_factors( a, params_cache , eft_cache )
+
+        ! dump cache if in debug mode:
+        if ( DebugEFTCAMB ) then
+            call eft_cache%dump_cache_files()
+        end if
 
     end subroutine EFTStabilityComputation
 
