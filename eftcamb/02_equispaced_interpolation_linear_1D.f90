@@ -147,6 +147,14 @@ contains
 
         real(dl) :: x1, x2
 
+        ! check input:
+        if ( x <= self%x_initial .or. x >= self%x_final ) then
+            ind = self%num_points
+            x1  = 0._dl
+            x2  = 0._dl
+            mu  = 0._dl
+            return
+        end if
         ! compute the interpolation index:
         ind = int( ( x-self%x_initial)/self%grid_width ) +1
         ! store the x values:
