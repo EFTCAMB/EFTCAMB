@@ -146,7 +146,7 @@ module EFTCAMB_cache
             real(dl)              :: Nu_pidotdot_Wrapper !< output value of the second time derivative of neutrino pressure
         end function Nu_pidotdot_Wrapper
         !----------------------------------------------------------------------------------------
-        !> Wwrapper to the function that computes the background massive neutrinos
+        !> Wrapper to the function that computes the background massive neutrinos
         !! third time derivative of pressure.
         function Nu_pidotdotdot_Wrapper( am, adotoa, Hdot,Hdotdot, presnu, presnudot, presnudotdot )
             use precision
