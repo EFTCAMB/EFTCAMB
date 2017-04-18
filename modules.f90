@@ -1907,7 +1907,10 @@ contains
             presnudotdotdot = dddp1(i)+d*(ddddp1(i)+d*(3._dl*(dddp1(i+1)-dddp1(i))-2._dl*ddddp1(i) &
                 -ddddp1(i+1)+d*(ddddp1(i)+ddddp1(i+1)+2._dl*(dddp1(i)-dddp1(i+1)))))
 
-            presnudotdotdot = 0._dl !IW
+            presnudotdotdot = presnu*adotoa**3*presnudotdotdot/dlnam +(2._dl*presnudot*adotoa +3._dl*presnu*Hdot)/(presnu*adotoa)**2&
+                &*(presnu*presnudotdot*adotoa-presnudot**2*adotoa -presnu*presnudot*Hdot ) +presnudot*presnudotdot/presnu &
+                & +3._dl*presnudot**2*Hdot/presnu/adotoa +presnudot*Hdotdot/adotoa
+
         end if
 
     end function Nu_pidotdotdot
