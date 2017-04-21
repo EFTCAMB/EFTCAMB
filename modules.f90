@@ -1894,10 +1894,11 @@ contains
 
         if (am< am_minp) then
             presnudotdotdot = presnudotdot*( adotoa+Hdot/adotoa )+presnudot*( Hdot+ Hdotdot/adotoa -( Hdot/adotoa )**2 )&
-                &-2._dl/3._dl*const2*( 2._dl*adotoa*Hdot*am +2._dl*adotoa**3*am**2 )
+                &-4._dl/3._dl*const2*( adotoa*Hdot +adotoa**3 )*am**2
         else if (am>am_maxp) then
-            presnudotdotdot = 15._dl/2._dl/const*( zeta5/am*( -Hdotdot +3._dl*adotoa*Hdot -adotoa**3 )&
-                & +189._dl/4._dl*zeta7/am**3*( Hdotdot-9._dl*adotoa*Hdot +9._dl*adotoa**3 ) )
+            presnudotdotdot = presnudotdot*( adotoa+Hdot/adotoa )+presnudot*( Hdot+ Hdotdot/adotoa -( Hdot/adotoa )**2 )&
+                & +30._dl*adotoa*Hdot*( zeta5/const/am -189._dl/2._dl*zeta7/const/am**3 )&
+                & +15._dl*adotoa**3*( -zeta5/const/am +1.5_dl*189._dl*zeta7/const/am**3 )
         else
 
             d=log(am/am_min)/dlnam+1._dl
@@ -1907,9 +1908,8 @@ contains
             presnudotdotdot = dddp1(i)+d*(ddddp1(i)+d*(3._dl*(dddp1(i+1)-dddp1(i))-2._dl*ddddp1(i) &
                 -ddddp1(i+1)+d*(ddddp1(i)+ddddp1(i+1)+2._dl*(dddp1(i)-dddp1(i+1)))))
 
-            presnudotdotdot = presnu*adotoa**3*presnudotdotdot/dlnam +(2._dl*presnudot*adotoa +3._dl*presnu*Hdot)/(presnu*adotoa)**2&
-                &*(presnu*presnudotdot*adotoa-presnudot**2*adotoa -presnu*presnudot*Hdot ) +presnudot*presnudotdot/presnu &
-                & +3._dl*presnudot**2*Hdot/presnu/adotoa +presnudot*Hdotdot/adotoa
+            presnudotdotdot = presnu*adotoa**4*presnudotdotdot/dlnam +3._dl*( presnudotdot*Hdot +presnudot*presnudotdot*adotoa/presnu &
+                &-presnudot**2*Hdot/presnu -presnudot*Hdot**3/adotoa ) -2._dl*presnudot**3/presnu*adotoa +presnu*Hdotdot
 
         end if
 
