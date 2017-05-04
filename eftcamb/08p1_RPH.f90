@@ -591,9 +591,9 @@ contains
         RPH_AT_PPP             = self%RPH_Tensor%third_derivative(a)
         ! compute the EFT functions:
         eft_cache%EFTOmegaV    = RPH_PM_V +RPH_AT_V*(1._dl +RPH_PM_V)
-        eft_cache%EFTOmegaP    = RPH_PM_V*RPH_AT_P +(1._dl +RPH_AT_V)*RPH_PM_P
-        eft_cache%EFTOmegaPP   = RPH_PM_V*RPH_AT_PP +2._dl*RPH_PM_P*RPH_AT_P +(1._dl +RPH_AT_V)*RPH_PM_PP
-        eft_cache%EFTOmegaPPP  = RPH_PM_V*RPH_AT_PPP +3._dl*RPH_PM_PP*RPH_AT_P +3._dl*RPH_PM_P*RPH_AT_PP &
+        eft_cache%EFTOmegaP    = (RPH_PM_V+1.0_dl)*RPH_AT_P +(1._dl +RPH_AT_V)*RPH_PM_P
+        eft_cache%EFTOmegaPP   = (RPH_PM_V+1.0_dl)*RPH_AT_PP +2._dl*RPH_PM_P*RPH_AT_P +(1._dl +RPH_AT_V)*RPH_PM_PP
+        eft_cache%EFTOmegaPPP  = (RPH_PM_V+1.0_dl)*RPH_AT_PPP +3._dl*RPH_PM_PP*RPH_AT_P +3._dl*RPH_PM_P*RPH_AT_PP &
             & +(1._dl +RPH_AT_V)*RPH_PM_PPP
         eft_cache%EFTc         = ( eft_cache%adotoa**2 - eft_cache%Hdot )*( eft_cache%EFTOmegaV + 0.5_dl*a*eft_cache%EFTOmegaP ) &
             & -0.5_dl*( a*eft_cache%adotoa )**2*eft_cache%EFTOmegaPP&
@@ -608,7 +608,7 @@ contains
             & +0.5_dl*a**2*eft_cache%adotoa*eft_cache%EFTOmegaPP*( eft_cache%adotoa**2 -3._dl*eft_cache%Hdot ) &
             & -0.5_dl*(a*eft_cache%adotoa)**3*eft_cache%EFTOmegaPPP
         eft_cache%EFTLambdadot = -2._dl*eft_cache%EFTOmegaV*( eft_cache%Hdotdot -eft_cache%adotoa*eft_cache%Hdot -eft_cache%adotoa**3 ) &
-            & -a*eft_cache%EFTOmegaP*( +eft_cache%Hdotdot +5._dl*eft_cache%adotoa*eft_cache%Hdot -eft_cache%adotoa**3  ) &
+            & -a*eft_cache%EFTOmegaP*( +eft_cache%Hdotdot +4._dl*eft_cache%adotoa*eft_cache%Hdot ) &
             & -a**2*eft_cache%EFTOmegaPP*eft_cache%adotoa*( +2._dl*eft_cache%adotoa**2 +3._dl*eft_cache%Hdot )&
             & -(a*eft_cache%adotoa)**3*eft_cache%EFTOmegaPPP &
             & +eft_cache%grhov_t*eft_cache%adotoa*( a*self%RPH_wDE%first_derivative(a) -3._dl*self%RPH_wDE%value(a)*(1._dl +self%RPH_wDE%value(a) ))
@@ -648,11 +648,11 @@ contains
             & +0.25_dl*( RPH_AK_P*(1._dl +RPH_PM_V)*eft_cache%adotoa**2 &
             & +RPH_AK_V*RPH_PM_P*eft_cache%adotoa**2 &
             & +2._dl*RPH_AK_V*(1._dl +RPH_PM_V)*eft_cache%Hdot/a &
-            & -4._dl*eft_cache%EFTc -2._dl*eft_cache%EFTcdot/a/eft_cache%adotoa )/(eft_par_cache%h0_Mpc**2*a**2)
+            & -4._dl*eft_cache%EFTc/a -2._dl*eft_cache%EFTcdot/a/eft_cache%adotoa )/(eft_par_cache%h0_Mpc**2*a**2)
         eft_cache%EFTGamma2V  = ( +2._dl*RPH_AB_V*(1._dl +RPH_PM_V) &
             & -a*eft_cache%EFTOmegaP )*eft_cache%adotoa/(eft_par_cache%h0_Mpc*a)
-        eft_cache%EFTGamma2P  = -0.5_dl*( +2._dl*RPH_AB_V*(1._dl +RPH_PM_V) &
-            & -a*eft_cache%EFTOmegaP )*eft_cache%adotoa/(eft_par_cache%h0_Mpc*a) &
+        eft_cache%EFTGamma2P  = -( +2._dl*RPH_AB_V*(1._dl +RPH_PM_V) &
+            & -a*eft_cache%EFTOmegaP )*eft_cache%adotoa/(eft_par_cache%h0_Mpc*a**2) &
             & -( -2._dl*(1._dl +RPH_PM_V)*( RPH_AB_P*eft_cache%adotoa**2 &
             & + RPH_AB_V*eft_cache%Hdot/a) &
             & - 2._dl*RPH_AB_V*eft_cache%adotoa**2*RPH_PM_P &

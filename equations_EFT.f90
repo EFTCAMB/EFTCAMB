@@ -1409,7 +1409,7 @@ contains
             dz = -adotoa*z - 0.5_dl*dgrho/k
         else if ( CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive) then
             ! RSA approximation.
-            z  = 1._dl/EV%eft_cache%EFTeomG*( etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
+            z  = 1._dl/EV%eft_cache%EFTeomG*( EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
             dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*z*(1._dl+EV%eft_cache%EFTeomY-0.5_dl*EV%eft_cache%EFTeomG) &
                 & - 0.5_dl*dgrho/k/(1._dl+EV%eft_cache%EFTOmegaV) -adotoa*EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc) -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
         end if
@@ -2350,7 +2350,7 @@ contains
             dz = -adotoa*z - 0.5_dl*dgrho/k
         else if ( CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive ) then
             ! RSA
-            z  = 1._dl/EV%eft_cache%EFTeomG*(etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
+            z  = 1._dl/EV%eft_cache%EFTeomG*(EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
             dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*z*(1._dl+EV%eft_cache%EFTeomY -0.5_dl*EV%eft_cache%EFTeomG) &
                 & - 0.5_dl*dgrho/k/(1._dl+EV%eft_cache%EFTOmegaV) -adotoa*EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc) -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
         end if
@@ -2411,7 +2411,7 @@ contains
         else if (CP%EFTCAMB%EFTflag/=0.and.CP%flat.and. EV%EFTCAMBactive) then
 
             ! compute z, dz, sigma and equation for etak:
-            EV%eft_cache%z = 1._dl/EV%eft_cache%EFTeomG*(etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
+            EV%eft_cache%z = 1._dl/EV%eft_cache%EFTeomG*(EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
             z              = EV%eft_cache%z
 
             EV%eft_cache%dz = 1._dl/EV%eft_cache%EFTeomU*(-2*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z +etak -0.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*( grhog_t*clxg +grhor_t*clxr )&
