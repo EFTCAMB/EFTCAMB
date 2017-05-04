@@ -348,7 +348,8 @@ contains
             & -3._dl*aomegaP*( (3._dl*adotoa2-eft_cache%Hdot+k2/3._dl)*eft_cache%pi +eft_cache%adotoa*eft_cache%pidot) &
             & +4._dl*a2*eft_par_cache%h0_mpc**2*eft_cache%EFTGamma1V/eft_cache%adotoa*pidot_p_H_pi &
             & +3._dl*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V*( (eft_cache%Hdot-2._dl*adotoa2-k2/3._dl)*eft_cache%pi/eft_cache%adotoa -eft_cache%pidot ) &                                                                                  ! Gamma2
-            & -eft_cache%pi*( k2-3._dl*hdot_m_adotoa2)*(3._dl*eft_cache%EFTGamma3V+eft_cache%EFTGamma4V) +8._dl*eft_cache%EFTGamma6V*k2*pidot_p_H_pi/eft_cache%adotoa )
+            & -eft_cache%pi*( k2-3._dl*hdot_m_adotoa2)*(3._dl*eft_cache%EFTGamma3V+eft_cache%EFTGamma4V) +8._dl*eft_cache%EFTGamma6V*k2*pidot_p_H_pi/eft_cache%adotoa )&
+            &+2._dl*eft_cache%EFTGamma5V/one_plus_omega*eft_cache%k**2*eft_cache%pi
         eft_cache%EFTeomM     = eft_cache%gpresdotq*eft_cache%pi +(eft_cache%grhoq+eft_cache%gpresq+a2*adotoa2*eft_cache%EFTOmegaPP)*pidot_p_H_pi &
             & +aomegaP*eft_cache%adotoa*( eft_cache%pidotdot +(eft_cache%Hdot+4._dl*adotoa2)*eft_cache%pidot/eft_cache%adotoa +2._dl*(eft_cache%Hdot+3._dl*adotoa2+k2/3._dl)*eft_cache%pi ) &
             & +a*eft_par_cache%h0_mpc*( eft_cache%EFTGamma2V*eft_cache%pidotdot &
@@ -380,6 +381,7 @@ contains
         eft_cache%EFTeomY     = +0.5_dl/one_plus_omega*( aomegaP &
             & +3._dl*eft_cache%EFTGamma3V+eft_cache%EFTGamma4V   &
             & +0.5_dl*a*(3._dl*eft_cache%EFTGamma3P+eft_cache%EFTGamma4P) )
+        eft_cache%EFTeomQ =1._dl+2._dl*eft_cache%EFTGamma5V/one_plus_omega
 
     end subroutine EFTCAMBModelComputeEinsteinFactors
 
@@ -407,7 +409,7 @@ contains
 
         ! compute the coefficients:
         eft_cache%EFTpiA1  = eft_cache%EFTc +2._dl*a2*adotoa02*eft_cache%EFTGamma1V +1.5_dl*a2*( eft_cache%adotoa*eft_cache%EFTOmegaP +eft_par_cache%h0_mpc*eft_cache%EFTGamma2V )**2&
-            &/(2._dl*one_plus_omega +eft_cache%EFTGamma3V +eft_cache%EFTGamma4V)
+            &/(2._dl*one_plus_omega +3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V)
             !
         eft_cache%EFTpiA2  = +4._dl*eft_cache%EFTGamma6V
             !

@@ -232,6 +232,7 @@ module EFTCAMB_cache
         real(dl) :: EFTeomM       !< the value of the Einstein equations coefficient M. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTeomV       !< the value of the Einstein equations coefficient V. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTeomVdot    !< the value of the Einstein equations coefficient dV/dtau. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFTeomQ       !< the value of the Einstein equations coefficient Q. Refer to the Numerical Notes for the definition.
         ! 8) pi field factors:
         real(dl) :: EFTpiA1       !< the value of the pi field equation coefficient A1. Scale independent part of A. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTpiA2       !< the value of the pi field equation coefficient A2. Part proportional to \f$ k^2 \f$. Refer to the Numerical Notes for the definition.
@@ -359,6 +360,7 @@ contains
         self%EFTeomM       = 0._dl
         self%EFTeomV       = 0._dl
         self%EFTeomVdot    = 0._dl
+        self%EFTeomQ       = 0._dl
         ! 8) pi field factors:
         self%EFTpiA1       = 0._dl
         self%EFTpiA2       = 0._dl
@@ -471,6 +473,7 @@ contains
         HaveNan = HaveNan.or.IsNaN(self%EFTeomM)
         HaveNan = HaveNan.or.IsNaN(self%EFTeomV)
         HaveNan = HaveNan.or.IsNaN(self%EFTeomVdot)
+        HaveNan = HaveNan.or.IsNaN(self%EFTeomQ)
         HaveNan = HaveNan.or.IsNaN(self%EFTpiA1)
         HaveNan = HaveNan.or.IsNaN(self%EFTpiA2)
         HaveNan = HaveNan.or.IsNaN(self%EFTpiB1)
@@ -566,7 +569,7 @@ contains
         write (555 ,'(20a)')  '# ', 'a ', 'tau ', 'k ', 'EFTOmegaV ', 'EFTOmegaP ', 'EFTOmegaPP ', 'EFTOmegaPPP ', 'EFTc ', 'EFTcdot ', 'EFTLambda ', 'EFTLambdadot '
         write (666 ,'(16a)')  '# ', 'a ', 'tau ', 'k ', 'EFTGamma1V ', 'EFTGamma1P ', 'EFTGamma2V ', 'EFTGamma2P ', 'EFTGamma3V ', 'EFTGamma3P ', 'EFTGamma4V ', 'EFTGamma4P ', 'EFTGamma4PP ', 'EFTGamma5V ', 'EFTGamma5P ', 'EFTGamma6V ', 'EFTGamma6P '
         write (777 ,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'grhoq ', 'gpresq ', 'grhodotq ', 'gpresdotq '
-        write (888 ,'(18a)')  '# ', 'a ', 'tau ', 'k ', 'EFTeomF ', 'EFTeomN ', 'EFTeomNdot ', 'EFTeomX ', 'EFTeomXdot ', 'EFTeomY ', 'EFTeomG ', 'EFTeomU ', 'EFTeomL ', 'EFTeomM ', 'EFTeomV ', 'EFTeomVdot '
+        write (888 ,'(18a)')  '# ', 'a ', 'tau ', 'k ', 'EFTeomF ', 'EFTeomN ', 'EFTeomNdot ', 'EFTeomX ', 'EFTeomXdot ', 'EFTeomY ', 'EFTeomG ', 'EFTeomU ', 'EFTeomL ', 'EFTeomM ', 'EFTeomV ', 'EFTeomVdot ', 'EFTeomQ'
         write (999 ,'(14a)')  '# ', 'a ', 'tau ', 'k ', 'EFTpiA1 ', 'EFTpiA2 ', 'EFTpiB1 ', 'EFTpiB2 ', 'EFTpiC ', 'EFTpiD1 ', 'EFTpiD2 ', 'EFTpiE '
         write (1111,'(12a)')  '# ', 'a ', 'tau ', 'k ', 'pi ', 'pidot ', 'pidotdot '
         write (2222,'(20a)')  '# ', 'a ', 'tau ', 'k ', 'z ', 'sigma', 'clxc ', 'clxb ', 'clxg ', 'clxr ', 'vb ', 'dgpnu ', 'dgrho ', 'dgq '
@@ -684,7 +687,7 @@ contains
         ! write background EFT auxiliary quantities:
         write (777 ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%grhoq, self%gpresq, self%grhodotq, self%gpresdotq
         ! write Einstein equations coefficients:
-        write (888 ,'(18'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTeomF, self%EFTeomN, self%EFTeomNdot, self%EFTeomX, self%EFTeomXdot, self%EFTeomY, self%EFTeomG, self%EFTeomU, self%EFTeomL, self%EFTeomM, self%EFTeomV, self%EFTeomVdot
+        write (888 ,'(18'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTeomF, self%EFTeomN, self%EFTeomNdot, self%EFTeomX, self%EFTeomXdot, self%EFTeomY, self%EFTeomG, self%EFTeomU, self%EFTeomL, self%EFTeomM, self%EFTeomV, self%EFTeomVdot, self%EFTeomQ
         ! write pi field coefficients:
         write (999 ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTpiA1, self%EFTpiA2, self%EFTpiB1, self%EFTpiB2, self%EFTpiC, self%EFTpiD1, self%EFTpiD2, self%EFTpiE
         ! write pi field solution:
