@@ -1548,7 +1548,7 @@ module MassiveNu
     real(dl) dlnam
 
     ! EFTCAMB MOD START: compatibility with massive neutrinos
-    real(dl), dimension(:), allocatable ::  r1,p1,dr1,dp1,ddr1, ddp1, dddp1
+    real(dl), dimension(:), allocatable ::  r1,p1,dr1,dp1,ddr1, ddp1, dddp1, ddddp1
     ! Original code:
     ! real(dl), dimension(:), allocatable ::  r1,p1,dr1,dp1,ddr1
     ! EFTCAMB MOD END.
@@ -1562,7 +1562,7 @@ module MassiveNu
 
     ! EFTCAMB MOD START: compatibility with massive neutrinos
     public const,Nu_Init,Nu_background, Nu_rho, Nu_drho,  nqmax0, nqmax, &
-    	nu_int_kernel, nu_q, sum_mnu_for_m1, neutrino_mass_fac, Nu_pidot, Nu_pidotdot
+    	nu_int_kernel, nu_q, sum_mnu_for_m1, neutrino_mass_fac, Nu_pidot, Nu_pidotdot, Nu_pidotdotdot
     ! Original code:
     ! public const,Nu_Init,Nu_background, Nu_rho, Nu_drho,  nqmax0, nqmax, &
     ! nu_int_kernel, nu_q
@@ -1600,17 +1600,19 @@ contains
         !  Error due to velocity < 1e-5
 
         ! EFTCAMB MOD START: initialize the massive neutrino's wrapper
-        if ( associated( CP%eft_par_cache%Nu_background ) ) nullify( CP%eft_par_cache%Nu_background )
-        if ( associated( CP%eft_par_cache%Nu_rho        ) ) nullify( CP%eft_par_cache%Nu_rho        )
-        if ( associated( CP%eft_par_cache%Nu_drho       ) ) nullify( CP%eft_par_cache%Nu_drho       )
-        if ( associated( CP%eft_par_cache%Nu_pidot      ) ) nullify( CP%eft_par_cache%Nu_pidot      )
-        if ( associated( CP%eft_par_cache%Nu_pidotdot   ) ) nullify( CP%eft_par_cache%Nu_pidotdot   )
+        if ( associated( CP%eft_par_cache%Nu_background    ) ) nullify( CP%eft_par_cache%Nu_background )
+        if ( associated( CP%eft_par_cache%Nu_rho           ) ) nullify( CP%eft_par_cache%Nu_rho        )
+        if ( associated( CP%eft_par_cache%Nu_drho          ) ) nullify( CP%eft_par_cache%Nu_drho       )
+        if ( associated( CP%eft_par_cache%Nu_pidot         ) ) nullify( CP%eft_par_cache%Nu_pidot      )
+        if ( associated( CP%eft_par_cache%Nu_pidotdot      ) ) nullify( CP%eft_par_cache%Nu_pidotdot   )
+        if ( associated( CP%eft_par_cache%Nu_pidotdotdot   ) ) nullify( CP%eft_par_cache%Nu_pidotdotdot   )
 
         CP%eft_par_cache%Nu_background  => Nu_background
         CP%eft_par_cache%Nu_rho         => Nu_rho
         CP%eft_par_cache%Nu_drho        => Nu_drho
         CP%eft_par_cache%Nu_pidot       => Nu_pidot
         CP%eft_par_cache%Nu_pidotdot    => Nu_pidotdot
+        CP%eft_par_cache%Nu_pidotdotdot => Nu_pidotdotdot
         ! EFTCAMB MOD END.
 
         do i=1, CP%Nu_mass_eigenstates
@@ -1621,7 +1623,7 @@ contains
         if (allocated(r1)) return
 
         ! EFTCAMB MOD START: compatibility with massive neutrinos
-        allocate(r1(nrhopn),p1(nrhopn),dr1(nrhopn),dp1(nrhopn),ddr1(nrhopn),ddp1(nrhopn),dddp1(nrhopn))
+        allocate(r1(nrhopn),p1(nrhopn),dr1(nrhopn),dp1(nrhopn),ddr1(nrhopn),ddp1(nrhopn),dddp1(nrhopn),ddddp1(nrhopn))
         ! Original code:
         ! allocate(r1(nrhopn),p1(nrhopn),dr1(nrhopn),dp1(nrhopn),ddr1(nrhopn))
         ! EFTCAMB MOD END.
@@ -1683,6 +1685,7 @@ contains
         ! EFTCAMB MOD START: compatibility with massive neutrinos
         call splder(dp1,ddp1,nrhopn,spline_data)
         call splder(ddp1,dddp1,nrhopn,spline_data)
+        call splder(dddp1,ddddp1,nrhopn,spline_data)
         ! EFTCAMB MOD END.
 
     end subroutine Nu_init
@@ -1879,6 +1882,38 @@ contains
         end if
 
     end function Nu_pidotdot
+
+    function Nu_pidotdotdot(am,adotoa,Hdot,Hdotdot,presnu,presnudot,presnudotdot) result (presnudotdotdot)
+        use precision
+        use ModelParams
+
+        real(dl) adotoa,Hdot,Hdotdot,presnu,presnudot,presnudotdot,presnudotdotdot
+        real(dl) d
+        real(dl), intent(in) :: am
+        integer i
+
+        if (am< am_minp) then
+            presnudotdotdot = presnudotdot*( adotoa+Hdot/adotoa )+presnudot*( Hdot+ Hdotdot/adotoa -( Hdot/adotoa )**2 )&
+                &-4._dl/3._dl*const2*( adotoa*Hdot +adotoa**3 )*am**2
+        else if (am>am_maxp) then
+            presnudotdotdot = presnudotdot*( adotoa+Hdot/adotoa )+presnudot*( Hdot+ Hdotdot/adotoa -( Hdot/adotoa )**2 )&
+                & +30._dl*adotoa*Hdot*( zeta5/const/am -189._dl/2._dl*zeta7/const/am**3 )&
+                & +15._dl*adotoa**3*( -zeta5/const/am +1.5_dl*189._dl*zeta7/const/am**3 )
+        else
+
+            d=log(am/am_min)/dlnam+1._dl
+            i=int(d)
+            d=d-i
+
+            presnudotdotdot = dddp1(i)+d*(ddddp1(i)+d*(3._dl*(dddp1(i+1)-dddp1(i))-2._dl*ddddp1(i) &
+                -ddddp1(i+1)+d*(ddddp1(i)+ddddp1(i+1)+2._dl*(dddp1(i)-dddp1(i+1)))))
+
+            presnudotdotdot = presnu*adotoa**4*presnudotdotdot/dlnam +3._dl*( presnudotdot*Hdot +presnudot*presnudotdot*adotoa/presnu &
+                &-presnudot**2*Hdot/presnu -presnudot*Hdot**3/adotoa ) -2._dl*presnudot**3/presnu*adotoa +presnu*Hdotdot
+
+        end if
+
+    end function Nu_pidotdotdot
     ! EFTCAMB MOD END.
 
 end module MassiveNu

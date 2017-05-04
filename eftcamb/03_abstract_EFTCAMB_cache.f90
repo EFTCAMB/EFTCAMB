@@ -74,11 +74,12 @@ module EFTCAMB_cache
         real(dl), allocatable, dimension(:) :: grhormass  !< densities of neutrinos in each mass eigenstate \f$ 8 \pi G_{N} \rho_{ m\nu }(t_0) \f$
         real(dl), allocatable, dimension(:) :: nu_masses  !< neutrino masses
         ! 5) massive neutrinos wrapper:
-        procedure( Nu_background_Wrapper ), pointer, nopass :: Nu_background => null()  !< wrapper to the subroutine that computes the background massive neutrinos density and pressure.
-        procedure( Nu_rho_Wrapper        ), pointer, nopass :: Nu_rho        => null()  !< wrapper to the subroutine that computes the background massive neutrinos density.
-        procedure( Nu_drho_Wrapper       ), pointer, nopass :: Nu_drho       => null()  !< wrapper to the subroutine that computes the time derivative of the background massive neutrinos density.
-        procedure( Nu_pidot_Wrapper      ), pointer, nopass :: Nu_pidot      => null()  !< wrapper to the function that computes the background massive neutrinos time derivative of pressure.
-        procedure( Nu_pidotdot_Wrapper   ), pointer, nopass :: Nu_pidotdot   => null()  !< wrapper to the function that computes the background massive neutrinos second time derivative of pressure.
+        procedure( Nu_background_Wrapper    ), pointer, nopass :: Nu_background    => null()  !< wrapper to the subroutine that computes the background massive neutrinos density and pressure.
+        procedure( Nu_rho_Wrapper           ), pointer, nopass :: Nu_rho           => null()  !< wrapper to the subroutine that computes the background massive neutrinos density.
+        procedure( Nu_drho_Wrapper          ), pointer, nopass :: Nu_drho          => null()  !< wrapper to the subroutine that computes the time derivative of the background massive neutrinos density.
+        procedure( Nu_pidot_Wrapper         ), pointer, nopass :: Nu_pidot         => null()  !< wrapper to the function that computes the background massive neutrinos time derivative of pressure.
+        procedure( Nu_pidotdot_Wrapper      ), pointer, nopass :: Nu_pidotdot      => null()  !< wrapper to the function that computes the background massive neutrinos second time derivative of pressure.
+        procedure( Nu_pidotdotdot_Wrapper   ), pointer, nopass :: Nu_pidotdotdot   => null()  !< wrapper to the function that computes the background massive neutrinos third time derivative of pressure.
 
     contains
 
@@ -144,6 +145,21 @@ module EFTCAMB_cache
             real(dl)              :: presnudot !< input time derivative of neutrino pressure
             real(dl)              :: Nu_pidotdot_Wrapper !< output value of the second time derivative of neutrino pressure
         end function Nu_pidotdot_Wrapper
+        !----------------------------------------------------------------------------------------
+        !> Wrapper to the function that computes the background massive neutrinos
+        !! third time derivative of pressure.
+        function Nu_pidotdotdot_Wrapper( am, adotoa, Hdot,Hdotdot, presnu, presnudot, presnudotdot )
+            use precision
+            implicit none
+            real(dl), intent(in)  :: am           !< input scale factor times the neutrino mass
+            real(dl)              :: adotoa       !< input conformal Hubble
+            real(dl)              :: Hdot         !< input time derivative of conformal Hubble
+            real(dl)              :: Hdotdot      !< input time derivative of conformal Hubble
+            real(dl)              :: presnu       !< input neutrino pressure
+            real(dl)              :: presnudot    !< input time derivative of neutrino pressure
+            real(dl)              :: presnudotdot !< input second time derivative of neutrino pressure
+            real(dl)              :: Nu_pidotdotdot_Wrapper !< output value of the second time derivative of neutrino pressure
+        end function Nu_pidotdotdot_Wrapper
         !----------------------------------------------------------------------------------------
     end interface
 
@@ -710,12 +726,13 @@ contains
         self%grhok       = 0._dl
         self%Num_Nu_Massive       = 0
         self%Nu_mass_eigenstates  = 0
-        if ( allocated(self%grhormass)      ) deallocate(self%grhormass)
-        if ( allocated(self%nu_masses)      ) deallocate(self%nu_masses)
-        if ( associated(self%Nu_background) ) nullify(self%Nu_background)
-        if ( associated(self%Nu_rho)        ) nullify(self%Nu_rho)
-        if ( associated(self%Nu_pidot)      ) nullify(self%Nu_pidot)
-        if ( associated(self%Nu_pidotdot)   ) nullify(self%Nu_pidotdot)
+        if ( allocated(self%grhormass)         ) deallocate(self%grhormass)
+        if ( allocated(self%nu_masses)         ) deallocate(self%nu_masses)
+        if ( associated(self%Nu_background)    ) nullify(self%Nu_background)
+        if ( associated(self%Nu_rho)           ) nullify(self%Nu_rho)
+        if ( associated(self%Nu_pidot)         ) nullify(self%Nu_pidot)
+        if ( associated(self%Nu_pidotdot)      ) nullify(self%Nu_pidotdot)
+        if ( associated(self%Nu_pidotdotdot)   ) nullify(self%Nu_pidotdotdot)
 
     end subroutine EFTCAMBParameterCacheInit
 
