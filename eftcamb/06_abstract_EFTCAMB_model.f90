@@ -409,7 +409,7 @@ contains
 
         ! compute the coefficients:
         eft_cache%EFTpiA1  = eft_cache%EFTc +2._dl*a2*adotoa02*eft_cache%EFTGamma1V +1.5_dl*a2*( eft_cache%adotoa*eft_cache%EFTOmegaP +eft_par_cache%h0_mpc*eft_cache%EFTGamma2V )**2&
-            &/(2._dl*one_plus_omega +eft_cache%EFTGamma3V +eft_cache%EFTGamma4V)
+            &/(2._dl*one_plus_omega +3._dl*eft_cache%EFTGamma3V +eft_cache%EFTGamma4V)
             !
         eft_cache%EFTpiA2  = +4._dl*eft_cache%EFTGamma6V
             !
