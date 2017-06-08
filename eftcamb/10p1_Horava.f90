@@ -337,8 +337,10 @@ contains
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
         ! compute the EFT functions:
-        eft_cache%EFTGamma1V  = 0._dl
-        eft_cache%EFTGamma1P  = 0._dl
+        eft_cache%EFTGamma1V  = ( 2._dl*self%Horava_xi-3._dl*self%Horava_lambda )/( 2._dl +2._dl*self%Horava_xi -self%Horava_eta )/( 2._dl*a**2*eft_par_cache%h0_Mpc**2 )&
+                              &*( eft_cache%Hdot -eft_cache%adotoa**2 )
+        eft_cache%EFTGamma1P  = ( 2._dl*self%Horava_xi-3._dl*self%Horava_lambda )/( 2._dl +2._dl*self%Horava_xi -self%Horava_eta )/( 2._dl*a**3*eft_par_cache%h0_Mpc**2 )&
+                              &*( eft_cache%Hdotdot/eft_cache%adotoa -4._dl*eft_cache%Hdot +2._dl*eft_cache%adotoa**2 )
         eft_cache%EFTGamma2V  = 0._dl
         eft_cache%EFTGamma2P  = 0._dl
         eft_cache%EFTGamma3V  = 2._dl*(self%Horava_lambda -self%Horava_xi)/( 2._dl +2._dl*self%Horava_xi -self%Horava_eta )
@@ -433,7 +435,7 @@ contains
         eft_cache%EFTpiC   = 0._dl
         eft_cache%EFTpiD1  = 0.5_dl*( 3._dl*self%Horava_lambda -2._dl*self%Horava_xi)*( eft_cache%adotoa**2 -eft_cache%Hdot ) + 0.5_dl*self%Horava_eta*( eft_cache%adotoa**2 +eft_cache%Hdot )
         eft_cache%EFTpiD2  = 0.5_dl*self%Horava_lambda*(1._dl+self%Horava_xi)
-        eft_cache%EFTpiE   = 0.5_dl*eft_cache%k**2*self%Horava_lambda*( 1._dl +self%Horava_xi )*eft_cache%k*eft_cache%z + 0.5_dl*eft_cache%k*self%Horava_xi*eft_cache%dgq
+        eft_cache%EFTpiE   = 0.5_dl*eft_cache%k**2*self%Horava_lambda*( 1._dl +self%Horava_xi )*eft_cache%k*eft_cache%z + 0.25_dl*eft_cache%k*self%Horava_xi*( 2._dl*self%Horava_xi +2._dl -self%Horava_eta )*eft_cache%dgq
 
     end subroutine EFTCAMBHoravaComputePiFactors
 
