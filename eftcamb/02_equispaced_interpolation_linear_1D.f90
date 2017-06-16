@@ -467,14 +467,35 @@ contains
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the derivatives if the derivatives vectors are not initialized.
     !! The derivative are inferred from the function itself.
-    subroutine EquispacedLinearIntepolateFunction1DInitDerivatives( self )
+    subroutine EquispacedLinearIntepolateFunction1DInitDerivatives( self, jacobian )
 
         implicit none
 
         class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
+        real(dl), dimension(self%num_points), optional    :: jacobian    !< Jacobian of the transformation to use if we want the derivative wrt to another variable
 
-        write(*,*) 'ERROR: not yet implemented (IW)'
-        stop
+        real(dl), dimension(self%num_points) :: spline_workspace
+
+        ! initialize the calculation:
+        call splini( spline_workspace, self%num_points )
+        ! compute the numerical first derivative:
+        call splder( self%y, self%yp, self%num_points, spline_workspace )
+        self%yp = self%yp/self%grid_width
+        if ( present(jacobian) ) then
+            self%yp = jacobian*self%yp
+        end if
+        ! compute the numerical second derivative:
+        call splder( self%yp, self%ypp, self%num_points, spline_workspace )
+        self%ypp = self%ypp/self%grid_width
+        if ( present(jacobian) ) then
+            self%ypp = jacobian*self%ypp
+        end if
+        ! compute the numerical third derivative:
+        call splder( self%ypp, self%yppp, self%num_points, spline_workspace )
+        self%yppp = self%yppp/self%grid_width
+        if ( present(jacobian) ) then
+            self%yppp = jacobian*self%yppp
+        end if
 
     end subroutine EquispacedLinearIntepolateFunction1DInitDerivatives
 
