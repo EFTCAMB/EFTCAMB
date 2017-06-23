@@ -1,0 +1,67 @@
+***************************************************************
+     ______________________   __  ______  
+    / __/ __/_  __/ ___/ _ | /  |/  / _ ) 
+   / _// _/  / / / /__/ __ |/ /|_/ / _  | 
+  /___/_/   /_/  \___/_/ |_/_/  /_/____/   V3.0 Apr17
+  
+***************************************************************
+ 
+ EFTCAMB feedback level  =  1
+ 
+ EFTCAMB stability flags:
+  Mathematical stability =  F
+  Physical stability     =  F
+  Additional priors      =  F
+ 
+ EFTCAMB model flags:
+   EFTflag             =  1
+   PureEFTmodel        =  1
+ 
+   Model               =  Standard Pure EFT
+   Number of params    =  6
+ 
+   PureEFTmodelOmega   =  3
+   PureEFTmodelGamma1  =  3
+   PureEFTmodelGamma2  =  3
+ 
+ Power Law function: EFTOmega
+   EFTOmega0           =    2.000000
+   EFTOmegaExp         =    1.500000
+ Power Law function: EFTGamma1
+   EFTGamma10          =    1.000000
+   EFTGamma1Exp        =    1.000000
+ Power Law function: EFTGamma2
+   EFTGamma20          =   -4.800000
+   EFTGamma2Exp        =    0.000000
+ 
+Reion redshift       =  11.164
+Om_b h^2             =  0.022032
+Om_c h^2             =  0.120380
+Om_nu h^2            =  0.000000
+Om_Lambda            =  0.700878
+Om_K                 =  0.000000
+Om_m (1-Om_K-Om_L)   =  0.299122
+100 theta (CosmoMC)  =  1.045349
+Reion opt depth      =  0.0900
+Age of universe/GYr  =  13.668
+zstar                =  1090.38
+r_s(zstar)/Mpc       =  144.58
+100*theta            =  1.045606
+DA(zstar)/Gpc        =  13.82746
+zdrag                =  1059.09
+r_s(zdrag)/Mpc       =  147.37
+k_D(zstar) Mpc       =  0.1401
+100*theta_D          =  0.162164
+z_EQ (if v_nu=1)     =  3400.71
+k_EQ Mpc (if v_nu=1) =  0.010383
+100*theta_EQ         =  0.816038
+100*theta_rs_EQ      =  0.451182
+tau_recomb/Mpc       =  280.52  tau_now/Mpc =  14107.8
+at z =  2.000 sigma8 (all matter) =  0.3998
+at z =  1.000 sigma8 (all matter) =  0.6213
+at z =  0.500 sigma8 (all matter) =  0.8424
+at z =  0.000 sigma8 (all matter) =  1.2168
+at z =  2.000 sigma8^2_vd/sigma8  =  0.4331
+at z =  1.000 sigma8^2_vd/sigma8  =  0.6722
+at z =  0.500 sigma8^2_vd/sigma8  =  0.8600
+at z =  0.000 sigma8^2_vd/sigma8  =  0.9161

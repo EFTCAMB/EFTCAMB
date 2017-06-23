@@ -1315,10 +1315,10 @@ contains
             unit = open_file_header(ScalFile, 'L', C_name_tags(:last_C))
             do in=1,CP%InitPower%nn
                 do il=lmin,min(10000,CP%Max_l)
-                    write(unit,trim(numcat('(1I6,',last_C))//'E15.5)')il ,fact*Cl_scalar(il,in,C_Temp:last_C)
+                    write(unit,trim(numcat('(1I6,',last_C))//'ES15.5E3)')il ,fact*Cl_scalar(il,in,C_Temp:last_C)
                 end do
                 do il=10100,CP%Max_l, 100
-                    write(unit,trim(numcat('(1E15.5,',last_C))//'E15.5)') real(il),&
+                    write(unit,trim(numcat('(1ES15.5E3,',last_C))//'ES15.5E3)') real(il),&
                         fact*Cl_scalar(il,in,C_Temp:last_C)
                 end do
             end do
@@ -1339,13 +1339,13 @@ contains
                     outarr=Cl_scalar_array(il,in,1:3+num_redshiftwindows,1:3+num_redshiftwindows)
                     outarr(1:2,:)=sqrt(fact)*outarr(1:2,:)
                     outarr(:,1:2)=sqrt(fact)*outarr(:,1:2)
-                    write(unit,trim(numcat('(1I6,',(3+num_redshiftwindows)**2))//'E15.5)') il, outarr
+                    write(unit,trim(numcat('(1I6,',(3+num_redshiftwindows)**2))//'ES15.5E3)') il, outarr
                 end do
                 do il=10100,CP%Max_l, 100
                     outarr=Cl_scalar_array(il,in,1:3+num_redshiftwindows,1:3+num_redshiftwindows)
                     outarr(1:2,:)=sqrt(fact)*outarr(1:2,:)
                     outarr(:,1:2)=sqrt(fact)*outarr(:,1:2)
-                    write(unit,trim(numcat('(1E15.5,',(3+num_redshiftwindows)**2))//'E15.5)') real(il), outarr
+                    write(unit,trim(numcat('(1ES15.5E3,',(3+num_redshiftwindows)**2))//'ES15.5E3)') real(il), outarr
                 end do
             end do
             close(unit)
@@ -1356,7 +1356,7 @@ contains
             unit = open_file_header(TensFile, 'L', CT_name_tags)
             do in=1,CP%InitPower%nn
                 do il=lmin,CP%Max_l_tensor
-                    write(unit,'(1I6,4E15.5)')il, fact*Cl_tensor(il, in, CT_Temp:CT_Cross)
+                    write(unit,'(1I6,4ES15.5E3)')il, fact*Cl_tensor(il, in, CT_Temp:CT_Cross)
                 end do
             end do
             close(unit)
@@ -1366,11 +1366,11 @@ contains
             unit = open_file_header(TotFile, 'L', CT_name_tags)
             do in=1,CP%InitPower%nn
                 do il=lmin,CP%Max_l_tensor
-                    write(unit,'(1I6,4E15.5)')il, fact*(Cl_scalar(il, in, C_Temp:C_E)+ Cl_tensor(il,in, C_Temp:C_E)), &
+                    write(unit,'(1I6,4ES15.5E3)')il, fact*(Cl_scalar(il, in, C_Temp:C_E)+ Cl_tensor(il,in, C_Temp:C_E)), &
                         fact*Cl_tensor(il,in, CT_B), fact*(Cl_scalar(il, in, C_Cross) + Cl_tensor(il, in, CT_Cross))
                 end do
                 do il=CP%Max_l_tensor+1,CP%Max_l
-                    write(unit,'(1I6,4E15.5)')il ,fact*Cl_scalar(il,in,C_Temp:C_E), 0._dl, fact*Cl_scalar(il,in,C_Cross)
+                    write(unit,'(1I6,4ES15.5E3)')il ,fact*Cl_scalar(il,in,C_Temp:C_E), 0._dl, fact*Cl_scalar(il,in,C_Cross)
                 end do
             end do
             close(unit)
@@ -1380,7 +1380,7 @@ contains
             unit = open_file_header(LensFile, 'L', CT_name_tags)
             do in=1,CP%InitPower%nn
                 do il=lmin, lmax_lensed
-                    write(unit,'(1I6,4E15.5)')il, fact*Cl_lensed(il, in, CT_Temp:CT_Cross)
+                    write(unit,'(1I6,4ES15.5E3)')il, fact*Cl_lensed(il, in, CT_Temp:CT_Cross)
                 end do
             end do
             close(unit)
@@ -1391,10 +1391,10 @@ contains
             unit = open_file_header(LensTotFile, 'L', CT_name_tags)
             do in=1,CP%InitPower%nn
                 do il=lmin,min(CP%Max_l_tensor,lmax_lensed)
-                    write(unit,'(1I6,4E15.5)')il, fact*(Cl_lensed(il, in, CT_Temp:CT_Cross)+ Cl_tensor(il,in, CT_Temp:CT_Cross))
+                    write(unit,'(1I6,4ES15.5E3)')il, fact*(Cl_lensed(il, in, CT_Temp:CT_Cross)+ Cl_tensor(il,in, CT_Temp:CT_Cross))
                 end do
                 do il=min(CP%Max_l_tensor,lmax_lensed)+1,lmax_lensed
-                    write(unit,'(1I6,4E15.5)')il, fact*Cl_lensed(il, in, CT_Temp:CT_Cross)
+                    write(unit,'(1I6,4ES15.5E3)')il, fact*Cl_lensed(il, in, CT_Temp:CT_Cross)
                 end do
             end do
             close(unit)
@@ -1439,12 +1439,12 @@ contains
                     end if
                     scale = (real(il+1)/il)**2/OutputDenominator !Factor to go from old l^4 factor to new
 
-                    write(unit,'(1I6,7E15.5)') il , fact*TT, fact*EE, fact*BB, fact*TE, scale*Cl_scalar(il,in,C_Phi),&
+                    write(unit,'(1I6,7ES15.5E3)') il , fact*TT, fact*EE, fact*BB, fact*TE, scale*Cl_scalar(il,in,C_Phi),&
                         (real(il+1)/il)**1.5/OutputDenominator*sqrt(fact)*Cl_scalar(il,in,C_PhiTemp:C_PhiE)
                 end do
                 do il=10100,CP%Max_l, 100
                     scale = (real(il+1)/il)**2/OutputDenominator
-                    write(unit,'(1E15.5,7E15.5)') real(il), fact*Cl_scalar(il,in,C_Temp:C_E),0.,fact*Cl_scalar(il,in,C_Cross), &
+                    write(unit,'(1ES15.5E3,7ES15.5E3)') real(il), fact*Cl_scalar(il,in,C_Temp:C_E),0.,fact*Cl_scalar(il,in,C_Cross), &
                         scale*Cl_scalar(il,in,C_Phi),&
                         (real(il+1)/il)**1.5/OutputDenominator*sqrt(fact)*Cl_scalar(il,in,C_PhiTemp:C_PhiE)
                 end do
@@ -1473,7 +1473,7 @@ contains
             unit =  open_file_header(VecFile, 'L', CT_name_tags)
             do in=1,CP%InitPower%nn
                 do il=lmin,CP%Max_l
-                    write(unit,'(1I6,4E15.5)')il, fact*Cl_vector(il, in, CT_Temp:CT_Cross)
+                    write(unit,'(1I6,4ES15.5E3)')il, fact*Cl_vector(il, in, CT_Temp:CT_Cross)
                 end do
             end do
             close(unit)
@@ -2690,7 +2690,7 @@ contains
                     columns = ['P   ', 'P_vd','P_vv']
                     unit = open_file_header(FileNames(itf), 'k/h', columns(:ncol), 15)
                     do i=1,points
-                        write (unit, '(*(E15.5))') MTrans%TransferData(Transfer_kh,i,1),outpower(i,1:CP%InitPower%nn,:)
+                        write (unit, '(*(ES15.5E3))') MTrans%TransferData(Transfer_kh,i,1),outpower(i,1:CP%InitPower%nn,:)
                     end do
                     close(unit)
                 else
@@ -2707,7 +2707,7 @@ contains
                     unit = open_file_header(FileNames(itf), 'k/h', columns(:1), 15)
 
                     do i=1,points
-                        write (unit, '(*(E15.5))') minkh*exp((i-1)*dlnkh),outpower(i,1:CP%InitPower%nn,1)
+                        write (unit, '(*(ES15.5E3))') minkh*exp((i-1)*dlnkh),outpower(i,1:CP%InitPower%nn,1)
                     end do
                     close(unit)
                 end if
