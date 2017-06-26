@@ -225,8 +225,8 @@ contains
             ! print the function B0(A). This is used to debug the initial conditions part.
             call CreateTxtFile( './debug_designer_fR_B.dat', 34 )
             print*, 'EFTCAMB DEBUG ( f(R) designer ): Printing B(A) results'
-            TempMin      = -10._dl
-            TempMax      = +10._dl
+            TempMin      = -100._dl
+            TempMax      = +100._dl
             Debug_MaxNum = 1000
             do Debug_n = 1, Debug_MaxNum
                 debug_A = TempMin +REAL(Debug_n-1)*(TempMax-TempMin)/REAL(Debug_MaxNum-1)
@@ -312,8 +312,8 @@ contains
         ! 4) Initialize DLSODA:
         ! set-up the relative and absolute tollerances:
         itol = 1
-        rtol = 1.d-10
-        atol = 1.d-14
+        rtol = 1.d-12
+        atol = 1.d-16
         ! initialize task to do:
         itask  = 1
         istate = 1
