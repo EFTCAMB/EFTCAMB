@@ -1,0 +1,69 @@
+***************************************************************
+     ______________________   __  ______  
+    / __/ __/_  __/ ___/ _ | /  |/  / _ ) 
+   / _// _/  / / / /__/ __ |/ /|_/ / _  | 
+  /___/_/   /_/  \___/_/ |_/_/  /_/____/   V3.0 Apr17
+  
+***************************************************************
+ 
+ EFTCAMB feedback level  =  5
+ 
+ EFTCAMB stability flags:
+  Mathematical stability =  F
+  Physical stability     =  F
+  Additional priors      =  F
+ 
+ EFTCAMB model flags:
+   EFTflag             =  4
+   FullMappingEFTmodel =  4
+ 
+   Model               =  Quintic Galileon
+   Number of params    =  2
+                 xi    =    1.400000
+                 c2    =    0.000000
+                 c3    =   -0.200000
+                 c4    =    0.000000
+                 c5    =    0.000000
+ 
+ 
+   Model               =  Quintic Galileon
+   Number of params    =  2
+                 xi    =    1.400000
+                 c2    =   -1.000000
+                 c3    =   -0.200000
+                 c4    =    0.124488
+                 c5    =   -0.041592
+***************************************************************
+ EFTCAMB Return to GR time: 0.0000000000
+
+ EFT functions at RGR time: 
+   EFTLambda    =    0.6024E-07
+***************************************************************
+ EFTCAMB: checking stability of the theory
+
+ EFTCAMB: theory stable
+***************************************************************
+Reion redshift       =   7.933
+Integrated opt depth =  0.0620
+Om_b h^2             =  0.022019
+Om_c h^2             =  0.100000
+Om_nu h^2            =  0.000000
+Om_Lambda            =  0.596630
+Om_K                 =  0.000000
+Om_m (1-Om_K-Om_L)   =  0.403370
+100 theta (CosmoMC)  =  0.957318
+Reion opt depth      =  0.0620
+Age of universe/GYr  =  16.350
+zstar                =  1088.33
+r_s(zstar)/Mpc       =  150.25
+100*theta            =  0.957639
+DA(zstar)/Gpc        =  15.68965
+zdrag                =  1057.45
+r_s(zdrag)/Mpc       =  153.17
+k_D(zstar) Mpc       =  0.1346
+100*theta_D          =  0.148770
+z_EQ (if v_nu=1)     =  2915.75
+k_EQ Mpc (if v_nu=1) =  0.008899
+100*theta_EQ         =  0.839070
+100*theta_rs_EQ      =  0.460833
+tau_recomb/Mpc       =  291.97  tau_now/Mpc =  15981.3

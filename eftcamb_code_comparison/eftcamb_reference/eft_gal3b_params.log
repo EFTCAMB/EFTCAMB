@@ -1,0 +1,77 @@
+***************************************************************
+     ______________________   __  ______  
+    / __/ __/_  __/ ___/ _ | /  |/  / _ ) 
+   / _// _/  / / / /__/ __ |/ /|_/ / _  | 
+  /___/_/   /_/  \___/_/ |_/_/  /_/____/   V3.0 Apr17
+  
+***************************************************************
+ 
+ EFTCAMB feedback level  =  5
+ 
+ EFTCAMB stability flags:
+  Mathematical stability =  F
+  Physical stability     =  F
+  Additional priors      =  F
+ 
+ EFTCAMB model flags:
+   EFTflag             =  4
+   FullMappingEFTmodel =  2
+ 
+   Model               =  Cubic Galileon
+   Number of params    =  0
+                  xi    =  0.000000000000000E+000
+                  c2    =  0.000000000000000E+000
+                  c3    =  0.000000000000000E+000
+ 
+ 
+   Model               =  Cubic Galileon
+   Number of params    =  0
+                  xi    =   2.13888113274207     
+                  c2    =  -1.00000000000000     
+                  c3    =  7.792236048807355E-002
+***************************************************************
+ EFTCAMB Return to GR time: 0.0100000000
+
+ EFT functions at RGR time: 
+   EFTLambda    =    0.1629E-06
+   EFTGamma1V   =    0.7050E-05
+   EFTGamma1P   =    0.2132E-02
+   EFTGamma2V   =    0.1265E-07
+   EFTGamma2P   =    0.5742E-05
+***************************************************************
+ EFTCAMB: checking stability of the theory
+
+ EFTCAMB: theory stable
+***************************************************************
+Reion redshift       =  11.126
+Integrated opt depth =  0.0880
+Om_b h^2             =  0.022020
+Om_c h^2             =  0.130000
+Om_nu h^2            =  0.000000
+Om_Lambda            =  0.762469
+Om_K                 =  0.000000
+Om_m (1-Om_K-Om_L)   =  0.237531
+100 theta (CosmoMC)  =  1.056844
+Reion opt depth      =  0.0880
+Age of universe/GYr  =  13.157
+zstar                =  1091.01
+r_s(zstar)/Mpc       =  142.21
+100*theta            =  1.057162
+DA(zstar)/Gpc        =  13.45229
+zdrag                =  1059.67
+r_s(zdrag)/Mpc       =  144.93
+k_D(zstar) Mpc       =  0.1431
+100*theta_D          =  0.163199
+z_EQ (if v_nu=1)     =  3632.88
+k_EQ Mpc (if v_nu=1) =  0.011087
+100*theta_EQ         =  0.785495
+100*theta_rs_EQ      =  0.435420
+tau_recomb/Mpc       =  275.74  tau_now/Mpc =  13727.9
+at z =  2.000 sigma8 (all matter) =  0.4134
+at z =  1.000 sigma8 (all matter) =  0.6119
+at z =  0.500 sigma8 (all matter) =  0.7835
+at z =  0.000 sigma8 (all matter) =  1.0234
+at z =  2.000 sigma8^2_vd/sigma8  =  0.4096
+at z =  1.000 sigma8^2_vd/sigma8  =  0.5653
+at z =  0.500 sigma8^2_vd/sigma8  =  0.6124
+at z =  0.000 sigma8^2_vd/sigma8  =  0.5573
