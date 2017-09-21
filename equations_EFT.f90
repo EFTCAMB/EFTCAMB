@@ -100,7 +100,7 @@ function dtauda(a)
     end if
 
     ! EFTCAMB MOD START: compute dtauda, if EFTCAMB is active replace the standard DE EoS
-    if ( CP%EFTCAMB%EFTFlag == 0 ) then
+    if ( CP%EFTCAMB%EFTFlag == 0 .or. a < EFTbackgroundcutoff ) then
 
         if (w_lam == -1._dl) then
             grhoa2=grhoa2+grhov*a2**2

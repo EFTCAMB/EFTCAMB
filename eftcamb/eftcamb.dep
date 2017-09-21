@@ -176,6 +176,7 @@ $(OUTPUT_DIR)/04p1_constant_parametrizations_1D.o :  \
 $(OUTPUT_DIR)/modules.o :  \
 	$(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(OUTPUT_DIR)/11_EFTCAMB_stability.o \
+	$(OUTPUT_DIR)/01_EFT_def.o \
 	$(OUTPUT_DIR)/11_EFTCAMB_RGR.o \
 	$(OUTPUT_DIR)/11_EFTCAMB_main.o
 
@@ -437,6 +438,7 @@ $(DLL_DIR)/04p1_constant_parametrizations_1D.o :  \
 $(DLL_DIR)/modules.o :  \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/11_EFTCAMB_stability.o \
+	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/11_EFTCAMB_RGR.o \
 	$(DLL_DIR)/11_EFTCAMB_main.o
 

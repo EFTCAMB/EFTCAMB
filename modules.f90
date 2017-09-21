@@ -33,6 +33,7 @@ module ModelParams
     use Errors
 
     ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
+    use EFT_def
     use EFTCAMB_cache
     use EFTCAMB_stability
     use EFTCAMB_ReturnToGR
