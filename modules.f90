@@ -2943,7 +2943,6 @@ contains
                     print*, 'tau minimum:', tauminn, '; initial time:', adotrad*tauminn
                 end if
                 call GlobalError('inithermo: failed, dtauda is NaN. The model considered has either a bug in the expansion history or does not have radiation domination',error_reionization)
-                stop
                 return
             end if
             ! EFTCAMB MOD END.
