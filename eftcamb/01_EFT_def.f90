@@ -31,9 +31,8 @@ module EFT_def
     ! EFT compile time flags:
     character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Sept17'
 
-    real(dl), parameter :: EFTbackgroundcutoff = 1.d-10 !< Smallest scale factor that the code should
-        !!    consider when copmputing the background. For all practical purposes this should only
-        !!    prevent from calling the w DE integral at a=0 where it is usually ill defined.
+    real(dl), parameter :: EFTbackgroundcutoff = 0._dl !< Smallest scale factor that the code should
+        !!    consider when copmputing the background. Set to zero, change background at all times.
 
     real(dl), parameter :: EFTturnonpiInitial = 1.d-2   !< Turn on pi field flag:
         !!    Sets the scale factor at which the code starts to evolve the pi field.
@@ -44,9 +43,8 @@ module EFT_def
     real(dl), parameter :: EFTtoGR = 1.d-8 !< Return to GR flag:
         !!    This is the threshold at which a theory is considered to be exactly GR.
 
-    real(dl), parameter :: EFTstabilitycutoff = EFTbackgroundcutoff !< Smallest scale factor that the code checks for stability.
-        !!    Earlier times are neglected in the stability check. Keep this reasonably early for models with a modified expansion history as weird things
-        !!    happen if the model does not have radiation domination. A working choice is the background cutoff.
+    real(dl), parameter :: EFTstabilitycutoff = 1.d-10 !< Smallest scale factor that the code checks for stability.
+        !!    Earlier times are neglected in the stability check. Keep this reasonably early for models with a modified expansion history.
 
     integer , parameter :: EFT_names_max_length       = 20    !< maximum length of names for EFT functions and parameters.
     integer , parameter :: EFT_names_latex_max_length = 40    !< maximum length of latex names for EFT functions and parameters.
