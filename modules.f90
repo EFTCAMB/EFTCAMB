@@ -2928,6 +2928,17 @@ contains
             scaleFactor(i)=a
             a2=a*a
 
+            ! EFTCAMB MOD START: protection against models that do not have radiation domination
+            if ( isnan(a) ) then
+                if ( FeedbackLevel > 2 ) then
+                    print*, 'inithermo failed: dtauda is NaN. The model considered has either a bug in the expansion history or does not have radiation domination'
+                    print*, 'tau minimum:', tauminn, '; initial time:', adotrad*tauminn
+                end if
+                call GlobalError('inithermo: failed, dtauda is NaN. The model considered has either a bug in the expansion history or does not have radiation domination',error_reionization)
+                return
+            end if
+            ! EFTCAMB MOD END.
+
             adot=1/dtauda(a)
 
             if (matter_verydom_tau ==0 .and. a > a_verydom) then
