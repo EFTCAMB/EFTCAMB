@@ -44,6 +44,10 @@ module EFT_def
     real(dl), parameter :: EFTtoGR = 1.d-8 !< Return to GR flag:
         !!    This is the threshold at which a theory is considered to be exactly GR.
 
+    real(dl), parameter :: EFTstabilitycutoff = EFTbackgroundcutoff !< Smallest scale factor that the code checks for stability.
+        !!    Earlier times are neglected in the stability check. Keep this reasonably early for models with a modified expansion history as weird things
+        !!    happen if the model does not have radiation domination. A working choice is the background cutoff.
+
     integer , parameter :: EFT_names_max_length       = 20    !< maximum length of names for EFT functions and parameters.
     integer , parameter :: EFT_names_latex_max_length = 40    !< maximum length of latex names for EFT functions and parameters.
 

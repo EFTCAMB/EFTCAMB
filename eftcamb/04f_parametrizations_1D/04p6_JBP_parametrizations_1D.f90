@@ -166,6 +166,7 @@ contains
         real(dl) :: JBPParametrized1DValue                              !< the output value
 
         JBPParametrized1DValue = self%w0 +(1._dl - x)*self%wa*x**(self%wn -1._dl)
+
     end function JBPParametrized1DValue
 
     ! ---------------------------------------------------------------------------------------------
@@ -224,7 +225,12 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: JBPParametrized1DIntegral                           !< the output value
 
-        JBPParametrized1DIntegral = x**(-1._dl -3._dl*self%w0)*Exp(3._dl*(x +x**self%wn*(x*(self%wn -1._dl) -self%wn))*self%wa/(x*self%wn*(self%wn -1._dl)))
+        ! the limit to n->1 has to be written by hand:
+        if ( abs(self%wn-1.0) < 1.d-8 ) then
+            JBPParametrized1DIntegral = x**(2._dl -3._dl*(1._dl +self%w0 +self%wa))*Exp(3._dl*(x-1._dl)*self%wa)
+        else
+            JBPParametrized1DIntegral = x**(-1._dl -3._dl*self%w0)*Exp(3._dl*(x +x**self%wn*(x*(self%wn -1._dl) -self%wn))*self%wa/(x*self%wn*(self%wn -1._dl)))
+        end if
 
     end function JBPParametrized1DIntegral
 

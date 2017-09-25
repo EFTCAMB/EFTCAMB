@@ -462,7 +462,7 @@ contains
 
                 ! 4) compute wether the theory is stable or not:
                 k_max = 10._dl
-                call EFTCAMB_Stability_Check( success, CP%EFTCAMB, CP%eft_par_cache, 1.d-7, 1._dl, k_max )
+                call EFTCAMB_Stability_Check( success, CP%EFTCAMB, CP%eft_par_cache, EFTstabilitycutoff, 1._dl, k_max )
                 if ( .not. success ) then
                     global_error_flag         = 1
                     global_error_message      = 'EFTCAMB: theory unstable'
@@ -514,6 +514,7 @@ contains
         if (present(error)) then
             error = 0
         else if (FeedbackLevel > 0 .and. .not. call_again) then
+            write(*,'("H0                   = ",f9.6)') CP%H0
             write(*,'("Om_b h^2             = ",f9.6)') CP%omegab*(CP%H0/100)**2
             write(*,'("Om_c h^2             = ",f9.6)') CP%omegac*(CP%H0/100)**2
             write(*,'("Om_nu h^2            = ",f9.6)') CP%omegan*(CP%H0/100)**2
@@ -2934,6 +2935,19 @@ contains
             end if
 
             a=a0+2._dl*dtau/(1._dl/adot0+1._dl/adot)
+
+            ! EFTCAMB MOD START: protection against models that do not have radiation domination
+            if ( isnan(a) ) then
+                if ( FeedbackLevel > 2 ) then
+                    print*, 'inithermo failed: dtauda is NaN. The model considered has either a bug in the expansion history or does not have radiation domination'
+                    print*, 'tau minimum:', tauminn, '; initial time:', adotrad*tauminn
+                end if
+                call GlobalError('inithermo: failed, dtauda is NaN. The model considered has either a bug in the expansion history or does not have radiation domination',error_reionization)
+                stop
+                return
+            end if
+            ! EFTCAMB MOD END.
+
             !  Baryon temperature evolution: adiabatic except for Thomson cooling.
             !  Use  quadrature solution.
             ! This is redundant as also calculated in REFCAST, but agrees well before reionization

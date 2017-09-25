@@ -165,6 +165,8 @@ contains
         logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep
         real(dl) :: EFT_instability_rate, tempk, temp1, temp2, temp3, temp4, temp5
         integer  :: ind_max, ind
+        real(dl) :: dtauda, test_dtauda
+        external :: dtauda
 
         ! Stability check initialization
         EFTTestStability = .true.
@@ -177,6 +179,13 @@ contains
 
         ! check stability of the theory:
 
+        ! 0) dtauda should be finite:
+        test_dtauda = dtauda(a)
+        if ( test_dtauda > HUGE(test_dtauda) .or. IsNaN(test_dtauda) ) then
+            EFTTestStability = .false.
+            if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') '   Model dtauda is Nan'
+            return
+        end if
         ! 1) everything inside the parameter cache should not be a NaN:
         call params_cache%is_nan( EFT_HaveNan_parameter )
         if ( EFT_HaveNan_parameter ) then
