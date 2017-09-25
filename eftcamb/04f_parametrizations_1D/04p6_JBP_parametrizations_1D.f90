@@ -39,6 +39,10 @@ module EFTCAMB_JBP_parametrizations_1D
     public JBP_parametrization_1D
 
     ! ---------------------------------------------------------------------------------------------
+    !> early time cutoff for the integral that might be numerically ill defined at a=0.
+    real(dl), parameter :: integral_cutoff = 1.d-10
+
+    ! ---------------------------------------------------------------------------------------------
     !> Type containing the JBP function parametrization. Inherits from parametrized_function_1D.
     type, extends ( parametrized_function_1D ) :: JBP_parametrization_1D
 
@@ -224,6 +228,12 @@ contains
         real(dl), intent(in)                               :: x         !< the input scale factor
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: JBPParametrized1DIntegral                           !< the output value
+
+        ! the integral might be numerically ill defined at early times. Cut it in scale factor.
+        if ( x < integral_cutoff ) then
+            JBPParametrized1DIntegral = 0._dl
+            return
+        end if
 
         ! the limit to n->1 has to be written by hand:
         if ( abs(self%wn-1.0) < 1.d-8 ) then
