@@ -2444,12 +2444,7 @@ contains
             ! compute pi field equation factors:
             call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , EV%eft_cache )
             ! use them:
-            ayprime(EV%w_ix)   =  EV%eft_cache%pidot
-            ayprime(EV%w_ix+1) = -( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )*EV%eft_cache%pidot &
-                & - ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )*EV%eft_cache%pi &
-                & - CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )
-            ! strategies to adopt if the theory does not propagate an additional dof
-            if ( ( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )==0._dl) then
+            if ( ( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )==0._dl) then       ! strategies to adopt if the theory does not propagate an additional dof
                 if ( ( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )==0._dl ) then
                     vq                 = 0._dl
                     ay(EV%w_ix)        = 0._dl
@@ -2462,6 +2457,11 @@ contains
                     ayprime(EV%w_ix)   = vq
                     ayprime(EV%w_ix+1) = 0._dl
                 end if
+            else
+              ayprime(EV%w_ix)   =  EV%eft_cache%pidot
+              ayprime(EV%w_ix+1) = -( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )*EV%eft_cache%pidot &
+                  & - ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )*EV%eft_cache%pi &
+                  & - CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )
             end if
             ! store in cache:
             EV%eft_cache%pidot    = ayprime(EV%w_ix)
