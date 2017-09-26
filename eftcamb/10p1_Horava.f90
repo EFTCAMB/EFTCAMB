@@ -228,7 +228,7 @@ contains
             name = 'Horava_lambda'
             return
         end if
-        if ( i==3 .and. self%HoravaSolarSystem ) then
+        if ( i==3 .and. .not. self%HoravaSolarSystem ) then
             name = 'Horava_xi'
             return
         end if
@@ -260,7 +260,7 @@ contains
             latexname = '\lambda_{\rm Ho\v rava}'
             return
         end if
-        if ( i==3 .and. self%HoravaSolarSystem ) then
+        if ( i==3 .and. .not. self%HoravaSolarSystem ) then
             latexname = '\xi_{\rm Ho\v rava}'
             return
         end if
@@ -292,7 +292,7 @@ contains
             value = self%Horava_lambda
             return
         end if
-        if ( i==3 .and. self%HoravaSolarSystem ) then
+        if ( i==3 .and. .not. self%HoravaSolarSystem ) then
             value = self%Horava_xi
             return
         end if
