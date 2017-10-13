@@ -510,7 +510,7 @@ program stability_sampler
             end if
           end if
 
-    open(unit=1, name='results/stability_space.dat', action='write')
+    open(unit=1, name=trim(outroot) //'Stability_Space.dat', action='write')
     ! do the sampling and save to file:
     allocate(t1(param_number))
     astart = 0.1_dl
@@ -518,7 +518,7 @@ program stability_sampler
     k_max = 10._dl
     if(param_number==1)then
       call P%EFTCAMB%model%parameter_names( 1, name_1 )
-      write(1,*)'####','   iteration   ', name_1, '  stable  '
+      write(1,*)'####','   iteration   ', name_1, '               stable  '
       do i = 0, sample_points
         t1(1) = param_1_min+i*1._dl/sample_points*(param_1_max-param_1_min)
 
