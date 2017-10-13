@@ -41,6 +41,8 @@ program stability_sampler
     use Bispectrum
     use CAMBmain
     use omp_lib
+    use EFTCAMB_stability
+    ! use EFTCAMB_cache
 #ifdef NAGF95
     use F90_UNIX
 #endif
@@ -53,13 +55,16 @@ program stability_sampler
     character(LEN=Ini_max_string_len) numstr, VectorFileName, &
         InputFile, ScalarFileName, TensorFileName, TotalFileName, LensedFileName,&
         LensedTotFileName, LensPotentialFileName,ScalarCovFileName, benchmark_buffer
-    integer i, benchmark_count
+    integer i,j,sample_points, benchmark_count
     character(LEN=Ini_max_string_len) TransferFileNames(max_transfer_redshifts), &
         MatterPowerFileNames(max_transfer_redshifts), outroot, version_check
+    character(LEN=8) name_1, name_2
     real(dl) output_factor, nmassive
-    real(dl) t1, t2, param_1_max, param_1_min, param_2_max, param_2_min
-    integer param_number
-    logical do_log_sampling_param_1, do_log_sampling_param_2
+    real(dl)  t2, param_1_max, param_1_min, param_2_max, param_2_min
+    real(dl),allocatable :: t1(:)
+    integer param_number, iter, nu_i
+    logical do_log_sampling_param_1, do_log_sampling_param_2, success, error
+    real(dl) k_max, astart, aend
 
 #ifdef WRITE_FITS
     character(LEN=Ini_max_string_len) FITSfilename
@@ -135,12 +140,16 @@ program stability_sampler
     call DarkEnergy_ReadParams(DefIni)
 
     P%h0     = Ini_Read_Double('hubble')
-
+    P%eft_par_cache%h0  =P%h0
     if (Ini_Read_Logical('use_physical',.false.)) then
         P%omegab = Ini_Read_Double('ombh2')/(P%H0/100)**2
+        P%eft_par_cache%omegab =P%omegab
         P%omegac = Ini_Read_Double('omch2')/(P%H0/100)**2
+        P%eft_par_cache%omegac=P%omegac
         P%omegan = Ini_Read_Double('omnuh2')/(P%H0/100)**2
+        P%eft_par_cache%omegan= P%omegan
         P%omegav = 1- Ini_Read_Double('omk') - P%omegab-P%omegac - P%omegan
+        P%eft_par_cache%omegav=P%omegav
     else
         P%omegab = Ini_Read_Double('omega_baryon')
         P%omegac = Ini_Read_Double('omega_cdm')
@@ -413,18 +422,147 @@ program stability_sampler
         end if
 
     end if
-
+    sample_points = Ini_Read_Int( 'sample_points',10  )
     call Ini_Close
 
     if (.not. CAMB_ValidateParams(P)) stop 'Stopped due to parameter error'
 
     FeedbackLevel = 0
 
-    ! do the sampling and save to file:
+    !Fill the cache
+    grhom = 3*P%h0**2/c**2*1000**2 !3*h0^2/c^2 (=8*pi*G*rho_crit/c^2)
 
+    !grhom=3.3379d-11*h0*h0
+    grhog = kappa/c**2*4*sigma_boltz/c**3*P%tcmb**4*Mpc**2 !8*pi*G/c^2*4*sigma_B/c^3 T^4
+    ! grhog=1.4952d-13*tcmb**4
+    grhor = 7._dl/8*(4._dl/11)**(4._dl/3)*grhog !7/8*(4/11)^(4/3)*grhog (per neutrino species)
+    !grhor=3.3957d-14*tcmb**4
+
+    !correction for fractional number of neutrinos, e.g. 3.04 to give slightly higher T_nu hence rhor
+    !for massive Nu_mass_degeneracies parameters account for heating from grhor
+
+    grhornomass=grhor*P%Num_Nu_massless
+    grhormass=0
+    do nu_i = 1, P%Nu_mass_eigenstates
+        grhormass(nu_i)=grhor*P%Nu_mass_degeneracies(nu_i)
+    end do
+    grhoc=grhom*P%omegac
+    grhob=grhom*P%omegab
+    grhov=grhom*P%omegav
+    grhok=grhom*P%omegak
+    !  adotrad gives the relation a(tau) in the radiation era:
+    adotrad = sqrt((grhog+grhornomass+sum(grhormass(1:P%Nu_mass_eigenstates)))/3)
+
+    Nnow = P%omegab*(1-P%yhe)*grhom*c**2/kappa/m_H/Mpc**2
+
+    akthom = sigma_thomson*Nnow*Mpc
+    !sigma_T * (number density of protons now)
+
+    fHe = P%YHe/(mass_ratio_He_H*(1.d0-P%YHe))  !n_He_tot / n_H_tot
+
+        ! EFTCAMB MOD START: clean up the EFTCAMB parameter cache
+        if ( P%EFTCAMB%EFTFlag /= 0 ) then
+            call P%eft_par_cache%initialize()
+        end if
+        ! EFTCAMB MOD END.
+
+        call init_massive_nu(P%omegan /=0)
+
+        ! EFTCAMB MOD START: initialize the EFTCAMB parameter choice
+        if ( P%EFTCAMB%EFTFlag /= 0 ) then
+
+            ! 1) parameter cache:
+            !    - relative densities:
+            P%eft_par_cache%omegac      = P%omegac
+            P%eft_par_cache%omegab      = P%omegab
+            P%eft_par_cache%omegav      = P%omegav
+            P%eft_par_cache%omegak      = P%omegak
+            P%eft_par_cache%omegan      = P%omegan
+            P%eft_par_cache%omegag      = grhog/grhom
+            P%eft_par_cache%omegar      = grhornomass/grhom
+            !    - Hubble constant:
+            P%eft_par_cache%h0          = P%h0
+            P%eft_par_cache%h0_Mpc      = P%h0/c*1000._dl
+            !    - densities:
+            P%eft_par_cache%grhog       = grhog
+            P%eft_par_cache%grhornomass = grhornomass
+            P%eft_par_cache%grhoc       = grhoc
+            P%eft_par_cache%grhob       = grhob
+            P%eft_par_cache%grhov       = grhov
+            P%eft_par_cache%grhok       = grhok
+            !    - massive neutrinos:
+            P%eft_par_cache%Num_Nu_Massive       = P%Num_Nu_Massive
+            P%eft_par_cache%Nu_mass_eigenstates  = P%Nu_mass_eigenstates
+            allocate( P%eft_par_cache%grhormass(max_nu), P%eft_par_cache%nu_masses(max_nu) )
+            P%eft_par_cache%grhormass            = grhormass
+            P%eft_par_cache%nu_masses            = nu_masses
+            ! 2) now run background initialization:
+            call P%EFTCAMB%model%initialize_background( P%eft_par_cache, P%EFTCAMB%EFTCAMB_feedback_level, success )
+            if ( .not. success ) then
+                ! global_error_flag         = 1
+                ! global_error_message      = 'EFTCAMB: background solver failed'
+                ! error = global_error_flag
+                ! 5) final feedback:
+                if ( P%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
+                    write(*,'(a)') '***************************************************************'
+                end if
+                call MpiStop('EFTCAMB: background solver failed')
+            end if
+          end if
+
+    open(unit=1, name='results/stability_space.dat', action='write')
+    ! do the sampling and save to file:
+    allocate(t1(param_number))
+    astart = 0.1_dl
+    aend = 1._dl
+    k_max = 10._dl
+    if(param_number==1)then
+      call P%EFTCAMB%model%parameter_names( 1, name_1 )
+      write(1,*)'####','   iteration   ', name_1, '  stable  '
+      do i = 0, sample_points
+        t1(1) = param_1_min+i*1._dl/sample_points*(param_1_max-param_1_min)
+
+        call P%EFTCAMB%model%init_model_parameters( t1(1) )
+        success = .true.
+        call EFTCAMB_Stability_Check( success, P%EFTCAMB, P%eft_par_cache, astart, aend, k_max )
+
+        if (success) then
+          write(1,*)i, t1(1), 1
+        else
+          write(1,*)i, t1(1), 0
+        end if
+
+      end do
+    else if (param_number==2) then
+      iter=0
+      call P%EFTCAMB%model%parameter_names( 1, name_1 )
+      call P%EFTCAMB%model%parameter_names( 2, name_2 )
+      write(1,*)'####','   iteration   ', name_1,'                 ', name_2, '               stable  '
+      do j=0, sample_points
+        do i = 0, sample_points
+          iter = iter+1
+          t1(1) = param_1_min+i*1._dl/sample_points*(param_1_max-param_1_min)
+          t1(2) = param_2_min+j*1._dl/sample_points*(param_2_max-param_2_min)
+
+          call P%EFTCAMB%model%init_model_parameters( t1 )
+          success = .true.
+          call EFTCAMB_Stability_Check( success, P%EFTCAMB, P%eft_par_cache, astart, aend, k_max )
+
+          if (success) then
+            write(1,*)iter, t1(1),t1(2), 1
+          else
+            write(1,*)iter, t1(1),t1(2), 0
+          end if
+
+        end do
+      end do
+    end if
+
+
+    close(1)
 
     call CAMB_cleanup
-    stop
+    ! stop
 
 100 stop 'Must give num_massive number of integer physical neutrinos for each eigenstate'
 
