@@ -524,6 +524,7 @@ program stability_sampler
 
         call P%EFTCAMB%model%init_model_parameters( t1(1) )
         success = .true.
+        call P%EFTCAMB%model%initialize_background( P%eft_par_cache, P%EFTCAMB%EFTCAMB_feedback_level, success )
         call EFTCAMB_Stability_Check( success, P%EFTCAMB, P%eft_par_cache, astart, aend, k_max )
 
         if (success) then
@@ -546,6 +547,7 @@ program stability_sampler
 
           call P%EFTCAMB%model%init_model_parameters( t1 )
           success = .true.
+          call P%EFTCAMB%model%initialize_background( P%eft_par_cache, P%EFTCAMB%EFTCAMB_feedback_level, success )
           call EFTCAMB_Stability_Check( success, P%EFTCAMB, P%eft_par_cache, astart, aend, k_max )
 
           if (success) then
