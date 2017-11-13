@@ -22,7 +22,7 @@
 !> This module contains the definition of the Quartic Galileon model.
 !! Please refer to the numerical notes for details.
 
-!> @author Bin Hu, Marco Raveri, Simone Peirone
+!> @author Simone Peirone, Bin Hu, Marco Raveri
 
 module EFTCAMB_full_Quartic_Galileon
 
@@ -147,7 +147,6 @@ contains
         class(EFTCAMB_Quartic_Galileon)    :: self   !< the base class
         type(TIniFile)                     :: Ini    !< Input ini file
 
-        ! read xi:
         self%csi = Ini_Read_Double_File( Ini, 'Quartic_Galileon_xi', 0._dl )
 
     end subroutine EFTCAMBQuarticGalileonInitModelParametersFromFile
@@ -167,7 +166,7 @@ contains
 
         Omega_phi0 = params_cache%omegav
 
-        ! SP: Quartic -> just c_4 and c_3
+        ! Quartic -> just c_4 and c_3
         self%QuarticGalileon_c2 = -1.0_dl
         self%QuarticGalileon_c3 = 1._dl/2._dl*self%csi**(-1) -2._dl*Omega_phi0*self%csi**(-3)
         self%QuarticGalileon_c4 = -1._dl/9._dl*self%csi**(-2) +2._dl/3._dl*Omega_phi0*self%csi**(-4)
@@ -708,19 +707,12 @@ contains
 
         ! compute the background EFT functions:
         eft_cache%EFTOmegaV    = self%EFTOmega%value( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTOmegaP    = self%EFTOmega%first_derivative( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTOmegaPP   = self%EFTOmega%second_derivative( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTOmegaPPP  = self%EFTOmega%third_derivative( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTc         = self%EFTc%value( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTLambda    = self%EFTLambda%value( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTcdot      = self%EFTc%first_derivative( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTLambdadot = self%EFTLambda%first_derivative( x, index=ind, coeff=mu )
 
     end subroutine EFTCAMBQuarticGalileonBackgroundEFTFunctions
@@ -747,29 +739,17 @@ contains
         !
         ! ! compute the second order EFT functions:
         eft_cache%EFTGamma1V  = self%EFTgamma1%value( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma1P  = self%EFTgamma1%first_derivative( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma2V  = self%EFTgamma2%value( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma2P  = self%EFTgamma2%first_derivative( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma3V  = self%EFTgamma3%value( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma3P  = self%EFTgamma3%first_derivative( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma4V  = self%EFTgamma4%value( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma4P  = self%EFTgamma4%first_derivative( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma4PP = self%EFTgamma4%second_derivative( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma5V  = 0.5_dl*eft_cache%EFTGamma3V
-
         eft_cache%EFTGamma5P  = 0.5_dl*eft_cache%EFTGamma3P
-
         eft_cache%EFTGamma6V  = 0._dl
-
         eft_cache%EFTGamma6P  = 0._dl
 
     end subroutine EFTCAMBQuarticGalileonSecondOrderEFTFunctions
@@ -788,9 +768,7 @@ contains
         real(dl)    :: temp, a2, Omega_tot
 
         a2 = a*a
-
         Omega_tot = ( eft_par_cache%omegac +eft_par_cache%omegab )*a**(-3) + ( eft_par_cache%omegag +eft_par_cache%omegar)*a**(-4) +eft_cache%grhonu_tot/(3._dl*eft_par_cache%h0_Mpc**2*a2)
-
         temp = 0.5_dl*a2*(eft_par_cache%h0_Mpc)**2*( Omega_tot + sqrt( Omega_tot**2 +4._dl*eft_par_cache%omegav ) )
         eft_cache%adotoa = sqrt( temp )
 
@@ -840,8 +818,6 @@ contains
         logical :: EFTCAMBQuarticGalileonAdditionalModelStability       !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
 
         EFTCAMBQuarticGalileonAdditionalModelStability = .True.
-
-        ! IW
 
     end function EFTCAMBQuarticGalileonAdditionalModelStability
 

@@ -143,8 +143,8 @@ contains
 
         Omega_phi0 = params_cache%omegav
 
-        ! SP: Cubic -> just c_3
-        self%csi = sqrt( 6._dl*Omega_phi0 )
+        ! Cubic -> just c_3
+        self%csi              = sqrt( 6._dl*Omega_phi0 )
         self%CubicGalileon_c2 = -1.0_dl
         self%CubicGalileon_c3 =  1.0_dl/(6.0_dl*self%csi )
         call self%feedback()
@@ -175,25 +175,16 @@ contains
         logical, optional              :: print_params !< optional flag that decised whether to print numerical values
                                                        !! of the parameters.
 
-        logical                        :: print_params_temp
-
         ! print general model informations:
         if (self%CubicGalileon_c2 == -1._dl) then
 
           write(*,*)
-          write(*,'(a,a)')    '   Model              =  ', self%name
-          write(*,'(a,I3)')   '   Number of params   ='  , self%parameter_number
+          write(*,'(a,a)')       '   Model              =  ', self%name
+          write(*,'(a,I3)')      '   Number of params   ='  , self%parameter_number
           write(*,'(a,F12.6)')   '                xi    ='  , self%csi
           write(*,'(a,F12.6)')   '                c2    ='  , self%CubicGalileon_c2
           write(*,'(a,F12.6)')   '                c3    ='  , self%CubicGalileon_c3
 
-        end if
-
-        ! print the values of the parameters:
-        if ( present(print_params) ) then
-            print_params_temp = print_params
-        else
-            print_params_temp = .True.
         end if
 
     end subroutine EFTCAMBCubicGalileonFeedback
@@ -396,6 +387,7 @@ contains
         Omega_tot = ( eft_par_cache%omegac +eft_par_cache%omegab )*a**(-3) + ( eft_par_cache%omegag +eft_par_cache%omegar)*a**(-4) +eft_cache%grhonu_tot/(3._dl*eft_par_cache%h0_Mpc**2*a2)
 
         temp = 0.5_dl*a2*(eft_par_cache%h0_Mpc)**2*( Omega_tot + sqrt( Omega_tot**2 +4._dl*eft_par_cache%omegav ) )
+
         eft_cache%adotoa = sqrt( temp )
 
     end subroutine EFTCAMBCubicGalileonComputeAdotoa
@@ -421,9 +413,7 @@ contains
                           & -(eft_cache%grhonu_tot+eft_cache%gpinu_tot)/(eft_par_cache%h0_Mpc**2*a2*a)
         Omega_tot_primeprime = 12._dl*( eft_par_cache%omegac +eft_par_cache%omegab )*a**(-5) +20._dl*( eft_par_cache%omegag +eft_par_cache%omegar)*a**(-6)&
                           & +(4._dl*(eft_cache%grhonu_tot+eft_cache%gpinu_tot)-eft_cache%gpinudot_tot/eft_cache%adotoa )/(eft_par_cache%h0_Mpc**2*a2**2)
-
         Omega_phi0 = eft_par_cache%omegav
-
 
         eft_cache%Hdot = eft_cache%adotoa**2 +0.25_dl*(eft_par_cache%h0_Mpc)**2*a**3*( 1._dl + Omega_tot/sqrt( Omega_tot**2 +4._dl*Omega_phi0 ) )*Omega_tot_prime
         eft_cache%Hdotdot = 2._dl*eft_cache%adotoa*eft_cache%Hdot +3._dl*eft_cache%adotoa*( eft_cache%Hdot -eft_cache%adotoa**2 ) +0.25_dl*(eft_par_cache%h0_Mpc)**2*eft_cache%adotoa*a2**2&
@@ -446,8 +436,6 @@ contains
         logical :: EFTCAMBCubicGalileonAdditionalModelStability       !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
 
         EFTCAMBCubicGalileonAdditionalModelStability = .True.
-
-        ! IW
 
     end function EFTCAMBCubicGalileonAdditionalModelStability
 

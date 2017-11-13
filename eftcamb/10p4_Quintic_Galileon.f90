@@ -22,7 +22,7 @@
 !> This module contains the definition of the Quintic Galileon model.
 !! Please refer to the numerical notes for details.
 
-!> @author Bin Hu, Marco Raveri, Simone Peirone
+!> @author Simone Peirone, Bin Hu, Marco Raveri
 
 module EFTCAMB_full_Quintic_Galileon
 
@@ -132,9 +132,7 @@ contains
         class(EFTCAMB_Quintic_Galileon)                            :: self   !< the base class
         real(dl), dimension(self%parameter_number), intent(in)     :: array  !< input array with the values of the parameters of the model.
 
-        ! read xi:
-        self%csi = array(1)
-        ! read c3:
+        self%csi                = array(1)
         self%QuinticGalileon_c3 = array(2)
 
     end subroutine EFTCAMBQuinticGalileonInitModelParameters
@@ -147,11 +145,9 @@ contains
         implicit none
 
         class(EFTCAMB_Quintic_Galileon)  :: self   !< the base class
-        type(TIniFile)                     :: Ini    !< Input ini file
+        type(TIniFile)                   :: Ini    !< Input ini file
 
-        ! read xi:
-        self%csi = Ini_Read_Double_File( Ini, 'Quintic_Galileon_xi', 0._dl )
-        ! read c3:
+        self%csi                = Ini_Read_Double_File( Ini, 'Quintic_Galileon_xi', 0._dl )
         self%QuinticGalileon_c3 = Ini_Read_Double_File( Ini, 'Quintic_Galileon_c3', 0._dl )
 
     end subroutine EFTCAMBQuinticGalileonInitModelParametersFromFile
@@ -171,7 +167,7 @@ contains
 
         Omega_phi0 = params_cache%omegav
 
-        !SP: Quintic -> all c_i
+        ! Quintic -> all c_i
         self%QuinticGalileon_c2 = -1.0_dl
         self%QuinticGalileon_c5= 4._dl/3._dl*Omega_phi0*self%csi**(-5)+ 1._dl/3._dl*self%QuinticGalileon_c2*self%csi**(-3)+2._dl/3._dl*self%QuinticGalileon_c3*self%csi**(-2)
         self%QuinticGalileon_c4= -10._dl/9._dl*Omega_phi0*self%csi**(-4)- 1._dl/3._dl*self%QuinticGalileon_c2*self%csi**(-2)-8._dl/9._dl*self%QuinticGalileon_c3*self%csi**(-1)
@@ -724,19 +720,12 @@ contains
 
         ! compute the background EFT functions:
         eft_cache%EFTOmegaV    = self%EFTOmega%value( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTOmegaP    = self%EFTOmega%first_derivative( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTOmegaPP   = self%EFTOmega%second_derivative( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTOmegaPPP  = self%EFTOmega%third_derivative( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTc         = self%EFTc%value( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTLambda    = self%EFTLambda%value( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTcdot      = self%EFTc%first_derivative( x, index=ind, coeff=mu )
-        !
         eft_cache%EFTLambdadot = self%EFTLambda%first_derivative( x, index=ind, coeff=mu )
 
     end subroutine EFTCAMBQuinticGalileonBackgroundEFTFunctions
@@ -763,29 +752,17 @@ contains
         !
         ! ! compute the second order EFT functions:
         eft_cache%EFTGamma1V  = self%EFTgamma1%value( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma1P  = self%EFTgamma1%first_derivative( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma2V  = self%EFTgamma2%value( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma2P  = self%EFTgamma2%first_derivative( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma3V  = self%EFTgamma3%value( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma3P  = self%EFTgamma3%first_derivative( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma4V  = self%EFTgamma4%value( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma4P  = self%EFTgamma4%first_derivative( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma4PP = self%EFTgamma4%second_derivative( x, index=ind, coeff=mu )
-
         eft_cache%EFTGamma5V  = 0.5_dl*eft_cache%EFTGamma3V
-
         eft_cache%EFTGamma5P  = 0.5_dl*eft_cache%EFTGamma3P
-
         eft_cache%EFTGamma6V  = 0._dl
-
         eft_cache%EFTGamma6P  = 0._dl
 
     end subroutine EFTCAMBQuinticGalileonSecondOrderEFTFunctions
@@ -804,9 +781,7 @@ contains
         real(dl)    :: temp, a2, Omega_tot
 
         a2 = a*a
-
         Omega_tot = ( eft_par_cache%omegac +eft_par_cache%omegab )*a**(-3) + ( eft_par_cache%omegag +eft_par_cache%omegar)*a**(-4) +eft_cache%grhonu_tot/(3._dl*eft_par_cache%h0_Mpc**2*a2)
-
         temp = 0.5_dl*a2*(eft_par_cache%h0_Mpc)**2*( Omega_tot + sqrt( Omega_tot**2 +4._dl*eft_par_cache%omegav ) )
         eft_cache%adotoa = sqrt( temp )
 
@@ -856,8 +831,6 @@ contains
         logical :: EFTCAMBQuinticGalileonAdditionalModelStability       !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
 
         EFTCAMBQuinticGalileonAdditionalModelStability = .True.
-
-        ! IW
 
     end function EFTCAMBQuinticGalileonAdditionalModelStability
 
