@@ -272,8 +272,8 @@ module EFTCAMB_cache
         real(dl) :: CMBTSource    !< Full source of CMB temperature fluctuations.
         real(dl) :: Psi           !< Perturbation in the 00 component of the metric in Conformal Newtonian gauge.
         real(dl) :: Phi           !< Perturbation in the space component of the metric in Conformal Newtonian gauge.
-        real(dl) :: mu            !< Effective perturbation gravitational constant. \f$ k^2\Psi/\Delta_{m} $\f
-        real(dl) :: gamma         !< Ratio between the two gravitational potentials. \f$ \gamma = \Phi/\Psi $\f
+        real(dl) :: mu            !< Effective perturbation gravitational constant \f$ k^2 \Psi / \Delta_{m} \f$.
+        real(dl) :: gamma         !< Ratio between the two gravitational potentials \f$ \gamma = \Phi / \Psi \f$.
 
     contains
 

@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 10p2_Quartic_Galileon.f90
+!> @file 10p3_Quartic_Galileon.f90
 !! This file contains the definition of the Quartic Galileon model.
 !! Please refer to the numerical notes for details.
 

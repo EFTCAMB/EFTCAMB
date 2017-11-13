@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 10p2_Quintic_Galileon.f90
+!> @file 10p4_Quintic_Galileon.f90
 !! This file contains the definition of the Quintic Galileon model.
 !! Please refer to the numerical notes for details.
 
