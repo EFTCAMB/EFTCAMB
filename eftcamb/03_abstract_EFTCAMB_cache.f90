@@ -19,7 +19,6 @@
 !! or are used to store partial results when solving the time evolution of perturbations,
 !! in EFTCAMB_timestep_cache.
 
-
 !----------------------------------------------------------------------------------------
 !> This module contains the definition of the EFTCAMB caches.
 !! These are used to store parameters that can be used by EFTCAMB, in EFTCAMB_parameter_cache
@@ -165,7 +164,9 @@ module EFTCAMB_cache
 
 
     !----------------------------------------------------------------------------------------
-    !> This is the type that defines the EFTCAMB time step cache.
+    !> This is the type that defines the EFTCAMB time step cache. The idea is that while
+    !! CAMB is solving the background and perturbation equations all quantities that need
+    !! to be exchanged with EFTCAMB are written in here.
     type :: EFTCAMB_timestep_cache
 
         ! 1) time and k:

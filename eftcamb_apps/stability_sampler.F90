@@ -510,7 +510,7 @@ program stability_sampler
             end if
           end if
 
-    call CreateTxtFile( name=trim(outroot)//'Stability_Space.dat', 1 )
+    call CreateTxtFile( trim(outroot)//'Stability_Space.dat', 1 )
     ! do the sampling and save to file:
     allocate(t1(param_number))
     astart = 0.1_dl
