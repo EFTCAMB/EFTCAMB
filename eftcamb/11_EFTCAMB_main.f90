@@ -38,6 +38,9 @@ module EFTCAMB_main
     use EFTCAMB_designer_fR
     use EFTCAMB_designer_mc_quintessence
     use EFTCAMB_LE_Horava
+    use EFTCAMB_full_Cubic_Galileon
+    use EFTCAMB_full_Quartic_Galileon
+    use EFTCAMB_full_Quintic_Galileon
 
     implicit none
 
@@ -313,11 +316,23 @@ contains
                     case(1)
                         allocate( EFTCAMB_Horava::self%model )
                         call self%model%init( 'Horava', 'Horava' )
+                    case(2)
+                        allocate( EFTCAMB_Cubic_Galileon::self%model )
+                        call self%model%init( 'Cubic Galileon', 'Cubic Galileon' )
+                    case(3)
+                        allocate( EFTCAMB_Quartic_Galileon::self%model )
+                        call self%model%init( 'Quartic Galileon', 'Quartic Galileon' )
+                    case(4)
+                        allocate( EFTCAMB_Quintic_Galileon::self%model )
+                        call self%model%init( 'Quintic Galileon', 'Quintic Galileon' )
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and FullMappingEFTmodel =', self%FullMappingEFTmodel
                         write(*,'(a)')    'Please select an appropriate model:'
                         write(*,'(a)')    'FullMappingEFTmodel=1  Horava gravity'
+                        write(*,'(a)')    'FullMappingEFTmodel=2  Cubic Galileon'
+                        write(*,'(a)')    'FullMappingEFTmodel=3  Quartic Galileon'
+                        write(*,'(a)')    'FullMappingEFTmodel=4  Quintic Galileon'
                         call MpiStop('EFTCAMB error')
                 end select
 
