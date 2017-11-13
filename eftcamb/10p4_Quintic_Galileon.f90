@@ -45,20 +45,20 @@ module EFTCAMB_full_Quintic_Galileon
     type, extends ( EFTCAMB_full_model ) :: EFTCAMB_Quintic_Galileon
 
         ! the model parameters:
-        real(dl)  :: QuinticGalileon_c2      !< Quintic Galileon model parameter c_2
-        real(dl)  :: QuinticGalileon_c3      !< Quintic Galileon model parameter c_3
-        real(dl)  :: QuinticGalileon_c4      !< Quintic Galileon model parameter c_4
-        real(dl)  :: QuinticGalileon_c5      !< Quintic Galileon model parameter c_5
-        real(dl)  :: csi                     !< Quintic Galileon background parameter \xi deriving from the tracker solution
+        real(dl)  :: QuinticGalileon_c2      !< Quintic Galileon model parameter \f$c_2\f$
+        real(dl)  :: QuinticGalileon_c3      !< Quintic Galileon model parameter \f$c_3\f$
+        real(dl)  :: QuinticGalileon_c4      !< Quintic Galileon model parameter \f$c_4\f$
+        real(dl)  :: QuinticGalileon_c5      !< Quintic Galileon model parameter \f$c_5\f$
+        real(dl)  :: csi                     !< Quintic Galileon background parameter \f$\xi\f$ deriving from the tracker solution
 
         ! the interpolated EFT functions that come out of the background sover:
         type(equispaced_linear_interpolate_function_1D) :: EFTOmega       !< The interpolated function Omega (and derivatives).
         type(equispaced_linear_interpolate_function_1D) :: EFTLambda      !< The interpolated function Lambda (and derivatives).
         type(equispaced_linear_interpolate_function_1D) :: EFTc           !< The interpolated function c (and derivatives).
-        type(equispaced_linear_interpolate_function_1D) :: EFTgamma1      !< The interpolated function gamma_1 (and derivatives).
-        type(equispaced_linear_interpolate_function_1D) :: EFTgamma2      !< The interpolated function gamma_2 (and derivatives).
-        type(equispaced_linear_interpolate_function_1D) :: EFTgamma3      !< The interpolated function gamma_3 (and derivatives).
-        type(equispaced_linear_interpolate_function_1D) :: EFTgamma4      !< The interpolated function gamma_4 (and derivatives).
+        type(equispaced_linear_interpolate_function_1D) :: EFTgamma1      !< The interpolated function \f$\gamma_1\f$ (and derivatives).
+        type(equispaced_linear_interpolate_function_1D) :: EFTgamma2      !< The interpolated function \f$\gamma_2\f$ (and derivatives).
+        type(equispaced_linear_interpolate_function_1D) :: EFTgamma3      !< The interpolated function \f$\gamma_3\f$ (and derivatives).
+        type(equispaced_linear_interpolate_function_1D) :: EFTgamma4      !< The interpolated function \f$\gamma_4\f$ (and derivatives).
 
         ! some designer parameters:
         integer  :: designer_num_points = 1000                             !< Number of points sampled by the designer code.
@@ -74,8 +74,8 @@ module EFTCAMB_full_Quintic_Galileon
         procedure :: init_model_parameters_from_file => EFTCAMBQuinticGalileonInitModelParametersFromFile !< subroutine that reads the parameters of the model from file.
 
         ! background solver:
-        procedure :: initialize_background           => EFTCAMBQuinticGalileonInitBackground               !< subroutine that initializes the background of Quintic Galileon.
-        procedure :: solve_background                => EFTCAMBQuinticGalileonSolveBackground              !< subroutine that solves the background equations.
+        procedure :: initialize_background           => EFTCAMBQuinticGalileonInitBackground              !< subroutine that initializes the background of Quintic Galileon.
+        procedure :: solve_background                => EFTCAMBQuinticGalileonSolveBackground             !< subroutine that solves the background equations.
 
         ! utility functions:
         procedure :: compute_param_number  => EFTCAMBQuinticGalileonComputeParametersNumber    !< subroutine that computes the number of parameters of the model.

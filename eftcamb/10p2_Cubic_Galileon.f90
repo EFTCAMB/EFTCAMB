@@ -44,9 +44,9 @@ module EFTCAMB_full_Cubic_Galileon
     type, extends ( EFTCAMB_full_model ) :: EFTCAMB_Cubic_Galileon
 
         ! the model parameters:
-        real(dl)  :: CubicGalileon_c2      !< Cubic Galileon model parameter c_2
-        real(dl)  :: CubicGalileon_c3      !< Cubic Galileon model parameter c_3
-        real(dl)  :: csi                   !< Cubic Galileon background parameter \xi deriving from the tracker solution
+        real(dl)  :: CubicGalileon_c2      !< Cubic Galileon model parameter \f$c_2\f$
+        real(dl)  :: CubicGalileon_c3      !< Cubic Galileon model parameter \f$c_3\f$
+        real(dl)  :: csi                   !< Cubic Galileon background parameter \f$\xi\f$ deriving from the tracker solution
 
     contains
 

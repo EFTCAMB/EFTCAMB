@@ -45,20 +45,20 @@ module EFTCAMB_full_Quartic_Galileon
     type, extends ( EFTCAMB_full_model ) :: EFTCAMB_Quartic_Galileon
 
         ! the model parameters:
-        real(dl)  :: QuarticGalileon_c2      !< Quartic Galileon model parameter c_2
-        real(dl)  :: QuarticGalileon_c3      !< Quartic Galileon model parameter c_3
-        real(dl)  :: QuarticGalileon_c4      !< Quartic Galileon model parameter c_4
-        real(dl)  :: QuarticGalileon_c5      !< Quartic Galileon model parameter c_5
-        real(dl)  :: csi                     !< Quartic Galileon background parameter \xi deriving from the tracker solution
+        real(dl)  :: QuarticGalileon_c2      !< Quartic Galileon model parameter \f$c_2\f$
+        real(dl)  :: QuarticGalileon_c3      !< Quartic Galileon model parameter \f$c_3\f$
+        real(dl)  :: QuarticGalileon_c4      !< Quartic Galileon model parameter \f$c_4\f$
+        real(dl)  :: QuarticGalileon_c5      !< Quartic Galileon model parameter \f$c_5\f$
+        real(dl)  :: csi                     !< Quartic Galileon background parameter \f$\xi\f$ deriving from the tracker solution
 
         ! the interpolated EFT functions that come out of the background sover:
         type(equispaced_linear_interpolate_function_1D) :: EFTOmega       !< The interpolated function Omega (and derivatives).
         type(equispaced_linear_interpolate_function_1D) :: EFTLambda      !< The interpolated function Lambda (and derivatives).
         type(equispaced_linear_interpolate_function_1D) :: EFTc           !< The interpolated function c (and derivatives).
-        type(equispaced_linear_interpolate_function_1D) :: EFTgamma1      !< The interpolated function gamma_1 (and derivatives).
-        type(equispaced_linear_interpolate_function_1D) :: EFTgamma2      !< The interpolated function gamma_2 (and derivatives).
-        type(equispaced_linear_interpolate_function_1D) :: EFTgamma3      !< The interpolated function gamma_3 (and derivatives).
-        type(equispaced_linear_interpolate_function_1D) :: EFTgamma4      !< The interpolated function gamma_4 (and derivatives).
+        type(equispaced_linear_interpolate_function_1D) :: EFTgamma1      !< The interpolated function \f$\gamma_1\f$ (and derivatives).
+        type(equispaced_linear_interpolate_function_1D) :: EFTgamma2      !< The interpolated function \f$\gamma_2\f$ (and derivatives).
+        type(equispaced_linear_interpolate_function_1D) :: EFTgamma3      !< The interpolated function \f$\gamma_3\f$ (and derivatives).
+        type(equispaced_linear_interpolate_function_1D) :: EFTgamma4      !< The interpolated function \f$\gamma_4\f$ (and derivatives).
 
         ! some designer parameters:
         integer  :: designer_num_points = 1000                            !< Number of points sampled by the designer code.

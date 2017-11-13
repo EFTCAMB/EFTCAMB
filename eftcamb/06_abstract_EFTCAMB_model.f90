@@ -74,7 +74,7 @@ module EFTCAMB_abstract_model
         procedure(EFTCAMBModelComputeAdotoa          ), deferred :: compute_adotoa                        !< subroutine that computes adotoa = H.
         procedure(EFTCAMBModelComputeHubbleDer       ), deferred :: compute_H_derivs                      !< subroutine that computes the two derivatives wrt conformal time of H.
 
-        procedure :: compute_rhoQPQ              => EFTCAMBModelComputeRhoQPQ                             !< subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
+        procedure :: compute_rhoQPQ              => EFTCAMBModelComputeRhoQPQ                             !< subroutine that computes \f$\rho_Q\f$ and \f$P_Q\f$. For details refer to the numerical notes.
         procedure :: compute_Einstein_factors    => EFTCAMBModelComputeEinsteinFactors                    !< subroutine that computes the Einstein equations factors. For details refer to the numerical notes.
         procedure :: compute_pi_factors          => EFTCAMBModelComputePiFactors                          !< subroutine that computes the pi field equations factors. For details refer to the numerical notes.
         procedure :: compute_tensor_factors      => EFTCAMBModelComputeTensorFactors                      !< subroutine that computes the factors for the tensor propagation equation. For details refer to the numerical notes.
@@ -287,7 +287,7 @@ contains
     end subroutine EFTCAMBModelInitBackground
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
+    !> Subroutine that computes \f$\rho_Q\f$ and \f$P_Q\f$. For details refer to the numerical notes.
     subroutine EFTCAMBModelComputeRhoQPQ( self, a, eft_par_cache, eft_cache )
 
         implicit none
