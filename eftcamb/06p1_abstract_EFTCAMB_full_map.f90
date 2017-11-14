@@ -66,16 +66,26 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        real(dl) :: EFTCAMBFullModelComputeDtauda                     !< the output dtauda
+        real(dl) :: EFTCAMBFullModelComputeDtauda ,temp                    !< the output dtauda
 
-        real(dl) :: a2
+        real(dl) :: a2!, ax=0._dl
 
         a2=a*a
 
-        EFTCAMBFullModelComputeDtauda = 1._dl/sqrt( ( eft_cache%grhoa2/3._dl +2._dl/3._dl*eft_cache%EFTc*a2 + a2*eft_par_cache%h0_Mpc**2*eft_par_cache%omegav*a2*(1._dl +eft_cache%EFTLambda ) )&
-                                      & /( 1._dl +eft_cache%EFTOmegaV +a*eft_cache%EFTOmegaP ) )
+        if (a*eft_cache%adotoa==0._dl) then
 
-    end function EFTCAMBFullModelComputeDtauda
+          EFTCAMBFullModelComputeDtauda = 1._dl/sqrt( eft_cache%grhoa2/3._dl )
+
+        else
+          call self%compute_adotoa( a, eft_par_cache, eft_cache )
+          call self%compute_H_derivs( a, eft_par_cache, eft_cache )
+          call self%compute_background_EFT_functions( a, eft_par_cache, eft_cache )
+
+          EFTCAMBFullModelComputeDtauda = 1._dl/sqrt( ( eft_cache%grhoa2/3._dl +2._dl/3._dl*eft_cache%EFTc*a2 -a2*eft_cache%EFTLambda/3._dl ) &
+                                        & /( 1._dl +eft_cache%EFTOmegaV +a*eft_cache%EFTOmegaP ) )
+        end if
+
+        end function EFTCAMBFullModelComputeDtauda
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes adotoa = H.

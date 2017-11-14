@@ -146,7 +146,6 @@ contains
         real(dl), intent(out)                             :: mu         !< the interpolation coefficient
 
         real(dl) :: x1, x2
-
         ! check input:
         if ( x <= self%x_initial .or. x >= self%x_final ) then
             ind = self%num_points
@@ -155,8 +154,11 @@ contains
             mu  = 0._dl
             return
         end if
+
         ! compute the interpolation index:
         ind = int( ( x-self%x_initial)/self%grid_width ) +1
+        !SP
+        if (ind<0) return
         ! store the x values:
         x1  = self%x(ind)
         x2  = self%x(ind+1)
@@ -214,7 +216,8 @@ contains
             ! compute the linear interpolation coefficient:
             mu  = (x-x1)/(x2-x1)
         end if
-
+        !SP
+        if (ind<0) return
         ! store the y values:
         y1  = self%y(ind)
         y2  = self%y(ind+1)
@@ -274,7 +277,8 @@ contains
             ! compute the linear interpolation coefficient:
             mu  = (x-x1)/(x2-x1)
         end if
-
+        !SP
+        if (ind<0) return
         ! store the y values:
         y1  = self%yp(ind)
         y2  = self%yp(ind+1)
@@ -334,7 +338,8 @@ contains
             ! compute the linear interpolation coefficient:
             mu  = (x-x1)/(x2-x1)
         end if
-
+        !SP
+        if (ind<0) return
         ! store the y values:
         y1  = self%ypp(ind)
         y2  = self%ypp(ind+1)
@@ -394,7 +399,8 @@ contains
             ! compute the linear interpolation coefficient:
             mu  = (x-x1)/(x2-x1)
         end if
-
+        !SP
+        if (ind<0) return
         ! store the y values:
         y1  = self%yppp(ind)
         y2  = self%yppp(ind+1)
@@ -454,7 +460,8 @@ contains
             ! compute the linear interpolation coefficient:
             mu  = (x-x1)/(x2-x1)
         end if
-
+        !SP
+        if (ind<0) return
         ! store the y values:
         y1  = self%yint(ind)
         y2  = self%yint(ind+1)
@@ -467,35 +474,14 @@ contains
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the derivatives if the derivatives vectors are not initialized.
     !! The derivative are inferred from the function itself.
-    subroutine EquispacedLinearIntepolateFunction1DInitDerivatives( self, jacobian )
+    subroutine EquispacedLinearIntepolateFunction1DInitDerivatives( self )
 
         implicit none
 
         class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
-        real(dl), dimension(self%num_points), optional    :: jacobian    !< Jacobian of the transformation to use if we want the derivative wrt to another variable
 
-        real(dl), dimension(self%num_points) :: spline_workspace
-
-        ! initialize the calculation:
-        call splini( spline_workspace, self%num_points )
-        ! compute the numerical first derivative:
-        call splder( self%y, self%yp, self%num_points, spline_workspace )
-        self%yp = self%yp/self%grid_width
-        if ( present(jacobian) ) then
-            self%yp = jacobian*self%yp
-        end if
-        ! compute the numerical second derivative:
-        call splder( self%yp, self%ypp, self%num_points, spline_workspace )
-        self%ypp = self%ypp/self%grid_width
-        if ( present(jacobian) ) then
-            self%ypp = jacobian*self%ypp
-        end if
-        ! compute the numerical third derivative:
-        call splder( self%ypp, self%yppp, self%num_points, spline_workspace )
-        self%yppp = self%yppp/self%grid_width
-        if ( present(jacobian) ) then
-            self%yppp = jacobian*self%yppp
-        end if
+        write(*,*) 'ERROR: not yet implemented (IW)'
+        stop
 
     end subroutine EquispacedLinearIntepolateFunction1DInitDerivatives
 
