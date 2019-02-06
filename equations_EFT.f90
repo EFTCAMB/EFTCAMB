@@ -1611,6 +1611,8 @@ contains
             EV%eft_cache%EFTISW        = ISW
             EV%eft_cache%EFTLensing    = sources(3)
             EV%eft_cache%CMBTSource    = sources(1)
+            EV%eft_cache%sigmadot      = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomV)*sigma +etak&
+                & -1._dl/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV) +EV%eft_cache%EFTeomN/CP%eft_par_cache%h0_Mpc)
             EV%eft_cache%Psi           = ( EV%eft_cache%sigmadot +EV%eft_cache%adotoa*EV%eft_cache%sigma )/k
             EV%eft_cache%Phi           = ( etak -EV%eft_cache%adotoa*EV%eft_cache%sigma )/k
             EV%eft_cache%mu            = -2._dl*k*( EV%eft_cache%sigmadot +EV%eft_cache%adotoa*EV%eft_cache%sigma)/(dgrho)
