@@ -510,7 +510,7 @@ program stability_sampler
             end if
           end if
 
-    open(unit=1, name=trim(outroot) //'Stability_Space.dat', action='write')
+    open(unit=1, file=trim(outroot) //'Stability_Space.dat', action='write')
     ! do the sampling and save to file:
     allocate(t1(param_number))
     astart = 0.1_dl
