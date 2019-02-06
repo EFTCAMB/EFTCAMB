@@ -1604,6 +1604,7 @@ contains
         if ( DebugEFTCAMB ) then
 
             ! compute other things and save them in cache:
+            call CP%EFTCAMB%model%compute_Einstein_Factors( a, CP%eft_par_cache , EV%eft_cache )
             EV%eft_cache%clxc          = clxc
             EV%eft_cache%clxb          = clxb
             EV%eft_cache%vb            = vb
@@ -1611,6 +1612,7 @@ contains
             EV%eft_cache%EFTISW        = ISW
             EV%eft_cache%EFTLensing    = sources(3)
             EV%eft_cache%CMBTSource    = sources(1)
+            EV%eft_cache%sigma         = sigma
             EV%eft_cache%sigmadot      = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomV)*sigma +etak&
                 & -1._dl/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV) +EV%eft_cache%EFTeomN/CP%eft_par_cache%h0_Mpc)
             EV%eft_cache%Psi           = ( EV%eft_cache%sigmadot +EV%eft_cache%adotoa*EV%eft_cache%sigma )/k
@@ -1626,7 +1628,7 @@ contains
             end if
 
             ! dump the cache to file:
-            if (CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive) then
+            if (CP%EFTCAMB%EFTflag/=0) then
                 call EV%eft_cache%dump_cache_files()
             end if
 
