@@ -166,6 +166,9 @@ $(OUTPUT_DIR)/02_equispaced_interpolation_linear_1D.o :  \
 	$(OUTPUT_DIR)/constants.o \
 	$(OUTPUT_DIR)/utils.o
 
+$(OUTPUT_DIR)/02p10_splines.o :  \
+	$(OUTPUT_DIR)/constants.o
+
 $(OUTPUT_DIR)/04p1_constant_parametrizations_1D.o :  \
 	$(OUTPUT_DIR)/01_EFT_def.o \
 	$(OUTPUT_DIR)/04_abstract_parametrizations_1D.o \
@@ -216,6 +219,7 @@ $(OUTPUT_DIR)/04p3_power_law_parametrizations_1D.o :  \
 $(OUTPUT_DIR)/02_interpolation_linear_1D.o :  \
 	$(OUTPUT_DIR)/02_utilities.o \
 	$(OUTPUT_DIR)/constants.o \
+	$(OUTPUT_DIR)/02p10_splines.o \
 	$(OUTPUT_DIR)/utils.o
 
 $(OUTPUT_DIR)/04p5_CPL_parametrizations_1D.o :  \
@@ -428,6 +432,9 @@ $(DLL_DIR)/02_equispaced_interpolation_linear_1D.o :  \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/utils.o
 
+$(DLL_DIR)/02p10_splines.o :  \
+	$(DLL_DIR)/constants.o
+
 $(DLL_DIR)/04p1_constant_parametrizations_1D.o :  \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
@@ -478,6 +485,7 @@ $(DLL_DIR)/04p3_power_law_parametrizations_1D.o :  \
 $(DLL_DIR)/02_interpolation_linear_1D.o :  \
 	$(DLL_DIR)/02_utilities.o \
 	$(DLL_DIR)/constants.o \
+	$(DLL_DIR)/02p10_splines.o \
 	$(DLL_DIR)/utils.o
 
 $(DLL_DIR)/04p5_CPL_parametrizations_1D.o :  \
