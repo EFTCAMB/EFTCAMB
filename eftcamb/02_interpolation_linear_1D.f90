@@ -456,14 +456,37 @@ contains
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the derivatives if the derivatives vectors are not initialized.
     !! The derivative are inferred from the function itself.
-    subroutine LinearIntepolateFunction1DInitDerivatives( self )
+    subroutine LinearIntepolateFunction1DInitDerivatives( self, jacobian )
 
         implicit none
 
-        class(linear_interpolate_function_1D)  :: self        !< the base class
+        class(linear_interpolate_function_1D)             :: self        !< the base class
+        real(dl), dimension(self%num_points), optional    :: jacobian    !< Jacobian of the transformation to use if we want the derivative wrt to another variable
 
-        write(*,*) 'ERROR: not yet implemented (IW)'
-        stop
+        real(dl), dimension(self%num_points) :: dummy, dummy2
+        integer  :: i
+
+        ! compute the first derivative:
+        call spline3ders( self%x, self%y, self%x, dummy, self%yp, self%ypp )
+        ! compute the second derivative:
+        call spline3ders( self%x, self%yp, self%x, dummy, self%ypp, self%yppp )
+        ! compute the third derivative:
+        call spline3ders( self%x, self%ypp, self%x, dummy, self%yppp, dummy2 )
+
+        ! apply the Jacobian:
+        if ( present(jacobian) ) then
+            self%yp = jacobian*self%yp
+            self%ypp = jacobian*self%ypp
+            self%yppp = jacobian*self%yppp
+        end if
+
+        ! set the derivatives to zero at the boundary for continuity:
+        self%yp(1)   = 0._dl
+        self%ypp(1)  = 0._dl
+        self%yppp(1) = 0._dl
+        self%yp(self%num_points)   = 0._dl
+        self%ypp(self%num_points)  = 0._dl
+        self%yppp(self%num_points) = 0._dl
 
     end subroutine LinearIntepolateFunction1DInitDerivatives
 
