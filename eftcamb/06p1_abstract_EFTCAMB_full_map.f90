@@ -73,6 +73,8 @@ contains
         a2   = a*a
         temp = 1.0_dl/(1.0_dl + eft_cache%EFTOmegaV+ a*eft_cache%EFTOmegaP)*( eft_cache%grhoa2 +2._dl*eft_cache%EFTc*a2 -eft_cache%EFTLambda*a2 )/3._dl
 
+        EFTCAMBFullModelComputeDtauda = 1._dl/sqrt( temp )
+
     end function EFTCAMBFullModelComputeDtauda
 
     ! ---------------------------------------------------------------------------------------------
