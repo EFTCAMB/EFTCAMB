@@ -68,12 +68,10 @@ contains
 
         real(dl) :: EFTCAMBFullModelComputeDtauda                     !< the output dtauda
 
-        real(dl) :: a2
+        real(dl) :: a2, temp
 
-        a2=a*a
-
-        EFTCAMBFullModelComputeDtauda = 1._dl/sqrt( ( eft_cache%grhoa2/3._dl +2._dl/3._dl*eft_cache%EFTc*a2 + a2*eft_par_cache%h0_Mpc**2*eft_par_cache%omegav*a2*(1._dl +eft_cache%EFTLambda ) )&
-                                      & /( 1._dl +eft_cache%EFTOmegaV +a*eft_cache%EFTOmegaP ) )
+        a2   = a*a
+        temp = 1.0_dl/(1.0_dl + eft_cache%EFTOmegaV+ a*eft_cache%EFTOmegaP)*( eft_cache%grhoa2 +2._dl*eft_cache%EFTc*a2 -eft_cache%EFTLambda*a2 )/3._dl
 
     end function EFTCAMBFullModelComputeDtauda
 
