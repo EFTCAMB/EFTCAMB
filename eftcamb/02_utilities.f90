@@ -30,7 +30,7 @@ module EFTCAMB_mixed_algorithms
 
     private
 
-    public hunt, integer_to_string, string
+    public hunt, integer_to_string, string, dfridr
 
     !----------------------------------------------------------------------------------------
     !> This is a utility type that allows to handle strings arrays. It is used because

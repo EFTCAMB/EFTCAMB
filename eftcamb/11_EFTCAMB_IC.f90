@@ -488,7 +488,7 @@ contains
         real(dl), intent(in) :: k                  !< input scale
         real(dl)             :: EFTpiCdotFunction  !< return value of the function
 
-        real(dl) err, dfridr
+        real(dl) err
 
         EFTpiCdotfunction = dfridr( dummy_helper, a, 0.03_dl*a, err )
 
@@ -515,7 +515,7 @@ contains
         real(dl)             :: EFTpiDdotFunction  !< return value of the function
 
 
-        real(dl) err, dfridr
+        real(dl) err
 
         EFTpiDdotfunction = dfridr( dummy_helper, a, 0.03_dl*a, err )
 
