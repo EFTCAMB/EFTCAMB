@@ -25,6 +25,7 @@
 submodule (GaugeInterface) EFTCAMB_IC
 
 use precision
+use EFTCAMB_mixed_algorithms
 
 implicit none
 
@@ -487,11 +488,18 @@ contains
         real(dl), intent(in) :: k                  !< input scale
         real(dl)             :: EFTpiCdotFunction  !< return value of the function
 
-        real(dl) err
+        real(dl) err, dfridr
 
-        EFTpiCdotfunction = dfridr( EFTpiCfunction, a, k, 0.03_dl*a, err )
+        EFTpiCdotfunction = dfridr( dummy_helper, a, 0.03_dl*a, err )
 
         return
+
+    contains
+
+        function dummy_helper(temp_a)
+            real(dl) temp_a,dummy_helper
+            dummy_helper = EFTpiCfunction(temp_a,k)
+        end function dummy_helper
 
     end function EFTpiCdotFunction
 
@@ -507,57 +515,20 @@ contains
         real(dl)             :: EFTpiDdotFunction  !< return value of the function
 
 
-        real(dl) err
+        real(dl) err, dfridr
 
-        EFTpiDdotfunction = dfridr( EFTpiDfunction, a, k, 0.03_dl*a, err )
+        EFTpiDdotfunction = dfridr( dummy_helper, a, 0.03_dl*a, err )
 
         return
+
+    contains
+
+        function dummy_helper(temp_a)
+            real(dl) temp_a,dummy_helper
+            dummy_helper = EFTpiDfunction(temp_a,k)
+        end function dummy_helper
 
     end function EFTpiDdotFunction
-
-    !----------------------------------------------------------------------------------------
-    !> Algorithm to compute the numerical derivative.
-    !! Modified to accept two function arguments.
-    function dfridr( func, x, k, h, err )
-
-        implicit none
-
-        integer,parameter :: ntab = 100
-        real(dl) dfridr,err,h,x,k,func
-        external func
-
-        real(dl), parameter :: CON=1.4_dl       ! decrease of the stepsize.
-        real(dl), parameter :: CON2=CON*CON
-        real(dl), parameter :: BIG=1.d+30
-        real(dl), parameter :: SAFE=2._dl
-
-        integer i,j
-        real(dl) errt, fac, hh
-        real(dl), dimension(ntab,ntab) :: a
-
-        if (h.eq.0._dl) h = 1.d-8
-
-        hh=h
-        a(1,1)=(func(x+hh,k)-func(x-hh,k))/(2.0_dl*hh)
-        err=BIG
-
-        do 12 i=2,NTAB
-            hh=hh/CON
-            a(1,i)=(func(x+hh,k)-func(x-hh,k))/(2.0_dl*hh)
-            fac=CON2
-            do 11 j=2,i
-                a(j,i)=(a(j-1,i)*fac-a(j-1,i-1))/(fac-1._dl)
-                fac=CON2*fac
-                errt=max(abs(a(j,i)-a(j-1,i)),abs(a(j,i)-a(j-1,i-1)))
-                if (errt.le.err) then
-                    err=errt
-                    dfridr=a(j,i)
-                endif
-11          continue
-            if(abs(a(i,i)-a(i-1,i-1)).ge.SAFE*err)return
-12      continue
-        return
-    end function dfridr
 
     !----------------------------------------------------------------------------------------
 
