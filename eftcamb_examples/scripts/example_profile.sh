@@ -2,7 +2,7 @@
 #
 # This file is part of EFTCAMB.
 #
-# Copyright (C) 2013-2017 by the EFTCAMB authors
+# Copyright (C) 2013-2019 by the EFTCAMB authors
 #
 # The EFTCAMB code is free software;
 # You can use it, redistribute it, and/or modify it under the terms
@@ -68,10 +68,10 @@ for i in $EXAMPLE_PARAMS_DIR/*.ini;
 	filename="${filename%.*}"
 
 	printf "  Doing %s: " "$filename"
-	
+
 	./profiler.x $i &> $RESULTS_SPECTRA_RAW/$filename.log
 	gprof -b profiler.x &> $RESULTS_PROFILE/$filename.prof
-	
+
 	# check if run succeded:
 	if [ $? -eq 0 ]; then
 	    printf "${BGreen} OK\n${Color_Off}"

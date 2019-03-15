@@ -2,7 +2,7 @@
 #
 # This file is part of EFTCAMB.
 #
-# Copyright (C) 2013-2017 by the EFTCAMB authors
+# Copyright (C) 2013-2019 by the EFTCAMB authors
 #
 # The EFTCAMB code is free software;
 # You can use it, redistribute it, and/or modify it under the terms
@@ -59,18 +59,18 @@ var=0
 # start the loop:
 for i in ${PATH_TO_DATA}/*_params.ini
 	do
-		
+
 	filename=$(basename "$i")
 	extension="${filename##*.}"
 	filename="${filename%_params.*}"
-	
+
 	# increment the counter
 	var=$((var+1))
-	
+
 	# call the plotter
 	python $PLOTTER $REFERENCE_MODEL $PATH_TO_DATA/$filename $PATH_TO_RES '1_GR' $filename &
 	# wait if reached NPROCS jobs running
-	if [ $((var%NPROCS)) -eq 0 ] ; then 
+	if [ $((var%NPROCS)) -eq 0 ] ; then
 		wait
 	fi
 

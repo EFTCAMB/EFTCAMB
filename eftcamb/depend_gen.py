@@ -2,7 +2,7 @@
 #
 # This file is part of EFTCAMB.
 #
-# Copyright (C) 2013-2017 by the EFTCAMB authors
+# Copyright (C) 2013-2019 by the EFTCAMB authors
 #
 # The EFTCAMB code is free software;
 # You can use it, redistribute it, and/or modify it under the terms
@@ -33,7 +33,7 @@ def run( verbose=True, overwrite=None, outdir=None ):
 
     # some feedback:
     print "\033[032m"+'Generating EFTCAMB dependencies'+"\033[039m"
-    
+
     # grab the EFTCAMB/CAMB paths:
     eftcamb_dir = os.path.dirname(os.path.abspath(__file__))
     camb_dir    = os.path.abspath(os.path.join( eftcamb_dir, os.pardir ))
@@ -46,7 +46,7 @@ def run( verbose=True, overwrite=None, outdir=None ):
                 eftcamb_files.append( os.path.join(os.path.basename(root),file) )
             else:
                 eftcamb_files.append( file )
-    
+
     camb_files    = os.listdir(camb_dir)
 
     # filter them to get only the fortran files:

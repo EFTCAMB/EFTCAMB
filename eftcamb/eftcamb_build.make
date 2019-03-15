@@ -2,7 +2,7 @@
 #
 # This file is part of EFTCAMB.
 #
-# Copyright (C) 2013-2017 by the EFTCAMB authors
+# Copyright (C) 2013-2019 by the EFTCAMB authors
 #
 # The EFTCAMB code is free software;
 # You can use it, redistribute it, and/or modify it under the terms
@@ -89,10 +89,10 @@ APPS_BINS    := $(addprefix $(CAMB_DIR)/, $(APPS_BINS))
 
 eftcamb_apps: directories $(CAMBOBJ) $(APPS_BINS) profile
 
-$(CAMB_DIR)/%.x: directories $(CAMBOBJ) $(EFTCAMB_APPS)/%.f90 
+$(CAMB_DIR)/%.x: directories $(CAMBOBJ) $(EFTCAMB_APPS)/%.f90
 	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(EFTCAMB_APPS)/$*.f90 $(F90CRLINK) -o $(CAMB_DIR)/$*.x
 
-$(CAMB_DIR)/%.x: directories $(CAMBOBJ) $(EFTCAMB_APPS)/%.F90 
+$(CAMB_DIR)/%.x: directories $(CAMBOBJ) $(EFTCAMB_APPS)/%.F90
 	$(F90C) $(F90FLAGS) $(CAMBOBJ) $(EFTCAMB_APPS)/$*.F90 $(F90CRLINK) -o $(CAMB_DIR)/$*.x
 
 Debug: eftcamb_apps
@@ -112,7 +112,7 @@ ifeq ($(MAKECMDGOALS), profile)
 F90FLAGS += -pg
 endif
 
-profile: directories $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90 
+profile: directories $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90
 	$(F90C) $(F90FLAGS) -DPROFILER $(CAMBOBJ) $(EFTCAMB_APPS)/benchmark.F90 $(F90CRLINK) -o $(CAMB_DIR)/profiler.x
 
 # INTEL PROFILER: this requires special options
@@ -125,8 +125,7 @@ intel_profile: camb eftcamb_apps
 clean_apps:
 	@rm -f $(CAMB_DIR)/*.x
 	@rm -f gmon.out
-	
+
 # add the apps targets to the main ones:
 all: eftcamb_apps
 clean: clean_apps
-

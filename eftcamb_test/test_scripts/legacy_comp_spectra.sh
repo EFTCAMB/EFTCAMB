@@ -2,7 +2,7 @@
 #
 # This file is part of EFTCAMB.
 #
-# Copyright (C) 2013-2017 by the EFTCAMB authors
+# Copyright (C) 2013-2019 by the EFTCAMB authors
 #
 # The EFTCAMB code is free software;
 # You can use it, redistribute it, and/or modify it under the terms
@@ -57,30 +57,30 @@ TOTAL_TEST=0
 # start the loop:
 for i in $PATH_TO_DATA_1/*_params.ini;
 	do
-		
+
 	filename=$(basename "$i")
 	extension="${filename##*.}"
 	filename="${filename%_params.*}"
-		
+
 	printf "  Doing %s: " "$filename"
-	TOTAL_TEST=$((TOTAL_TEST+1))	
-	
+	TOTAL_TEST=$((TOTAL_TEST+1))
+
 	# test with numdiff:
 	SUCCESS=true
 	for file in $PATH_TO_DATA_1/$filename*;
-	do 
-		
+	do
+
 		temp_filename=$(basename "$file")
 		temp_extension="${temp_filename##*.}"
 		log_filename="${temp_filename%.*}"
-		
+
 		# test if file exists:
 		if [ -e "$PATH_TO_DATA_2/$temp_filename" ];
 		then
-			
+
 			# file exists, run numdiff:
 			numdiff $file $PATH_TO_DATA_2/$temp_filename $NUMDIFF_OPTIONS &> /dev/null
-		
+
 			if [ $? -ne 0 ]; then
 				# if it is the first test failed go to new line and add failure reason:
 				if [ "$SUCCESS" = true ]; then
@@ -93,7 +93,7 @@ for i in $PATH_TO_DATA_1/*_params.ini;
 		    	# redo numdiff to print the fail log:
 				numdiff $file $PATH_TO_DATA_2/$temp_filename $NUMDIFF_OPTIONS &> $PATH_TO_DATA_2/$log_filename.fail
 			fi
-		
+
 		else
 			# file does not exist:
 			if [ "$SUCCESS" = true ]; then
@@ -103,22 +103,22 @@ for i in $PATH_TO_DATA_1/*_params.ini;
 			printf "${BRed}   FAIL FILE NOT FOUND: %s\n${Color_Off}" "$temp_filename"
 			SUCCESS=false
 		fi
-		
+
 	done;
 
 	# if the test failed plot the results:
-	
+
 	if [ "$SUCCESS" = false ]; then
-		
-		
-		if [ -z ${TRAVIS} ]; then 
-			if [ "${FAILURE_REASON[-1]}" = "diff failure" ]; then 
+
+
+		if [ -z ${TRAVIS} ]; then
+			if [ "${FAILURE_REASON[-1]}" = "diff failure" ]; then
 				printf "${BRed}   Plotting results\n${Color_Off}"
 				python $PLOTTER $PATH_TO_DATA_1/$filename $PATH_TO_DATA_2/$filename $PATH_TO_RES ${filename}_LEGACY ${filename}_NEW &> /dev/null
 			fi
-		fi		
+		fi
 		FAILED_TEST+=($filename)
-	
+
 	else
 		printf "${BGreen} OK\n${Color_Off}"
 	fi

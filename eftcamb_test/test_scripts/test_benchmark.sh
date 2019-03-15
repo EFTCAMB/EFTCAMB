@@ -2,7 +2,7 @@
 #
 # This file is part of EFTCAMB.
 #
-# Copyright (C) 2013-2017 by the EFTCAMB authors
+# Copyright (C) 2013-2019 by the EFTCAMB authors
 #
 # The EFTCAMB code is free software;
 # You can use it, redistribute it, and/or modify it under the terms
@@ -68,9 +68,9 @@ for i in $TEST_PARAMS_DIR/*.ini;
 	filename="${filename%.*}"
 
 	printf "  Doing %s: " "$filename"
-	
+
 	./benchmark.x $i &> $RESULTS_BENCHMARK_DIR/$filename.bench
-	
+
 	# check if run succeded:
 	if [ $? -eq 0 ]; then
 		TIMING=$(tail -1 $RESULTS_BENCHMARK_DIR/$filename.bench)
