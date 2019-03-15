@@ -121,11 +121,12 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that allocates the model selection.
-    subroutine EFTCAMBDesignerFRAllocateModelSelection( self )
+    subroutine EFTCAMBDesignerFRAllocateModelSelection( self, Ini )
 
         implicit none
 
         class(EFTCAMB_fR_designer)                        :: self              !< the base class
+        type(TIniFile)                                    :: Ini               !< Input ini file
         character, allocatable, dimension(:)              :: param_names       !< an array of strings containing the names of the function parameters
         character, allocatable, dimension(:)              :: param_names_latex !< an array of strings containing the latex names of the function parameters
 
@@ -155,6 +156,9 @@ contains
 
         ! initialize the names:
         call self%DesfRwDE%set_name( 'EFTw', 'w' )
+
+        ! additional initialization of the function:
+        call self%DesfRwDE%init_func_from_file( Ini )
 
     end subroutine EFTCAMBDesignerFRAllocateModelSelection
 

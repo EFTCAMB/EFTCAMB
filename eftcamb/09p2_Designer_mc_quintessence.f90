@@ -65,11 +65,12 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that allocates the model selection.
-    subroutine EFTCAMBDesMC5eAllocateModelSelection( self )
+    subroutine EFTCAMBDesMC5eAllocateModelSelection( self, Ini )
 
         implicit none
 
-        class(EFTCAMB_des_mc_quint)                       :: self              !< the base class
+        class(EFTCAMB_des_mc_quint)   :: self  !< the base class
+        type(TIniFile)                :: Ini   !< Input ini file
 
         ! allocate wDE:
         if ( allocated(self%PureEFTwDE) ) deallocate(self%PureEFTwDE)
@@ -125,6 +126,9 @@ contains
         call self%PureEFTGamma4%set_name( 'EFTGamma4', '\gamma^{(4)}' )
         call self%PureEFTGamma5%set_name( 'EFTGamma5', '\gamma^{(5)}' )
         call self%PureEFTGamma6%set_name( 'EFTGamma6', '\gamma^{(6)}' )
+
+        ! additional initialization of the function:
+        call self%PureEFTwDE%init_func_from_file( Ini )
 
     end subroutine EFTCAMBDesMC5eAllocateModelSelection
 

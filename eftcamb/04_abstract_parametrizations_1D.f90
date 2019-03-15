@@ -62,6 +62,7 @@ module EFTCAMB_abstract_parametrizations_1D
         procedure :: set_name              => ParametrizedFunction1DSetName                !< subroutine that sets the name of the parametrized function.
         procedure :: set_param_names       => ParametrizedFunction1DSetParamNames          !< subroutine that sets the parameter names starting from two array of characters, containing the names and the latex names of the function parameters.
         procedure :: init_from_file        => ParametrizedFunction1DInitFromFile           !< subroutine that reads a Ini file looking for the parameters of the function.
+        procedure :: init_func_from_file   => ParametrizedFunction1DInitFunctionFromFile   !< subroutine that reads a Ini file looking for initialization parameters for the function..
         procedure( ParametrizedFunction1DInitParams       ), deferred :: init_parameters   !< subroutine that initializes the function parameters based on the values found in an input array.
         ! utility functions:
         procedure :: feedback              => ParametrizedFunction1DFeedback               !< subroutine that prints to screen the informations about the function.
@@ -314,6 +315,17 @@ contains
         call self%init_parameters( parameters )
 
     end subroutine ParametrizedFunction1DInitFromFile
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads a Ini file looking for initialization parameters for the function..
+    subroutine ParametrizedFunction1DInitFunctionFromFile( self, Ini )
+
+        implicit none
+
+        class(parametrized_function_1D)    :: self   !< the base class
+        type(TIniFile)                     :: Ini    !< Input ini file
+
+    end subroutine ParametrizedFunction1DInitFunctionFromFile
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints to screen the informations about the function.

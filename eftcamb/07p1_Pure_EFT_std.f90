@@ -129,11 +129,12 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that allocates the model selection.
-    subroutine EFTCAMBPureEFTstdAllocateModelSelection( self )
+    subroutine EFTCAMBPureEFTstdAllocateModelSelection( self, Ini )
 
         implicit none
 
-        class(EFTCAMB_std_pure_EFT)                       :: self              !< the base class
+        class(EFTCAMB_std_pure_EFT)       :: self  !< the base class
+        type(TIniFile)                    :: Ini   !< Input ini file
 
         ! allocate Omega:
         if ( allocated(self%PureEFTOmega) ) deallocate(self%PureEFTOmega)
@@ -306,6 +307,19 @@ contains
             call self%PureEFTGamma4%set_name( 'EFTGamma4', '\gamma^{(4)}' )
             call self%PureEFTGamma5%set_name( 'EFTGamma5', '\gamma^{(5)}' )
             call self%PureEFTGamma6%set_name( 'EFTGamma6', '\gamma^{(6)}' )
+        end if
+
+        ! additional initialization of the function:
+        call self%PureEFTOmega%init_func_from_file ( Ini )
+        call self%PureEFTwDE%init_func_from_file   ( Ini )
+        call self%PureEFTGamma1%init_func_from_file( Ini )
+        call self%PureEFTGamma2%init_func_from_file( Ini )
+        call self%PureEFTGamma3%init_func_from_file( Ini )
+
+        if ( .not. self%PureEFTHorndeski ) then
+            call self%PureEFTGamma4%init_func_from_file( Ini )
+            call self%PureEFTGamma5%init_func_from_file( Ini )
+            call self%PureEFTGamma6%init_func_from_file( Ini )
         end if
 
     end subroutine EFTCAMBPureEFTstdAllocateModelSelection

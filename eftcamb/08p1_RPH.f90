@@ -116,11 +116,12 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that allocates the model selection.
-    subroutine EFTCAMBRPHAllocateModelSelection( self )
+    subroutine EFTCAMBRPHAllocateModelSelection( self, Ini )
 
         implicit none
 
-        class(EFTCAMB_RPH)                       :: self              !< the base class
+        class(EFTCAMB_RPH)  :: self   !< the base class
+        type(TIniFile)      :: Ini    !< Input ini file
 
         ! allocate wDE:
         if ( allocated(self%RPH_wDE) ) deallocate(self%RPH_wDE)
@@ -228,6 +229,13 @@ contains
         call self%RPH_Kineticity%set_name ( 'RPHkineticity', '\alpha^{\rm K}' )
         call self%RPH_Braiding%set_name   ( 'RPHbraiding'  , '\alpha^{\rm B}' )
         call self%RPH_Tensor%set_name     ( 'RPHtensor'    , '\alpha^{\rm T}' )
+
+        ! additional initialization of the function:
+        call self%RPH_wDE%init_func_from_file       ( Ini )
+        call self%RPH_PlanckMass%init_func_from_file( Ini )
+        call self%RPH_Kineticity%init_func_from_file( Ini )
+        call self%RPH_Braiding%init_func_from_file  ( Ini )
+        call self%RPH_Tensor%init_func_from_file    ( Ini )
 
     end subroutine EFTCAMBRPHAllocateModelSelection
 

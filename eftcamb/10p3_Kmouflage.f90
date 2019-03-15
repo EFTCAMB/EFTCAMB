@@ -114,11 +114,12 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that allocates the model selection. 
-    subroutine EFTCAMBKmouflageAllocateModelSelection( self )
+    subroutine EFTCAMBKmouflageAllocateModelSelection( self, Ini )
 
         implicit none
 
         class(EFTCAMB_Kmouflage) :: self !< the base class
+        type(TIniFile)           :: Ini  !< Input ini file
 
         ! nothing to be done here.
 

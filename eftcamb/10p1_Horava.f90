@@ -97,11 +97,12 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that allocates the model selection. For Horava this is a dummy procedure.
-    subroutine EFTCAMBHoravaAllocateModelSelection( self )
+    subroutine EFTCAMBHoravaAllocateModelSelection( self, Ini )
 
         implicit none
 
-        class(EFTCAMB_Horava) :: self !< the base class
+        class(EFTCAMB_Horava) :: self   !< the base class
+        type(TIniFile)        :: Ini    !< Input ini file
 
     end subroutine EFTCAMBHoravaAllocateModelSelection
 

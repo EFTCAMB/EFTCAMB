@@ -112,10 +112,12 @@ module EFTCAMB_abstract_model
 
         ! ---------------------------------------------------------------------------------------------
         !> Subroutine that reads the parameters of the model from file.
-        subroutine EFTCAMBModelAllocateModelSelection( self )
+        subroutine EFTCAMBModelAllocateModelSelection( self, Ini )
+            use IniFile
             import EFTCAMB_model
             implicit none
-            class(EFTCAMB_model)  :: self   !< the base class
+            class(EFTCAMB_model)     :: self   !< the base class
+            type(TIniFile)           :: Ini    !< Input ini file for additional initialization
         end subroutine EFTCAMBModelAllocateModelSelection
 
         ! ---------------------------------------------------------------------------------------------

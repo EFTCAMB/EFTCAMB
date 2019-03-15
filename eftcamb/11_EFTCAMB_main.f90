@@ -136,7 +136,7 @@ contains
         ! read the parameters defining the model from file:
         call self%EFTCAMB_read_model_selection( Ini )
         ! allocate model functions and parameters:
-        call self%EFTCAMB_allocate_model_functions( )
+        call self%EFTCAMB_allocate_model_functions( Ini )
         ! read model parameters from file:
         call self%EFTCAMB_read_model_parameters( Ini )
         ! compute model number of parameters:
@@ -373,11 +373,12 @@ contains
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that, based on the model specific selection flags allocates the EFTCAMB model functions.
     !! Just a wrapper to the model specific subroutine.
-    subroutine allocate_EFTCAMB_model_functions( self )
+    subroutine allocate_EFTCAMB_model_functions( self, Ini )
 
         implicit none
 
         class(EFTCAMB)      :: self       !< the base class
+        type(TIniFile)      :: Ini        !< Input ini file
 
         ! check the allocation of the model:
         if ( .not. allocated(self%model) ) then
@@ -387,7 +388,7 @@ contains
         end if
 
         ! call the model specific read parameters:
-        call self%model%allocate_model_selection( )
+        call self%model%allocate_model_selection( Ini )
 
     end subroutine allocate_EFTCAMB_model_functions
 
