@@ -25,12 +25,12 @@ Invoking the help option ``debug_plotter.py -h`` will result in::
                             [-y Y_COLUMNS [Y_COLUMNS ...]] [-xl] [-yl] [-l] [-v]
                             [-q]
                             files [files ...]
-
+    
     debug plotter
-
+    
     positional arguments:
-      files                 a list of files with Fisher matrices
-
+      files                 a list of files with data to plot
+    
     optional arguments:
       -h, --help            show this help message and exit
       -o OUTROOT, --outroot OUTROOT
@@ -81,7 +81,7 @@ here = os.path.dirname(os.path.abspath(__file__))
 
 # protection against importing:
 if __name__ == "__main__":
-
+    
     # parse command line arguments:
     parser = argparse.ArgumentParser(description='debug plotter')
     # parse file names:
@@ -90,6 +90,9 @@ if __name__ == "__main__":
     # parse the output root:
     parser.add_argument('-o','--outroot', dest='outroot', type=str,
                          help='path, name and format of the output file. If this option is not present the plotter will try to display to screen.')
+    # parse the title:
+    parser.add_argument('-t','--title', dest='title', type=str,
+                         help='title of the plot.')
     # reference column:
     parser.add_argument('-x','--x', dest='x_column', type=int,
                         help='decides which column of the file to use as the x coordinate for the plot.')
@@ -97,22 +100,22 @@ if __name__ == "__main__":
     parser.add_argument('-y','--y', dest='y_columns', type=int, nargs='+',
                         help='decides which columns of the file to use as the y coordinate for the plot.')
     # x scale log option:
-    parser.add_argument('-xl','--xlog', dest='xlog', action='store_true',
+    parser.add_argument('-xl','--xlog', dest='xlog', action='store_true', 
                         help='decides wether the x scale is a log scale. If log plotting will plot the absolute value.')
     # y scale log option:
-    parser.add_argument('-yl','--ylog', dest='ylog', action='store_true',
+    parser.add_argument('-yl','--ylog', dest='ylog', action='store_true', 
                         help='decides wether the y scale is a log scale. If log plotting will plot the absolute value.')
     # latex text option:
-    parser.add_argument('-l','--latex', dest='latex', action='store_true',
+    parser.add_argument('-l','--latex', dest='latex', action='store_true', 
                         help='decides wether text is latex rendered or not')
     # version:
     parser.add_argument('-v','--version', action='version', version='%(prog)s '+__version__)
     # quiet mode:
-    parser.add_argument('-q','--quiet', dest='quiet', action='store_true',
+    parser.add_argument('-q','--quiet', dest='quiet', action='store_true', 
                         help='decides wether something gets printed to screen or not')
     # do the parsing:
     args = parser.parse_args()
-
+            
     # process input arguments:
     files          = args.files
     number_fish    = len(files)
@@ -120,22 +123,32 @@ if __name__ == "__main__":
         outroot    = args.outroot
     else:
         outroot    = None
-
-    # latex rendering of text if required:
+    
+    # latex rendering of text if required:   
     if args.latex is not None:
         if args.latex:
             plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
             plt.rc('text', usetex=True)
-
+    
     # start the plot:
     fig = plt.figure()
-
+    
+    # formats:
+    formats = ['-','--','.']
+    
     # cycle over files:
-    for file in files:
+    for index, file in enumerate(files):
         # import the data:
         data  = np.loadtxt( file )
         # get number of columns:
         n_col = data.shape[1]
+        # try to get labels if appearing as commented first line:
+        with open( file ) as f:
+            first_line = f.readline()
+            if first_line[0]=='#':
+                labels = first_line[1:].replace('\xc2\xa0', ' ').strip().split(" ")
+            else:
+                labels = [ str(ind) for ind in range(0,n_col) ]
         # get the x column:
         if args.x_column is not None:
             x_index = args.x_column
@@ -148,35 +161,44 @@ if __name__ == "__main__":
         if args.y_columns is not None:
             data_indexes = args.y_columns
         else:
-            data_indexes = range(0,n_col)
+            data_indexes = range(0,n_col)    
         # remove the x axis:
         try:
             data_indexes.remove( x_index )
         except: pass
         # cycle over indexes:
         for ind in data_indexes:
-            if args.ylog:
+            if args.ylog: 
                 y = np.abs(data[:,ind])
             else:
                 y = data[:,ind]
-
-            plt.plot( x, y, label=str(ind) )
-
+            plt.plot( x, y, formats[index], label=str(ind)+') '+labels[ind] ) 
+        
     plt.legend()
-
+    
+    # x axis label:
+    plt.xlabel(str(x_index)+') '+labels[x_index])
+    
     # get log scales:
     if args.xlog: plt.xscale('log')
     if args.ylog: plt.yscale('log')
-
+    
+    # put the title:
+    if args.title is not None:
+        plt.title( args.title )
+    
+    # use tight layout:
+    plt.tight_layout()
+    
     # save or try to display:
     if args.outroot is not None:
         plt.savefig( args.outroot )
     else:
         plt.show()
-
+    
     # close all:
     plt.close('all')
-
+    
     # print some final feedback:
     if not args.quiet:
         if outroot is not None:
