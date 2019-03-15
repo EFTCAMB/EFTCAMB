@@ -30,7 +30,7 @@ module EFTCAMB_mixed_algorithms
 
     private
 
-    public hunt, integer_to_string, string, dfridr
+    public hunt, integer_to_string, string, dfridr, double_NaN
 
     !----------------------------------------------------------------------------------------
     !> This is a utility type that allows to handle strings arrays. It is used because
@@ -38,6 +38,9 @@ module EFTCAMB_mixed_algorithms
     type :: string
         character(len=:), allocatable :: string
     end type string
+
+    ! real number that gets represented as a Nan:
+    real(dl), parameter :: double_NaN = TRANSFER((/ Z'00000000', Z'7FF80000' /),1.0_8) !< there are situations where we need to initialize a variable to Nan...
 
 contains
 
