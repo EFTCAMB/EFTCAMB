@@ -38,6 +38,7 @@ module EFTCAMB_main
     use EFTCAMB_designer_fR
     use EFTCAMB_designer_mc_quintessence
     use EFTCAMB_LE_Horava
+    use EFTCAMB_Kmouflage_Mod
 
     implicit none
 
@@ -313,11 +314,15 @@ contains
                     case(1)
                         allocate( EFTCAMB_Horava::self%model )
                         call self%model%init( 'Horava', 'Horava' )
+                    case(3)
+                        allocate( EFTCAMB_Kmouflage::self%model )
+                        call self%model%init( 'K-mouflage', 'K-mouflage' )
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and FullMappingEFTmodel =', self%FullMappingEFTmodel
                         write(*,'(a)')    'Please select an appropriate model:'
                         write(*,'(a)')    'FullMappingEFTmodel=1  Horava gravity'
+                        write(*,'(a)')    'FullMappingEFTmodel=3  K-mouflage'
                         call MpiStop('EFTCAMB error')
                 end select
 
