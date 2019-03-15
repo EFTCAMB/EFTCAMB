@@ -86,6 +86,18 @@ class CAMB_results_compare_plot:
             self.matterpower_2       = np.loadtxt(root2+'_matterpower.dat')
             self.transfer_func_2     = np.loadtxt(root2+'_transfer_out.dat')
 
+            # try to get the labels of the transfer function:
+            self.transfer_labels = None
+            infile = open(root1+'_transfer_out.dat', 'r')
+            firstLine = infile.readline()
+            if firstLine[0]=='#':
+                firstLine = firstLine.split(' ')
+                firstLine = list(filter(None,list(firstLine)))
+                firstLine.pop(0)
+                firstLine.pop(0)
+                firstLine.pop(-1)
+                self.transfer_labels = firstLine
+
         if self.tensor:
             self.tensCls_1           = np.loadtxt(root1+'_tensCls.dat')
             self.totCls_1            = np.loadtxt(root1+'_totCls.dat')
@@ -109,7 +121,6 @@ class CAMB_results_compare_plot:
         if num1!=num2:
             print 'wrong number of Cls'
             return
-
         # add the matter power spectrum if required:
         if self.transfer: num1 += 1
         # values of l:
@@ -162,8 +173,14 @@ class CAMB_results_compare_plot:
                     min2val_2      = cutoff
                 np.place(yvalues_1, yvalues_1 == 0.0, min2val_1)
                 np.place(yvalues_2, yvalues_2 == 0.0, min2val_2)
-                # computation of the percentual comparison:
-                yvalues_comp = (yvalues_1 - yvalues_2)/abs(yvalues_1)*100
+                # computation of comparison:
+                yvalues_comp = (yvalues_1 - yvalues_2)/abs(yvalues_1)
+                # account for variance of TE:
+                if ind == 3:
+                    yvalues_comp = (yvalues_1 - yvalues_2)/np.sqrt(2./(2.*l_values+1.))
+                    _temp_ClTT = UnivariateSpline( xvalues_1, self.scalCls_1[:,1], s=0)(l_values)
+                    _temp_ClEE = UnivariateSpline( xvalues_1, self.scalCls_1[:,2], s=0)(l_values)
+                    yvalues_comp = yvalues_comp/np.sqrt( _temp_ClTT*_temp_ClEE+yvalues_1**2.)
                 # protection against values too small:
                 np.place(yvalues_comp, abs(yvalues_comp)<cutoff, [cutoff])
             else: # matter power spectrum case
@@ -204,6 +221,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.TT_plot(temp, l_values, yvalues_1)
                 plots_2.TT_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.TT_plot(temp_comp, l_values, yvalues_comp)
                 temp_comp.set_yscale('Log')
                 temp.set_title('TT power spectrum')
@@ -212,6 +230,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.EE_plot(temp, l_values, yvalues_1)
                 plots_2.EE_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.EE_plot(temp_comp, l_values, yvalues_comp)
                 temp.set_title('EE power spectrum')
 
@@ -226,14 +245,14 @@ class CAMB_results_compare_plot:
 
                 plots_1.Phi_plot(temp, l_values, yvalues_1)
                 plots_2.Phi_plot(temp, l_values, yvalues_2)
-                plots_compa.Phi_plot(temp_comp, l_values, yvalues_comp)
+                plots_compa.Phi_plot(temp_comp, l_values, yvalues_comp*100.)
                 temp.set_title('$\phi$ power spectrum')
 
             elif ind == 5 and self.lensing: # CMB lensing - Temperature power spectrum:
 
                 plots_1.PhiT_plot(temp, l_values, yvalues_1)
                 plots_2.PhiT_plot(temp, l_values, yvalues_2)
-                plots_compa.PhiT_plot(temp_comp, l_values, yvalues_comp)
+                plots_compa.PhiT_plot(temp_comp, l_values, yvalues_comp*100.)
                 temp.set_title('$\phi$T power spectrum')
 
             elif ind == num1 and self.transfer: # matter power spectrum:
@@ -259,7 +278,7 @@ class CAMB_results_compare_plot:
         # set the global legend
         fig.legend( handles = [plots_1.TT_p, plots_2.TT_p, plots_compa.CV_p],
                     labels  = [self.name_h1, self.name_h2, 'Cosmic variance'],
-                    loc='lower center', ncol=3 ,fancybox=True)
+                    loc='lower center', ncol=3 ,fancybox=True, edgecolor='k')
         # adjust the size of the plot
         fig.subplots_adjust(top=0.92, bottom=0.08)
         # save the result and close
@@ -362,7 +381,7 @@ class CAMB_results_compare_plot:
         # set the global legend
         fig.legend( handles = [plots_1.Generic_Cl_plot, plots_2.Generic_Cl_plot, plots_compa.CV_p],
                     labels  = [self.name_h1, self.name_h2, 'Cosmic variance'],
-                    loc='lower center', ncol=3 ,fancybox=True)
+                    loc='lower center', ncol=3 ,fancybox=True, edgecolor='k')
 
         # set the global title
         plt.suptitle(self.name_h1+' VS '+self.name_h2+
@@ -440,7 +459,13 @@ class CAMB_results_compare_plot:
             np.place(yvalues_1, yvalues_1 == 0.0, min2val_1)
             np.place(yvalues_2, yvalues_2 == 0.0, min2val_2)
             # computation of the percentual comparison:
-            yvalues_comp = (yvalues_1 - yvalues_2)/abs(yvalues_1)*100
+            yvalues_comp = (yvalues_1 - yvalues_2)/abs(yvalues_1)
+            # account for variance of TE:
+            if ind == 4:
+                yvalues_comp = (yvalues_1 - yvalues_2)/np.sqrt(2./(2.*l_values+1.))
+                _temp_ClTT = UnivariateSpline( xvalues_1, self.lensedCls_1[:,1], s=0)(l_values)
+                _temp_ClEE = UnivariateSpline( xvalues_1, self.lensedCls_1[:,2], s=0)(l_values)
+                yvalues_comp = yvalues_comp/np.sqrt( _temp_ClTT*_temp_ClEE+yvalues_1**2.)
             # protection against values too small:
             np.place(yvalues_comp, abs(yvalues_comp)<cutoff, [cutoff])
 
@@ -448,6 +473,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.TT_plot(temp, l_values, yvalues_1)
                 plots_2.TT_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.TT_plot(temp_comp, l_values, yvalues_comp)
                 temp_comp.set_yscale('Log')
                 temp.set_title('TT power spectrum')
@@ -456,6 +482,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.EE_plot(temp, l_values, yvalues_1)
                 plots_2.EE_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.EE_plot(temp_comp, l_values, yvalues_comp)
                 temp.set_title('EE power spectrum')
 
@@ -463,6 +490,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.BB_plot(temp, l_values, yvalues_1)
                 plots_2.BB_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.BB_plot(temp_comp, l_values, yvalues_comp)
                 temp.set_title('BB power spectrum')
 
@@ -477,6 +505,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.TT_plot(temp, l_values, yvalues_1)
                 plots_2.TT_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.TT_plot(temp_comp, l_values, yvalues_comp)
 
         # set the size of the image
@@ -489,7 +518,7 @@ class CAMB_results_compare_plot:
         # set the global legend
         fig.legend( handles = [plots_1.TT_p, plots_2.TT_p, plots_compa.CV_p],
                     labels  = [self.name_h1, self.name_h2, 'Cosmic variance'],
-                    loc='lower center', ncol=3 ,fancybox=True)
+                    loc='lower center', ncol=3 ,fancybox=True, edgecolor='k')
         # adjust the size of the plot
         fig.subplots_adjust(top=0.92, bottom=0.08)
         # save the result and close
@@ -561,7 +590,13 @@ class CAMB_results_compare_plot:
             np.place(yvalues_1, yvalues_1 == 0.0, min2val_1)
             np.place(yvalues_2, yvalues_2 == 0.0, min2val_2)
             # computation of the percentual comparison:
-            yvalues_comp = (yvalues_1 - yvalues_2)/abs(yvalues_1)*100
+            yvalues_comp = (yvalues_1 - yvalues_2)/abs(yvalues_1)
+            # account for variance of TE:
+            if ind == 4:
+                yvalues_comp = (yvalues_1 - yvalues_2)/np.sqrt(2./(2.*l_values+1.))
+                _temp_ClTT = UnivariateSpline( xvalues_1, self.tensCls_1[:,1], s=0)(l_values)
+                _temp_ClEE = UnivariateSpline( xvalues_1, self.tensCls_1[:,2], s=0)(l_values)
+                yvalues_comp = yvalues_comp/np.sqrt( _temp_ClTT*_temp_ClEE+yvalues_1**2.)
             # protection against values too small:
             np.place(yvalues_comp, abs(yvalues_comp)<cutoff, [cutoff])
 
@@ -569,6 +604,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.TT_plot(temp, l_values, yvalues_1)
                 plots_2.TT_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.TT_plot(temp_comp, l_values, yvalues_comp)
                 temp.set_yscale('Log')
                 temp.set_title('TT power spectrum')
@@ -577,6 +613,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.EE_plot(temp, l_values, yvalues_1)
                 plots_2.EE_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.EE_plot(temp_comp, l_values, yvalues_comp)
                 temp.set_title('EE power spectrum')
 
@@ -584,6 +621,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.BB_plot(temp, l_values, yvalues_1)
                 plots_2.BB_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.BB_plot(temp_comp, l_values, yvalues_comp)
                 temp.set_title('BB power spectrum')
 
@@ -610,7 +648,7 @@ class CAMB_results_compare_plot:
         # set the global legend
         fig.legend( handles = [plots_1.TT_p, plots_2.TT_p, plots_compa.CV_p],
                     labels  = [self.name_h1, self.name_h2, 'Cosmic variance'],
-                    loc='lower center', ncol=3 ,fancybox=True)
+                    loc='lower center', ncol=3 ,fancybox=True, edgecolor='k')
         # adjust the size of the plot
         fig.subplots_adjust(top=0.92, bottom=0.08)
         # save the result and close
@@ -691,7 +729,13 @@ class CAMB_results_compare_plot:
             np.place(yvalues_1, yvalues_1 == 0.0, min2val_1)
             np.place(yvalues_2, yvalues_2 == 0.0, min2val_2)
             # computation of the percentual comparison:
-            yvalues_comp = (yvalues_1 - yvalues_2)/abs(yvalues_1)*100
+            yvalues_comp = (yvalues_1 - yvalues_2)/abs(yvalues_1)
+            # account for variance of TE:
+            if ind == 4:
+                yvalues_comp = (yvalues_1 - yvalues_2)/np.sqrt(2./(2.*l_values+1.))
+                _temp_ClTT = UnivariateSpline( xvalues_1, data1[:,1], s=0)(l_values)
+                _temp_ClEE = UnivariateSpline( xvalues_1, data1[:,2], s=0)(l_values)
+                yvalues_comp = yvalues_comp/np.sqrt( _temp_ClTT*_temp_ClEE+yvalues_1**2.)
             # protection against values too small:
             np.place(yvalues_comp, abs(yvalues_comp)<cutoff, [cutoff])
 
@@ -699,6 +743,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.TT_plot(temp, l_values, yvalues_1)
                 plots_2.TT_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.TT_plot(temp_comp, l_values, yvalues_comp)
                 temp.set_yscale('Log')
                 temp.set_title('TT power spectrum')
@@ -707,6 +752,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.EE_plot(temp, l_values, yvalues_1)
                 plots_2.EE_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.EE_plot(temp_comp, l_values, yvalues_comp)
                 temp.set_title('EE power spectrum')
 
@@ -714,6 +760,7 @@ class CAMB_results_compare_plot:
 
                 plots_1.BB_plot(temp, l_values, yvalues_1)
                 plots_2.BB_plot(temp, l_values, yvalues_2)
+                yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.BB_plot(temp_comp, l_values, yvalues_comp)
                 temp.set_title('BB power spectrum')
 
@@ -743,7 +790,7 @@ class CAMB_results_compare_plot:
         # set the global legend
         fig.legend( handles = [plots_1.TT_p, plots_2.TT_p, plots_compa.CV_p],
                     labels  = [self.name_h1, self.name_h2, 'Cosmic variance'],
-                    loc='lower center', ncol=3 ,fancybox=True)
+                    loc='lower center', ncol=3 ,fancybox=True, edgecolor='k')
         # adjust the size of the plot
         fig.subplots_adjust(top=0.92, bottom=0.08)
         # save the result and close
@@ -790,10 +837,13 @@ class CAMB_results_compare_plot:
         plots_compa.axes_label_position = 'right'
         fig = plt.gcf()
 
-        labels = [ 'CDM', 'baryons', 'photons', 'massless neutrinos', 'massive neutrinos',
-                   'CDM+baryons+massive neutrinos', 'CDM+baryons', 'CDM+baryons+massive neutrinos+ de',
-                   'The Weyl potential', 'vel_Newt_cdm', 'vel_Newt_b', 'relative baryon-CDM velocity',
-                  ]
+        if self.transfer_labels is None:
+            labels = [ 'CDM', 'baryons', 'photons', 'massless neutrinos', 'massive neutrinos',
+                       'CDM+baryons+massive neutrinos', 'CDM+baryons', 'CDM+baryons+massive neutrinos+ de',
+                       'Weyl potential', 'vel_Newt_cdm', 'vel_Newt_b', 'relative baryon-CDM velocity',
+                      ]
+        else:
+            labels = self.transfer_labels
 
         if not len(labels) == num1:
             print 'Not enough transfer functions for labels'
@@ -850,7 +900,7 @@ class CAMB_results_compare_plot:
         # set the global legend
         fig.legend( handles = [plots_1.Transfer_p, plots_2.Transfer_p],
                     labels  = [self.name_h1, self.name_h2],
-                    loc='lower center', ncol=3 ,fancybox=True)
+                    loc='lower center', ncol=3 ,fancybox=True, edgecolor='k')
         # adjust the size of the plot
         fig.subplots_adjust(top=0.95, bottom=0.05)
         # save the result and close
