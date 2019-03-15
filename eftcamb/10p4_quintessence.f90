@@ -167,7 +167,7 @@ contains
                 call self%potential%set_param_names( ['V0     ', 'lambda '], ['V_0    ', '\lambda'] )
             case(7)
                 allocate( double_exponential_parametrization_1D::self%potential )
-                call self%potential%set_param_names( ['V1     ', 'lambda1','V2    ', 'lambda2'], ['V_1      ', '\lambda_1','V_2      ', '\lambda_2'] )
+                call self%potential%set_param_names( ['V1     ', 'lambda1','V2     ', 'lambda2'], ['V_1      ', '\lambda_1','V_2      ', '\lambda_2'] )
             case(8)
                 allocate( cosine_parametrization_1D::self%potential )
                 call self%potential%set_param_names( ['V0    ', 'm     ','phi0  ', 'offset'], ['V_1   ', 'm     ','phi_0 ', 'offset'] )
