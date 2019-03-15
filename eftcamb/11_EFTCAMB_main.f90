@@ -39,6 +39,7 @@ module EFTCAMB_main
     use EFTCAMB_designer_mc_quintessence
     use EFTCAMB_LE_Horava
     use EFTCAMB_Kmouflage_Mod
+    use EFTCAMB_FM_quintessence
 
     implicit none
 
@@ -317,6 +318,9 @@ contains
                     case(3)
                         allocate( EFTCAMB_Kmouflage::self%model )
                         call self%model%init( 'K-mouflage', 'K-mouflage' )
+                    case(4)
+                        allocate( EFTCAMB_5e::self%model )
+                        call self%model%init( 'Quintessence', 'Quintessence' )
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and FullMappingEFTmodel =', self%FullMappingEFTmodel

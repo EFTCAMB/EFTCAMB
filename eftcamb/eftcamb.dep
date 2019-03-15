@@ -17,6 +17,18 @@ $(OUTPUT_DIR)/08p1_RPH.o :  \
 	$(OUTPUT_DIR)/01_EFT_def.o \
 	$(OUTPUT_DIR)/04p008_taylor_expansion_parametrizations_1D.o
 
+$(OUTPUT_DIR)/04p015_axion_potential.o :  \
+	$(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o \
+	$(OUTPUT_DIR)/02_interpolation_linear_1D.o \
+	$(OUTPUT_DIR)/02_root_finding.o \
+	$(OUTPUT_DIR)/inifile.o \
+	$(OUTPUT_DIR)/constants.o \
+	$(OUTPUT_DIR)/utils.o \
+	$(OUTPUT_DIR)/04_abstract_parametrizations_1D.o \
+	$(OUTPUT_DIR)/02_utilities.o \
+	$(OUTPUT_DIR)/01_EFT_def.o \
+	$(OUTPUT_DIR)/constants.o
+
 $(OUTPUT_DIR)/04p011_fourier_parametrizations_1D.o :  \
 	$(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(OUTPUT_DIR)/02_interpolation_linear_1D.o \
@@ -219,6 +231,7 @@ $(OUTPUT_DIR)/02p10_splines.o :  \
 $(OUTPUT_DIR)/10p4_quintessence.o :  \
 	$(OUTPUT_DIR)/04p012_exponential_2_parametrizations_1D.o \
 	$(OUTPUT_DIR)/04p010_pade_series_parametrizations_1D.o \
+	$(OUTPUT_DIR)/04p015_axion_potential.o \
 	$(OUTPUT_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(OUTPUT_DIR)/04p003_power_law_parametrizations_1D.o \
 	$(OUTPUT_DIR)/04p013_double_exponential_parametrizations_1D.o \
@@ -336,6 +349,7 @@ $(OUTPUT_DIR)/11_EFTCAMB_main.o :  \
 	$(OUTPUT_DIR)/utils.o \
 	$(OUTPUT_DIR)/06p2_abstract_EFTCAMB_designer.o \
 	$(OUTPUT_DIR)/09p2_Designer_mc_quintessence.o \
+	$(OUTPUT_DIR)/10p4_quintessence.o \
 	$(OUTPUT_DIR)/01_EFT_def.o \
 	$(OUTPUT_DIR)/08p1_RPH.o \
 	$(OUTPUT_DIR)/10p1_Horava.o \
@@ -373,6 +387,18 @@ $(DLL_DIR)/08p1_RPH.o :  \
 	$(DLL_DIR)/04p004_exponential_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/04p008_taylor_expansion_parametrizations_1D.o
+
+$(DLL_DIR)/04p015_axion_potential.o :  \
+	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
+	$(DLL_DIR)/02_interpolation_linear_1D.o \
+	$(DLL_DIR)/02_root_finding.o \
+	$(DLL_DIR)/inifile.o \
+	$(DLL_DIR)/constants.o \
+	$(DLL_DIR)/utils.o \
+	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
+	$(DLL_DIR)/02_utilities.o \
+	$(DLL_DIR)/01_EFT_def.o \
+	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p011_fourier_parametrizations_1D.o :  \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
@@ -576,6 +602,7 @@ $(DLL_DIR)/02p10_splines.o :  \
 $(DLL_DIR)/10p4_quintessence.o :  \
 	$(DLL_DIR)/04p012_exponential_2_parametrizations_1D.o \
 	$(DLL_DIR)/04p010_pade_series_parametrizations_1D.o \
+	$(DLL_DIR)/04p015_axion_potential.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04p003_power_law_parametrizations_1D.o \
 	$(DLL_DIR)/04p013_double_exponential_parametrizations_1D.o \
@@ -693,6 +720,7 @@ $(DLL_DIR)/11_EFTCAMB_main.o :  \
 	$(DLL_DIR)/utils.o \
 	$(DLL_DIR)/06p2_abstract_EFTCAMB_designer.o \
 	$(DLL_DIR)/09p2_Designer_mc_quintessence.o \
+	$(DLL_DIR)/10p4_quintessence.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/08p1_RPH.o \
 	$(DLL_DIR)/10p1_Horava.o \

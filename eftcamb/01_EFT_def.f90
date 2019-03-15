@@ -29,7 +29,7 @@ module EFT_def
     implicit none
 
     ! EFT compile time flags:
-    character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Sept17'
+    character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Mar19'
 
     real(dl), parameter :: EFTbackgroundcutoff = 0._dl !< Smallest scale factor that the code should
         !!    consider when copmputing the background. Set to zero, change background at all times.
