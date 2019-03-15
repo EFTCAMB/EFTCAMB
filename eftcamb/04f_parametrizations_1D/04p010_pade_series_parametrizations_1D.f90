@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04p10_pade_series_parametrizations_1D.f90
+!> @file 04p010_pade_series_parametrizations_1D.f90
 !! This file contains the definition of the Pade series parametrization, in the scale
 !! factor, around an arbitrary expansion point. For best performances Horner’s algorithm is used.
 !! Inherits from parametrized_function_1D.

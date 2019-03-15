@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04p12_fourier_parametrizations_1D.f90
+!> @file 04p011_fourier_parametrizations_1D.f90
 !! This file contains the definition of the fourier series parametrization.
 !! Inherits from parametrized_function_1D.
 

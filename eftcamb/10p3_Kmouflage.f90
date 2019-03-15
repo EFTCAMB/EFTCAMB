@@ -375,7 +375,7 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the background of Kmouflage.
-    subroutine EFTCAMBKmouflageInitBackground( self, params_cache, feedback_level, success )
+    subroutine EFTCAMBKmouflageInitBackground( self, params_cache, feedback_level, success, outroot )
 
         implicit none
 
@@ -383,6 +383,7 @@ contains
         type(EFTCAMB_parameter_cache), intent(in)    :: params_cache   !< a EFTCAMB parameter cache containing cosmological parameters
         integer                      , intent(in)    :: feedback_level !< level of feedback from the background code. 0=none; 1=some; 2=chatty.
         logical                      , intent(out)   :: success        !< wether the background initialization succeded or not
+        character(LEN=*), optional   , intent(in)    :: outroot        !< the output root for the debug files
 
         ! some feedback:
         if ( feedback_level>0 ) then
@@ -408,8 +409,8 @@ contains
 
         if ( DebugEFTCAMB ) then
             print*, 'EFTCAMB DEBUG ( Kmouflage background solver ): Printing solution to background equations.'
-            call CreateTxtFile( './debug_kmouflage_background_solution.dat', 33 )
-            call CreateTxtFile( './debug_kmouflage_background_eft.dat', 44 )
+            call CreateTxtFile( TRIM(outroot)//'debug_kmouflage_background_solution.dat', 33 )
+            call CreateTxtFile( TRIM(outroot)//'debug_kmouflage_background_eft.dat', 44 )
         end if
 
         call self%solve_background_equations ( params_cache, success=success )

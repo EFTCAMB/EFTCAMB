@@ -200,7 +200,7 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the background of designer f(R).
-    subroutine EFTCAMBDesignerFRInitBackground( self, params_cache, feedback_level, success )
+    subroutine EFTCAMBDesignerFRInitBackground( self, params_cache, feedback_level, success, outroot )
 
         implicit none
 
@@ -208,6 +208,7 @@ contains
         type(EFTCAMB_parameter_cache), intent(in)    :: params_cache   !< a EFTCAMB parameter cache containing cosmological parameters
         integer                      , intent(in)    :: feedback_level !< level of feedback from the background code. 0=none; 1=some; 2=chatty.
         logical                      , intent(out)   :: success        !< wether the background initialization succeded or not
+        character(LEN=*), optional   , intent(in)    :: outroot        !< the output root for the debug files
 
         real(dl) :: A_ini, B0
         real(dl) :: TempMin, TempMax, debug_A
@@ -227,7 +228,7 @@ contains
         ! debug code:
         if ( DebugEFTCAMB ) then
             ! print the function B0(A). This is used to debug the initial conditions part.
-            call CreateTxtFile( './debug_designer_fR_B.dat', 34 )
+            call CreateTxtFile( TRIM(outroot)//'debug_designer_fR_B.dat', 34 )
             print*, 'EFTCAMB DEBUG ( f(R) designer ): Printing B(A) results'
             TempMin      = -100._dl
             TempMax      = +100._dl
@@ -240,7 +241,7 @@ contains
             close(34)
             ! prints f(R) quantities.
             print*, 'EFTCAMB DEBUG ( f(R) designer ): Printing F(R) results'
-            call CreateTxtFile( './debug_designer_fR_solution.dat', 33 )
+            call CreateTxtFile( TRIM(outroot)//'debug_designer_fR_solution.dat', 33 )
             debug_A = 1.0_dl
             call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.False., success=success )
             close(33)

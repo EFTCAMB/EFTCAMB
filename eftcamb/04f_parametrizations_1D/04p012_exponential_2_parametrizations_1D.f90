@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04p015_exponential_2_parametrizations_1D.f90
+!> @file 04p012_exponential_2_parametrizations_1D.f90
 !! This file contains the definition of the second type of exponential parametrization,
 !! inheriting from parametrized_function_1D.
 

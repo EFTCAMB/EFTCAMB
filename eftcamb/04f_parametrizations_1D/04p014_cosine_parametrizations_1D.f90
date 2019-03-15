@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------------------
 
-!> @file 04p017_cosine_parametrizations_1D.f90
+!> @file 04p014_cosine_parametrizations_1D.f90
 !! This file contains the definition of the cosine parametrization defined as:
 !! f(x) = f0*( Cos(alpha*x+beta) +gamma)
 !! Inherits from parametrized_function_1D.
