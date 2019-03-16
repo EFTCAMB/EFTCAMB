@@ -128,11 +128,6 @@ module ModelParams
         real(dl)  :: Nu_mass_fractions(max_nu) !The ratios of the total densities
         integer   :: Nu_mass_numbers(max_nu) !physical number per eigenstate
 
-        ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
-        type(EFTCAMB)                 :: EFTCAMB
-        type(EFTCAMB_parameter_cache) :: eft_par_cache
-        ! EFTCAMB MOD END.
-
         integer   :: Scalar_initial_condition
         !must be one of the initial_xxx values defined in GaugeInterface
 
@@ -171,6 +166,11 @@ module ModelParams
         real(dl) omegak
         real(dl) curv,r, Ksign !CP%r = 1/sqrt(|CP%curv|), CP%Ksign = 1,0 or -1
         real(dl) tau0,chi0 !time today and rofChi(CP%tau0/CP%r)
+
+        ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
+        type(EFTCAMB)                 :: EFTCAMB
+        type(EFTCAMB_parameter_cache) :: eft_par_cache
+        ! EFTCAMB MOD END.
 
     end type CAMBparams
 
@@ -462,7 +462,7 @@ contains
 
                 ! 4) compute wether the theory is stable or not:
                 k_max = 10._dl
-                call EFTCAMB_Stability_Check( success, CP%EFTCAMB, CP%eft_par_cache, EFTstabilitycutoff, 1._dl, k_max )
+                call EFTCAMB_Stability_Check( success, CP%EFTCAMB, CP%eft_par_cache, CP%EFTCAMB%EFTCAMB_stability_time, 1._dl, k_max )
                 if ( .not. success ) then
                     global_error_flag         = 1
                     global_error_message      = 'EFTCAMB: theory unstable'
@@ -715,6 +715,34 @@ contains
 
     end function ComovingRadialDistance
 
+    subroutine ComovingRadialDistanceArr(arr, z, n, tol)
+        !z array must be monotonically increasing
+        integer, intent(in) :: n
+        real(dl), intent(out) :: arr(n)
+        real(dl), intent(in) :: z(n)
+        real(dl), intent(in) :: tol
+        integer i
+
+        !$OMP PARALLEL DO DEFAULT(SHARED),SCHEDULE(STATIC)
+        do i = 1, n
+            if (i==1) then
+                if (z(i) < 1e-6_dl) then
+                    arr(i) = 0
+                else
+                    arr(i) = DeltaTime(1/(1+z(i)),1._dl, tol)
+                end if
+            else
+                if (z(i) < z(i-1)) error stop 'ComovingRadialDistanceArr redshifts out of order'
+                arr(i) = DeltaTime(1/(1+z(i)),1/(1+z(i-1)),tol)
+            end if
+        end do
+        !$OMP END PARALLEL DO
+        do i = 2, n
+            arr(i) = arr(i)  + arr(i-1)
+        end do
+
+    end subroutine ComovingRadialDistanceArr
+
     function Hofz(z)
         !!non-comoving Hubble in MPC units, divide by MPC_in_sec to get in SI units
         real(dl) Hofz, dtauda,a
@@ -725,6 +753,20 @@ contains
         Hofz = 1/(a**2*dtauda(a))
 
     end function Hofz
+
+    subroutine HofzArr(arr, z, n)
+        !non-comoving Hubble in MPC units, divide by MPC_in_sec to get in SI units
+        !multiply by c/1e3 to get in km/s/Mpc units
+        integer,intent(in) :: n
+        real(dl), intent(out) :: arr(n)
+        real(dl), intent(in) :: z(n)
+        integer i
+
+        do i=1, n
+            arr(i) = Hofz(z(i))
+        end do
+
+    end subroutine HofzArr
 
     real(dl) function BAO_D_v_from_DA_H(z, DA, Hz)
         real(dl), intent(in) :: z, DA, Hz
@@ -1144,7 +1186,9 @@ module ModelData
     !The following are set only if doing lensing
     integer lmax_lensed !Only accurate to rather less than this
     real(dl) , dimension (:,:,:), allocatable :: Cl_lensed
-!Cl_lensed(l, power_index, Cl_type) are the interpolated Cls
+    !Cl_lensed(l, power_index, Cl_type) are the interpolated Cls
+
+    character(*), parameter :: output_format = 'ES20.10E3'
 
 contains
 
@@ -1165,12 +1209,14 @@ contains
 
     subroutine Init_Limber(CTrans)
         Type(ClTransferData) :: CTrans
+        integer st
 
-        allocate(CTrans%Limber_l_min(CTrans%NumSources))
+        allocate(CTrans%Limber_l_min(CTrans%NumSources),  STAT = st)
         CTrans%Limber_l_min = 0
         if (num_redshiftwindows>0 .or. limber_phiphi>0) then
-            allocate(CTrans%Limber_windows(CTrans%NumSources,CTrans%ls%l0))
+            allocate(CTrans%Limber_windows(CTrans%NumSources,CTrans%ls%l0),  STAT = st)
         end if
+        if (st /= 0) call MpiStop('Init_Limber: Error allocating memory')
 
     end subroutine Init_Limber
 
@@ -1317,10 +1363,10 @@ contains
             unit = open_file_header(ScalFile, 'L', C_name_tags(:last_C))
             do in=1,CP%InitPower%nn
                 do il=lmin,min(10000,CP%Max_l)
-                    write(unit,trim(numcat('(1I6,',last_C))//'E15.5)')il ,fact*Cl_scalar(il,in,C_Temp:last_C)
+                    write(unit,trim(numcat('(1I6,',last_C))//output_format//')')il ,fact*Cl_scalar(il,in,C_Temp:last_C)
                 end do
                 do il=10100,CP%Max_l, 100
-                    write(unit,trim(numcat('(1E15.5,',last_C))//'E15.5)') real(il),&
+                    write(unit,trim(numcat('(1E15.5,',last_C))//output_format//')') real(il),&
                         fact*Cl_scalar(il,in,C_Temp:last_C)
                 end do
             end do
@@ -1341,13 +1387,13 @@ contains
                     outarr=Cl_scalar_array(il,in,1:3+num_redshiftwindows,1:3+num_redshiftwindows)
                     outarr(1:2,:)=sqrt(fact)*outarr(1:2,:)
                     outarr(:,1:2)=sqrt(fact)*outarr(:,1:2)
-                    write(unit,trim(numcat('(1I6,',(3+num_redshiftwindows)**2))//'E15.5)') il, outarr
+                    write(unit,trim(numcat('(1I6,',(3+num_redshiftwindows)**2))//output_format//')') il, outarr
                 end do
                 do il=10100,CP%Max_l, 100
                     outarr=Cl_scalar_array(il,in,1:3+num_redshiftwindows,1:3+num_redshiftwindows)
                     outarr(1:2,:)=sqrt(fact)*outarr(1:2,:)
                     outarr(:,1:2)=sqrt(fact)*outarr(:,1:2)
-                    write(unit,trim(numcat('(1E15.5,',(3+num_redshiftwindows)**2))//'E15.5)') real(il), outarr
+                    write(unit,trim(numcat('(1E15.5,',(3+num_redshiftwindows)**2))//output_format//')') real(il), outarr
                 end do
             end do
             close(unit)
@@ -1358,7 +1404,7 @@ contains
             unit = open_file_header(TensFile, 'L', CT_name_tags)
             do in=1,CP%InitPower%nn
                 do il=lmin,CP%Max_l_tensor
-                    write(unit,'(1I6,4E15.5)')il, fact*Cl_tensor(il, in, CT_Temp:CT_Cross)
+                    write(unit,'(1I6,4'//output_format//')')il, fact*Cl_tensor(il, in, CT_Temp:CT_Cross)
                 end do
             end do
             close(unit)
@@ -1368,11 +1414,11 @@ contains
             unit = open_file_header(TotFile, 'L', CT_name_tags)
             do in=1,CP%InitPower%nn
                 do il=lmin,CP%Max_l_tensor
-                    write(unit,'(1I6,4E15.5)')il, fact*(Cl_scalar(il, in, C_Temp:C_E)+ Cl_tensor(il,in, C_Temp:C_E)), &
+                    write(unit,'(1I6,4'//output_format//')')il, fact*(Cl_scalar(il, in, C_Temp:C_E)+ Cl_tensor(il,in, C_Temp:C_E)), &
                         fact*Cl_tensor(il,in, CT_B), fact*(Cl_scalar(il, in, C_Cross) + Cl_tensor(il, in, CT_Cross))
                 end do
                 do il=CP%Max_l_tensor+1,CP%Max_l
-                    write(unit,'(1I6,4E15.5)')il ,fact*Cl_scalar(il,in,C_Temp:C_E), 0._dl, fact*Cl_scalar(il,in,C_Cross)
+                    write(unit,'(1I6,4'//output_format//')')il ,fact*Cl_scalar(il,in,C_Temp:C_E), 0._dl, fact*Cl_scalar(il,in,C_Cross)
                 end do
             end do
             close(unit)
@@ -1382,7 +1428,7 @@ contains
             unit = open_file_header(LensFile, 'L', CT_name_tags)
             do in=1,CP%InitPower%nn
                 do il=lmin, lmax_lensed
-                    write(unit,'(1I6,4E15.5)')il, fact*Cl_lensed(il, in, CT_Temp:CT_Cross)
+                    write(unit,'(1I6,4'//output_format//')')il, fact*Cl_lensed(il, in, CT_Temp:CT_Cross)
                 end do
             end do
             close(unit)
@@ -1393,10 +1439,10 @@ contains
             unit = open_file_header(LensTotFile, 'L', CT_name_tags)
             do in=1,CP%InitPower%nn
                 do il=lmin,min(CP%Max_l_tensor,lmax_lensed)
-                    write(unit,'(1I6,4E15.5)')il, fact*(Cl_lensed(il, in, CT_Temp:CT_Cross)+ Cl_tensor(il,in, CT_Temp:CT_Cross))
+                    write(unit,'(1I6,4'//output_format//')')il, fact*(Cl_lensed(il, in, CT_Temp:CT_Cross)+ Cl_tensor(il,in, CT_Temp:CT_Cross))
                 end do
                 do il=min(CP%Max_l_tensor,lmax_lensed)+1,lmax_lensed
-                    write(unit,'(1I6,4E15.5)')il, fact*Cl_lensed(il, in, CT_Temp:CT_Cross)
+                    write(unit,'(1I6,4'//output_format//')')il, fact*Cl_lensed(il, in, CT_Temp:CT_Cross)
                 end do
             end do
             close(unit)
@@ -1441,12 +1487,12 @@ contains
                     end if
                     scale = (real(il+1)/il)**2/OutputDenominator !Factor to go from old l^4 factor to new
 
-                    write(unit,'(1I6,7E15.5)') il , fact*TT, fact*EE, fact*BB, fact*TE, scale*Cl_scalar(il,in,C_Phi),&
+                    write(unit,'(1I6,7'//output_format//')') il , fact*TT, fact*EE, fact*BB, fact*TE, scale*Cl_scalar(il,in,C_Phi),&
                         (real(il+1)/il)**1.5/OutputDenominator*sqrt(fact)*Cl_scalar(il,in,C_PhiTemp:C_PhiE)
                 end do
                 do il=10100,CP%Max_l, 100
                     scale = (real(il+1)/il)**2/OutputDenominator
-                    write(unit,'(1E15.5,7E15.5)') real(il), fact*Cl_scalar(il,in,C_Temp:C_E),0.,fact*Cl_scalar(il,in,C_Cross), &
+                    write(unit,'(1E15.5,7'//output_format//')') real(il), fact*Cl_scalar(il,in,C_Temp:C_E),0.,fact*Cl_scalar(il,in,C_Cross), &
                         scale*Cl_scalar(il,in,C_Phi),&
                         (real(il+1)/il)**1.5/OutputDenominator*sqrt(fact)*Cl_scalar(il,in,C_PhiTemp:C_PhiE)
                 end do
@@ -1475,7 +1521,7 @@ contains
             unit =  open_file_header(VecFile, 'L', CT_name_tags)
             do in=1,CP%InitPower%nn
                 do il=lmin,CP%Max_l
-                    write(unit,'(1I6,4E15.5)')il, fact*Cl_vector(il, in, CT_Temp:CT_Cross)
+                    write(unit,'(1I6,4'//output_format//')')il, fact*Cl_vector(il, in, CT_Temp:CT_Cross)
                 end do
             end do
             close(unit)
@@ -1564,7 +1610,7 @@ module MassiveNu
 
     ! EFTCAMB MOD START: compatibility with massive neutrinos
     public const,Nu_Init,Nu_background, Nu_rho, Nu_drho,  nqmax0, nqmax, &
-    	nu_int_kernel, nu_q, sum_mnu_for_m1, neutrino_mass_fac, Nu_pidot, Nu_pidotdot, Nu_pidotdotdot
+        nu_int_kernel, nu_q, sum_mnu_for_m1, neutrino_mass_fac, Nu_pidot, Nu_pidotdot, Nu_pidotdotdot
     ! Original code:
     ! public const,Nu_Init,Nu_background, Nu_rho, Nu_drho,  nqmax0, nqmax, &
     ! nu_int_kernel, nu_q
@@ -1678,7 +1724,6 @@ contains
         end do
         !$OMP END PARALLEL DO
 
-
         call splini(spline_data,nrhopn)
         call splder(r1,dr1,nrhopn,spline_data)
         call splder(p1,dp1,nrhopn,spline_data)
@@ -1752,10 +1797,14 @@ contains
             return
         end if
 
-
-        d=log(am/am_min)/dlnam+1._dl
-        i=int(d)
+        ! EFTCAMB MOD START: fix for weird expansion history
+        d=log(am/am_min)/dlnam
+        i=int(d)+1
+        i=min(i,nrhopn-1)
+        i=max(i,1)
+        d=d+1._dl
         d=d-i
+        ! EFTCAMB MOD END
 
         !  Cubic spline interpolation.
         rhonu=r1(i)+d*(dr1(i)+d*(3._dl*(r1(i+1)-r1(i))-2._dl*dr1(i) &
@@ -1789,14 +1838,20 @@ contains
             return
         end if
 
-        d=log(am/am_min)/dlnam+1._dl
-        i=int(d)
+        ! EFTCAMB MOD START: fix for weird expansion
+        d=log(am/am_min)/dlnam
+        i=int(d)+1
+        i=min(i,nrhopn-1)
+        i=max(i,1)
+        d=d+1._dl
         d=d-i
+        ! EFTCAMB MOD END
 
         !  Cubic spline interpolation.
         rhonu=r1(i)+d*(dr1(i)+d*(3._dl*(r1(i+1)-r1(i))-2._dl*dr1(i) &
             -dr1(i+1)+d*(dr1(i)+dr1(i+1)+2._dl*(r1(i)-r1(i+1)))))
         rhonu=exp(rhonu)
+
     end subroutine Nu_rho
 
     !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1817,9 +1872,16 @@ contains
         else if (am>am_maxp) then
             rhonudot = 3/(2*const)*(zeta3*am - (15*zeta5)/2/am)*adotoa
         else
-            d=log(am/am_min)/dlnam+1._dl
-            i=int(d)
+            
+            ! EFTCAMB MOD START: small fix for very weird expansion histories
+            d=log(am/am_min)/dlnam
+            i=int(d)+1
+            i=min(i,nrhopn-1)
+            i=max(i,1)
+            d=d+1._dl
             d=d-i
+            ! EFTCAMB MOD END
+
             !  Cubic spline interpolation for rhonudot.
             rhonudot=dr1(i)+d*(ddr1(i)+d*(3._dl*(dr1(i+1)-dr1(i)) &
                 -2._dl*ddr1(i)-ddr1(i+1)+d*(ddr1(i)+ddr1(i+1) &
@@ -1845,14 +1907,19 @@ contains
         else if (am>am_maxp) then
             presnudot = -((15._dl*(4._dl*am**2*zeta5 -189._dl*Zeta7))/(8._dl*am**3*const))*adotoa
         else
-            d=log(am/am_min)/dlnam+1._dl
-            i=int(d)
+
+            d=log(am/am_min)/dlnam
+            i=int(d)+1
+            i=min(i,nrhopn-1)
+            i=max(i,1)
+            d=d+1._dl
             d=d-i
 
             presnudot = dp1(i)+d*(ddp1(i)+d*(3._dl*(dp1(i+1)-dp1(i))-2._dl*ddp1(i) &
                 -ddp1(i+1)+d*(ddp1(i)+ddp1(i+1)+2._dl*(dp1(i)-dp1(i+1)))))
 
             presnudot=presnu*adotoa*presnudot/dlnam
+
         end if
 
     end function Nu_pidot
@@ -1873,14 +1940,18 @@ contains
                 &-((15._dl*zeta5)/(am**3*const)) + (15._dl*(4._dl*am**2*zeta5 -189._dl*Zeta7))/(2._dl*am**5*const))
         else
 
-            d=log(am/am_min)/dlnam+1._dl
-            i=int(d)
+            d=log(am/am_min)/dlnam
+            i=int(d)+1
+            i=min(i,nrhopn-1)
+            i=max(i,1)
+            d=d+1._dl
             d=d-i
 
             presnudotdot = ddp1(i)+d*(dddp1(i)+d*(3._dl*(ddp1(i+1)-ddp1(i))-2._dl*dddp1(i) &
                 -dddp1(i+1)+d*(dddp1(i)+dddp1(i+1)+2._dl*(ddp1(i)-ddp1(i+1)))))
 
             presnudotdot = +adotoa**2*presnu*presnudotdot/dlnam +Hdot/adotoa*presnudot +presnudot**2/presnu
+
         end if
 
     end function Nu_pidotdot
@@ -1903,8 +1974,11 @@ contains
                 & +15._dl*adotoa**3*( -zeta5/const/am +1.5_dl*189._dl*zeta7/const/am**3 )
         else
 
-            d=log(am/am_min)/dlnam+1._dl
-            i=int(d)
+            d=log(am/am_min)/dlnam
+            i=int(d)+1
+            i=min(i,nrhopn-1)
+            i=max(i,1)
+            d=d+1._dl
             d=d-i
 
             presnudotdotdot = dddp1(i)+d*(ddddp1(i)+d*(3._dl*(dddp1(i+1)-dddp1(i))-2._dl*ddddp1(i) &
@@ -2066,7 +2140,7 @@ contains
         real(dl) h, kh, k, power
         integer ik
         integer nz,itf, itf_start, itf_end
-        integer :: s1,s2, p_ix
+        integer :: s1,s2, p_ix, st
 
 
         s1 = transfer_power_var
@@ -2087,12 +2161,13 @@ contains
         end if
         PK_data%num_k = MTrans%num_q_trans
         PK_Data%num_z = nz
+        allocate(PK_data%matpower(PK_data%num_k,nz),  STAT = st)
+        allocate(PK_data%ddmat(PK_data%num_k,nz),  STAT = st)
+        allocate(PK_data%nonlin_ratio(PK_data%num_k,nz),  STAT = st)
+        allocate(PK_data%log_kh(PK_data%num_k),  STAT = st)
+        allocate(PK_data%redshifts(nz),  STAT = st)
+        if (st /= 0) call MpiStop('Transfer_GetMatterPowerData: Error allocating memory')
 
-        allocate(PK_data%matpower(PK_data%num_k,nz))
-        allocate(PK_data%ddmat(PK_data%num_k,nz))
-        allocate(PK_data%nonlin_ratio(PK_data%num_k,nz))
-        allocate(PK_data%log_kh(PK_data%num_k))
-        allocate(PK_data%redshifts(nz))
         PK_data%redshifts = CP%Transfer%Redshifts(itf_start:itf_end)
 
         h = CP%H0/100
@@ -2130,7 +2205,7 @@ contains
         Type(MatterPowerData) :: PK_data
         real(dl)kh, Pk
         integer ik
-        integer nz
+        integer nz, st
 
 
         nz = 1
@@ -2139,12 +2214,14 @@ contains
         PK_data%num_k = FileLines(fileio_unit)
         PK_Data%num_z = 1
 
-        allocate(PK_data%matpower(PK_data%num_k,nz))
-        allocate(PK_data%ddmat(PK_data%num_k,nz))
-        allocate(PK_data%nonlin_ratio(PK_data%num_k,nz))
-        allocate(PK_data%log_kh(PK_data%num_k))
+        allocate(PK_data%matpower(PK_data%num_k,nz),  STAT = st)
+        allocate(PK_data%ddmat(PK_data%num_k,nz),  STAT = st)
+        allocate(PK_data%nonlin_ratio(PK_data%num_k,nz),  STAT = st)
+        allocate(PK_data%log_kh(PK_data%num_k),  STAT = st)
+        if (st /= 0) call MpiStop('MatterPowerData_Load: Error allocating memory')
 
-        allocate(PK_data%redshifts(nz))
+        allocate(PK_data%redshifts(nz),  STAT = st)
+        if (st /= 0) call MpiStop('MatterPowerData_Load: Error allocating memory')
         PK_data%redshifts = 0
 
         do ik=1,PK_data%num_k
@@ -2572,11 +2649,12 @@ contains
         deallocate(MTrans%TransferData, STAT = st)
         deallocate(MTrans%sigma_8, STAT = st)
         if (get_growth_sigma8) deallocate(MTrans%sigma2_vdelta_8, STAT = st)
-        allocate(MTrans%q_trans(MTrans%num_q_trans))
-        allocate(MTrans%TransferData(Transfer_max,MTrans%num_q_trans,CP%Transfer%num_redshifts))
+        allocate(MTrans%q_trans(MTrans%num_q_trans), STAT = st)
+        allocate(MTrans%TransferData(Transfer_max,MTrans%num_q_trans,CP%Transfer%num_redshifts), STAT = st)
         !JD 08/13 Changes in here to PK arrays and variables
-        allocate(MTrans%sigma_8(CP%Transfer%PK_num_redshifts, CP%InitPower%nn))
-        if (get_growth_sigma8) allocate(MTrans%sigma2_vdelta_8(CP%Transfer%PK_num_redshifts, CP%InitPower%nn))
+        allocate(MTrans%sigma_8(CP%Transfer%PK_num_redshifts, CP%InitPower%nn), STAT = st)
+        if (get_growth_sigma8) allocate(MTrans%sigma2_vdelta_8(CP%Transfer%PK_num_redshifts, CP%InitPower%nn), STAT = st)
+        if (st /= 0) call MpiStop('Transfer_Allocate: Error allocating memory')
 
     end  subroutine Transfer_Allocate
 
@@ -2665,7 +2743,7 @@ contains
         integer ncol
         !JD 08/13 Changes in here to PK arrays and variables
         integer itf_PK
-        integer unit
+        integer unit, st
         character(name_tag_len) :: columns(3)
 
         ncol=1
@@ -2677,8 +2755,8 @@ contains
                     itf_PK = CP%Transfer%PK_redshifts_index(itf)
 
                     points = MTrans%num_q_trans
-                    allocate(outpower(points,CP%InitPower%nn,ncol))
-
+                    allocate(outpower(points,CP%InitPower%nn,ncol), STAT = st)
+                    if (st /= 0) call MpiStop('Transfer_SaveMatterPower: Error allocating memory for transfer functions')
                     do in = 1, CP%InitPower%nn
                         call Transfer_GetMatterPowerData(MTrans, PK_data, in, itf_PK)
                         !JD 08/13 for nonlinear lensing of CMB + LSS compatibility
@@ -2692,7 +2770,7 @@ contains
                     columns = ['P   ', 'P_vd','P_vv']
                     unit = open_file_header(FileNames(itf), 'k/h', columns(:ncol), 15)
                     do i=1,points
-                        write (unit, '(*(E15.5))') MTrans%TransferData(Transfer_kh,i,1),outpower(i,1:CP%InitPower%nn,:)
+                        write (unit, '(*('//output_format//'))') MTrans%TransferData(Transfer_kh,i,1),outpower(i,1:CP%InitPower%nn,:)
                     end do
                     close(unit)
                 else
@@ -2709,7 +2787,7 @@ contains
                     unit = open_file_header(FileNames(itf), 'k/h', columns(:1), 15)
 
                     do i=1,points
-                        write (unit, '(*(E15.5))') minkh*exp((i-1)*dlnkh),outpower(i,1:CP%InitPower%nn,1)
+                        write (unit, '(*('//output_format//'))') minkh*exp((i-1)*dlnkh),outpower(i,1:CP%InitPower%nn,1)
                     end do
                     close(unit)
                 end if
@@ -3197,9 +3275,16 @@ contains
 
     subroutine SetTimeSteps
         real(dl) dtau0
-        integer nri0, nstep
+        integer nri0, nstep, st
 
         call Ranges_Init(TimeSteps)
+
+#ifdef DEBUG
+#ifdef fixq
+        ! in debug mode add some time mesh points at early times. The bound is chosen to have
+        call Ranges_Add( TimeSteps, 0.01_dl/fixq, taurst, nstep=100, IsLog=.True. )
+#endif
+#endif
 
         call Ranges_Add_delta(TimeSteps, taurst, taurend, dtaurec)
 
@@ -3230,8 +3315,9 @@ contains
             deallocate(vis,dvis,ddvis,expmmu,dopac, opac)
             if (dowinlens) deallocate(lenswin)
         end if
-        allocate(vis(nstep),dvis(nstep),ddvis(nstep),expmmu(nstep),dopac(nstep),opac(nstep))
-        if (dowinlens) allocate(lenswin(nstep))
+        allocate(vis(nstep),dvis(nstep),ddvis(nstep),expmmu(nstep),dopac(nstep),opac(nstep),  STAT = st)
+        if (dowinlens) allocate(lenswin(nstep),  STAT = st)
+        if (st /= 0) call MpiStop('SetTimeSteps: Error allocating memory for transfer functions')
 
         if (DebugMsgs .and. FeedbackLevel > 0) write(*,*) 'Set ',nstep, ' time steps'
 

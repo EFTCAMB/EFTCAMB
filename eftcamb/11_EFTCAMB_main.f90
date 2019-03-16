@@ -74,6 +74,8 @@ module EFTCAMB_main
         ! EFTCAMB working flags:
         integer   :: EFTCAMB_feedback_level      !< Amount of feedback that is printed to screen.
         real(dl)  :: EFTCAMB_turn_on_time        !< Scale factor at which EFTCAMB becomes active. Default set to EFTturnonpiInitial in 01_EFT_def.f90.
+        real(dl)  :: EFTCAMB_stability_time      !< Minimum scale factor at which the code checks for stability of a theory
+        real(dl)  :: EFTCAMB_stability_threshold !< Threshold for the stability module to consider the model stable.
         logical   :: EFTCAMB_model_is_designer   !< Logical flag that establishes whether the model is designer or not.
 
     contains
@@ -118,8 +120,10 @@ contains
         self%EFT_additional_priors      = Ini_Read_Logical_File( Ini, 'EFT_additional_priors'     , .true. )
 
         ! EFTCAMB working stuff:
-        self%EFTCAMB_feedback_level     = Ini_Read_Int_File( Ini, 'feedback_level', 1 )
-        self%EFTCAMB_turn_on_time       = Ini_Read_Double_File( Ini, 'EFTCAMB_turn_on_time', EFTturnonpiInitial )
+        self%EFTCAMB_feedback_level      = Ini_Read_Int_File   ( Ini, 'feedback_level', 1 )
+        self%EFTCAMB_turn_on_time        = Ini_Read_Double_File( Ini, 'EFTCAMB_turn_on_time'       , EFTturnonpiInitial )
+        self%EFTCAMB_stability_time      = Ini_Read_Double_File( Ini, 'EFTCAMB_stability_time'     , EFTstabilitycutoff )
+        self%EFTCAMB_stability_threshold = Ini_Read_Double_File( Ini, 'EFTCAMB_stability_threshold', 0._dl              )
 
     end subroutine read_EFTCAMB_flags_from_file
 
@@ -327,6 +331,7 @@ contains
                         write(*,'(a)')    'Please select an appropriate model:'
                         write(*,'(a)')    'FullMappingEFTmodel=1  Horava gravity'
                         write(*,'(a)')    'FullMappingEFTmodel=3  K-mouflage'
+                        write(*,'(a)')    'FullMappingEFTmodel=4  Quintessence'
                         call MpiStop('EFTCAMB error')
                 end select
 

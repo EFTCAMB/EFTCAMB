@@ -201,7 +201,7 @@
             end do
             call Ranges_GetArray( Evolve_q, .false. )
             ! some feedback:
-            write(*,*) 'EFTCAMB printing evolution of scalar variables at k:'
+            write(*,*) 'EFTCAMB printing evolution of scalar variables at k ='
             call Ranges_Write( Evolve_q )
         end if
     end if
@@ -565,11 +565,14 @@
         boost = AccuracyBoost
         if (CP%Transfer%high_precision) boost = boost*1.5
 
-        q_switch_lowk1 = 0.7/taurst
+		! EFTCAMB MOD START: small fix
+        q_switch_lowk1 = min(CP%Transfer%kmax,0.7/taurst)
         dlog_lowk1=2*boost
 
-        q_switch_lowk = 8/taurst
+        q_switch_lowk = min(CP%Transfer%kmax,8/taurst)
         dlog_lowk=8*boost
+        ! EFTCAMB MOD END.
+        
         if (HighAccuracyDefault) dlog_lowk = dlog_lowk*2.5
 
         q_switch_osc = min(CP%Transfer%kmax,30/taurst)
@@ -621,6 +624,7 @@
             end do
             MT%num_q_trans = MT%num_q_trans + nq
         end if
+
     else
         !Fixed spacing
         MT%num_q_trans=int((log(CP%Transfer%kmax)-log(qmin))*CP%Transfer%k_per_logint)+1
@@ -833,7 +837,11 @@
             tautf(itf)=min(TimeOfz(CP%Transfer%redshifts(itf)),CP%tau0)
             if (itf>1) then
                 if (tautf(itf) <= tautf(itf-1)) then
-                    call MpiStop('Transfer redshifts not set or out of order')
+                    ! EFTCAMB MOD START: protection against some numerical errors:
+                    call GlobalError('Transfer redshifts not set or out of order',error_reionization)
+                    return
+                    !call MpiStop('Transfer redshifts not set or out of order')
+                    ! EFTCAMB MOD END.
                 end if
             end if
         end do
@@ -990,14 +998,13 @@
 
         ! EFTCAMB MOD START: debug one k mode
         if ( DebugEFTCAMB ) then
-            write(*,*) 'EFTCAMB printing evolution of scalar variables at k=', fixq
+            write(*,*) 'EFTCAMB printing evolution of scalar variables at k =', fixq
+            write(*,*) '        from tau =',taustart, 'to tau =', TimeSteps%points(TimeSteps%npoints)
         end if
 
         tol1=tol/exp(AccuracyBoost-1)
-        !do j=1,1000
         do j=2,TimeSteps%npoints
 
-            !tauend = taustart +REAL(j-1)*(CP%tau0-taustart)/REAL(10000-1)
             tauend=TimeSteps%points(j)
 
             call GaugeInterface_EvolveScal(EV,tau,y,tauend,tol1,ind,c,w)
