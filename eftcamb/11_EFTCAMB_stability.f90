@@ -31,6 +31,8 @@ module EFTCAMB_stability
     use EFTCAMB_abstract_model_full
     use EFTCAMB_abstract_model_designer
     use EFTCAMB_main
+    use EFTCAMB_ReturnToGR
+    use AMLutils
 
     implicit none
 
@@ -173,12 +175,11 @@ contains
         ! reset the time-step cache:
         call eft_cache%initialize()
         ! fill it:
-        call EFTStabilityComputation( a, input_EFTCAMB%model, params_cache, eft_cache )
+        call EFTStabilityComputation( a, input_EFTCAMB, input_EFTCAMB%model, params_cache, eft_cache )
         ! protect against k_max too small:
         if ( k_max < 0.1_dl ) k_max = 0.1_dl
 
         ! check stability of the theory:
-
         ! 0) dtauda should be finite:
         test_dtauda = dtauda(a)
         if ( test_dtauda > HUGE(test_dtauda) .or. IsNaN(test_dtauda) ) then
@@ -283,15 +284,15 @@ contains
                 if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') '   Model specific stability criteria are not met'
             end if
         end if
-        ! 5) enforce physical viability:
-        if ( input_EFTCAMB%EFT_physical_stability ) then
+        ! 5) enforce ghost viability:
+        if ( input_EFTCAMB%EFT_ghost_stability ) then
 
             ! the present conditions extend up to Horndeski. Enforce that:
             if ( (eft_cache%EFTGamma6V /= 0._dl) .or.      &
                 & ( (eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) then
                 write(*,'(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
                 write(*,'(a)') '      It will be added in a future release.'
-                write(*,'(a)') '      If you want to run this model disable EFT_physical_stability.'
+                write(*,'(a)') '      If you want to run this model disable EFT_ghost_stability.'
                 EFTTestStability = .false.
                 return
             end if
@@ -308,22 +309,59 @@ contains
                 if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: ghost instability. Kinetic term = ', eft_cache%EFT_kinetic
             end if
 
-            ! 3- Gradient instability:
-            if ( eft_cache%EFT_gradient < 0._dl ) then
-                EFTTestStability = .false.
-                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: gradient instability. Gradient term = ', eft_cache%EFT_gradient
-            end if
-
-            ! 4- No tensor ghosts:
+            ! 3- No tensor ghosts:
             if ( eft_cache%EFTAT < 0 ) then
                 EFTTestStability = .false.
                 if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: tensor ghost instability. Tensor kinetic term = ', eft_cache%EFTAT
             end if
 
-            ! 5- No tensor gradient:
+        end if
+
+        ! 6) enforce gradient viability:
+        if ( input_EFTCAMB%EFT_gradient_stability ) then
+
+            ! the present conditions extend up to Horndeski. Enforce that:
+            if ( (eft_cache%EFTGamma6V /= 0._dl) .or.      &
+                & ( (eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl) ) then
+                write(*,'(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
+                write(*,'(a)') '      It will be added in a future release.'
+                write(*,'(a)') '      If you want to run this model disable EFT_gradient_stability.'
+                EFTTestStability = .false.
+                return
+            end if
+
+            ! 1- Positive gravitational constant:
+            if ( 1._dl +eft_cache%EFTOmegaV <= 0 ) then
+                EFTTestStability = .false.
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl +eft_cache%EFTOmegaV
+            end if
+
+            ! 2- Gradient instability:
+            if ( eft_cache%EFT_gradient < 0._dl ) then
+                EFTTestStability = .false.
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: gradient instability. Gradient term = ', eft_cache%EFT_gradient
+            end if
+
+            ! 3- No tensor gradient:
             if ( eft_cache%EFTDT < 0 ) then
                 EFTTestStability = .false.
                 if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: tensor gradient instability. Tensor gradient term = ', eft_cache%EFTDT
+            end if
+
+        end if
+
+        ! 7) enforce mass viability:
+        if ( input_EFTCAMB%EFT_mass_stability ) then
+            ! 1 - Check first mass eigenvalue
+            if ( eft_cache%EFT_mu1 < -eft_cache%adotoa**2/a**2 .and. a>input_EFTCAMB%EFTCAMB_turn_on_time) then
+                EFTTestStability = .false.
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: Mass instability. mu_1 = ', eft_cache%EFT_mu1
+            end if
+
+            ! 2 - Check second mass eigenvalue
+            if ( eft_cache%EFT_mu2 < -eft_cache%adotoa**2/a**2 .and. a>input_EFTCAMB%EFTCAMB_turn_on_time) then
+                EFTTestStability = .false.
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a,E11.4)') '   Physical instability: Mass instability. mu_2 = ', eft_cache%EFT_mu2
             end if
 
         end if
@@ -344,11 +382,12 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that fills the caches to check the stability of the theory.
-    subroutine EFTStabilityComputation( a, input_model, params_cache, eft_cache )
+    subroutine EFTStabilityComputation( a, input_EFTCAMB, input_model, params_cache, eft_cache )
 
         implicit none
 
         real(dl), intent(in)                         :: a                       !< the input scale factor.
+        class(EFTCAMB)               , intent(in)    :: input_EFTCAMB           !< the EFTCAMB model for which the code is computing the RGR time.
         class(EFTCAMB_model)         , intent(in)    :: input_model             !< the EFTCAMB model for which the code is computing the RGR time.
         type(EFTCAMB_parameter_cache), intent(inout) :: params_cache            !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache               !< the EFTCAMB timestep cache that contains all the physical values.
@@ -427,8 +466,13 @@ contains
         call input_model%compute_pi_factors( a, params_cache , eft_cache )
         ! Compute coefficients for the tensor propagation equation:
         call input_model%compute_tensor_factors( a, params_cache , eft_cache )
-        ! Compute kinetic and gradient terms:
+        ! Compute kinetic, gradient and mass terms:
         call input_model%compute_stability_factors( a, params_cache , eft_cache )
+
+        if(a>input_EFTCAMB%EFTCAMB_turn_on_time) then
+          call input_model%compute_additional_derivs( a, params_cache , eft_cache )
+          call input_model%compute_mass_factors( a, params_cache, eft_cache )
+        end if
 
         ! dump cache if in debug mode:
         if ( DebugEFTCAMB ) then
