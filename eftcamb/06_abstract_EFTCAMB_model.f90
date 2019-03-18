@@ -31,6 +31,8 @@ module EFTCAMB_abstract_model
     use precision
     use IniFile
     use EFTCAMB_cache
+    use EFTCAMB_mixed_algorithms
+    use AMLutils
 
     implicit none
 
@@ -73,12 +75,14 @@ module EFTCAMB_abstract_model
         procedure(EFTCAMBModelComputeDtauda          ), deferred :: compute_dtauda                        !< function that computes dtauda = 1/sqrt(a^2H^2).
         procedure(EFTCAMBModelComputeAdotoa          ), deferred :: compute_adotoa                        !< subroutine that computes adotoa = H.
         procedure(EFTCAMBModelComputeHubbleDer       ), deferred :: compute_H_derivs                      !< subroutine that computes the two derivatives wrt conformal time of H.
+        procedure(EFTCAMBModelComputeAdditionalDer   ), deferred :: compute_additional_derivs             !< subroutine that computes additional derivatives of the EFT functions, as needed by the stability calculation.
 
         procedure :: compute_rhoQPQ              => EFTCAMBModelComputeRhoQPQ                             !< subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
         procedure :: compute_Einstein_factors    => EFTCAMBModelComputeEinsteinFactors                    !< subroutine that computes the Einstein equations factors. For details refer to the numerical notes.
         procedure :: compute_pi_factors          => EFTCAMBModelComputePiFactors                          !< subroutine that computes the pi field equations factors. For details refer to the numerical notes.
         procedure :: compute_tensor_factors      => EFTCAMBModelComputeTensorFactors                      !< subroutine that computes the factors for the tensor propagation equation. For details refer to the numerical notes.
         procedure :: compute_stability_factors   => EFTCAMBModelComputeStabilityFactors                   !< subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
+        procedure :: compute_mass_factors        => EFTCAMBModelComputeMassFactors                        !< subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
 
         ! stability procedures:
         procedure :: additional_model_stability  => EFTCAMBModelAdditionalModelStability                  !< function that computes model specific stability requirements.
@@ -246,6 +250,20 @@ module EFTCAMB_abstract_model
             type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
             type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
         end subroutine EFTCAMBModelComputeHubbleDer
+
+        ! ---------------------------------------------------------------------------------------------
+        !> Subroutine that computes additional derivatives of the EFT functions, as needed by the
+        !> stability calculation.
+        subroutine EFTCAMBModelComputeAdditionalDer( self, a, eft_par_cache, eft_cache )
+            use precision
+            use EFTCAMB_cache
+            import EFTCAMB_model
+            implicit none
+            class(EFTCAMB_model)                         :: self          !< the base class.
+            real(dl), intent(in)                         :: a             !< the input scale factor.
+            type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+            type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+        end subroutine EFTCAMBModelComputeAdditionalDer
 
     ! ---------------------------------------------------------------------------------------------
 
@@ -513,6 +531,9 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
+        real(dl):: F1, F2, F3, F1dot, F2dot, rho_d, rho_d_dot, F1dotdot, F2dotdot, F3dot, F3dotdot
+        real(dl):: EFTcP, EFTcPP
+
         eft_cache%EFT_kinetic  = 9._dl*( 1._dl +eft_cache%EFTOmegaV -eft_cache%EFTGamma4V )*( 4._dl*eft_cache%EFTc*( 1._dl +eft_cache%EFTOmegaV -eft_cache%EFTGamma4V ) &
             & +3._dl*eft_cache%adotoa**2*eft_cache%EFTOmegaP**2*a**2 + a**2*eft_par_cache%h0_Mpc*( eft_par_cache%h0_Mpc*( 3._dl*eft_cache%EFTGamma2V**2 +8._dl*eft_cache%EFTGamma1V* &
             &( 1._dl +eft_cache%EFTOmegaV -eft_cache%EFTGamma4V ) +6._dl*eft_cache%adotoa*eft_cache%EFTGamma2V*eft_cache%EFTOmegaP ) ) )
@@ -539,6 +560,101 @@ contains
             &+ 2._dl*eft_cache%EFTGamma5V + 3._dl*eft_cache%EFTOmegaV)) +(1._dl + 2._dl*eft_cache%EFTGamma5V + eft_cache%EFTOmegaV)*(4._dl + a*eft_cache%EFTOmegaP + 4._dl*eft_cache%EFTOmegaV)*eft_cache%Hdot))
 
     end subroutine EFTCAMBModelComputeStabilityFactors
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
+    subroutine EFTCAMBModelComputeMassFactors( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_model)                         :: self          !< the base class
+        real(dl), intent(in)                         :: a             !< the input scale factor.
+        type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        real(dl):: F1, F2, F3, F1dot, F2dot, rho_d, rho_d_dot, F1dotdot, F2dotdot, F3dot, F3dotdot
+        real(dl):: EFTcP, EFTcPP
+
+        !< Define useful quantities used for the mass stability
+        rho_d = (eft_cache%grhob_t+ eft_cache%grhoc_t)/a**2._dl
+        rho_d_dot = -3._dl*eft_cache%adotoa/a*rho_d
+        EFTcP = eft_cache%EFTcdot/(a*eft_cache%adotoa) + 2._dl*eft_cache%EFTc/a
+
+        !< Define some EFT functions needed by stability
+        EFTcPP = ( eft_cache%EFTcdotdot/eft_cache%adotoa +(3._dl-eft_cache%Hdot/eft_cache%adotoa)*eft_cache%EFTcdot +2._dl*eft_cache%adotoa*eft_cache%EFTc )/(a**2*eft_cache%adotoa**2)
+
+        !< general expressions for Fs
+        F1 = 2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V
+
+        F2 = eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + (eft_cache%adotoa*(2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V &
+            &+ eft_cache%EFTGamma4V))/a + eft_cache%adotoa*eft_cache%EFTOmegaP
+
+        F3 = (2._dl*eft_cache%EFTc)/a**2. + 4._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%EFTGamma1V - (6._dl*eft_par_cache%h0_Mpc*eft_cache%adotoa*eft_cache%EFTGamma2V)/a &
+            &- (3._dl*eft_cache%adotoa**2.*(2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V))/a**2. &
+            &- (6._dl*eft_cache%adotoa**2.*eft_cache%EFTOmegaP)/a
+
+        F1dot = eft_cache%adotoa*(2._dl*eft_cache%EFTOmegaP + 3._dl*eft_cache%EFTGamma3P + eft_cache%EFTGamma4P)
+
+        F2dot = ((2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + a*eft_cache%EFTOmegaP)*eft_cache%Hdot &
+            &+  a**2._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%adotoa*eft_cache%EFTGamma2P + eft_cache%adotoa**2._dl*(-2._dl - 2._dl*eft_cache%EFTOmegaV &
+            &- 3._dl*eft_cache%EFTGamma3V - eft_cache%EFTGamma4V + 2._dl*a*eft_cache%EFTOmegaP + 3._dl*a*eft_cache%EFTGamma3P + a*eft_cache%EFTGamma4P &
+            &+ a**2._dl*eft_cache%EFTOmegaPP))/a**2._dl
+
+        F3dot = -((4._dl*eft_cache%EFTc*eft_cache%adotoa + 6._dl*a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V*eft_cache%Hdot - 2._dl*eft_cache%adotoa*(a*EFTcP &
+            &- 3._dl*(2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + 2._dl*a*eft_cache%EFTOmegaP)*eft_cache%Hdot &
+            &+  2._dl*a**3._dl*eft_par_cache%h0_Mpc**2*eft_cache%EFTGamma1P) +  6._dl*a*eft_par_cache%h0_Mpc*eft_cache%adotoa**2._dl*(-eft_cache%EFTGamma2V &
+            &+ a*eft_cache%EFTGamma2P) -  3._dl*eft_cache%adotoa**3._dl*(4._dl + 4._dl*eft_cache%EFTOmegaV + 6._dl*eft_cache%EFTGamma3V + 2._dl*eft_cache%EFTGamma4V &
+            &- 3._dl*a*eft_cache%EFTGamma3P - a*eft_cache%EFTGamma4P -  2._dl*a**2*eft_cache%EFTOmegaPP))/a**3._dl)
+
+        F1dotdot = (2._dl*eft_cache%EFTOmegaP*eft_cache%Hdot + eft_cache%Hdot*(3._dl*eft_cache%EFTGamma3P + eft_cache%EFTGamma4P) + a*eft_cache%adotoa**2._dl*(2._dl*eft_cache%EFTOmegaPP &
+            &+ 3._dl*eft_cache%EFTGamma3PP + eft_cache%EFTGamma4PP))/a
+
+        F2dotdot = (a**2._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%Hdot*eft_cache%EFTGamma2P +  eft_cache%adotoa*eft_cache%Hdot*(-8._dl - 8._dl*eft_cache%EFTOmegaV - 12._dl*eft_cache%EFTGamma3V &
+            &- 4._dl*eft_cache%EFTGamma4V + 5._dl*a*eft_cache%EFTOmegaP +  9._dl*a*eft_cache%EFTGamma3P + 3._dl*a*eft_cache%EFTGamma4P + 3._dl*a**2._dl*eft_cache%EFTOmegaPP) &
+            &+ (2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + a*eft_cache%EFTOmegaP)*eft_cache%Hdotdot &
+            &+ a**3._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%adotoa**2._dl*eft_cache%EFTGamma2PP +  eft_cache%adotoa**3._dl*(4._dl + 4._dl*eft_cache%EFTOmegaV &
+            &+ 6._dl*eft_cache%EFTGamma3V + 2._dl*eft_cache%EFTGamma4V - 4._dl*a*eft_cache%EFTOmegaP - 6._dl*a*eft_cache%EFTGamma3P - 2._dl*a*eft_cache%EFTGamma4P + 2._dl*a**2._dl*eft_cache%EFTOmegaPP &
+            &+ 3._dl*a**2._dl*eft_cache%EFTGamma3PP + a**2._dl*eft_cache%EFTGamma4PP + a**3._dl*eft_cache%EFTOmegaPPP))/a**3._dl
+
+        F3dotdot = (4._dl*eft_cache%EFTc*(3._dl*eft_cache%adotoa**2._dl - eft_cache%Hdot) +  2._dl*(a*EFTcP*eft_cache%Hdot - 3._dl*(2._dl + 2._dl*eft_cache%EFTOmegaV &
+            &+ 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + 2*a*eft_cache%EFTOmegaP)*eft_cache%Hdot**2 + 2._dl*a**3._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%Hdot*eft_cache%EFTGamma1P &
+            &-  3._dl*a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V*eft_cache%Hdotdot) -  6._dl*eft_cache%adotoa*(a*eft_par_cache%h0_Mpc*eft_cache%Hdot*(&
+            &-4._dl*eft_cache%EFTGamma2V + 3._dl*a*eft_cache%EFTGamma2P) +  (2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V &
+            &+ 2._dl*a*eft_cache%EFTOmegaP)*eft_cache%Hdotdot) + eft_cache%adotoa**2._dl*(-8._dl*a*EFTcP +  3._dl*eft_cache%Hdot*(24._dl&
+            & + 24._dl*eft_cache%EFTOmegaV + 36._dl*eft_cache%EFTGamma3V + 12._dl*eft_cache%EFTGamma4V + 4._dl*a*eft_cache%EFTOmegaP -   15._dl*a*eft_cache%EFTGamma3P &
+            &- 5._dl*a*eft_cache%EFTGamma4P - 10._dl*a**2._dl*eft_cache%EFTOmegaPP) + 2._dl*a**2._dl*(EFTcPP + 2._dl*a**2._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%EFTGamma1PP)) &
+            &- 6._dl*a*eft_par_cache%h0_Mpc*eft_cache%adotoa**3*(2*eft_cache%EFTGamma2V + a*(-2._dl*eft_cache%EFTGamma2P + a*eft_cache%EFTGamma2PP)) &
+            &- 3._dl*eft_cache%adotoa**4._dl*(12._dl + 12._dl*eft_cache%EFTOmegaV + 18._dl*eft_cache%EFTGamma3V + 6._dl*eft_cache%EFTGamma4V - 4._dl*a*eft_cache%EFTOmegaP - 12._dl*a*eft_cache%EFTGamma3P &
+            &-  4._dl*a*eft_cache%EFTGamma4P - 2._dl*a**2._dl*eft_cache%EFTOmegaPP + 3._dl*a**2._dl*eft_cache%EFTGamma3PP + a**2._dl*eft_cache%EFTGamma4PP + 2._dl*a**3._dl*eft_cache%EFTOmegaPPP))/a**4._dl
+
+        !< compute the mass eigenvalues
+        eft_cache%EFT_mu1 = ((-4._dl*F1*F2**2._dl*F3*(-2._dl*F1*F3*F2dot +F2*(F3*F1dot + F1*F3dot))**2._dl)/(3._dl*F2**2._dl + F1*F3) +(4._dl*F1*F3*(-2._dl*F1*F3*F2dot +F2*(F3*F1dot + F1*F3dot))**2._dl)/(3._dl &
+            &+ (F1*F3)/F2**2._dl) -(9._dl*F2**6*(1._dl + 1._dl/(3.*Sqrt(F2**4._dl/(3._dl*F2**2._dl + 2._dl*F1*F3)**2._dl)))*(6._dl*F1*F2*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa*(F2*F3*F1dot &
+            &+F1*(F2*F3dot + 2._dl*F3*(-F2dot + rho_d))) +a*(-3._dl*F2**4._dl*F3**2._dl*F1dot**2._dl +2._dl*F1*F2**2._dl*F3**2._dl*(-(F3*F1dot**2._dl) + 3._dl*F2**2._dl*F1dotdot) &
+            &+2._dl*F1**3._dl*F3*(-2._dl*F2**2._dl*F3dot**2._dl +F2*F3*(F2*F3dotdot - 2._dl*F3dot*(-2._dl*F2dot + rho_d)) -2._dl*F3**2._dl*(F2dot**2._dl - F2dot*rho_d + rho_d**2._dl &
+            &+F2*(F2dotdot - rho_d_dot))) +F1**2._dl*F2*(4._dl*F3**3._dl*F1dot*F2dot +F2**3._dl*(-9._dl*F3dot**2._dl + 6._dl*F3*F3dotdot) +2._dl*F2*F3**2._dl*(-(F1dot*F3dot) + F3*F1dotdot &
+            &+6._dl*(F2dot - rho_d)*rho_d) +12._dl*F2**2._dl*F3*(F3dot*(F2dot - rho_d) +F3*(-F2dotdot + rho_d_dot))))))/(a*(3._dl*F2**2._dl + F1*F3)**2._dl*(3._dl*F2**2._dl + 2._dl*F1*F3)) &
+            &+(2._dl*F1*F2**2._dl*(6._dl*F1*F2**2._dl*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa*(-2._dl*F3**2._dl*F1dot + 3._dl*F2**2._dl*F3dot +6._dl*F2*F3*(-F2dot + rho_d)) &
+            &+a*(6._dl*F2**4._dl*F3**3._dl*F1dot**2._dl +2._dl*F1**3._dl*F3**2._dl*(-2._dl*F3*F2dot + F2*F3dot)**2._dl +F1**2._dl*F2*F3*(-8._dl*F3**3._dl*F1dot*F2dot +F2**3._dl*(-9._dl*F3dot**2._dl + 6._dl*F3*F3dotdot) &
+            &+4._dl*F2*F3**2._dl*(F1dot*F3dot - F3*F1dotdot +3._dl*(F2dot - rho_d)*rho_d) +12._dl*F2**2._dl*F3*(F3dot*(F2dot - rho_d) +F3*(-F2dotdot + rho_d_dot))) &
+            &+F1*(4._dl*F2**2._dl*F3**4._dl*F1dot**2._dl +9._dl*F2**6._dl*(-3._dl*F3dot**2._dl + 2._dl*F3*F3dotdot) -12._dl*F2**4._dl*F3**2._dl*(F3*F1dotdot +3._dl*rho_d*(-F2dot + rho_d)) &
+            &+36._dl*F2**5._dl*F3*(F3dot*(F2dot - rho_d) +F3*(-F2dotdot + rho_d_dot))))))/(a*(3._dl*F2**2._dl + F1*F3)*(3._dl*F2**2._dl + 2._dl*F1*F3)))/(16._dl*F1**2._dl*F2**4._dl*F3**2._dl)
+
+        eft_cache%EFT_mu2 = ((-4._dl*F1*F2**2._dl*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2._dl)/(3._dl*F2**2._dl + F1*F3) + (4._dl*F1*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot &
+            &+ F1*F3dot))**2._dl)/ (3._dl + (F1*F3)/F2**2._dl) - (2._dl*F2**2._dl*F3*(6._dl*F1*F2**2._dl*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa*(9._dl*F2**4._dl*F1dot + 6._dl*F1*F2**2._dl*F3*F1dot &
+            &+ F1**2._dl*(-3._dl*F2**2._dl*F3dot + 2._dl*F3*(F3*F1dot + 3._dl*F2*(F2dot - rho_d)))) + a*(-27._dl*F2**8._dl*F3*F1dot**2._dl - 2._dl*F1**5._dl*F3**2._dl*(-2._dl*F3*F2dot + F2*F3dot)**2._dl &
+            &+ 18._dl*F1*F2**6._dl*F3*(-2._dl*F3*F1dot**2._dl + 3._dl*F2**2._dl*F1dotdot) + 18._dl*F1**2._dl*F2**4._dl*F3*(-(F1dot*(F3**2._dl*F1dot - 2._dl*F2*F3*F2dot + F2**2._dl*F3dot)) &
+            &+ 3._dl*F2**2._dl*F3*F1dotdot) + 2._dl*F1**3._dl*F2**2._dl*(-2._dl*F3**4._dl*F1dot**2._dl + 12._dl*F2*F3**3._dl*F1dot*F2dot + 9._dl*F2**4._dl*(F3dot**2._dl - F3*F3dotdot) + 6._dl*F2**2._dl*F3**2._dl*(&
+            &-3._dl*F2dot**2._dl - F1dot*F3dot + 2._dl*F3*F1dotdot - 3._dl*F2dot*rho_d + 3._dl*rho_d**2._dl) + 18._dl*F2**3._dl*F3*(F3dot*rho_d + F3*(F2dotdot - rho_d_dot))) &
+            &+ F1**4._dl*F2*F3*(8._dl*F3**3._dl*F1dot*F2dot + 3._dl*F2**3._dl*(F3dot**2._dl - 2._dl*F3*F3dotdot) + 4._dl*F2*F3**2._dl*(-(F1dot*F3dot) + F3*F1dotdot + 3._dl*(-2._dl*F2dot + rho_d)*(F2dot &
+            &+ rho_d)) + 12._dl*F2**2._dl*F3*(F3dot*(F2dot + rho_d) + F3*(F2dotdot - rho_d_dot))))))/(a*(3._dl*F2**2._dl + F1*F3)**2._dl*(3._dl*F2**2._dl + 2._dl*F1*F3)) &
+            &+ (9._dl*F2**6._dl*(1._dl + 1._dl/(3._dl*Sqrt(F2**4._dl/(3._dl*F2**2._dl + 2._dl*F1*F3)**2._dl)))*(6._dl*F1*F2*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa*(F2*F3*F1dot + F1*(F2*F3dot &
+            &+ 2._dl*F3*(-F2dot + rho_d))) + a*(-3._dl*F2**4._dl*F3**2._dl*F1dot**2._dl + 2._dl*F1*F2**2._dl*F3**2._dl*(-(F3*F1dot**2._dl) + 3._dl*F2**2._dl*F1dotdot) + 2._dl*F1**3._dl*F3*(-2._dl*F2**2._dl*F3dot**2._dl &
+            &+ F2*F3*(F2*F3dotdot - 2._dl*F3dot*(-2._dl*F2dot + rho_d)) - 2._dl*F3**2*(F2dot**2._dl - F2dot*rho_d + rho_d**2._dl + F2*(F2dotdot - rho_d_dot))) &
+            &+ F1**2*F2*(4._dl*F3**3._dl*F1dot*F2dot + F2**3._dl*(-9._dl*F3dot**2._dl + 6._dl*F3*F3dotdot) + 2._dl*F2*F3**2._dl*(-(F1dot*F3dot) + F3*F1dotdot + 6._dl*(F2dot - rho_d)*rho_d) &
+            &+ 12._dl*F2**2._dl*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))))))/(a*(3._dl*F2**2._dl + F1*F3)**2._dl*(3._dl*F2**2._dl + 2._dl*F1*F3)))/(16._dl*F1**2._dl*F2**4._dl*F3**2._dl)
+
+    end subroutine EFTCAMBModelComputeMassFactors
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes model specific stability requirements.

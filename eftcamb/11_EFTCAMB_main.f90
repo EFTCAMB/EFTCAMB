@@ -65,7 +65,9 @@ module EFTCAMB_main
 
         ! EFTCAMB stability flags:
         logical   :: EFT_mathematical_stability  !< Flag that extablishes wether to use mathematical stability.
-        logical   :: EFT_physical_stability      !< Flag that extablishes wether to use physical stability.
+        logical   :: EFT_ghost_stability         !< Flag that extablishes wether to use ghost stability.
+        logical   :: EFT_gradient_stability      !< Flag that extablishes wether to use gradient stability.
+        logical   :: EFT_mass_stability          !< Flag that extablishes wether to use mass stability.
         logical   :: EFT_additional_priors       !< Flag that extablishes wether to use some additional priors that are related to the specific model.
 
         ! EFTCAMB model:
@@ -116,7 +118,9 @@ contains
         self%FullMappingEFTmodel  = Ini_Read_Int_File( Ini, 'FullMappingEFTmodel', 0 )
         ! read the stability flags:
         self%EFT_mathematical_stability = Ini_Read_Logical_File( Ini, 'EFT_mathematical_stability', .true. )
-        self%EFT_physical_stability     = Ini_Read_Logical_File( Ini, 'EFT_physical_stability'    , .true. )
+        self%EFT_ghost_stability     = Ini_Read_Logical_File( Ini, 'EFT_ghost_stability'    , .true. )
+        self%EFT_gradient_stability     = Ini_Read_Logical_File( Ini, 'EFT_gradient_stability'    , .true. )
+        self%EFT_mass_stability     = Ini_Read_Logical_File( Ini, 'EFT_mass_stability'    , .false. )
         self%EFT_additional_priors      = Ini_Read_Logical_File( Ini, 'EFT_additional_priors'     , .true. )
 
         ! EFTCAMB working stuff:
@@ -229,7 +233,9 @@ contains
         write(*,*) 'EFTCAMB stability flags:'
 
         write(*,*) ' Mathematical stability = ', self%EFT_mathematical_stability
-        write(*,*) ' Physical stability     = ', self%EFT_physical_stability
+        write(*,*) ' Ghost stability        = ', self%EFT_ghost_stability
+        write(*,*) ' Gradient stability     = ', self%EFT_gradient_stability
+        write(*,*) ' Mass stability         = ', self%EFT_mass_stability
         write(*,*) ' Additional priors      = ', self%EFT_additional_priors
         write(*,*)
         ! print model selection flags:

@@ -199,14 +199,18 @@ module EFTCAMB_cache
         real(dl) :: EFTOmegaPPP   !< the value of the third derivative wrt scale factor of Omega \f$ d^3 \Omega(a) / da^3 \f$.
         real(dl) :: EFTc          !< the value of \f$ c a^2/m_0^2 \f$.
         real(dl) :: EFTcdot       !< the value of \f$ \dot{c} a^2/m_0^2 \f$.
+        real(dl) :: EFTcdotdot    !< the value of \f$ \dot{c} a^2/m_0^2 \f$.
         real(dl) :: EFTLambda     !< the value of \f$ \Lambda a^2/m_0^2 \f$.
         real(dl) :: EFTLambdadot  !< the value of \f$ \dot{\Lambda}a^2/m_0^2 \f$. Derivative of \f$ \Lambda\f$ wrt conformal time.
         real(dl) :: EFTGamma1V    !< the value of Gamma 1 \f$ \gamma_1(a) \f$.
         real(dl) :: EFTGamma1P    !< the value of the derivative wrt scale factor of Gamma 1 \f$  d \gamma_1(a) / da \f$.
+        real(dl) :: EFTGamma1PP   !< the value of the derivative wrt scale factor of Gamma 1 \f$  d \gamma_1(a) / da \f$.
         real(dl) :: EFTGamma2V    !< the value of Gamma 2 \f$ \gamma_2(a) \f$.
         real(dl) :: EFTGamma2P    !< the value of the derivative wrt scale factor of Gamma 2 \f$  d \gamma_2(a) / da \f$.
+        real(dl) :: EFTGamma2PP   !< the value of the derivative wrt scale factor of Gamma 2 \f$  d \gamma_2(a) / da \f$.
         real(dl) :: EFTGamma3V    !< the value of Gamma 3 \f$ \gamma_3(a) \f$.
         real(dl) :: EFTGamma3P    !< the value of the derivative wrt scale factor of Gamma 3 \f$  d \gamma_3(a) / da \f$.
+        real(dl) :: EFTGamma3PP   !< the value of the derivative wrt scale factor of Gamma 3 \f$  d \gamma_3(a) / da \f$.
         real(dl) :: EFTGamma4V    !< the value of Gamma 4 \f$ \gamma_4(a) \f$.
         real(dl) :: EFTGamma4P    !< the value of the derivative wrt scale factor of Gamma 4 \f$  d \gamma_4(a) / da \f$.
         real(dl) :: EFTGamma4PP   !< the value of the second derivative wrt scale factor of Gamma 4 \f$  d^2 \gamma_4(a) / da^2 \f$.
@@ -267,6 +271,8 @@ module EFTCAMB_cache
         ! 12) Kinetic and Gradient quantities for the stability check:
         real(dl) :: EFT_kinetic   !< the value of the kinetic term. Refer to the Numerical Notes for the definition.
         real(dl) :: EFT_gradient  !< the value of the gradient term. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFT_mu1       !< the value of the first mass eigenvalue. Refer to the Numerical Notes for the definition.
+        real(dl) :: EFT_mu2       !< the value of the second mass eigenvalue. Refer to the Numerical Notes for the definition.
         ! 13) other quantities usefull for debug purposes:
         real(dl) :: EFTISW        !< Source for ISW effect.
         real(dl) :: EFTLensing    !< Source for lensing effect.
@@ -396,6 +402,8 @@ contains
         ! 12) Kinetic and Gradient quantities for the stability check:
         self%EFT_kinetic   = 0._dl
         self%EFT_gradient  = 0._dl
+        self%EFT_mu1       = 0._dl
+        self%EFT_mu2       = 0._dl
         ! 13) other quantities usefull for debug purposes:
         self%EFTISW        = 0._dl
         self%EFTLensing    = 0._dl
@@ -504,6 +512,8 @@ contains
         HaveNan = HaveNan.or.IsNaN(self%EFTDT)
         HaveNan = HaveNan.or.IsNaN(self%EFT_kinetic)
         HaveNan = HaveNan.or.IsNaN(self%EFT_gradient)
+        HaveNan = HaveNan.or.IsNaN(self%EFT_mu1)
+        HaveNan = HaveNan.or.IsNaN(self%EFT_mu2)
         HaveNan = HaveNan.or.IsNaN(self%EFTISW)
         HaveNan = HaveNan.or.IsNaN(self%EFTLensing)
         HaveNan = HaveNan.or.IsNaN(self%CMBTSource)
