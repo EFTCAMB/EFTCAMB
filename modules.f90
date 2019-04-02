@@ -438,6 +438,7 @@ contains
                 CP%eft_par_cache%grhok       = grhok
                 !    - massive neutrinos:
                 CP%eft_par_cache%Num_Nu_Massive       = CP%Num_Nu_Massive
+                CP%eft_par_cache%Num_Nu_Massless      = CP%Num_Nu_Massless
                 CP%eft_par_cache%Nu_mass_eigenstates  = CP%Nu_mass_eigenstates
                 allocate( CP%eft_par_cache%grhormass(max_nu), CP%eft_par_cache%nu_masses(max_nu) )
                 CP%eft_par_cache%grhormass            = grhormass
@@ -1872,7 +1873,7 @@ contains
         else if (am>am_maxp) then
             rhonudot = 3/(2*const)*(zeta3*am - (15*zeta5)/2/am)*adotoa
         else
-            
+
             ! EFTCAMB MOD START: small fix for very weird expansion histories
             d=log(am/am_min)/dlnam
             i=int(d)+1

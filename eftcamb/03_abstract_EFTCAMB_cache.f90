@@ -69,6 +69,7 @@ module EFTCAMB_cache
         real(dl) :: grhov          !< the value of \f$ 8 \pi G_{N} \rho_{\Lambda}(t_0) \f$.
         real(dl) :: grhok          !< the value of \f$ 8 \pi G_{N} \rho_{\rm K}(t_0) \f$.
         ! 4) massive neutrinos:
+        integer  :: Num_Nu_Massless                       !< number of massless neutrinos
         integer  :: Num_Nu_Massive                        !< number of massive neutrinos
         integer  :: Nu_mass_eigenstates                   !< number of mass eigenstates
         real(dl), allocatable, dimension(:) :: grhormass  !< densities of neutrinos in each mass eigenstate \f$ 8 \pi G_{N} \rho_{ m\nu }(t_0) \f$
@@ -727,6 +728,7 @@ contains
         self%grhob       = 0._dl
         self%grhov       = 0._dl
         self%grhok       = 0._dl
+        self%Num_Nu_Massless      = 0
         self%Num_Nu_Massive       = 0
         self%Nu_mass_eigenstates  = 0
         if ( allocated(self%grhormass)         ) deallocate(self%grhormass)
@@ -768,6 +770,7 @@ contains
         write(*,'(a14,E13.6)') ' grhob      : ', self%grhob
         write(*,'(a14,E13.6)') ' grhov      : ', self%grhov
         write(*,'(a14,E13.6)') ' grhok      : ', self%grhok
+        write(*,'(a22,I10)') ' Num_Nu_Massless     : ', self%Num_Nu_Massless
         write(*,'(a22,I10)') ' Num_Nu_Massive      : ', self%Num_Nu_Massive
         write(*,'(a22,I10)') ' Nu_mass_eigenstates : ', self%Nu_mass_eigenstates
         do i=1, self%Nu_mass_eigenstates
@@ -806,6 +809,7 @@ contains
         HaveNan = HaveNan.or.IsNaN(self%grhob)
         HaveNan = HaveNan.or.IsNaN(self%grhov)
         HaveNan = HaveNan.or.IsNaN(self%grhok)
+        HaveNan = HaveNan.or.IsNaN(self%Num_Nu_Massless*1.0_dl)
         HaveNan = HaveNan.or.IsNaN(self%Num_Nu_Massive*1.0_dl)
         HaveNan = HaveNan.or.IsNaN(self%Nu_mass_eigenstates*1.0)
 

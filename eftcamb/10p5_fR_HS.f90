@@ -31,6 +31,7 @@ module EFTCAMB_full_fR_HS
     use EFTCAMB_cache
     use EFT_def
     use EFTCAMB_abstract_model_full
+    use equispaced_linear_interpolation_1D
 
     implicit none
 
@@ -46,7 +47,19 @@ module EFTCAMB_full_fR_HS
         real(dl)  :: fm_hs_n        !< Hu-Sawicki f(R) model parameter n
         real(dl)  :: fm_hs_fro      !< Hu-Sawicki f(R) model parameter fR_0
 
-        real(dl), parameter :: solver_switch = -5._dl
+        ! quantities used in the code
+        real(dl) :: c2
+        real(dl) :: c1
+        real(dl) :: m2
+        real(dl) :: mgamma2
+        real(dl) :: range
+
+        ! parameters used by the background solver:
+        real(dl) :: solver_switch         = -5._dl
+        integer  :: background_num_points = 1000                            !< Number of points sampled by the designer code.
+        real(dl) :: x_initial             = log(10._dl**(-8._dl))           !< log(a start)
+        real(dl) :: x_final               = 0.0_dl                          !< log(a final)
+        logical  :: debug_flag            = .true.
 
         ! the interpolated EFT functions that come out of the background sover:
         type(equispaced_linear_interpolate_function_1D) :: EFTOmega       !< The interpolated function Omega (and derivatives).
@@ -56,7 +69,7 @@ module EFTCAMB_full_fR_HS
 
         ! initialization of the model:
         procedure :: read_model_selection            => EFTCAMBHSfRReadModelSelectionFromFile  !< subroutine that reads the parameters of the model from file
-        procedure :: allocate_model_selection        => EFTCAMBHSfRAllocateModelSelection      !< subroutine that allocates the model selection. For Horava this is a dummy procedure.
+        procedure :: allocate_model_selection        => EFTCAMBHSfRAllocateModelSelection      !< subroutine that allocates the model selection. This is a dummy procedure.
         procedure :: init_model_parameters           => EFTCAMBHSfRInitModelParameters         !< subroutine that initializes the model parameters based on the values found in an input array.
         procedure :: init_model_parameters_from_file => EFTCAMBHSfRInitModelParametersFromFile !< subroutine that reads the parameters of the model from file.
 
@@ -101,11 +114,12 @@ contains
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that allocates the model selection. Nothing needs to be done
     !! but procedure present because it is deferred.
-    subroutine EFTCAMBHSfRAllocateModelSelection( self )
+    subroutine EFTCAMBHSfRAllocateModelSelection( self, Ini )
 
         implicit none
 
         class(EFTCAMB_fR_HS)       :: self !< the base class
+        type(TIniFile)             :: Ini    !< Input ini file
 
     end subroutine EFTCAMBHSfRAllocateModelSelection
 
@@ -139,7 +153,7 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the background of Hu-Sawicki f(R).
-    subroutine EFTCAMBHSfRInitBackground( self, params_cache, feedback_level, success )
+    subroutine EFTCAMBHSfRInitBackground( self, params_cache, feedback_level, success, outroot )
 
         implicit none
 
@@ -147,30 +161,41 @@ contains
         type(EFTCAMB_parameter_cache), intent(in)    :: params_cache   !< a EFTCAMB parameter cache containing cosmological parameters
         integer                      , intent(in)    :: feedback_level !< level of feedback from the background code. 0=none; 1=some; 2=chatty.
         logical                      , intent(out)   :: success        !< wether the background initialization succeded or not
+        character(LEN=*), optional   , intent(in)    :: outroot        !< the output root for the debug files
 
-        real(dl) :: fm_hs_Omegadeh2,fm_hs_Omegagammah2, fm_hs_Omeganuh2, fm_hs_Omegacdmh2
-        real(dl) :: fm_hs_c2, fm_hs_c1, fm_hs_m2, fm_hs_mgamma2, fm_hs_rnge, fm_hs_step
-
-        ! fm_hs_llim = fm_xInitial
-        ! fm_hs_ulim = fm_xFinal
-        ! fm_hs_nnosteps = fm_nstep+1
-        ! fm_hs_z_ast_threshold = 5.d-5
+        real(dl) :: fm_hs_Omegadeh2,fm_hs_Omegagammah2, fm_hs_Omegacdmh2, fm_hs_t
+        integer  :: ni
 
         !the following is useful for debugging
         fm_hs_Omegadeh2 = params_cache%omegav*(params_cache%h0)**2.
         fm_hs_Omegagammah2 = params_cache%omegag*(params_cache%h0)**2.
-        fm_hs_Omeganuh2 = params_cache%omegan*(params_cache%h0)**2.
         fm_hs_Omegacdmh2 = params_cache%omegab*(params_cache%h0)**2. +params_cache%omegac*(params_cache%h0)**2.
 
-        fm_hs_c2 = -fm_hs_n*(6.*fm_hs_Omegadeh2/fm_hs_Omegacdmh2)*( 3.+12.*fm_hs_Omegadeh2/fm_hs_Omegacdmh2)**(-fm_hs_n-1.)*(1./fm_hs_fro)
-        fm_hs_c1 = 6.*(fm_hs_Omegadeh2/fm_hs_Omegacdmh2)*fm_hs_c2
-        fm_hs_m2 = ((8320.5)**(-2.))*(fm_hs_Omegacdmh2/0.13)
-        fm_hs_mgamma2 = fm_hs_Omegagammah2*(1./9.)*10**(-6.)
-        fm_hs_rnge = ABS(fm_hs_llim-fm_hs_ulim)
-        fm_hs_step = fm_hs_rnge/real(fm_nstep)
+        self%c2 = -self%fm_hs_n*(6.*fm_hs_Omegadeh2/fm_hs_Omegacdmh2)*( 3.+12.*fm_hs_Omegadeh2/fm_hs_Omegacdmh2)**(-self%fm_hs_n-1.)*(1./self%fm_hs_fro)
+        self%c1 = 6.*(fm_hs_Omegadeh2/fm_hs_Omegacdmh2)*self%c2
+        self%m2 = ((8320.5)**(-2.))*(fm_hs_Omegacdmh2/0.13)
+        self%mgamma2 = fm_hs_Omegagammah2*(1./9.)*10**(-6.)
+        self%range = ABS(self%x_initial-self%x_final)/real(self%background_num_points)
+
+        ! initialize interpolating functions:
+        call self%EFTOmega%initialize  ( self%background_num_points, self%x_initial, self%x_final )
+        call self%EFTLambda%initialize ( self%background_num_points, self%x_initial, self%x_final )
 
         ! solve the background equations and store the solution:
         call self%solve_background_equations( params_cache, success=success )
+
+        if (self%debug_flag) then
+
+          open(66,file=TRIM(outroot)//'debug_lambda.dat')
+          open(99,file=TRIM(outroot)//'debug_omega.dat')
+
+          do ni = 1,self%background_num_points
+              fm_hs_t = self%x_initial+self%range*(ni-1.)
+              write(66, *)Exp(fm_hs_t), self%EFTLambda%y(ni)
+              write(99, *)Exp(fm_hs_t), self%EFTOmega%y(ni)
+          end do
+
+        end if
 
         return
 
@@ -186,10 +211,22 @@ contains
         type(EFTCAMB_parameter_cache), intent(in)    :: params_cache  !< a EFTCAMB parameter cache containing cosmological parameters.
         logical , intent(out)                        :: success       !< whether the calculation ended correctly or not
 
+        integer :: fm_hs_ni
+        real(dl) :: fm_hs_i
+        real(dl) :: fm_hs_h1,fm_hs_h2,fm_hs_h3,fm_hs_h4,fm_hs_g1,fm_hs_g2,fm_hs_g3,fm_hs_g4
+        real(dl) :: fm_hs_t
+
+        integer  :: neq, itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode
+        real(dl) :: t0, tfin, rtol, atol, t1, t2
+        real(dl), allocatable :: rwork(:), y(:)
+        integer,  allocatable :: iwork(:)
+
+        real(dl), dimension(self%background_num_points) :: fm_hs_yH, fm_hs_vtrue, fm_hs_yHtrue, fm_hs_v, fm_hs_eqstate, fm_hs_rhoeff
+
         ! Initialization of LSODA:
         neq  = 2
-        t0   = fm_hs_llim
-        tfin = fm_hs_ulim
+        t0   = self%x_initial
+        tfin = self%x_final
         ! set-up the relative and absolute tollerances:
         itol = 1
         rtol = 1.d-10
@@ -229,71 +266,70 @@ contains
 
         ! set initial conditions:
         ! initial time:
-        fm_hs_t = fm_hs_llim
+        fm_hs_t = self%x_initial
         ! guess and guess first derivative:
-        fm_hs_yH(1) = fm_hs_sourceFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)/fm_hs_massFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)
-        fm_hs_v(1) = fm_hs_firstderive(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)
+        fm_hs_yH(1) = fm_hs_sourceFunction(fm_hs_t)/fm_hs_massFunction(fm_hs_t)
+        fm_hs_v(1) = fm_hs_firstderive(fm_hs_t)
         ! initial conditions:
-        fm_hs_yHtrue(1) = fm_hs_yH(1)*EXP(-3.*fm_hs_t)+fm_hs_c1/(fm_hs_c2*6.)
+        fm_hs_yHtrue(1) = fm_hs_yH(1)*EXP(-3.*fm_hs_t)+self%c1/(self%c2*6.)
         fm_hs_vtrue(1) = -3.*EXP(-3.*fm_hs_t)*fm_hs_yH(1)+EXP(-3.*fm_hs_t)*fm_hs_v(1)
         ! derived quantities:
         fm_hs_eqstate(1) = -1-(fm_hs_vtrue(1)/(3*fm_hs_yHtrue(1)))
-        fm_hs_rhoeff(1) = 3*fm_hs_m2*fm_hs_yHtrue(1)
+        fm_hs_rhoeff(1) = 3*self%m2*fm_hs_yHtrue(1)
         fm_hs_i = fm_hs_i+1.
         ! initial conditions for LSODA:
         y(1) = fm_hs_yHtrue(1)
         y(2) = fm_hs_vtrue(1)
 
         ! solve the ODE:
-        DO fm_hs_ni = 2,fm_hs_nnosteps,1
+        DO fm_hs_ni = 2,self%background_num_points
 
             t1 = fm_hs_t
-            t2 = fm_hs_llim+fm_hs_step*(fm_hs_i-1.)
+            t2 = self%x_initial+self%range*(fm_hs_i-1.)
             fm_hs_t = t2
 
             if ( .false. ) then
 
                 !... evolving full non-linear eq. using rk4 method
-                fm_hs_h1 = fm_hs_step*fm_hs_vtrue(fm_hs_ni-1)
-                fm_hs_g1 = fm_hs_step*fm_hs_derivativeForV(fm_hs_llim+(fm_hs_i-2.)*fm_hs_step,fm_hs_yHtrue(fm_hs_ni-1),fm_hs_vtrue(fm_hs_ni-1),fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n)
-                fm_hs_h2 = fm_hs_step*(fm_hs_vtrue(fm_hs_ni-1)+fm_hs_h1/2)
-                fm_hs_g2 = fm_hs_step*fm_hs_derivativeForV(fm_hs_llim+(fm_hs_i-2.)*fm_hs_step+fm_hs_step/2.,fm_hs_yHtrue(fm_hs_ni-1)+fm_hs_h1/2,&
-                    &fm_hs_vtrue(fm_hs_ni-1)+fm_hs_g1/2.,fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n)
-                fm_hs_h3 = fm_hs_step*(fm_hs_vtrue(fm_hs_ni-1)+fm_hs_h2/2)
-                fm_hs_g3 = fm_hs_step*fm_hs_derivativeForV(fm_hs_llim+fm_hs_step*(fm_hs_i-2.)+fm_hs_step/2.,fm_hs_yHtrue(fm_hs_ni-1)+fm_hs_h2/2,fm_hs_vtrue(fm_hs_ni-1)+&
-                    &fm_hs_g2/2.,fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n)
-                fm_hs_h4 = fm_hs_step*(fm_hs_vtrue(fm_hs_ni-1)+fm_hs_h3)
-                fm_hs_g4 = fm_hs_step*fm_hs_derivativeForV(fm_hs_llim+(fm_hs_i-2.)*fm_hs_step+fm_hs_step,fm_hs_yHtrue(fm_hs_ni-1)+fm_hs_h3,fm_hs_vtrue(fm_hs_ni-1)+fm_hs_g3,&
-                    &fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n)
+                fm_hs_h1 = self%range*fm_hs_vtrue(fm_hs_ni-1)
+                fm_hs_g1 = self%range*fm_hs_derivativeForV(self%x_initial+(fm_hs_i-2.)*self%range,fm_hs_yHtrue(fm_hs_ni-1),fm_hs_vtrue(fm_hs_ni-1))
+                fm_hs_h2 = self%range*(fm_hs_vtrue(fm_hs_ni-1)+fm_hs_h1/2)
+                fm_hs_g2 = self%range*fm_hs_derivativeForV(self%x_initial+(fm_hs_i-2.)*self%range+self%range/2.,fm_hs_yHtrue(fm_hs_ni-1)+fm_hs_h1/2,&
+                    &fm_hs_vtrue(fm_hs_ni-1)+fm_hs_g1/2.)
+                fm_hs_h3 = self%range*(fm_hs_vtrue(fm_hs_ni-1)+fm_hs_h2/2)
+                fm_hs_g3 = self%range*fm_hs_derivativeForV(self%x_initial+self%range*(fm_hs_i-2.)+self%range/2.,fm_hs_yHtrue(fm_hs_ni-1)+fm_hs_h2/2,fm_hs_vtrue(fm_hs_ni-1)+&
+                    &fm_hs_g2/2.)
+                fm_hs_h4 = self%range*(fm_hs_vtrue(fm_hs_ni-1)+fm_hs_h3)
+                fm_hs_g4 = self%range*fm_hs_derivativeForV(self%x_initial+(fm_hs_i-2.)*self%range+self%range,fm_hs_yHtrue(fm_hs_ni-1)+fm_hs_h3,fm_hs_vtrue(fm_hs_ni-1)+fm_hs_g3)
 
-                fm_hs_v(fm_hs_ni) = fm_hs_firstderive(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)
-                fm_hs_yH(fm_hs_ni) = fm_hs_sourceFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)/fm_hs_massFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)
+                fm_hs_v(fm_hs_ni) = fm_hs_firstderive(fm_hs_t)
+                fm_hs_yH(fm_hs_ni) = fm_hs_sourceFunction(fm_hs_t)/fm_hs_massFunction(fm_hs_t)
                 fm_hs_vtrue(fm_hs_ni) = fm_hs_vtrue(fm_hs_ni-1) + (fm_hs_g1+fm_hs_g2*2.+fm_hs_g3*2.+fm_hs_g4)/6.
                 fm_hs_yHtrue(fm_hs_ni) = fm_hs_yHtrue(fm_hs_ni-1) + (fm_hs_h1+fm_hs_h2*2.+fm_hs_h3*2.+fm_hs_h4)/6.
 
-            else if ( fm_hs_t < solver_switch ) then
+            else if ( fm_hs_t < self%solver_switch ) then
 
                 !... using the particular guess
-                fm_hs_yH(fm_hs_ni) = fm_hs_sourceFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)/fm_hs_massFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)
-                fm_hs_v(fm_hs_ni) = fm_hs_firstderive(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)
+                fm_hs_yH(fm_hs_ni) = fm_hs_sourceFunction(fm_hs_t)/fm_hs_massFunction(fm_hs_t)
+                fm_hs_v(fm_hs_ni) = fm_hs_firstderive(fm_hs_t)
 
-                fm_hs_yHtrue(fm_hs_ni) = fm_hs_yH(fm_hs_ni)*EXP(-3.*fm_hs_t)+fm_hs_c1/(fm_hs_c2*6.)
+                fm_hs_yHtrue(fm_hs_ni) = fm_hs_yH(fm_hs_ni)*EXP(-3.*fm_hs_t)+self%c1/(self%c2*6.)
                 fm_hs_vtrue(fm_hs_ni) = -3.*EXP(-3.*fm_hs_t)*fm_hs_yH(fm_hs_ni)+EXP(-3.*fm_hs_t)*fm_hs_v(fm_hs_ni)
 
                 y(1) = fm_hs_yHtrue(fm_hs_ni)
                 y(2) = fm_hs_vtrue(fm_hs_ni)
 
-            else if ( fm_hs_t >= solver_switch ) then
+            else if ( fm_hs_t >= self%solver_switch ) then
 
-                call DLSODA ( FM_HS_derivs, neq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, RWORK, LRW, IWORK, LIW, FM_HS_Jac, JacobianMode)
+                call DLSODA ( FM_HS_derivs, neq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, RWORK, LRW, IWORK, LIW, jacobian, JacobianMode)
 
                 ! check the quality of the output:
                 if ( istate<0 ) then
 
-                    fm_hs_yH(fm_hs_ni) = fm_hs_sourceFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)/fm_hs_massFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)
-                    fm_hs_v(fm_hs_ni) = fm_hs_firstderive(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)
+                    fm_hs_yH(fm_hs_ni) = fm_hs_sourceFunction(fm_hs_t)/fm_hs_massFunction(fm_hs_t)
+                    fm_hs_v(fm_hs_ni) = fm_hs_firstderive(fm_hs_t)
 
-                    fm_hs_yHtrue(fm_hs_ni) = fm_hs_yH(fm_hs_ni)*EXP(-3.*fm_hs_t)+fm_hs_c1/(fm_hs_c2*6.)
+                    fm_hs_yHtrue(fm_hs_ni) = fm_hs_yH(fm_hs_ni)*EXP(-3.*fm_hs_t)+self%c1/(self%c2*6.)
                     fm_hs_vtrue(fm_hs_ni) = -3.*EXP(-3.*fm_hs_t)*fm_hs_yH(fm_hs_ni)+EXP(-3.*fm_hs_t)*fm_hs_v(fm_hs_ni)
 
                     y(1) = fm_hs_yHtrue(fm_hs_ni)
@@ -309,12 +345,12 @@ contains
             end if
 
             fm_hs_eqstate(fm_hs_ni) = -1-(fm_hs_vtrue(fm_hs_ni)/(3*fm_hs_yHtrue(fm_hs_ni)))
-            fm_hs_rhoeff(fm_hs_ni) = 3*fm_hs_m2*fm_hs_yHtrue(fm_hs_ni)
+            fm_hs_rhoeff(fm_hs_ni) = 3*self%m2*fm_hs_yHtrue(fm_hs_ni)
             fm_hs_i = fm_hs_i+1.
 
         END DO
 
-        call FM_HS_output(success) !... calculate background and EFT functions !bh
+        call output(success) !... calculate background and EFT functions !bh
 
         return
 
@@ -334,7 +370,7 @@ contains
 
             real(dl) :: dummy
 
-            dummy = fm_hs_derivativeForV( x, y(1), y(2), fm_hs_m2, fm_hs_c1, fm_hs_c2, fm_hs_n)
+            dummy = fm_hs_derivativeForV( x, y(1), y(2))
 
             ydot(1) = y(2)
             ydot(2) = dummy
@@ -344,8 +380,7 @@ contains
         ! ! ---------------------------------------------------------------------------------------------
         ! !> Subroutine that computes the Jacobian of the system. Now a dummy function.
         ! !! Implementing it might increase performances.
-        ! subroutine jacobian( num_eq, x, y, ml, mu, pd, nrowpd )
-        subroutine FM_HS_Jac( num_eq, x, y, ml, mu, pd, nrowpd )
+        subroutine jacobian( num_eq, x, y, ml, mu, pd, nrowpd )
 
             implicit none
 
@@ -357,241 +392,215 @@ contains
             real(dl), dimension(num_eq) :: y
             real(dl), dimension(nrowpd,num_eq) :: pd
 
-        end subroutine FM_HS_Jac
+        end subroutine jacobian
 
         ! ---------------------------------------------------------------------------------------------
         !> Subroutine that takes the solution of the background f(R) equations and computes the value of
         !! B and stores the values of the EFT functions.
+        subroutine output( success )
         ! subroutine output( num_eq, ind, x, y, B )
-        !---------------------------------------------------------------------------!
-        !... calculate background and EFT functions
-        subroutine FM_HS_output(success)
 
             implicit none
 
             logical, intent(inout) :: success
             integer :: fm_hs_ni
-            real(dl) :: fm_hs_i
             real(dl) :: fm_hs_rhoeffprime
             real(dl) :: fm_hs_t,fm_hs_rho,fm_hs_rhop,fm_hs_Ricci,fm_hs_Hubble,fm_hs_Hprime
 
             !--------------------------------Hybride-Part---------------------------------!
-            fm_hs_i=1.
-            DO fm_hs_ni = 1,fm_hs_nnosteps,1
-                fm_hs_t = fm_hs_llim+fm_hs_step*(fm_hs_i-1.)
-                fm_hs_efold(fm_hs_ni) = fm_hs_t
-                fm_hs_rhoeffprime = 3*fm_hs_m2*fm_hs_vtrue(fm_hs_ni)
-                fm_hs_rho = fm_hs_rhofunction(fm_hs_t,fm_hs_mgamma2,fm_hs_Neff,fm_hs_Omeganuh2)
-                fm_hs_rhop = fm_hs_rhoprime(fm_hs_t,fm_hs_mgamma2,fm_hs_Neff,fm_hs_Omeganuh2)
-                fm_hs_Hubble = SQRT(fm_hs_m2*EXP(-3.*fm_hs_t) + fm_hs_mgamma2*EXP(-4.*fm_hs_t) + fm_hs_rho/3. +&
+            DO fm_hs_ni = 1,self%background_num_points
+                fm_hs_t = self%x_initial+self%range*(fm_hs_ni-1.)
+                fm_hs_rhoeffprime = 3*self%m2*fm_hs_vtrue(fm_hs_ni)
+                fm_hs_rho = fm_hs_rhofunction(fm_hs_t)
+                fm_hs_rhop = fm_hs_rhoprime(fm_hs_t)
+                fm_hs_Hubble = SQRT(self%m2*EXP(-3.*fm_hs_t) + self%mgamma2*EXP(-4.*fm_hs_t) + fm_hs_rho/3. +&
                     fm_hs_rhoeff(fm_hs_ni)/3.)
-                fm_hs_Hprime = ((-3*fm_hs_m2)/EXP(3*fm_hs_t) - (4*fm_hs_mgamma2)/EXP(4*fm_hs_t) + fm_hs_rhop/3. + fm_hs_rhoeffprime/3.)/(2*fm_hs_Hubble)
+                fm_hs_Hprime = ((-3*self%m2)/EXP(3*fm_hs_t) - (4*self%mgamma2)/EXP(4*fm_hs_t) + fm_hs_rhop/3. + fm_hs_rhoeffprime/3.)/(2*fm_hs_Hubble)
                 fm_hs_Ricci = 6*fm_hs_Hprime*fm_hs_Hubble + 12*(fm_hs_Hubble**2)
-                fm_hs_Lambda(fm_hs_ni) = (1./2.)*(-(fm_hs_c1/fm_hs_c2)*fm_hs_m2 + (fm_hs_c1/(fm_hs_c2**2.))*((fm_hs_m2/fm_hs_Ricci)**(fm_hs_n+1.))*fm_hs_Ricci -&
-                    fm_hs_Ricci*(-(fm_hs_c1/(fm_hs_c2**2.))*fm_hs_n*(fm_hs_m2/fm_hs_Ricci)**(1.+fm_hs_n)))
-                fm_hs_Omega(fm_hs_ni) = -(fm_hs_c1/(fm_hs_c2**2.))*fm_hs_n*((fm_hs_m2/fm_hs_Ricci)**(1.+fm_hs_n))
-                fm_hs_c(fm_hs_ni) = 0.
-                fm_hs_i = fm_hs_i+1.
+                ! fm_hs_Lambda(fm_hs_ni) = (1./2.)*(-(self%c1/self%c2)*self%m2 + (self%c1/(self%c2**2.))*((self%m2/fm_hs_Ricci)**(self%fm_hs_n+1.))*fm_hs_Ricci -&
+                !     &fm_hs_Ricci*(-(self%c1/(self%c2**2.))*self%fm_hs_n*(self%m2/fm_hs_Ricci)**(1.+self%fm_hs_n)))
+
+                ! Compute the EFT functions
+                self%EFTLambda%y(fm_hs_ni) = (1./2.)*(-(self%c1/self%c2)*self%m2 + (self%c1/(self%c2**2.))*((self%m2/fm_hs_Ricci)**(self%fm_hs_n+1.))*fm_hs_Ricci -&
+                    &fm_hs_Ricci*(-(self%c1/(self%c2**2.))*self%fm_hs_n*(self%m2/fm_hs_Ricci)**(1.+self%fm_hs_n)))
+                self%EFTOmega%y(fm_hs_ni) = -(self%c1/(self%c2**2.))*self%fm_hs_n*((self%m2/fm_hs_Ricci)**(1.+self%fm_hs_n))
             END DO
             success = .true.
 
             return
 
-        end subroutine FM_HS_output
+        end subroutine output
 
         !---------------------------------------------------------------------------!
-        function fm_hs_rhofunction(t,mgamma2,Neff,Omeganuh2)
+        function fm_hs_rhofunction(t)
 
             implicit none
-            real(dl)::t,mgamma2,Neff,Omeganuh2
+            real(dl) :: t
+            real(dl) :: Omeganuh2,Neff
             real(dl) :: fm_hs_rhofunction
+
+            Omeganuh2 = params_cache%omegan*(params_cache%h0)**2.
+            Neff      = params_cache%Num_Nu_massless + params_cache%Num_Nu_Massive
 
             IF (Omeganuh2==0.) then
                 fm_hs_rhofunction = 0.
             else
-                fm_hs_rhofunction = (0.6813*mgamma2*Neff*(1 + 5.434509745635465e8*(EXP(t)*Omeganuh2)**1.83)**0.5464480874316939)/EXP(4*t)
+                fm_hs_rhofunction = (0.6813*self%mgamma2*Neff*(1 + 5.434509745635465e8*(EXP(t)*Omeganuh2)**1.83)**0.5464480874316939)/EXP(4*t)
             end if
 
         end function fm_hs_rhofunction
 
         !---------------------------------------------------------------------------!
-        function fm_hs_rhoprime(t,mgamma2,Neff,Omeganuh2)
+        function fm_hs_rhoprime(t)
 
             implicit none
-            real(dl)::t,mgamma2,Neff,Omeganuh2
+            real(dl) ::t
+            real(dl) :: Omeganuh2, Neff
             real(dl) :: fm_hs_rhoprime
+
+            Omeganuh2 = params_cache%omegan*(params_cache%h0)**2.
+            Neff      = params_cache%Num_Nu_massless + params_cache%Num_Nu_Massive
 
             if (Omeganuh2==0.) then
                 fm_hs_rhoprime = 0.
             else
-                fm_hs_rhoprime = (3.7025315D8*mgamma2*Neff*Omeganuh2*(EXP(t)*Omeganuh2)**83D-2)/&
-                    (EXP(3.*t)*(1.+ 5.43451D8*(EXP(t)*Omeganuh2)**1.83)**453552D-6)&
-                    - (2.7252*mgamma2*Neff*EXP(-4.*t))*((1. + 5.43451D8*(EXP(t)*Omeganuh2)**1.83)**(1./1.83))
+                fm_hs_rhoprime = (3.7025315D8*self%mgamma2*Neff*Omeganuh2*(EXP(t)*Omeganuh2)**83D-2)/&
+                    &(EXP(3.*t)*(1.+ 5.43451D8*(EXP(t)*Omeganuh2)**1.83)**453552D-6)&
+                    &- (2.7252*self%mgamma2*Neff*EXP(-4.*t))*((1. + 5.43451D8*(EXP(t)*Omeganuh2)**1.83)**(1./1.83))
             end if
 
         end function fm_hs_rhoprime
 
         !---------------------------------------------------------------------------!
-        function fm_hs_derivativeForV(t,yh,v,m2,c1,c2,n)
+        function fm_hs_derivativeForV(t,yh,v)
 
             implicit none
-            real(dl)::t,yh,v,yhp,m2,c1,c2,n
+            real(dl)::t,yh,v,yhp
             real(dl)::firstpart,secondpart,thirdpart,fourthpart
             real(dl) :: fm_hs_derivativeForV
 
-            firstpart = (c1*n*(1/(3/EXP(3*t) + 3*v + 12*yH))**(1 + n)*(-1/(2.*EXP(3*t)) - yH + (3*v + 12*yH)/6.))/c2**2
-            secondpart = (-((c1*m2)/c2) + (c1*m2*(1/(3/EXP(3*t) + 3*v + 12*yH))**n)/c2**2)/(6.*m2)
-            thirdpart = (2*c1*n*(1/(3/EXP(3*t) + 3*v + 12*yH))**(2 + n))/(c2**2*m2)
-            fourthpart = (c1*(-1 + n)*n*(1/(3/EXP(3*t) + 3*v + 12*yH))**(2 + n))/(c2**2*m2)
-            fm_hs_derivativeForV =  -4*v+(1./3.)*(9*EXP(-3*t) - (yH+firstpart + secondpart)/(m2*(EXP(-3*t)+yH)*(thirdpart+fourthpart)))
+            firstpart = (self%c1*self%fm_hs_n*(1/(3/EXP(3*t) + 3*v + 12*yH))**(1 + self%fm_hs_n)*(-1/(2.*EXP(3*t)) - yH + (3*v + 12*yH)/6.))/self%c2**2
+            secondpart = (-((self%c1*self%m2)/self%c2) + (self%c1*self%m2*(1/(3/EXP(3*t) + 3*v + 12*yH))**self%fm_hs_n)/self%c2**2)/(6.*self%m2)
+            thirdpart = (2*self%c1*self%fm_hs_n*(1/(3/EXP(3*t) + 3*v + 12*yH))**(2 + self%fm_hs_n))/(self%c2**2*self%m2)
+            fourthpart = (self%c1*(-1 + self%fm_hs_n)*self%fm_hs_n*(1/(3/EXP(3*t) + 3*v + 12*yH))**(2 + self%fm_hs_n))/(self%c2**2*self%m2)
+            fm_hs_derivativeForV =  -4*v+(1./3.)*(9*EXP(-3*t) - (yH+firstpart + secondpart)/(self%m2*(EXP(-3*t)+yH)*(thirdpart+fourthpart)))
 
         end function fm_hs_derivativeForV
 
         !-------------------------------------------------------------------------------------------!
-        function fm_hs_sourceFunction(m2,c1,c2,n,t)
+        function fm_hs_sourceFunction(t)
 
             implicit none
-            real(dl),intent(in)::m2,c1,c2,n,t
+            real(dl),intent(in):: t
             real(dl) :: fm_hs_sourceFunction
 
-            fm_hs_sourceFunction =3 + (3*c2)/((6*c2 + c1*EXP(3*t))*(1 + n)) +&
-                (c1*EXP(3*t))/((6*c2 + c1*EXP(3*t))*(1 + n)) - &
-                (2*c1**2*EXP(6*t))/(3.*c2*(6*c2 + c1*EXP(3*t))*(1 + n)) - &
-                (3*c2)/((6*c2 + c1*EXP(3*t))*n*(1 + n)) - &
-                (4*c1*EXP(3*t))/((6*c2 + c1*EXP(3*t))*n*(1 + n)) - &
-                (4*c1**2*EXP(6*t))/(3*c2*(6*c2 + c1*EXP(3*t))*n*(1 + n))
+            fm_hs_sourceFunction =3 + (3*self%c2)/((6*self%c2 + self%c1*EXP(3*t))*(1 + self%fm_hs_n)) +&
+                &(self%c1*EXP(3*t))/((6*self%c2 + self%c1*EXP(3*t))*(1 + self%fm_hs_n)) - &
+                &(2*self%c1**2*EXP(6*t))/(3.*self%c2*(6*self%c2 + self%c1*EXP(3*t))*(1 + self%fm_hs_n)) - &
+                &(3*self%c2)/((6*self%c2 + self%c1*EXP(3*t))*self%fm_hs_n*(1 + self%fm_hs_n)) - &
+                &(4*self%c1*EXP(3*t))/((6*self%c2 + self%c1*EXP(3*t))*self%fm_hs_n*(1 + self%fm_hs_n)) - &
+                &(4*self%c1**2*EXP(6*t))/(3*self%c2*(6*self%c2 + self%c1*EXP(3*t))*self%fm_hs_n*(1 + self%fm_hs_n))
 
         end function fm_hs_sourceFunction
 
         !-------------------------------------------------------------------------------------------!
-        function fm_hs_massFunction(m2,c1,c2,n,t)
+        function fm_hs_massFunction(t)
 
             implicit none
-            real(dl),intent(in) :: m2,c1,c2,n,t
+            real(dl),intent(in) :: t
             real(dl) :: fm_hs_massFunction
 
-            fm_hs_massFunction =-3 - (18*c2**2)/((6*c2 + c1*EXP(3*t))**2*(1 + n)) -&
-                (6*c1*c2*EXP(3*t))/((6*c2 + c1*EXP(3*t))**2*(1 + n)) - &
-                (5*c1**2*EXP(6*t))/((6*c2 + c1*EXP(3*t))**2*(1 + n)) + &
-                (18*c2**2)/((6*c2 + c1*EXP(3*t))**2*n*(1 + n)) + &
-                (6*c1*c2*EXP(3*t))/((6*c2 + c1*EXP(3*t))**2*n*(1 + n)) - &
-                (4*c1**2*EXP(6*t))/((6*c2 + c1*EXP(3*t))**2*n*(1 + n)) + &
-                (162*c2**3)/&
-                ((1/((2*c1)/c2 + 3/EXP(3*t)))**n*(6*c2 + c1*EXP(3*t))**2*n*&
-                (1 + n)) + (108*c2**4)/&
-                (c1*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*&
-                (6*c2 + c1*EXP(3*t))**2*n*(1 + n)) + &
-                (72*c1*c2**2*EXP(3*t))/&
-                ((1/((2*c1)/c2 + 3/EXP(3*t)))**n*(6*c2 + c1*EXP(3*t))**2*n*&
-                (1 + n)) + (8*c1**2*c2*EXP(6*t))/&
-                ((1/((2*c1)/c2 + 3/EXP(3*t)))**n*(6*c2 + c1*EXP(3*t))**2*n*&
-                (1 + n))
+            fm_hs_massFunction =-3 - (18*self%c2**2)/((6*self%c2 + self%c1*EXP(3*t))**2*(1 + self%fm_hs_n)) -&
+                &(6*self%c1*self%c2*EXP(3*t))/((6*self%c2 + self%c1*EXP(3*t))**2*(1 + self%fm_hs_n)) - &
+                &(5*self%c1**2*EXP(6*t))/((6*self%c2 + self%c1*EXP(3*t))**2*(1 + self%fm_hs_n)) + &
+                &(18*self%c2**2)/((6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*(1 + self%fm_hs_n)) + &
+                &(6*self%c1*self%c2*EXP(3*t))/((6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*(1 + self%fm_hs_n)) - &
+                &(4*self%c1**2*EXP(6*t))/((6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*(1 + self%fm_hs_n)) + &
+                &(162*self%c2**3)/&
+                &((1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*(6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*&
+                &(1 + self%fm_hs_n)) + (108*self%c2**4)/&
+                &(self%c1*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*&
+                &(6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*(1 + self%fm_hs_n)) + &
+                &(72*self%c1*self%c2**2*EXP(3*t))/&
+                &((1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*(6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*&
+                &(1 + self%fm_hs_n)) + (8*self%c1**2*self%c2*EXP(6*t))/&
+                &((1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*(6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*&
+                &(1 + self%fm_hs_n))
 
         end function fm_hs_massFunction
 
         !-------------------------------------------------------------------------------------------!
-        function fm_hs_fFunction(m2,c1,c2,n,t)
+        function fm_hs_firstderive(t)
 
             implicit none
-            real(dl),intent(in) :: m2,c1,c2,n,t
-            real(dl) :: fm_hs_fFunction
-
-            fm_hs_fFunction = (EXP(-3.*t)*(3.*c1*n*EXP(3.*t)+4.*c1*EXP(3.*t)+6.*c2))/(n*(n+1.)*(c1*EXP(3.*t)+6.*c2))
-            fm_hs_fFunction = 2.*EXP(-3.*t) - fm_hs_fFunction
-            fm_hs_fFunction = -EXP(-3.*t)*fm_hs_fFunction
-
-        end function fm_hs_fFunction
-
-        !-------------------------------------------------------------------------------------------!
-        function fm_hs_est_z_ast(success)
-
-            implicit none
-            real(dl) :: fm_hs_est_z_ast
-            integer fm_hs_ni
-            real(dl) fm_hs_i,fm_hs_t,fm_hs_ratio
-            logical, intent(inout) :: success
-
-            if (ABS(fm_hs_fro) .gt. 1.d-2) then
-                fm_hs_i = 1.
-                DO fm_hs_ni = 1,fm_hs_nnosteps,1
-                    fm_hs_t = fm_hs_llim+fm_hs_step*(fm_hs_i-1.)
-                    fm_hs_yH(fm_hs_ni) = fm_hs_sourceFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)/fm_hs_massFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)
-                    fm_hs_v(fm_hs_ni) = fm_hs_firstderive(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)
-                    if ((fm_hs_yH(fm_hs_ni) .ne. 0.0) .and. (fm_hs_massFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t) .ne. 0.0)) then
-                        !fm_hs_ratio = fm_hs_fFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)*fm_hs_v(fm_hs_ni)
-                        fm_hs_ratio = fm_hs_v(fm_hs_ni)
-                        fm_hs_ratio = fm_hs_ratio/fm_hs_massFunction(fm_hs_m2,fm_hs_c1,fm_hs_c2,fm_hs_n,fm_hs_t)/fm_hs_yH(fm_hs_ni)
-                        fm_hs_ratio = ABS(fm_hs_ratio)
-                    endif
-                    if ( fm_hs_ratio .gt. fm_hs_z_ast_threshold) then
-                        fm_hs_est_z_ast = fm_hs_t
-                        return
-                    endif
-                    fm_hs_i = fm_hs_i+1.
-                END DO
-                fm_hs_est_z_ast = fm_xFinal !bh
-            else
-                fm_hs_est_z_ast = fm_xFinal !bh
-            endif
-            success = .true.
-
-        end function fm_hs_est_z_ast
-
-        !-------------------------------------------------------------------------------------------!
-        function fm_hs_firstderive(m2,c1,c2,n,t)
-
-            implicit none
-            real(dl),intent(in)::m2,c1,c2,n,t
+            real(dl),intent(in):: t
             real(dl) :: fm_hs_firstderive
 
-            fm_hs_firstderive = -(-27/EXP(3*t) - (6*c1*(3*c2 + 2*c1*EXP(3*t) - 3*c2*n + c1*EXP(3*t)*n))/(c2*(6*c2 + c1*EXP(3*t))*n*(1 + n)) +&
-                (3*c1*(3*c2 + 2*c1*EXP(3*t))*(3*c2 + 2*c1*EXP(3*t) - 3*c2*n + c1*EXP(3*t)*n))/&
-                (c2*(6*c2 + c1*EXP(3*t))**2*n*(1 + n)) +&
-                (3*(3*c2 + 2*c1*EXP(3*t))*(3*c2 + 2*c1*EXP(3*t) - 3*c2*n + c1*EXP(3*t)*n))/&
-                (c2*EXP(3*t)*(6*c2 + c1*EXP(3*t))*n*(1 + n)) -&
-                ((3*c2 + 2*c1*EXP(3*t))*(6*c1*EXP(3*t) + 3*c1*EXP(3*t)*n))/(c2*EXP(3*t)*(6*c2 + c1*EXP(3*t))*n*(1 + n)))/&
-                (3*(3/EXP(3*t) + (-108*c2**4 - 162*c1*c2**3*EXP(3*t) - 72*c1**2*c2**2*EXP(6*t) - 8*c1**3*c2*EXP(9*t) -&
-                18*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n - 6*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n +&
-                4*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n + 18*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n +&
-                6*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n + 5*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n)/&
-                (c1*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*(6*c2 + c1*EXP(3*t))**2*n*(1 + n)))) +&
-                ((9/EXP(3*t) - ((3*c2 + 2*c1*EXP(3*t))*(3*c2 + 2*c1*EXP(3*t) - 3*c2*n + c1*EXP(3*t)*n))/&
-                (c2*EXP(3*t)*(6*c2 + c1*EXP(3*t))*n*(1 + n)))*&
-                (-9/EXP(3*t) - (9*(1/((2*c1)/c2 + 3/EXP(3*t)))**(1 - n)*&
-                (-108*c2**4 - 162*c1*c2**3*EXP(3*t) - 72*c1**2*c2**2*EXP(6*t) - 8*c1**3*c2*EXP(9*t) -&
-                18*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n -&
-                6*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n + 4*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n +&
-                18*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n +&
-                6*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n + 5*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n))&
-                /(c1*EXP(9*t)*(6*c2 + c1*EXP(3*t))**2*(1 + n)) -&
-                (6*(-108*c2**4 - 162*c1*c2**3*EXP(3*t) - 72*c1**2*c2**2*EXP(6*t) - 8*c1**3*c2*EXP(9*t) -&
-                18*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n -&
-                6*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n + 4*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n +&
-                18*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n +&
-                6*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n + 5*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n))&
-                /(EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*(6*c2 + c1*EXP(3*t))**3*n*(1 + n)) -&
-                (6*(-108*c2**4 - 162*c1*c2**3*EXP(3*t) - 72*c1**2*c2**2*EXP(6*t) - 8*c1**3*c2*EXP(9*t) -&
-                18*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n -&
-                6*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n + 4*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n +&
-                18*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n +&
-                6*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n + 5*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n))&
-                /(c1*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*(6*c2 + c1*EXP(3*t))**2*n*(1 + n)) +&
-                (-486*c1*c2**3*EXP(3*t) - 432*c1**2*c2**2*EXP(6*t) - 72*c1**3*c2*EXP(9*t) -&
-                54*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n - 36*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n +&
-                36*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n + 54*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n +&
-                36*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n +&
-                45*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n - 162*c1*c2**2*(1/((2*c1)/c2 + 3/EXP(3*t)))**(1 + n)*n -&
-                54*c1**2*c2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**(1 + n)*n +&
-                36*c1**3*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**(1 + n)*n +&
-                162*c1*c2**2*(1/((2*c1)/c2 + 3/EXP(3*t)))**(1 + n)*n**2 +&
-                54*c1**2*c2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**(1 + n)*n**2 +&
-                45*c1**3*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**(1 + n)*n**2)/&
-                (c1*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*(6*c2 + c1*EXP(3*t))**2*n*(1 + n))))/&
-                (3*(3/EXP(3*t) + (-108*c2**4 - 162*c1*c2**3*EXP(3*t) - 72*c1**2*c2**2*EXP(6*t) - 8*c1**3*c2*EXP(9*t) -&
-                18*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n - 6*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n +&
-                4*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n + 18*c1*c2**2*EXP(3*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n +&
-                6*c1**2*c2*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n + 5*c1**3*EXP(9*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*n)/&
-                (c1*EXP(6*t)*(1/((2*c1)/c2 + 3/EXP(3*t)))**n*(6*c2 + c1*EXP(3*t))**2*n*(1 + n)))**2)
+            fm_hs_firstderive = -(-27/EXP(3*t) - (6*self%c1*(3*self%c2 + 2*self%c1*EXP(3*t) - 3*self%c2*self%fm_hs_n + self%c1*EXP(3*t)*self%fm_hs_n))/(self%c2*(6*self%c2 &
+                &+ self%c1*EXP(3*t))*self%fm_hs_n*(1 + self%fm_hs_n)) +&
+                &(3*self%c1*(3*self%c2 + 2*self%c1*EXP(3*t))*(3*self%c2 + 2*self%c1*EXP(3*t) - 3*self%c2*self%fm_hs_n + self%c1*EXP(3*t)*self%fm_hs_n))/&
+                &(self%c2*(6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*(1 + self%fm_hs_n)) +&
+                &(3*(3*self%c2 + 2*self%c1*EXP(3*t))*(3*self%c2 + 2*self%c1*EXP(3*t) - 3*self%c2*self%fm_hs_n + self%c1*EXP(3*t)*self%fm_hs_n))/&
+                &(self%c2*EXP(3*t)*(6*self%c2 + self%c1*EXP(3*t))*self%fm_hs_n*(1 + self%fm_hs_n)) -&
+                &((3*self%c2 + 2*self%c1*EXP(3*t))*(6*self%c1*EXP(3*t) + 3*self%c1*EXP(3*t)*self%fm_hs_n))/(self%c2*EXP(3*t)*(6*self%c2&
+                & + self%c1*EXP(3*t))*self%fm_hs_n*(1 + self%fm_hs_n)))/&
+                &(3*(3/EXP(3*t) + (-108*self%c2**4 - 162*self%c1*self%c2**3*EXP(3*t) - 72*self%c1**2*self%c2**2*EXP(6*t) - 8*self%c1**3*self%c2*EXP(9*t) -&
+                &18*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n - 6*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n +&
+                &4*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n + 18*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n +&
+                &6*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n + 5*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n)/&
+                &(self%c1*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*(6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*(1 + self%fm_hs_n)))) +&
+                &((9/EXP(3*t) - ((3*self%c2 + 2*self%c1*EXP(3*t))*(3*self%c2 + 2*self%c1*EXP(3*t) - 3*self%c2*self%fm_hs_n + self%c1*EXP(3*t)*self%fm_hs_n))/&
+                &(self%c2*EXP(3*t)*(6*self%c2 + self%c1*EXP(3*t))*self%fm_hs_n*(1 + self%fm_hs_n)))*&
+                &(-9/EXP(3*t) - (9*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**(1 - self%fm_hs_n)*&
+                &(-108*self%c2**4 - 162*self%c1*self%c2**3*EXP(3*t) - 72*self%c1**2*self%c2**2*EXP(6*t) - 8*self%c1**3*self%c2*EXP(9*t) -&
+                &18*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n -&
+                &6*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n + 4*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n +&
+                &18*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n +&
+                &6*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n + 5*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n))&
+                &/(self%c1*EXP(9*t)*(6*self%c2 + self%c1*EXP(3*t))**2*(1 + self%fm_hs_n)) -&
+                &(6*(-108*self%c2**4 - 162*self%c1*self%c2**3*EXP(3*t) - 72*self%c1**2*self%c2**2*EXP(6*t) - 8*self%c1**3*self%c2*EXP(9*t) -&
+                &18*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n -&
+                &6*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n + 4*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n +&
+                &18*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n +&
+                &6*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n + 5*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n))&
+                &/(EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*(6*self%c2 + self%c1*EXP(3*t))**3*self%fm_hs_n*(1 + self%fm_hs_n)) -&
+                &(6*(-108*self%c2**4 - 162*self%c1*self%c2**3*EXP(3*t) - 72*self%c1**2*self%c2**2*EXP(6*t) - 8*self%c1**3*self%c2*EXP(9*t) -&
+                &18*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n -&
+                &6*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n + 4*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n +&
+                &18*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n +&
+                &6*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n + 5*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n))&
+                &/(self%c1*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*(6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*(1 + self%fm_hs_n)) +&
+                &(-486*self%c1*self%c2**3*EXP(3*t) - 432*self%c1**2*self%c2**2*EXP(6*t) - 72*self%c1**3*self%c2*EXP(9*t) -&
+                &54*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n - 36*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n +&
+                &36*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n + 54*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n +&
+                &36*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n +&
+                &45*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n - 162*self%c1*self%c2**2*(1/((2*self%c1)/self%c2&
+                & + 3/EXP(3*t)))**(1 + self%fm_hs_n)*self%fm_hs_n -&
+                &54*self%c1**2*self%c2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**(1 + self%fm_hs_n)*self%fm_hs_n +&
+                &36*self%c1**3*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**(1 + self%fm_hs_n)*self%fm_hs_n +&
+                &162*self%c1*self%c2**2*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**(1 + self%fm_hs_n)*self%fm_hs_n**2 +&
+                &54*self%c1**2*self%c2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**(1 + self%fm_hs_n)*self%fm_hs_n**2 +&
+                &45*self%c1**3*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**(1 + self%fm_hs_n)*self%fm_hs_n**2)/&
+                &(self%c1*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*(6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*(1 + self%fm_hs_n))))/&
+                &(3*(3/EXP(3*t) + (-108*self%c2**4 - 162*self%c1*self%c2**3*EXP(3*t) - 72*self%c1**2*self%c2**2*EXP(6*t) - 8*self%c1**3*self%c2*EXP(9*t) -&
+                &18*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n - 6*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n +&
+                &4*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n + 18*self%c1*self%c2**2*EXP(3*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n +&
+                &6*self%c1**2*self%c2*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n + 5*self%c1**3*EXP(9*t)*(1/((2*self%c1)/self%c2 &
+                &+ 3/EXP(3*t)))**self%fm_hs_n*self%fm_hs_n)/&
+                &(self%c1*EXP(6*t)*(1/((2*self%c1)/self%c2 + 3/EXP(3*t)))**self%fm_hs_n*(6*self%c2 + self%c1*EXP(3*t))**2*self%fm_hs_n*(1 + self%fm_hs_n)))**2)
 
         end function fm_hs_firstderive
 
@@ -623,10 +632,10 @@ contains
 
         ! print general model informations:
         write(*,*)
-        write(*,'(a,a)')    '   Model               =  ', self%name
-        write(*,'(a,I3)')   '   Number of params    ='  , self%parameter_number
-        write(*,*)   '                 n    ='  , self%fm_hs_n
-        write(*,*)   '                 fR_0 ='  , self%fm_hs_fro
+        write(*,'(a,a)')     '   Model               =  ', self%name
+        write(*,'(a,I3)')    '   Number of params    ='  , self%parameter_number
+        write(*,'(a24,F12.6)')'                 n    ='  , self%fm_hs_n
+        write(*,'(a24,F12.6)')'                 fR_0 ='  , self%fm_hs_fro
 
         ! print the values of the parameters:
         if ( present(print_params) ) then
@@ -745,15 +754,20 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        ! compute the background EFT functions:
-        eft_cache%EFTOmegaV    = 0._dl
-        eft_cache%EFTOmegaP    = 0._dl
-        eft_cache%EFTOmegaPP   = 0._dl
-        eft_cache%EFTOmegaPPP  = 0._dl
+        real(dl) :: x, mu
+        integer  :: ind
+
+        x   = log(a)
+        call self%EFTOmega%precompute(x, ind, mu )
+
+        eft_cache%EFTOmegaV    = self%EFTOmega%value( x, index=ind, coeff=mu )
+        eft_cache%EFTOmegaP    = self%EFTOmega%first_derivative( x, index=ind, coeff=mu )
+        eft_cache%EFTOmegaPP   = self%EFTOmega%second_derivative( x, index=ind, coeff=mu )
+        eft_cache%EFTOmegaPPP  = self%EFTOmega%third_derivative( x, index=ind, coeff=mu )
         eft_cache%EFTc         = 0._dl
-        eft_cache%EFTLambda    = 0._dl
+        eft_cache%EFTLambda    = self%EFTLambda%value( x, index=ind, coeff=mu )
         eft_cache%EFTcdot      = 0._dl
-        eft_cache%EFTLambdadot = 0._dl
+        eft_cache%EFTLambdadot = self%EFTLambda%first_derivative( x, index=ind, coeff=mu )
 
     end subroutine EFTCAMBHSfRBackgroundEFTFunctions
 
