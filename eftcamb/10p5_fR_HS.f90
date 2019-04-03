@@ -59,11 +59,12 @@ module EFTCAMB_full_fR_HS
         integer  :: background_num_points = 1000                            !< Number of points sampled by the designer code.
         real(dl) :: x_initial             = log(10._dl**(-8._dl))           !< log(a start)
         real(dl) :: x_final               = 0.0_dl                          !< log(a final)
-        logical  :: debug_flag            = .true.
+        logical  :: debug_flag            = .false.
 
         ! the interpolated EFT functions that come out of the background sover:
         type(equispaced_linear_interpolate_function_1D) :: EFTOmega       !< The interpolated function Omega (and derivatives).
         type(equispaced_linear_interpolate_function_1D) :: EFTLambda      !< The interpolated function Lambda (and derivatives).
+        type(equispaced_linear_interpolate_function_1D) :: EFTadotoa      !< The interpolated function Lambda (and derivatives).
 
     contains
 
@@ -167,9 +168,9 @@ contains
         integer  :: ni
 
         !the following is useful for debugging
-        fm_hs_Omegadeh2 = params_cache%omegav*(params_cache%h0)**2.
-        fm_hs_Omegagammah2 = params_cache%omegag*(params_cache%h0)**2.
-        fm_hs_Omegacdmh2 = params_cache%omegab*(params_cache%h0)**2. +params_cache%omegac*(params_cache%h0)**2.
+        fm_hs_Omegadeh2 = params_cache%omegav*(params_cache%h0/100._dl)**2.
+        fm_hs_Omegagammah2 = params_cache%omegag*(params_cache%h0/100._dl)**2.
+        fm_hs_Omegacdmh2 = params_cache%omegab*(params_cache%h0/100._dl)**2. +params_cache%omegac*(params_cache%h0/100._dl)**2.
 
         self%c2 = -self%fm_hs_n*(6.*fm_hs_Omegadeh2/fm_hs_Omegacdmh2)*( 3.+12.*fm_hs_Omegadeh2/fm_hs_Omegacdmh2)**(-self%fm_hs_n-1.)*(1./self%fm_hs_fro)
         self%c1 = 6.*(fm_hs_Omegadeh2/fm_hs_Omegacdmh2)*self%c2
@@ -180,6 +181,24 @@ contains
         ! initialize interpolating functions:
         call self%EFTOmega%initialize  ( self%background_num_points, self%x_initial, self%x_final )
         call self%EFTLambda%initialize ( self%background_num_points, self%x_initial, self%x_final )
+        call self%EFTadotoa%initialize ( self%background_num_points, self%x_initial, self%x_final )
+
+        !SP: some debug prints
+        write(*,*)'n=',self%fm_hs_n
+        write(*,*)'fR_0=',self%fm_hs_fro
+        write(*,*)'fm_hs_mnu',94.*params_cache%omegan*(params_cache%h0/100.)**2
+        write(*,*)'h0=',params_cache%h0/100.
+        write(*,*)'fm_hs_Omegacdmh2',fm_hs_Omegacdmh2
+        write(*,*)'Neff=',params_cache%Neff
+        print*, 'massive = ',  params_cache%Num_Nu_Massive
+        write(*,*) self%range
+        write(*,*) self%x_initial
+        write(*,*) self%x_final
+        write(*,*) self%background_num_points
+        write(*,*)'c1 = ', self%c1
+        write(*,*)'c2 = ', self%c2
+        write(*,*)'m2 = ', self%m2
+        write(*,*)'range = ', self%range
 
         ! solve the background equations and store the solution:
         call self%solve_background_equations( params_cache, success=success )
@@ -187,11 +206,13 @@ contains
         if (self%debug_flag) then
 
           open(66,file=TRIM(outroot)//'debug_lambda.dat')
+          open(77,file=TRIM(outroot)//'debug_adotoa.dat')
           open(99,file=TRIM(outroot)//'debug_omega.dat')
 
           do ni = 1,self%background_num_points
               fm_hs_t = self%x_initial+self%range*(ni-1.)
               write(66, *)Exp(fm_hs_t), self%EFTLambda%y(ni)
+              write(77, *)Exp(fm_hs_t), self%EFTadotoa%y(ni)
               write(99, *)Exp(fm_hs_t), self%EFTOmega%y(ni)
           end do
 
@@ -424,9 +445,16 @@ contains
                 self%EFTLambda%y(fm_hs_ni) = (1./2.)*(-(self%c1/self%c2)*self%m2 + (self%c1/(self%c2**2.))*((self%m2/fm_hs_Ricci)**(self%fm_hs_n+1.))*fm_hs_Ricci -&
                     &fm_hs_Ricci*(-(self%c1/(self%c2**2.))*self%fm_hs_n*(self%m2/fm_hs_Ricci)**(1.+self%fm_hs_n)))
                 self%EFTOmega%y(fm_hs_ni) = -(self%c1/(self%c2**2.))*self%fm_hs_n*((self%m2/fm_hs_Ricci)**(1.+self%fm_hs_n))
+                self%EFTadotoa%y(fm_hs_ni) = fm_hs_Hubble*EXP(fm_hs_t)
+
+                !SP: debug
+                ! write(111, *)Exp(fm_hs_t), self%EFTOmega%y(fm_hs_ni)
+                ! write(222, *)Exp(fm_hs_t), self%EFTLambda%y(fm_hs_ni)
+                ! write(333, *)Exp(fm_hs_t), fm_hs_Ricci
+
             END DO
             success = .true.
-
+! call MpiStop('done printing')
             return
 
         end subroutine output
@@ -436,16 +464,15 @@ contains
 
             implicit none
             real(dl) :: t
-            real(dl) :: Omeganuh2,Neff
+            real(dl) :: Omeganuh2
             real(dl) :: fm_hs_rhofunction
 
-            Omeganuh2 = params_cache%omegan*(params_cache%h0)**2.
-            Neff      = params_cache%Num_Nu_massless + params_cache%Num_Nu_Massive
+            Omeganuh2 = params_cache%omegan*(params_cache%h0/100._dl)**2.
 
             IF (Omeganuh2==0.) then
                 fm_hs_rhofunction = 0.
             else
-                fm_hs_rhofunction = (0.6813*self%mgamma2*Neff*(1 + 5.434509745635465e8*(EXP(t)*Omeganuh2)**1.83)**0.5464480874316939)/EXP(4*t)
+                fm_hs_rhofunction = (0.6813*self%mgamma2*params_cache%Neff*(1 + 5.434509745635465e8*(EXP(t)*Omeganuh2)**1.83)**0.5464480874316939)/EXP(4*t)
             end if
 
         end function fm_hs_rhofunction
@@ -455,18 +482,17 @@ contains
 
             implicit none
             real(dl) ::t
-            real(dl) :: Omeganuh2, Neff
+            real(dl) :: Omeganuh2
             real(dl) :: fm_hs_rhoprime
 
-            Omeganuh2 = params_cache%omegan*(params_cache%h0)**2.
-            Neff      = params_cache%Num_Nu_massless + params_cache%Num_Nu_Massive
+            Omeganuh2 = params_cache%omegan*(params_cache%h0/100._dl)**2.
 
             if (Omeganuh2==0.) then
                 fm_hs_rhoprime = 0.
             else
-                fm_hs_rhoprime = (3.7025315D8*self%mgamma2*Neff*Omeganuh2*(EXP(t)*Omeganuh2)**83D-2)/&
+                fm_hs_rhoprime = (3.7025315D8*self%mgamma2*params_cache%Neff*Omeganuh2*(EXP(t)*Omeganuh2)**83D-2)/&
                     &(EXP(3.*t)*(1.+ 5.43451D8*(EXP(t)*Omeganuh2)**1.83)**453552D-6)&
-                    &- (2.7252*self%mgamma2*Neff*EXP(-4.*t))*((1. + 5.43451D8*(EXP(t)*Omeganuh2)**1.83)**(1./1.83))
+                    &- (2.7252*self%mgamma2*params_cache%Neff*EXP(-4.*t))*((1. + 5.43451D8*(EXP(t)*Omeganuh2)**1.83)**(1./1.83))
             end if
 
         end function fm_hs_rhoprime
@@ -759,15 +785,18 @@ contains
 
         x   = log(a)
         call self%EFTOmega%precompute(x, ind, mu )
+        call self%EFTOmega%initialize_derivatives()
+        call self%EFTLambda%initialize_derivatives()
 
         eft_cache%EFTOmegaV    = self%EFTOmega%value( x, index=ind, coeff=mu )
-        eft_cache%EFTOmegaP    = self%EFTOmega%first_derivative( x, index=ind, coeff=mu )
-        eft_cache%EFTOmegaPP   = self%EFTOmega%second_derivative( x, index=ind, coeff=mu )
-        eft_cache%EFTOmegaPPP  = self%EFTOmega%third_derivative( x, index=ind, coeff=mu )
+        eft_cache%EFTOmegaP    = self%EFTOmega%first_derivative( x, index=ind, coeff=mu )/a
+        eft_cache%EFTOmegaPP   = (self%EFTOmega%second_derivative( x, index=ind, coeff=mu ) - self%EFTOmega%first_derivative( x, index=ind, coeff=mu ))/a**2.
+        eft_cache%EFTOmegaPPP  = (self%EFTOmega%third_derivative( x, index=ind, coeff=mu ) -3._dl*self%EFTOmega%second_derivative( x, index=ind, coeff=mu )&
+                  &+2._dl*self%EFTOmega%first_derivative( x, index=ind, coeff=mu ))/a**3.
         eft_cache%EFTc         = 0._dl
         eft_cache%EFTLambda    = self%EFTLambda%value( x, index=ind, coeff=mu )
         eft_cache%EFTcdot      = 0._dl
-        eft_cache%EFTLambdadot = self%EFTLambda%first_derivative( x, index=ind, coeff=mu )
+        eft_cache%EFTLambdadot = eft_cache%adotoa*(self%EFTLambda%first_derivative( x, index=ind, coeff=mu )-2._dl*self%EFTLambda%value( x, index=ind, coeff=mu ))
 
     end subroutine EFTCAMBHSfRBackgroundEFTFunctions
 
@@ -812,11 +841,14 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        real(dl)    :: temp, a2, Omega_tot
-        integer     :: nu_i
+        real(dl) :: x, mu
+        integer  :: ind
 
-        ! temp =
-        ! eft_cache%adotoa = sqrt( temp )
+        x   = log(a)
+        call self%EFTadotoa%precompute(x, ind, mu )
+        call self%EFTadotoa%initialize_derivatives()
+
+        eft_cache%adotoa = self%EFTadotoa%value( x, index=ind, coeff=mu )
 
     end subroutine EFTCAMBHSfRComputeAdotoa
 
@@ -831,11 +863,15 @@ contains
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
-        real(dl)    :: temp, a2, Omega_tot, Omega_tot_prime, Omega_tot_primeprime, Omega_phi0
-        integer     :: nu_i
+        real(dl) :: x, mu
+        integer  :: ind
 
-        eft_cache%Hdot    = 0._dl
-        eft_cache%Hdotdot = 0._dl
+        x   = log(a)
+        call self%EFTadotoa%precompute(x, ind, mu )
+        call self%EFTadotoa%initialize_derivatives()
+
+        eft_cache%Hdot    = eft_cache%adotoa*self%EFTadotoa%first_derivative( x, index=ind, coeff=mu )
+        eft_cache%Hdotdot = eft_cache%Hdot**2./eft_cache%adotoa+eft_cache%adotoa**2.*self%EFTadotoa%second_derivative( x, index=ind, coeff=mu )
 
     end subroutine EFTCAMBHSfRComputeHubbleDer
 

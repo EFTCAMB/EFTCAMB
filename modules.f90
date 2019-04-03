@@ -438,7 +438,7 @@ contains
                 CP%eft_par_cache%grhok       = grhok
                 !    - massive neutrinos:
                 CP%eft_par_cache%Num_Nu_Massive       = CP%Num_Nu_Massive
-                CP%eft_par_cache%Num_Nu_Massless      = CP%Num_Nu_Massless
+                CP%eft_par_cache%Neff                 = nu_massless_degeneracy + sum(CP%Nu_mass_degeneracies(1:CP%Nu_mass_eigenstates))
                 CP%eft_par_cache%Nu_mass_eigenstates  = CP%Nu_mass_eigenstates
                 allocate( CP%eft_par_cache%grhormass(max_nu), CP%eft_par_cache%nu_masses(max_nu) )
                 CP%eft_par_cache%grhormass            = grhormass
