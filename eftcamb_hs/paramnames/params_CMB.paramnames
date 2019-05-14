@@ -1,0 +1,77 @@
+omegabh2      \Omega_b h^2	#physical baryon density
+omegach2      \Omega_c h^2	#physical CDM matter density
+theta         100\theta_{MC} #100 times the ratio of the angular diameter distance to the LSS sound horizon (approx)
+tau           \tau
+omegak        \Omega_K
+mnu           \Sigma m_\nu    #sum of physical masses of standard neutrinos
+meffsterile   m_{\nu,{\rm{sterile}}}^{\rm{eff}}  #effective mass of sterile neutrino, \approx omeganuh2*94
+w             w			#equation of state parameter for scalar field dark energy today
+wa            w_a       #w_a variation
+nnu           N_{eff}   #effective number of neutrinos (only clearly defined for massless)
+yhe           Y_{He}    #Helium mass fraction (not used if bbn_consistency)    
+alpha1        \alpha_{-1} #correlated CDM isocurvature 
+deltazrei     {\Delta}z_{\rm re} #width of reionization
+Alens         A_{L}     #lensing potential scaled by sqrt(A_lens)
+Alensf        A^f_L     #amplitude of smoothing power from fiducial models 
+fdm           \epsilon_0 f_d    #CosmoRec dark matter annihilation parameter, 0910.3663
+EFTw0         w_0								# EFTCOSMOMC: EFTCAMB parameter (num 17)
+EFTwa         w_a								# EFTCOSMOMC: EFTCAMB parameter (num 18)
+EFTwn         w_n								# EFTCOSMOMC: EFTCAMB parameter (num 19)
+EFTwat        wa_t				 				# EFTCOSMOMC: EFTCAMB parameter (num 20)
+EFtw2         w_2				 				# EFTCOSMOMC: EFTCAMB parameter (num 21)
+EFTw3         w_3							    # EFTCOSMOMC: EFTCAMB parameter (num 22)
+EFTOmega0     \Omega_0^{\rm EFT}				# EFTCOSMOMC: EFTCAMB parameter (num 23)
+EFTOmegaExp   n^{\rm EFT}						# EFTCOSMOMC: EFTCAMB parameter (num 24)
+EFTGamma10	  \gamma_0^{(1) {\rm EFT}}			# EFTCOSMOMC: EFTCAMB parameter (num 25)
+EFTGamma1Exp  \gamma_{\rm exp}^{(1) {\rm EFT}}	# EFTCOSMOMC: EFTCAMB parameter (num 26)
+EFTGamma20	  \gamma_0^{(2) {\rm EFT}}			# EFTCOSMOMC: EFTCAMB parameter (num 27)
+EFTGamma2Exp  \gamma_{\rm exp}^{(2) {\rm EFT}}	# EFTCOSMOMC: EFTCAMB parameter (num 28)
+EFTGamma30	  \gamma_0^{(3) {\rm EFT}}			# EFTCOSMOMC: EFTCAMB parameter (num 29)
+EFTGamma3Exp  \gamma_{\rm exp}^{(3) {\rm EFT}}	# EFTCOSMOMC: EFTCAMB parameter (num 30)
+EFTGamma40	  \gamma_0^{(4) {\rm EFT}}			# EFTCOSMOMC: EFTCAMB parameter (num 31)
+EFTGamma4Exp  \gamma_{\rm exp}^{(4) {\rm EFT}}	# EFTCOSMOMC: EFTCAMB parameter (num 32)
+EFTGamma50	  \gamma_0^{(5) {\rm EFT}}			# EFTCOSMOMC: EFTCAMB parameter (num 33)
+EFTGamma5Exp  \gamma_{\rm exp}^{(5) {\rm EFT}}	# EFTCOSMOMC: EFTCAMB parameter (num 34)
+EFTGamma60	  \gamma_0^{(6) {\rm EFT}}			# EFTCOSMOMC: EFTCAMB parameter (num 35)
+EFTGamma6Exp  \gamma_{\rm exp}^{(6) {\rm EFT}}	# EFTCOSMOMC: EFTCAMB parameter (num 36)
+EFTLogB0      {\rm Log}_{10}(B_0)				# EFTCOSMOMC: EFTCAMB parameter (num 37)
+RPHmassP0        \tilde{M_0}					# EFTCOSMOMC: EFTCAMB parameter (num 38)
+RPHmassPexp		 \tilde{M}_{\rm exp}^{\rm RPH}  # EFTCOSMOMC: EFTCAMB parameter (num 39)
+RPHkineticity0	 \alpha_0^{\rm K}				# EFTCOSMOMC: EFTCAMB parameter (num 40)
+RPHkineticityexp \alpha_{\rm exp}^{\rm K}		# EFTCOSMOMC: EFTCAMB parameter (num 41)
+RPHbraiding0	 \alpha_0^{\rm B}				# EFTCOSMOMC: EFTCAMB parameter (num 42)
+RPHbraidingexp   \alpha_{\rm exp}^{\rm B}		# EFTCOSMOMC: EFTCAMB parameter (num 43)
+RPHtensor0		 \alpha_0^{\rm T}				# EFTCOSMOMC: EFTCAMB parameter (num 44)
+RPHtensorexp     \alpha_{\rm exp}^{\rm T}		# EFTCOSMOMC: EFTCAMB parameter (num 45)
+eft_fm_hs_n       n                                         # EFTCOSMOMC: EFTCAMB parameter (num 46)
+eft_fm_hs_fro    {\rm Log}_{10}(f_{R0})                     # EFTCOSMOMC: EFTCAMB parameter (num 47)
+logA          {\rm{ln}}(10^{10} A_s)
+ns            n_s	    #beware that pivot scale can change in .ini file
+nrun          n_{\rm run}
+nrunrun       n_{\rm run, run}
+r             r #ratio of tensor to scalar primordial amplitudes at pivot scale
+nt            n_t
+ntrun         n_{t,{\rm run}}
+Aphiphi       A^{\phi\phi}_L #scaling of lensing potential power (lensed power spectra unchanged)
+H0*           H_0		#hubble parameter is H0 km/s/Mpc
+omegal*       \Omega_\Lambda
+omegam*       \Omega_m
+omegamh2*     \Omega_m h^2 #includes massive neutrinos
+omeganuh2*    \Omega_\nu h^2 
+omegamh3*     \Omega_m h^3 #well determined orthogonal to degeneracy for 6-param model
+sigma8*       \sigma_8
+s8omegamp5*   \sigma_8 \Omega_m^{0.5}
+s8omegamp25*  \sigma_8 \Omega_m^{0.25}
+s8h5*         \sigma_8/h^{0.5}
+rmsdeflect*   \langle d^2\rangle^{1/2}  #rms lensing deflection in arcmin (2<=L<=2000)
+zrei*         z_{\rm re}
+A*            10^9 A_s
+clamp*        10^9 A_s e^{-2\tau}   #parameter determining C_l amplitude
+DL40*         D_{40}   #L(L+1)C_L/2pi at L=40 in muK^2
+DL220*        D_{220}  #L(L+1)C_L/2pi at L=220 in muK^2
+DL810*        D_{810}  #L(L+1)C_L/2pi at L=810 in muK^2
+DL1420*       D_{1420} #L(L+1)C_L/2pi at L=1420 in muK^2
+DL2000*       D_{2000} #L(L+1)C_L/2pi at L=2000 in muK^2
+ns02*         n_{s,0.002}
+yheused*      Y_P #MCMC value or from bbn consistency (mass definition)
+YpBBN*        Y_P^{\rm{BBN}} #MCMC value or from bbn consistency (nucleon definition)

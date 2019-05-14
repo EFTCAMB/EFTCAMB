@@ -1,0 +1,17 @@
+#DR8: http://arxiv.org/abs/1201.2172 (Seo et al. 2012)
+#Note that DR8 is not an independent data set from DR9, DR10, or later release versions of BOSS data. 
+#for explanation of the changes to the rs expression, see Hamann et al, 
+#http://xxx.lanl.gov/abs/1003.3999
+
+name = DR8
+
+measurement_type = DA_over_rs
+
+#rs_rescale = 153.017d0/148.92 
+rs_rescale = 1.027511416
+
+zeff = 0.54
+bao_measurement = 9.2124   0.41
+
+
+

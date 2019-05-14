@@ -1,0 +1,12 @@
+# http://arxiv.org/abs/1106.3366
+
+name = 6DF
+
+measurement_type = rs_over_DV
+
+#rs_rescale = 153.9/149.8 
+rs_rescale= 1.027369826
+
+zeff= 0.106
+
+bao_measurement = 0.336 0.015

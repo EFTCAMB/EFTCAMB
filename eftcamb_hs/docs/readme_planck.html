@@ -1,0 +1,101 @@
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <title>PlanckCosmomc ReadMe</title>
+</head>
+<body bgcolor="#FFFFFF" link="#0000FF" vlink="#800080">
+
+<center>
+<IMG SRC="http://cosmologist.info/cosmomc/pics/planck2015/lensonly_direction.png">
+<P>
+<h2>CosmoMC and Plotting with Planck Likelihood and Chains</h2>
+
+</center>
+The Planck likelihood code (PLC/clik) and parameter chains are available from the <A HREF="http://wiki.cosmos.esa.int/planckpla2015/index.php/">Planck Legacy Archive</A>.
+The Planck lensing and Bicep-Keck-Planck likelihoods are included with the cosmomc installation and do not need to be installed separately.
+<P>
+<H3>Using the Planck likelihood with CosmoMC</H3>
+Note you need to use ifort 14 or higher to build CosmoMC, or gfortran (gcc) 6 latest (easily available for testing in <A HREF="http://cosmologist.info/CosmoBox/">virtual environments</A>) so make sure you have that configured before you start.
+<UL>
+<LI>Download and install the Planck likelihood code and baseline data files to somewhere convenient from
+<UL>
+<LI><A HREF="http://pla.esac.esa.int/pla/#cosmology">Planck Legacy Archive</a> (see also <A HREF="http://wiki.cosmos.esa.int/planckpla2015/index.php/CMB_spectrum_%26_Likelihood_Code">description</A>)
+    <LI><A HREF="http://irsa.ipac.caltech.edu/data/Planck/release_2/software/">US site</A> 
+</UL>
+
+<LI>Extract and install the likelihood by doing:
+<pre>tar xvfj COM_Likelihood_Code-v2.*.tar.bz2</pre>
+<LI><pre>cd plc-2.0</pre>
+<LI><pre>./waf configure --lapack_mkl=${MKLROOT} --install_all_deps</pre>
+  (you may need to change the options on this line depending on your installation; --install_all_deps may not be needed; see the plc_2.0 readme.md for details)
+<LI><pre>./waf install</pre>
+<LI>Run ./bin/clik_profile.sh and edit your ~/.bashrc file (or equivalent) to include it in future sessions, or from command line:
+<pre>
+source ./bin/clik_profile.sh
+echo -e "\nsource $(pwd)/bin/clik_profile.sh" >> ~/.bashrc
+</pre>
+Here I assume you have installed CosmoMC in a directory called COSMOMC..PATH.
+If you haven't done it already, also add CosmoMC's python path (for plotting and analysis of chains) to your ~/.bashrc:
+<pre>
+export PYTHONPATH=COSMOMC..PATH/python:$PYTHONPATH
+</pre>
+<LI>Make sure you have also downloaded and extracted the Planck likelihood data files that you want (COM_Likelihood_Data-baseline...)
+<LI>Then change to your COSMOMC..PATH root directory and make a symbolic link to your data file installation
+<pre>
+cd COSMOMC...PATH
+ln -s DATA...PATH/plc_2.0 ./data/clik
+</pre>
+(CosmoMC will look for files in ./data/clik/hi_l, ./data/clik/lowl_l, etc etc.).
+<LI>You can now build cosmomc by running "make" as described further in the <A HREF="readme.html">ReadMe</A>, and it should detect and link to your PLC (clik) installation.
+</UL>
+A set of .ini files are supplied in ./batch2 which set up standards for Planck runs. You can try
+<pre>mpirun -np 1 ./cosmomc test_planck.ini</pre>
+to see if things are being loaded and calculate a test likelihood OK.
+<P>
+<A NAME="PlanckChains"></A>
+<H3>Using Planck Chains</H3>
+Planck provide a set of parameter chains produced by CosmoMC, available for download <A HREF="http://pla.esac.esa.int/pla/#cosmology">here</a> or the <A HREF="http://irsa.ipac.caltech.edu/data/Planck/release_2/ancillary-data/">US site</A> (which is easier to use).
+<P>
+You can use CosmoMC's python scripts and getdist to analyse and make plots from them. Check you have set the PYTHONPATH as described at the top of the <A hREF="readme_python.html">Python readme</A>.
+<P>
+Then download and extract all the chain data. Make a symbolic link from ./cosmomc/PLA to the location of the chains, e.g.
+<PRE>
+ln -s PLA..PATH ./PLA
+</PRE>
+so that ./PLA/base is for example the head directory with the baseline model chains.
+For the program to know about the structure of the grid you first need to initialize it for the location you have installed in. Do
+<PRE>
+python python/makeGrid.py PLA
+</PRE>
+(this step is also done automatically if you open the grid directory in the <A HREF="./readme_gui.html">GetDist GUI</A>).
+You can now use python, grid and plotting scripts on the PLA directory, and they will know about the available data.
+Grid configuration settings for the Planck parameter grid are in PLA/config/.
+<P>
+If you download multiple Planck 2015 chain bundles, extract them to the same location so new folders are just merged over the existing ones and run makeGrid.py again, then plotting scripts etc will find
+all the results. If you want to use the +BKP tensor chains, download and add them last, so the config folder matches that in the BKP download.
+<P>
+You can also configure the plotting scripts to use the PLA location as the <b>default_grid_root</b>  (esp. if you want to run or adapt sample plot scripts under batch2/outputs/).
+Make a text file called <b>python/getdist/config.ini</b> (or set the environment variable GETDIST_CONFIG to point to a config.ini file somewhere else) and add setting lines to the config.ini file as required,e.g.
+<pre>
+default_grid_root =  PLA..PATH
+cache_dir = PLA..PATH/cache
+output_base_dir=
+</pre>
+The <b>cache_dir</b> is used to cache python-format chains, which makes loading them much faster after the first time.
+By default, plots go into ./outputs directory under cosmomc. You can se the <b>output_base_dir</b> to another location is where plot output (e.g. pdf) files are put by default (in output_base_dir/outputs).
+
+<H4>Plotting</H4>
+
+You can use the <A HREF="readme_gui.html">GetDist GUI</A> to load the PLA folder location and then open and plot chains as you wish.
+Or you can write your own python scripts to plot things of interest; many examples are in <b>batch2/outputs/</b>.
+Make sure you have set up your python/getdist/config.ini as described above with default file location.
+<P>
+For example, to run the sample scripts, you can do
+<pre>
+python batch2/outputs/lensonly_direction.py
+</pre>
+to reproduce the figure above. (assuming you downloaded and installed the full PLA chain grid; default output location is ./outputs).
+<P>
+For instructions on writing plotting scripts, or how to calculate new derived parameters, see the <A HREF="readme_python.html">plotting and analysis scripts</A> readme.
+
+</body> 
