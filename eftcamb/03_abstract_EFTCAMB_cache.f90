@@ -257,8 +257,9 @@ module EFTCAMB_cache
         real(dl) :: clxr          !< Syncronous gauge massless neutrinos density perturbation.
         real(dl) :: vb            !< Syncronous gauge baryon velocity.
         real(dl) :: dgpnu         !< Syncronous gauge massive neutrinos pressure perturbation.
-        real(dl) :: dgrho         !< Syncronous gauge total density perturbation.
-        real(dl) :: dgq           !< Syncronous gauge total velocity perturbation.
+        real(dl) :: dgrho         !< Syncronous gauge total matter density perturbation.
+        real(dl) :: dgq           !< Syncronous gauge total matter velocity perturbation.
+        real(dl) :: delta_DE_eff  !< Syncronous gauge Dark energy fluid perturbation
         ! 11) tensor perturbations quantities:
         real(dl) :: EFTAT         !< the value of the tensor equation coefficient A. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTBT         !< the value of the tensor equation coefficient B. Refer to the Numerical Notes for the definition.
@@ -387,6 +388,7 @@ contains
         self%dgpnu         = 0._dl
         self%dgrho         = 0._dl
         self%dgq           = 0._dl
+        self%delta_DE_eff  = 0._dl
         ! 11) tensor perturbations quantities:
         self%EFTAT         = 0._dl
         self%EFTBT         = 0._dl

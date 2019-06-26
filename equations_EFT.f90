@@ -1620,6 +1620,9 @@ contains
             EV%eft_cache%mu            = -2._dl*k*( EV%eft_cache%sigmadot +EV%eft_cache%adotoa*EV%eft_cache%sigma)/(dgrho)
             EV%eft_cache%gamma         = ( etak -EV%eft_cache%adotoa*EV%eft_cache%sigma )/( EV%eft_cache%sigmadot +EV%eft_cache%adotoa*EV%eft_cache%sigma )
 
+	! GB was here, used Eq. 21 ofarXiv:astro-ph/9506072
+            EV%eft_cache%delta_DE_eff   = 2._dl*adotoa*k*EV%eft_cache%z-2._dl*k*etak - dgrho
+
             ! check the cache:
             call EV%eft_cache%is_nan( IsNaN )
             if ( IsNaN ) then
