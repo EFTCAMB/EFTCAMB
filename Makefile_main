@@ -51,11 +51,19 @@ CAMBOBJ       =  $(OUTPUT_DIR)/constants.o  $(OUTPUT_DIR)/utils.o $(EXTCAMBFILES
 	$(OUTPUT_DIR)/$(NONLINEAR).o $(OUTPUT_DIR)/lensing.o $(OUTPUT_DIR)/$(BISPECTRUM).o $(OUTPUT_DIR)/cmbmain.o \
 	$(OUTPUT_DIR)/camb.o
 
+ifeq "$(Debug)" "0"
 CAMBSO       =  $(DLL_DIR)/constants.o  $(DLL_DIR)/utils.o $(EXTCAMBFILES)  $(DLL_DIR)/subroutines.o  \
 	$(DLL_DIR)/inifile.o  $(DLL_DIR)/$(POWERSPECTRUM).o  $(DLL_DIR)/$(RECOMBINATION).o \
 	$(DLL_DIR)/$(REIONIZATION).o $(DLL_DIR)/modules.o $(DLL_DIR)/bessels.o $(DLL_DIR)/$(EQUATIONS).o \
 	$(DLL_DIR)/$(NONLINEAR).o $(DLL_DIR)/lensing.o $(DLL_DIR)/$(BISPECTRUM).o $(DLL_DIR)/cmbmain.o \
 	$(DLL_DIR)/camb.o $(DLL_DIR)/camb_python.o
+else
+CAMBSO       =  $(DLL_DIR)/constants.o  $(DLL_DIR)/utils.o $(EXTCAMBFILES)  $(DLL_DIR)/subroutines.o  \
+        $(DLL_DIR)/inifile.o  $(DLL_DIR)/$(POWERSPECTRUM).o  $(DLL_DIR)/$(RECOMBINATION).o \
+        $(DLL_DIR)/$(REIONIZATION).o $(DLL_DIR)/modules.o $(DLL_DIR)/bessels.o $(DLL_DIR)/$(EQUATIONS).o \
+        $(DLL_DIR)/$(NONLINEAR).o $(DLL_DIR)/lensing.o $(DLL_DIR)/$(BISPECTRUM).o $(DLL_DIR)/cmbmain.o \
+        $(DLL_DIR)/camb.o
+endif
 	
 # EFTCAMB MOD START: build system
 
@@ -121,7 +129,10 @@ $(DLL_DIR)/$(BISPECTRUM).o: $(DLL_DIR)/lensing.o $(DLL_DIR)/modules.o
 $(DLL_DIR)/cmbmain.o: $(DLL_DIR)/lensing.o $(DLL_DIR)/$(NONLINEAR).o $(DLL_DIR)/$(EQUATIONS).o $(DLL_DIR)/$(BISPECTRUM).o
 $(DLL_DIR)/camb.o: $(DLL_DIR)/cmbmain.o
 $(DLL_DIR)/Matrix_utils.o: $(DLL_DIR)/utils.o
+
+ifeq "$(Debug)" "0"
 $(DLL_DIR)/camb_python.o: $(DLL_DIR)/camb.o
+endif
 
 camblib.so: folders $(CAMBSO)
 	$(F90C) $(SF90FLAGS) $(CAMBSO) -o $(DLL_DIR)/camblib.so
