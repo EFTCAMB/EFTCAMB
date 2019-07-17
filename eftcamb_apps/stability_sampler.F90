@@ -157,6 +157,9 @@ program stability_sampler
         P%omegan = Ini_Read_Double('omega_neutrino')
     end if
 
+    ! Stability sampler not compatible with massive neutrinos
+    if (P%omegan/=0._dl .or.P%omegan/=0._dl) stop 'Stability sampler not compatible with massive neutrinos: set them to zero from parameters file '
+
     P%tcmb   = Ini_Read_Double('temp_cmb',COBE_CMBTemp)
     P%yhe    = Ini_Read_Double('helium_fraction',0.24_dl)
     P%Num_Nu_massless  = Ini_Read_Double('massless_neutrinos')
@@ -182,7 +185,7 @@ program stability_sampler
     numstr = Ini_Read_String('massive_neutrinos')
     read(numstr, *) nmassive
     if (abs(nmassive-nint(nmassive))>1e-6) stop 'massive_neutrinos should now be integer (or integer array)'
-    read(numstr,*, end=100, err=100) P%Nu_Mass_numbers(1:P%Nu_mass_eigenstates)
+    read(numstr,*) P%Nu_Mass_numbers(1:P%Nu_mass_eigenstates)
     P%Num_Nu_massive = sum(P%Nu_Mass_numbers(1:P%Nu_mass_eigenstates))
 
     if (P%Num_Nu_massive>0) then
@@ -565,7 +568,5 @@ program stability_sampler
 
     call CAMB_cleanup
     ! stop
-
-100 stop 'Must give num_massive number of integer physical neutrinos for each eigenstate'
 
 end program stability_sampler
