@@ -512,8 +512,6 @@ contains
         HaveNan = HaveNan.or.IsNaN(self%EFTDT)
         HaveNan = HaveNan.or.IsNaN(self%EFT_kinetic)
         HaveNan = HaveNan.or.IsNaN(self%EFT_gradient)
-        HaveNan = HaveNan.or.IsNaN(self%EFT_mu1)
-        HaveNan = HaveNan.or.IsNaN(self%EFT_mu2)
         HaveNan = HaveNan.or.IsNaN(self%EFTISW)
         HaveNan = HaveNan.or.IsNaN(self%EFTLensing)
         HaveNan = HaveNan.or.IsNaN(self%CMBTSource)
