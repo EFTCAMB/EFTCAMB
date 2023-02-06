@@ -323,15 +323,23 @@
     logical back_only
     !Constants in SI units
 
+    ! EFTCAMB MOD START: add things for EFTCAMB initialization
+    real(dl) :: RGR_time
+    logical  :: success
+    real(dl) :: k_max
+    ! EFTCAMB MOD END.
+
     global_error_flag = 0
 
     if ((P%WantTensors .or. P%WantVectors).and. P%WantTransfer .and. .not. P%WantScalars) then
         call GlobalError( 'Cannot generate tensor C_l and transfer without scalar C_l',error_unsupported_params)
     end if
 
-    if (.not. allocated(P%DarkEnergy)) then
+    ! EFTCAMB MOD START: no need to check for DarkEnergy allocation if using EFTCAMB
+    if (.not. allocated(P%DarkEnergy) .and. this%CP%EFTCAMB%EFTFlag == 0) then
         call GlobalError('DarkEnergy not set', error_darkenergy)
     end if
+    ! EFTCAMB MOD END.
 
     if (present(error)) error = global_error_flag
     if (global_error_flag/=0) return
@@ -490,7 +498,78 @@
         else
             this%nu_masses = 0
         end if
-        call this%CP%DarkEnergy%Init(this)
+
+        ! EFTCAMB MOD START:initialize the EFTCAMB parameter choice
+        if ( this%CP%EFTCAMB%EFTFlag /= 0 ) then
+          ! 1) parameter cache:
+          call this%CP%eft_par_cache%initialize()
+          !    - relative densities:
+          this%CP%eft_par_cache%omegac      = this%CP%omch2/h2
+          this%CP%eft_par_cache%omegab      = this%CP%ombh2/h2
+          this%CP%eft_par_cache%omegav      = this%Omega_de
+          this%CP%eft_par_cache%omegak      = this%CP%omk
+          this%CP%eft_par_cache%omegan      = this%CP%omnuh2/h2
+          this%CP%eft_par_cache%omegag      = this%grhog/this%grhocrit
+          this%CP%eft_par_cache%omegar      = this%grhornomass/this%grhocrit
+          !    - Hubble constant:
+          this%CP%eft_par_cache%h0          = this%CP%h0
+          this%CP%eft_par_cache%h0_Mpc      = this%CP%h0/c*1000._dl
+          !    - densities:
+          this%CP%eft_par_cache%grhog       = this%grhog
+          this%CP%eft_par_cache%grhornomass = this%grhornomass
+          this%CP%eft_par_cache%grhoc       = this%grhoc
+          this%CP%eft_par_cache%grhob       = this%grhob
+          this%CP%eft_par_cache%grhov       = this%grhov
+          this%CP%eft_par_cache%grhok       = this%grhok
+          !    - massive neutrinos:
+          this%CP%eft_par_cache%Num_Nu_Massive       = this%CP%Num_Nu_Massive
+          this%CP%eft_par_cache%Nu_mass_eigenstates  = this%CP%Nu_mass_eigenstates
+          allocate( this%CP%eft_par_cache%grhormass(max_nu), this%CP%eft_par_cache%nu_masses(max_nu) )
+          this%CP%eft_par_cache%grhormass            = this%grhormass
+          this%CP%eft_par_cache%nu_masses            = this%nu_masses
+
+          call this%CP%EFTCAMB%model%initialize_background( this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_feedback_level, success,outroot=this%CP%EFTCAMB%outroot )
+          if ( .not. success) then
+              ! the unstable theory makes the code crash only if H0 is well-defined
+              ! workaround to allow for solving the background to define H0 in terms of 100\theta
+              global_error_flag         = 1
+              global_error_message      = 'EFTCAMB: background solver failed'
+              if (present(error)) error = global_error_flag
+              ! 5) final feedback:
+              if ( this%CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
+                  write(*,'(a)') '***************************************************************'
+              end if
+              return
+          end if
+
+          ! 3) compute the return to GR of the theory:
+          call EFTCAMBReturnToGR( this%CP%EFTCAMB%model, this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_pert_turn_on, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold )
+          this%CP%EFTCAMB%EFTCAMB_pert_turn_on = RGR_time
+          call EFTCAMBReturnToGR_feedback( this%CP%EFTCAMB%EFTCAMB_feedback_level, this%CP%EFTCAMB%model, this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_pert_turn_on, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold )
+
+          ! 4) compute wether the theory is stable or not:
+          k_max = 10._dl
+          call EFTCAMB_Stability_Check( success, this%CP%EFTCAMB, this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_stability_time, 1._dl, k_max )
+          if ( .not. success ) then
+              global_error_flag         = 1
+              global_error_message      = 'EFTCAMB: theory unstable'
+              if (present(error)) error = global_error_flag
+              ! 5) final feedback:
+              if ( this%CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
+                  write(*,'(a)') '***************************************************************'
+              end if
+              return
+          end if
+
+          ! 5) final feedback:
+          if ( this%CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
+              write(*,'(a)') '***************************************************************'
+          end if
+        else
+          call this%CP%DarkEnergy%Init(this)
+        end if
+        ! EFTCAMB MOD END.
+
         if (global_error_flag==0) this%tau0=this%TimeOfz(0._dl)
         if (global_error_flag==0) then
             this%chi0=this%rofChi(this%tau0/this%curvature_radius)
@@ -563,6 +642,9 @@
     if (present(error)) then
         error = 0
     else if (FeedbackLevel > 0 .and. .not. calling_again) then
+        ! EFTCAMB MOD START: print out H0
+        write(*,'("H0                   = ",f9.6)') P%H0
+        ! EFTCAMB MOD END.
         write(*,'("Om_b h^2             = ",f9.6)') P%ombh2
         write(*,'("Om_c h^2             = ",f9.6)') P%omch2
         write(*,'("Om_nu h^2            = ",f9.6)') P%omnuh2
@@ -1732,7 +1814,6 @@
     end do
     this%nthermo = nthermo
     allocate(spline_data(nthermo), sdotmu(nthermo))
-
     if (allocated(this%tb) .and. this%nthermo/=size(this%tb)) then
         deallocate(this%scaleFactor, this%cs2, this%dcs2, this%ddotmu)
         deallocate(this%dscaleFactor, this%adot, this%dadot)
@@ -1769,6 +1850,7 @@
         sqrt(3*(State%grhog+sum(State%grhormass(1:CP%Nu_mass_eigenstates))+State%grhornomass))
     a0=this%tauminn*State%adotrad*(1+om*this%tauminn/4)
     ninverse = nint(background_boost*log(1/a0)/log(1/2d-10)*4000)
+
     if (.not. CP%DarkEnergy%is_cosmological_constant) ninverse = ninverse*2
 
     nlin = ninverse/2
@@ -2271,6 +2353,22 @@
     TimeSampleBoost = State%CP%Accuracy%AccuracyBoost*State%CP%Accuracy%TimeStepBoost
     call TimeSteps%Init()
 
+    ! EFTCAMB MOD START: print out perturbation evolution in debug mode for longer time
+#ifdef DEBUG
+#ifdef fixq
+    call TimeSteps%Add(0.001_dl/fixq, State%taurst, nstep=1000, IsLog=.True. )
+    State%dtaurec = State%dtaurec/10._dl
+#endif
+#ifdef fixq_array
+    call TimeSteps%Add(0.001_dl/minval(fixq_array), State%taurst, nstep=1000, IsLog=.True. )
+    State%dtaurec = State%dtaurec/10._dl
+#endif
+#if  defined (fixq)  || !defined (fixq_array)
+    call TimeSteps%Add(State%taurst/1000._dl, State%taurst, nstep=100, IsLog=.True. )
+#endif
+#endif
+    ! EFTCAMB MOD END.
+
     call TimeSteps%Add_delta(State%taurst, State%taurend, State%dtaurec)
 
     ! Calculating the timesteps after recombination
@@ -2283,6 +2381,17 @@
         !  if (CP%DoLensing) dtau0=dtau0/2
         !  if (CP%AccurateBB) dtau0=dtau0/3 !Need to get C_Phi accurate on small scales
     end if
+
+    ! EFTCAMB MOD START: in debug mode add more points
+#ifdef DEBUG
+#ifdef fixq
+    dtau0   = dtau0/10._dl
+#endif
+#ifdef fixq_array
+    dtau0   = dtau0/10._dl
+#endif
+#endif
+    ! EFTCAMB MOD END.
 
     call TimeSteps%Add_delta(State%taurend, State%tau0, dtau0)
 
@@ -2339,6 +2448,16 @@
 
     if (State%CP%Reion%Reionization) then
         nri0=int(State%reion_n_steps*State%CP%Accuracy%AccuracyBoost)
+        ! EFTCAMB MOD START: denser grid for fixq
+#ifdef DEBUG
+#ifdef fixq
+        nri0    = nri0/10._dl
+#endif
+#ifdef fixq_array
+        nri0    = nri0/10._dl
+#endif
+#endif
+        ! EFTCAMB MOD END.
         !Steps while reionization going from zero to maximum
         call TimeSteps%Add(State%reion_tau_start,State%reion_tau_complete,nri0)
     end if
@@ -2356,8 +2475,6 @@
     if (global_error_flag/=0) then
         return
     end if
-
-
 
     !Create arrays out of the region information.
     call TimeSteps%GetArray()
