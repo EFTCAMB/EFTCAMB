@@ -375,6 +375,24 @@ contains
             end if
         end if
 
+        ! 9) enforce positivity bounds:
+        ! works up to Horndeski
+        if ( input_EFTCAMB%EFT_positivity_bounds ) then
+            if (( eft_cache%posbound1 < 0._dl ) .or. ( eft_cache%posbound2 < 0._dl ) ) then
+                EFTTestStability = .false.
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') ' Positivity bounds are violated'
+            end if
+        end if
+
+        ! 10) check the existence of a healthy Minkowski limit:
+        ! works up to Horndeski
+        if ( input_EFTCAMB%EFT_minkowski_limit ) then
+            if (( -eft_cache%ghostpos <= 0 ) .or. ( -eft_cache%tachpos < 0 ) ) then
+                EFTTestStability = .false.
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') 'Healthy Minkowski limit does not exist'
+            end if
+        end if
+
     end function EFTTestStability
 
     ! ---------------------------------------------------------------------------------------------
@@ -490,6 +508,8 @@ contains
         call input_model%compute_tensor_factors( a, params_cache , eft_cache )
         ! Compute kinetic, gradient and mass terms:
         call input_model%compute_stability_factors( a, params_cache , eft_cache )
+        ! Compute positivity bounds:
+        call input_model%compute_positivity_bounds( a, params_cache , eft_cache )
 
         if ( a>input_EFTCAMB%EFTCAMB_pert_turn_on .and. input_EFTCAMB%EFT_mass_stability ) then
           call input_model%compute_additional_derivs( a, params_cache , eft_cache )
