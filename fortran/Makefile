@@ -49,14 +49,14 @@ endif
 
 
 ifeq ($(shell test $(ifortVer_major) -gt 15; echo $$?),0)
-COMMON_FFLAGS = -fpp -qopenmp
+COMMON_FFLAGS = -fpp -mkl -qopenmp
 else
-COMMON_FFLAGS = -fpp -openmp
+COMMON_FFLAGS = -fpp -mkl -openmp
 endif
 COMMON_FFLAGS += -gen-dep=$$*.d
 
 FFLAGS = -fp-model precise -W0 -WB $(COMMON_FFLAGS)
-DEBUGFLAGS =  -g -check all -check noarg_temp_created -traceback -fpe0 $(COMMON_FFLAGS)
+DEBUGFLAGS =  -g -check all -check noarg_temp_created -traceback -fpe2 $(COMMON_FFLAGS) -DDEBUG -mkl
 
 ifeq ($(shell uname -s),Darwin)
 SFFLAGS = -dynamiclib #-fpic
@@ -91,10 +91,14 @@ ifeq "$(gfortErr)" "0"
 compiler_ver = $(shell gfortran -dumpversion 2>&1)
 COMPILER = gfortran
 F90C     = gfortran
-COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fmax-errors=4 -fopenmp
+# EFTCAMB MOD START: allow argument mismatch to compile odepack
+COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp  -lblas -llapack
+# original code:
+#COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fmax-errors=4 -fopenmp
+# EFTCAMB MOD END
 # Using -ffast-math causes differences between Debug and Release configurations.
-FFLAGS = -O3 $(COMMON_FFLAGS)
-DEBUGFLAGS = -g -fbacktrace -ffpe-trap=invalid,overflow,zero -fbounds-check $(COMMON_FFLAGS)
+FFLAGS = -O3 -w $(COMMON_FFLAGS)
+DEBUGFLAGS = -g -fbacktrace -ffpe-trap=invalid,overflow,zero -fbounds-check $(COMMON_FFLAGS) -DDEBUG
 ifeq ($(shell uname -s),Darwin)
 SFFLAGS = -dynamiclib #-fpic
 else

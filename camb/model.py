@@ -9,6 +9,9 @@ from . import constants
 from .initialpower import InitialPower, SplinedInitialPower
 from .nonlinear import NonLinearModel
 from .dark_energy import DarkEnergyModel, DarkEnergyEqnOfState
+# EFTCAMB MOD START: include EFTCAMB
+from .eftcamb import EFTCAMB,EFTCAMB_parameter_cache
+# EFTCAMB MOD END.
 from .recombination import RecombinationModel
 from .sources import SourceWindow
 from . import bbn
@@ -153,7 +156,6 @@ class CustomSources(CAMB_Structure):
                 ("c_source_func", c_void_p, "Don't directly change this"),
                 ("custom_source_ell_scales", AllocatableArrayInt, "scaling in L for outputs")]
 
-
 @fortran_class
 class CAMBparams(F2003Class):
     """
@@ -237,7 +239,9 @@ class CAMBparams(F2003Class):
         ("use_cl_spline_template", c_bool,
          "When interpolating use a fiducial spectrum shape to define ratio to spline"),
         ("SourceWindows", AllocatableObjectArray(SourceWindow)),
-        ("CustomSources", CustomSources)
+        ("CustomSources", CustomSources),
+        ("EFTCAMB",AllocatableObject(EFTCAMB)),
+        ("EFTCAMB_parameter_cache",AllocatableObject(EFTCAMB_parameter_cache))
     ]
 
     _fortran_class_module_ = 'model'
@@ -401,8 +405,8 @@ class CAMBparams(F2003Class):
             # noinspection PyTypeChecker
             self.H0: float = brentq(f, theta_H0_range[0], theta_H0_range[1], rtol=5e-5)
             if not cosmomc_approx and abs(self.H0 - est_H0) > iteration_threshold:
-                # iterate with recalculation of recombination and zstar
-                self.set_H0_for_theta(theta, theta_H0_range=theta_H0_range, est_H0=self.H0,
+               #iterate with recalculation of recombination and zstar
+               self.set_H0_for_theta(theta, theta_H0_range=theta_H0_range, est_H0=self.H0,
                                       iteration_threshold=iteration_threshold)
         except ValueError:
             raise CAMBParamRangeError('No solution for H0 inside of theta_H0_range')
@@ -413,7 +417,8 @@ class CAMBparams(F2003Class):
                       mnu=0.06, nnu=constants.default_nnu, YHe: Optional[float] = None, meffsterile=0.0,
                       standard_neutrino_neff=constants.default_nnu, TCMB=constants.COBE_CMBTemp,
                       tau: Optional[float] = None, zrei: Optional[float] = None, deltazrei: Optional[float] = None,
-                      Alens=1.0, bbn_predictor: Union[None, str, bbn.BBNPredictor] = None, theta_H0_range=(10, 100)):
+                      Alens=1.0, bbn_predictor: Union[None, str, bbn.BBNPredictor] = None, theta_H0_range=(10, 100),
+                      ):
         r"""
         Sets cosmological parameters in terms of physical densities and parameters (e.g. as used in Planck analyses).
         Default settings give a single distinct neutrino mass eigenstate, by default one neutrino with mnu = 0.06eV.
@@ -509,8 +514,14 @@ class CAMBparams(F2003Class):
             if cosmomc_theta and thetastar:
                 raise CAMBError('Cannot set both cosmomc_theta and thetastar')
 
+            #EFTCAMB MOD START 
+            min_H0 = 100*np.sqrt( ombh2 +omnuh2 +omnuh2_sterile +omch2 )
+            min_H0 = 1.1*min_H0 # just to make sure we are safely above the limit
+            _H0_thmin = max( theta_H0_range[0], min_H0 )
             self.set_H0_for_theta(cosmomc_theta or thetastar, cosmomc_approx=cosmomc_theta is not None,
-                                  theta_H0_range=theta_H0_range)
+                                  theta_H0_range=(_H0_thmin,theta_H0_range[1]))
+            #EFTCAMB MOD END
+            
         else:
             if H0 is None:
                 raise CAMBError('Must set H0, cosmomc_theta or thetastar')
@@ -573,14 +584,36 @@ class CAMBparams(F2003Class):
         :param non_linear_model: name of a NonLinearModel class
         :param recombination_model: name of recombination_model class
         """
-        if dark_energy_model:
-            self.DarkEnergy = self.make_class_named(dark_energy_model, DarkEnergyModel)
+
+        # EFTCAMB is initialized using the flags for the darkenergy model
+        # should prevent double counting the DE. When dark_energy_model \= EFTCAMB
+        # EFTCAMB is initialized with EFTflag = 0 (default params)
+        if  dark_energy_model == 'EFTCAMB':
+                self.EFTCAMB = self.make_class_named('EFTCAMB',EFTCAMB)
+                self.DarkEnergy = self.make_class_named('fluid', DarkEnergyModel)
+        if dark_energy_model != 'EFTCAMB':
+           self.DarkEnergy = self.make_class_named(dark_energy_model, DarkEnergyModel)
+        # EFTCAMB MOD END.
+
         if initial_power_model:
             self.InitPower = self.make_class_named(initial_power_model, InitialPower)
         if non_linear_model:
             self.NonLinear = self.make_class_named(non_linear_model, NonLinearModel)
         if recombination_model:
             self.Recomb = self.make_class_named(recombination_model, RecombinationModel)
+        return self
+
+
+
+    #def set_eft_camb(self,eft_model='EFTCAMB'):
+    #        EFTpar = {
+    #              'EFTflag':1,'PureEFTmodelOmega':1,'feedback_level':1,
+    #              'EFTOmega0': 0.9
+    #              }
+    #        eft = self.make_class_named(eft_model,EFTCAMB)
+    #        eft.initialize_parameters(self,EFTpar,False)
+    #        self.EFTCAMB = eft
+    #        return self
 
     def set_dark_energy(self, w=-1.0, cs2=1.0, wa=0, dark_energy_model='fluid'):
         r"""

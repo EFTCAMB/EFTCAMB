@@ -44,7 +44,7 @@ class _config:
             err = config.global_error_message()
             self.global_error_flag = 0
             if reference:
-                reference = 'Error in Fortran called from %s:\n' % reference
+                reference = 'Error in Fortran called from %s:\n' % reference 
             else:
                 reference = ''
             if err:

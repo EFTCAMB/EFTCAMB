@@ -107,7 +107,6 @@ def lib_import(module_name, class_name, func_name, restype=None):
 def set_cl_template_file(cl_template_file=None):
     if cl_template_file and not osp.exists(cl_template_file):
         raise ValueError('File not found : %s' % cl_template_file)
-
     template = cl_template_file or osp.join(BASEDIR,
                                             "HighLExtrapTemplate_lenspotentialCls.dat")
     if not osp.exists(template):

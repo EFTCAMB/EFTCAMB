@@ -1,3 +1,8 @@
 [submodule "forutils"]
 	path = forutils
 	url = https://github.com/cmbant/forutils
+
+[submodule "fortran/eftcamb_test/eftcamb_legacy"]
+	path = fortran/eftcamb_test/eftcamb_legacy
+	url = https://github.com/EFTCAMB/EFTCAMB_legacy.git
+	branch = master

@@ -102,6 +102,15 @@
 
     integer :: l_smooth_sample = 3000 !assume transfer functions effectively small for k*chi0>2*l_smooth_sample
 
+    ! # EFTCAMB MOD START: flags for the latest ifort
+#ifndef fixq
+        real(dl) :: fixq = 0._dl !Debug output of one q
+#endif
+#ifndef fixq_array
+        real(dl), parameter, dimension(1) :: fixq_array = [ 0._dl ]
+#endif
+    ! # EFTCAMB MOD END.
+
     integer :: max_bessels_l_index  = 1000000
     real(dl) :: max_bessels_etak = 1000000*2
 
@@ -126,6 +135,12 @@
     type(EvolutionVars) EV
     Type(TTimer) :: Timer
     real(dl) starttime
+
+    ! EFTCAMB MOD START: some quantities:
+    real(dl) :: k_start, k_end
+    integer  :: i
+    real(dl), dimension(:), allocatable :: temp_fixq_array
+    ! EFTCAMB MOD END.
 
     WantLateTime =  CP%DoLensing .or. State%num_redshiftwindows > 0 .or. CP%CustomSources%num_custom_sources>0
 
@@ -171,10 +186,40 @@
         call SetkValuesForSources
     end if
 
+    ! EFTCAMB MOD START: fix k array if wanted:
+    if ( DebugEFTCAMB ) then
+        if ( fixq==0._dl .and. any( fixq_array /= 0._dl ) ) then
+            ! allocate the q array:
+            allocate( temp_fixq_array, source=fixq_array )
+            ! reset q values:
+            call ThisSources%Evolve_q%Init()
+            ! loop over fixq array:
+            do i=1, size( temp_fixq_array )-1
+                k_start = temp_fixq_array(i)
+                k_end   = temp_fixq_array(i+1)
+                ! call Ranges_Add( ThisSources%Evolve_q, k_start, k_end)!, nstep=1, IsLog=.False.)
+                ! call ThisCT%q%Add(ThisSources%Evolve_q, k_start, k_end)
+            end do
+            call ThisSources%Evolve_q%GetArray(.false.)
+            ! some feedback:
+            write(*,*) 'EFTCAMB printing evolution of scalar variables at k ='
+            call ThisSources%Evolve_q%write()
+        end if
+    end if
+    ! EFTCAMB MOD END.
+
     if (CP%WantTransfer) call InitTransfer
 
     !***note that !$ is the prefix for conditional multi-processor compilation***
     !$ if (ThreadNum /=0) call OMP_SET_NUM_THREADS(ThreadNum)
+
+    ! EFTCAMB MOD START: open files for EFTCAMB debug structure
+    if ( DebugEFTCAMB ) then
+       if (CP%WantScalars) then
+           call EV%eft_cache%open_cache_files( CP%EFTCAMB%outroot )
+       end if
+    end if
+    ! EFTCAMB MOD END.
 
     if (CP%WantCls) then
         if (DebugMsgs .and. Feedbacklevel > 0) call WriteFormat('Set %d source k values', &
@@ -202,6 +247,15 @@
         if (DebugMsgs .and. Feedbacklevel > 0) call Timer%WriteTime('Timing for source calculation')
 
     endif !WantCls
+
+    ! EFTCAMB MOD START: close files for EFTCAMB debug structure
+    if ( DebugEFTCAMB ) then
+       if (CP%WantScalars) then
+          call EV%eft_cache%close_cache_files()
+       end if
+       if ( .not. all( fixq_array .eq. 0._dl ) ) stop
+    end if
+    ! EFTCAMB MOD END.
 
     ! If transfer functions are requested, set remaining k values and output
     if (CP%WantTransfer .and. global_error_flag==0) then
@@ -561,11 +615,20 @@
         k_per_logint =CP%Transfer%k_per_logint
         if (CP%Transfer%high_precision) boost = boost*1.5
 
-        q_switch_lowk1 = 0.7/State%taurst
-        dlog_lowk1=max(2*boost, k_per_logint)
+        ! EFTCAMB MOD START: small fix
+        q_switch_lowk1 = min(CP%Transfer%kmax,0.7/State%taurst)
+        dlog_lowk1=2*boost
 
-        q_switch_lowk = 8/State%taurst
-        dlog_lowk=max(8*boost*2.5, k_per_logint)
+        q_switch_lowk = min(CP%Transfer%kmax,8/State%taurst)
+        dlog_lowk=8*boost
+
+        ! original camb code
+        ! q_switch_lowk1 = 0.7/State%taurst
+        ! dlog_lowk1=max(2*boost, k_per_logint)
+        !
+        ! q_switch_lowk = 8/State%taurst
+        ! dlog_lowk=max(8*boost*2.5, k_per_logint)
+        ! EFTCAMB MOD END.
 
         q_switch_osc = min(CP%Transfer%kmax,30/State%taurst)
         d_osc= 200*boost*1.8
@@ -695,6 +758,15 @@
         taustart=0.001_dl/sqrt(q**2-State%curv)
     end if
 
+    ! # EFTCAMB MOD START: flags for the latest ifort
+
+    if (fixq/=0._dl) then
+        taustart = 0.001_dl/fixq
+    end if
+
+    ! # EFTCAMB MOD END.
+
+
     !     Make sure to start early in the radiation era.
     taustart=min(taustart,0.1_dl)
 
@@ -713,6 +785,12 @@
 
     EV%q=ThisSources%Evolve_q%points(q_ix)
 
+    ! # EFTCAMB MOD START:
+    if (fixq/=0._dl) then
+        EV%q= min(500._dl,fixq) !for testing
+    end if
+    ! # EFTCAMB MOD END.
+
     EV%q2=EV%q**2
 
     EV%q_ix = q_ix
@@ -721,6 +799,13 @@
     EV%ThermoData => State%ThermoData
 
     taustart = GetTauStart(EV%q)
+
+    ! # EFTCAMB MOD START: flags for the latest ifort
+    if (fixq/=0._dl) then
+        EV%q= fixq
+        EV%q2=EV%q**2
+    end if
+    ! # EFTCAMB MOD END.
 
     call GetNumEqns(EV)
 
@@ -972,6 +1057,14 @@
     integer j,ind,itf
     real(dl) c(24),w(EV%nvar,9), y(EV%nvar), sources(ThisSources%SourceNum)
 
+    ! # EFTCAMB MOD START: flags for the latest ifort
+    if (fixq/=0._dl) then
+        !evolution output
+        EV%q=fixq
+        EV%q2=EV%q**2
+    endif
+    ! # EFTCAMB MOD END.
+
     w=0
     y=0
     call initial(EV,y, taustart)
@@ -979,6 +1072,34 @@
 
     tau=taustart
     ind=1
+
+    ! EFTCAMB MOD START: debug one k mode
+    if (fixq/=0._dl) then
+
+        if ( DebugEFTCAMB ) then
+            write(*,*) 'EFTCAMB printing evolution of scalar variables at k =', fixq
+            write(*,*) '        from tau =',taustart, 'to tau =', State%TimeSteps%points(State%TimeSteps%npoints)
+        end if
+
+        tol1=tol/exp(CP%Accuracy%AccuracyBoost-1)
+        do j=2,State%TimeSteps%npoints
+
+            tauend=State%TimeSteps%points(j)
+
+            call GaugeInterface_EvolveScal(EV,tau,y,tauend,tol1,ind,c,w)
+
+            ! call output(EV,y,j,tau,sources)
+            call output(EV,y,j, tau,sources, CP%CustomSources%num_custom_sources)
+        end do
+
+        if ( DebugEFTCAMB ) then
+           call EV%eft_cache%close_cache_files( )
+        end if
+
+        stop
+
+    end if
+    ! EFTCAMB MOD END.
 
     !     Begin timestep loop.
     itf=1
@@ -1025,7 +1146,9 @@
                         if (itf <= State%num_transfer_redshifts.and. &
                             State%TimeSteps%points(j+1) > State%Transfer_Times(itf)) goto 101
                     else
-                        if (abs(tau-State%Transfer_Times(itf-1)) > 5.e-5_dl) then
+                        ! EFTCAMB MOD START: enforce also relative precision
+                        if (abs(tau-State%Transfer_Times(itf-1)) > 5.e-5_dl .and. abs(tau-State%Transfer_Times(itf-1))/tau > 5.e-5_dl) then
+                        ! EFTCAMB MOD END.
                             write(*,*) 'WARNING: mismatch in integrated times (CAMB: CalcScalarSources)'
                         end if
                     end if
@@ -1137,7 +1260,16 @@
     real(dl) atol
 
     atol=tol/exp(CP%Accuracy%AccuracyBoost*CP%Accuracy%IntTolBoost-1)
-    if (CP%Transfer%high_precision) atol=atol/10000 !CHECKTHIS
+
+    ! EFTCAMB MOD START: this seems to create some problems. It should be safe to turn it off.
+    if (CP%EFTCAMB%EFTflag/=0) then
+        if (CP%Transfer%high_precision) atol=atol
+    else
+        if (CP%Transfer%high_precision) atol=atol/10000
+    end if
+    ! Original CAMB code:
+    ! if (CP%Transfer%high_precision) atol=atol/10000 !CHECKTHIS
+    ! EFTCAMB MOD END.
 
     ind=1
     call initial(EV,y, tau)

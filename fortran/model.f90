@@ -7,6 +7,15 @@
     use MassiveNu
     use config
     use iso_c_binding
+
+    ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
+    use EFT_def
+    use EFTCAMB_cache
+    use EFTCAMB_stability
+    use EFTCAMB_ReturnToGR
+    use EFTCAMB_main
+    ! EFTCAMB MOD END.
+
     implicit none
 
     integer, parameter :: outNone=1
@@ -187,6 +196,12 @@
         Type(TSourceWindowHolder), allocatable :: SourceWindows(:)
 
         Type(TCustomSourceParams) :: CustomSources
+
+        ! EFTCAMB MOD START: add the main EFTCAMB object to CAMBParams
+        class(TEFTCAMB), allocatable :: EFTCAMB
+        class(TEFTCAMB_parameter_cache), allocatable :: eft_par_cache
+        ! EFTCAMB MOD END.
+
     contains
     procedure, nopass :: PythonClass => CAMBparams_PythonClass
     procedure, nopass :: SelfPointer => CAMBparams_SelfPointer
