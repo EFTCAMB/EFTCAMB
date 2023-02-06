@@ -44,7 +44,9 @@ module EFTCAMB_main
     use EFTCAMB_FM_quintessence
     use EFTCAMB_Omega_Lambda_gamma
     use EFTCAMB_Omega_Lambda_alpha
+    use EFTCAMB_full_Beyond_Horndeski
     !use EFTCAMB_full_Extended_Galileon
+    use EFTCAMB_designer_ShiftSym_alphaB
     use EFTCAMB_full_Scaling_Cubic
 
     implicit none
@@ -77,6 +79,8 @@ module EFTCAMB_main
         real(dl)  :: EFT_mass_stability_rate       !< Flag that sets the rate for the mass instability in units of Hubble time.
         !
         logical   :: EFT_additional_priors         !< Flag that extablishes whether to use additional priors that are related to the specific model. Each model has the possibility of implementing their own additional stability requirements.
+        logical   :: EFT_positivity_bounds         !< Flag that decides whether to enforce the positivity bounds. Works up to Horndeski and for EFTFLAG=1 and (Omega,Lambda)-models.
+        logical   :: EFT_minkowski_limit           !< Flag that checks whether there exists a healthy Minkowski limit. Works up to Horndeski.
 
         ! EFTCAMB working flags:
         integer   :: EFTCAMB_feedback_level        !< Amount of feedback that is printed to screen.
@@ -87,6 +91,7 @@ module EFTCAMB_main
         real(dl)  :: EFTCAMB_stability_time        !< Minimum scale factor at which the code checks for stability of a theory
         real(dl)  :: EFTCAMB_stability_threshold   !< Threshold for the stability module to consider the model stable.
         logical   :: EFTCAMB_model_is_designer     !< Logical flag that establishes whether the model is designer or not.
+        logical   :: EFTCAMB_do_QSA                !< Logical flag that establishes whether to attempt QSA
 
         ! EFTCAMB output root:
         character(LEN=:), allocatable :: outroot   !< The root for auxiliary EFTCAMB output.
@@ -154,6 +159,12 @@ contains
         ! model specific priors:
         self%EFT_additional_priors      = Ini%Read_Logical( 'EFT_additional_priors'    , .true. )
 
+        !) positivity bounds:
+        self%EFT_positivity_bounds      = Ini%Read_Logical( 'EFT_positivity_bounds'    , .false. )
+
+        !) Existence of a healthy Minkowski limit:
+        self%EFT_minkowski_limit        = Ini%Read_Logical( 'EFT_minkowski_limit'    , .false. )
+
         ! EFTCAMB working flags:
         self%EFTCAMB_feedback_level      = Ini%Read_Int    ( 'feedback_level'             , 1      )
         self%EFTCAMB_back_turn_on        = Ini%Read_Double ( 'EFTCAMB_back_turn_on'       , 1.d-8  )
@@ -161,6 +172,7 @@ contains
         self%EFTCAMB_GR_threshold        = Ini%Read_Double ( 'EFTCAMB_GR_threshold'       , 1.d-8  )
         self%EFTCAMB_stability_time      = Ini%Read_Double ( 'EFTCAMB_stability_time'     , 1.d-10 )
         self%EFTCAMB_stability_threshold = Ini%Read_Double ( 'EFTCAMB_stability_threshold', 0._dl  )
+        self%EFTCAMB_do_QSA              = Ini%Read_Logical( 'EFTCAMB_do_QSA'             , .false.)
 
         ! Output root for debug purposes:
         outroot = Ini%Read_String('output_root')
@@ -288,6 +300,13 @@ contains
         write(*,*) ' Mass stability         = ', self%EFT_mass_stability
         write(*,'(a,E12.5)') '  Mass stability rate    = ', self%EFT_mass_stability_rate
         write(*,*) ' Additional priors      = ', self%EFT_additional_priors
+        write(*,*) ' Positivity bounds      = ', self%EFT_positivity_bounds
+        write(*,*) ' Minkowski limit      = ', self%EFT_minkowski_limit
+        if ( self%EFT_positivity_bounds ) then
+            write(*,*) ' The exact calculation of the positivity bounds is implemented'
+            write(*,*) ' only for models with an abstract parametrization using gamma functions:'
+            write(*,*) "  PureEFTmodel (EFTFlag = 1) and OmegaLambda with Gamma's (EFTFlag=2, AltParEFTmodel=2)"  
+        end if
         write(*,*)
         ! print model selection flags:
         write(*,*)              'EFTCAMB model flags:'
@@ -354,6 +373,9 @@ contains
                     case(3) !Lambda_Omega with alpha functions
                         allocate( EFTCAMB_OmegaLambda_alpha::self%model )
                         call self%model%init( 'OL alpha', 'OL alpha' )
+                    case(4) !Shift Simmetric Gravity with alpha_B
+                        allocate( EFTCAMB_ShiftSym_alphaB::self%model )
+                        call self%model%init( 'Shift Symmetric alpha B', 'Shift Symmetric alpha B' )
                     case default
                         if (self%EFTCAMB_feedback_level > 0) then
                             write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
@@ -404,6 +426,9 @@ contains
                     case(4)
                         allocate( EFTCAMB_5e::self%model )
                         call self%model%init( 'Quintessence', 'Quintessence' )
+                    case(5)
+                        allocate( EFTCAMB_Beyond_Horndeski::self%model)
+                        call self%model%init( 'Beyond Horndeski', 'Beyond Horndeski' )
                     case(6)
                         allocate( EFTCAMB_Scaling_Cubic::self%model)
                         call self%model%init( 'Scaling Cubic Galileon', 'Scaling Cubic Galileon' )

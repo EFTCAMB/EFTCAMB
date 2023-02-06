@@ -198,6 +198,8 @@ module EFTCAMB_cache
         real(dl) :: pi            !< the value of the pi field at a given time and scale.
         real(dl) :: pidot         !< the value of the (conformal) time derivative of the pi field at a given time and scale.
         real(dl) :: pidotdot      !< the value of the (conformal) second time derivative of the pi field at a given time and scale.
+        real(dl) :: QS_pi         !< the value of the pi field at a given time and scale with quasistatic approx
+        real(dl) :: QS_pidot      !< the value of the (conformal) time derivative of the pi field at a given time and scale with quasistatic approx
         ! 10) scalar perturbations quantities:
         real(dl) :: etak          !< Syncronous gauge \f$ eta*k \f$ perturbation.
         real(dl) :: etakdot       !< Syncronous gauge \f$ \dot{eta}*k \f$ perturbation. This is the Einstein equation that is actually integrated.
@@ -214,6 +216,7 @@ module EFTCAMB_cache
         real(dl) :: dgpnu         !< Syncronous gauge massive neutrinos pressure perturbation.
         real(dl) :: dgrho         !< Syncronous gauge total matter density perturbation.
         real(dl) :: dgq           !< Syncronous gauge total matter velocity perturbation.
+        real(dl) :: dgpi          !< Syncronous gauge total matter anisotropic stress.
         ! 11) tensor perturbations quantities:
         real(dl) :: EFTAT         !< the value of the tensor equation coefficient A. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTBT         !< the value of the tensor equation coefficient B. Refer to the Numerical Notes for the definition.
@@ -358,6 +361,8 @@ contains
         self%pi            = 0._dl
         self%pidot         = 0._dl
         self%pidotdot      = 0._dl
+        self%QS_pi         = 0._dl
+        self%QS_pidot      = 0._dl
         ! 10) perturbations quantities:
         self%etak          = 0._dl
         self%etakdot       = 0._dl
@@ -374,6 +379,7 @@ contains
         self%dgpnu         = 0._dl
         self%dgrho         = 0._dl
         self%dgq           = 0._dl
+        self%dgpi          = 0._dl
         ! 11) tensor perturbations quantities:
         self%EFTAT         = 0._dl
         self%EFTBT         = 0._dl
@@ -500,6 +506,8 @@ contains
         HaveNan = check( HaveNan, self%pi, 'pi' )
         HaveNan = check( HaveNan, self%pidot, 'pidot' )
         HaveNan = check( HaveNan, self%pidotdot, 'pidotdot' )
+        HaveNan = check( HaveNan, self%QS_pi, 'QS_pi' )
+        HaveNan = check( HaveNan, self%QS_pidot, 'QS_pidot' )
         HaveNan = check( HaveNan, self%etak, 'etak' )
         HaveNan = check( HaveNan, self%etakdot, 'etakdot' )
         HaveNan = check( HaveNan, self%z, 'z' )
@@ -515,6 +523,7 @@ contains
         HaveNan = check( HaveNan, self%dgpnu, 'dgpnu' )
         HaveNan = check( HaveNan, self%dgrho, 'dgrho' )
         HaveNan = check( HaveNan, self%dgq, 'dgq' )
+        HaveNan = check( HaveNan, self%dgpi, 'dgpi' )
         HaveNan = check( HaveNan, self%EFTAT, 'EFTAT' )
         HaveNan = check( HaveNan, self%EFTBT, 'EFTBT' )
         HaveNan = check( HaveNan, self%EFTDT, 'EFTDT' )
@@ -636,8 +645,8 @@ contains
         write (file_BackgroundQ%unit  ,'(12a)') '# ', 'a ', 'tau ', 'k ', 'grhoq ', 'gpresq ', 'grhodotq ', 'gpresdotq '
         write (file_EinsteinCoeff%unit,'(18a)') '# ', 'a ', 'tau ', 'k ', 'EFTeomF ', 'EFTeomN ', 'EFTeomNdot ', 'EFTeomX ', 'EFTeomXdot ', 'EFTeomY ', 'EFTeomG ', 'EFTeomU ', 'EFTeomL ', 'EFTeomM ', 'EFTeomV ', 'EFTeomVdot ', 'EFTeomQ'
         write (file_PiCoeff%unit      ,'(14a)') '# ', 'a ', 'tau ', 'k ', 'EFTpiA1 ', 'EFTpiA2 ', 'EFTpiB1 ', 'EFTpiB2 ', 'EFTpiC ', 'EFTpiD1 ', 'EFTpiD2 ', 'EFTpiE '
-        write (file_PiSolution%unit   ,'(12a)') '# ', 'a ', 'tau ', 'k ', 'pi ', 'pidot ', 'pidotdot '
-        write (file_EinsteinSol%unit  ,'(20a)') '# ', 'a ', 'tau ', 'k ', 'z ', 'sigma ', 'clxc ', 'clxb ', 'clxg ', 'clxr ', 'dgpnu ', 'dgrho ', 'dgq '
+        write (file_PiSolution%unit   ,'(12a)') '# ', 'a ', 'tau ', 'k ', 'pi ', 'pidot ', 'pidotdot ', 'QS_pi ', 'QS_pidot '
+        write (file_EinsteinSol%unit  ,'(20a)') '# ', 'a ', 'tau ', 'k ', 'z ', 'sigma ', 'clxc ', 'clxb ', 'clxg ', 'clxr ', 'dgpnu ', 'dgrho ', 'dgq ', 'dgpi '
         write (file_TensorCoeff%unit  ,'(12a)') '# ', 'a ', 'tau ', 'k ', 'EFTAT ', 'EFTBT ', 'EFTDT '
         write (file_Sources%unit      ,'(12a)') '# ', 'a ', 'tau ', 'k ', 'EFTISW ', 'EFTLensing ', 'Theta0 ', 'Theta1 '
         write (file_MetricMG%unit     ,'(14a)') '# ', 'a ', 'tau ', 'k ', 'Psi ', 'Phi ', 'PsiDot ', 'PhiDot ', 'mu ', 'gamma ', 'QS_mu', 'QS_sigma', 'QS_mu_gen', 'QS_sigma_gen', 'delta_DE_eff '
@@ -759,9 +768,9 @@ contains
         ! write pi field coefficients:
         write (file_PiCoeff%unit       ,'(14'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTpiA1, self%EFTpiA2, self%EFTpiB1, self%EFTpiB2, self%EFTpiC, self%EFTpiD1, self%EFTpiD2, self%EFTpiE
         ! write pi field solution:
-        write (file_PiSolution%unit    ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%pi, self%pidot, self%pidotdot
+        write (file_PiSolution%unit    ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%pi, self%pidot, self%pidotdot, self%QS_pi, self%QS_pidot
         ! write some perturbations:
-        write (file_EinsteinSol%unit   ,'(20'//cache_output_format//')')  self%a, self%tau, self%k, self%z, self%sigma, self%clxc, self%clxb, self%clxg, self%clxr, self%dgpnu, self%dgrho, self%dgq
+        write (file_EinsteinSol%unit   ,'(20'//cache_output_format//')')  self%a, self%tau, self%k, self%z, self%sigma, self%clxc, self%clxb, self%clxg, self%clxr, self%dgpnu, self%dgrho, self%dgq, self%dgpi
         ! write tensor coefficients:
         write (file_TensorCoeff%unit   ,'(12'//cache_output_format//')')  self%a, self%tau, self%k, self%EFTAT, self%EFTBT, self%EFTDT
         ! write sources:

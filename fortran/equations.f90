@@ -55,6 +55,7 @@
 
     end function dtauda
 
+
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
     !Gauge-dependent perturbation equations
@@ -67,6 +68,7 @@
     use Transfer
 
     ! EFTCAMB MOD START: use EFTCAMB modules
+    use EFTCAMB_rootfind
     use EFT_def
     use EFTCAMB_abstract_model_full
     use EFTCAMB_abstract_model_designer
@@ -187,8 +189,15 @@
 
         ! EFTCAMB MOD START: add the EFTCAMB switch to evolutionary variables. In this way we are sure of thread safety of the scalar equations evolution.
         logical  :: EFTCAMBactive    ! Tells wether EFTCAMB perturbations are active or not
+        logical  :: EFTCAMB_QS = .False.    ! Tells EFTCAMB to take the QSA when applicable
+        logical  :: EFTCAMB_QS_check1 = .False.    ! check 1 of turning on QSA
         logical  :: EFTCAMB_printing = .False. ! Tells EFTCAMB to fully fill the timestep cache for debug or plotting purposes
-        logical  :: EFTCAMB_QS = .False.        ! Tells EFTCAMB to take the QSA when applicable
+        real(dl) :: QSAturnOnSF     ! EFTCAMB switch for the time at which QSA kicks in. (in scale factor)
+        real(dl) :: tau_switch_QSA    ! EFTCAMB switch for the time at which QSA kicks in. (in tau)
+        real(dl) :: QSpiFD_tau = 0   ! EFTCAMB tau init used for finite difference QS pi dot
+        real(dl) :: QSpiFD_pi = 0    ! EFTCAMB QS pi init used for finite difference QS pi dot
+        real(dl) :: QSpiFD_tau2 = 0   ! EFTCAMB tau init used for finite difference QS pi dot in case deltatau = 0
+        real(dl) :: QSpiFD_pi2 = 0    ! EFTCAMB QS pi init used for finite difference QS pi dot
         real(dl) :: EFTturnOnTime    ! EFTCAMB switch for the time at which EFT kicks in.
         type(TEFTCAMB_timestep_cache) :: eft_cache ! the EFTCAMB timestep cache.
         ! EFTCAMB MOD END
@@ -263,8 +272,22 @@
 
     subroutine GaugeInterface_ScalEv(EV,y,tau,tauend,tol1,ind,c,w)
     type(EvolutionVars) EV
+    real(dl) dummy(EV%nvar)
     real(dl) c(24),w(EV%nvar,9), y(EV%nvar), tol1, tau, tauend
     integer ind
+
+    ! EFTCAMB MOD START
+    ! compute and cache tau and corresponding QS mu for finite difference resolution
+    ! of QS mu dot for QSA
+    if ( CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive ) then ! .and. EV%EFTCAMB_QS ) then
+      call derivs(EV,EV%ScalEqsToPropagate,tau,y,dummy)
+      ! store last last time's in case tau = EV%QSpiFD_tau
+      EV%QSpiFD_tau2 = EV%QSpiFD_tau
+      EV%QSpiFD_pi2 = EV%QSpiFD_pi
+      EV%QSpiFD_tau = EV%eft_cache%tau
+      EV%QSpiFD_pi = EV%eft_cache%QS_pi
+    end if
+    ! EFTCAMB MOD END
 
     call dverk(EV,EV%ScalEqsToPropagate,derivs,tau,y,tauend,tol1,ind,c,EV%nvar,w)
     if (ind==-3) then
@@ -312,6 +335,7 @@
     real(dl) noSwitch, smallTime
     !Sources
     real(dl) tau_switch_saha, Delta_TM, xe,a,tau_switch_evolve_TM
+    real(dl) dummy(EV%nvar) ! dummy array for derivs call
 
     noSwitch= State%tau0+1
     smallTime =  min(tau, 1/EV%k_buf)/100
@@ -358,11 +382,11 @@
             tau_switch_no_phot_multpoles =max(15/EV%k_buf,State%taurend)*CP%Accuracy%AccuracyBoost
     end if
 
-    ! EFTCAMB MOD START: add the dark energy switch.
+    ! EFTCAMBb  MOD START: add the dark energy switch.
     if ( CP%EFTCAMB%EFTFlag == 0 ) EV%EFTturnOnTime = noSwitch
     next_switch = min(tau_switch_ktau, tau_switch_nu_massless,EV%TightSwitchoffTime, tau_switch_nu_massive, &
         tau_switch_no_nu_multpoles, tau_switch_no_phot_multpoles, tau_switch_nu_nonrel, noSwitch, &
-        tau_switch_saha, tau_switch_evolve_TM, EV%EFTturnOnTime)
+        tau_switch_saha, tau_switch_evolve_TM, EV%EFTturnOnTime, EV%tau_switch_QSA)
     ! Original code:
     ! next_switch = min(tau_switch_ktau, tau_switch_nu_massless,EV%TightSwitchoffTime, tau_switch_nu_massive, &
     !    tau_switch_no_nu_multpoles, tau_switch_no_phot_multpoles, tau_switch_nu_nonrel, noSwitch, &
@@ -498,6 +522,37 @@
             y   = yout
             EV  = EVout
             call EFTCAMBInitialConditions( y, EV, tau )
+        ! switch for QSA of pi
+        else if (next_switch==EV%tau_switch_QSA) then
+            call derivs(EV,EV%ScalEqsToPropagate,tau,y,dummy)
+            ! two step switch
+            ! if ( abs(EV%eft_cache%mu/EV%eft_cache%QS_mu_gen-1) < 1.d-3 ) then
+            !     if (EV%EFTCAMB_QS_check1) then
+            !       EVout%EFTCAMB_QS = .true.
+            !       EVout%QSAturnOnSF = 1.01_dl ! no need to switch anymore
+            !       EVout%tau_switch_QSA = State%tau0 + 1
+            !     else
+            !       EVout%EFTCAMB_QS_check1 = .true.
+            !       EVout%EFTCAMB_QS = .false.
+            !       EVout%QSAturnOnSF = EXP(0.1)*EVout%QSAturnOnSF
+            !       EVout%tau_switch_QSA = State%DeltaTime(0._dl, EV%QSAturnOnSF)
+            !     end if
+            ! single step switch
+            if (( abs(EV%eft_cache%mu/EV%eft_cache%QS_mu_gen-1) < 1.d-3 ) .and. ( abs(EV%eft_cache%sigma_eft/EV%eft_cache%QS_sigma_gen-1) < 1.d-3 )) then
+                EVout%EFTCAMB_QS = .true.
+                EVout%QSAturnOnSF = 1.01_dl ! no need to switch anymore
+                EVout%tau_switch_QSA = State%tau0 + 1
+            else
+                EVout%EFTCAMB_QS_check1 = .false.
+                EVout%EFTCAMB_QS = .false.
+                EVout%QSAturnOnSF = EXP(0.5)*EVout%QSAturnOnSF
+                EVout%tau_switch_QSA = State%DeltaTime(0._dl, EV%QSAturnOnSF)
+            end if
+            ind = 1
+            call SetupScalarArrayIndices(EVout)
+            call CopyScalarVariableArray(y,yout, EV, EVout)
+            y   = yout
+            EV  = EVout
         ! EFTCAMB MOD STOP
         end if
 
@@ -609,9 +664,13 @@
 
     ! EFTCAMB MOD START
     if ( CP%EFTCAMB%EFTFlag/=0 ) then
-        EV%w_ix = neq+1
-        neq=neq+2
-        maxeq=maxeq+2
+        if ( EV%EFTCAMB_QS ) then
+            EV%w_ix = 0   ! if QSA, no need to evolve pi and pidot
+        else
+            EV%w_ix = neq+1
+            neq=neq+2
+            maxeq=maxeq+2
+        end if
     else
         !Dark energy
         if (.not. CP%DarkEnergy%is_cosmological_constant) then
@@ -741,8 +800,9 @@
           yout(EVOut%w_ix:EVOut%w_ix + CP%DarkEnergy%num_perturb_equations - 1) = &
           y(EV%w_ix:EV%w_ix + CP%DarkEnergy%num_perturb_equations - 1)
     end if
-    if ( (CP%EFTCAMB%EFTflag/=0.and.EVout%EFTCAMBactive).or.&
-        &(CP%EFTCAMB%EFTflag/=0.and.EV%EFTCAMBactive)) then
+    if ( ((CP%EFTCAMB%EFTflag/=0.and.EVout%EFTCAMBactive).or.&
+        &(CP%EFTCAMB%EFTflag/=0.and.EV%EFTCAMBactive)) .and.&
+        &(.not. EVout%EFTCAMB_QS) ) then ! need to copy pi pidot only when not QSA
         yout(EVout%w_ix)=y(EV%w_ix)
         yout(EVout%w_ix+1)=y(EV%w_ix+1)
     end if
@@ -938,6 +998,8 @@
         EV%FirstZerolForBeta= 100000 !a large number
     end if
 
+    EV%EFTCAMB_QS = .false.
+    EV%EFTCAMB_QS_check1 = .false.
     EV%high_ktau_neutrino_approx = .false.
     if (CP%WantScalars) then
         EV%TightCoupling=.true.
@@ -945,7 +1007,7 @@
         EV%no_nu_multpoles =.false.
         EV%MassiveNuApprox=.false.
 
-        ! EFTCAMB MOD START: initialize the EFTCAMB switch
+        ! EFTCAMB MOD START: initialize the EFTCAMB switch and QSA switch
         EV%EFTCAMBactive = .false.
         ! EFTCAMB MOD END
 
@@ -1954,6 +2016,8 @@
         Rc,Rb,Rv,Rg,grhonu,chi
     real(dl) k,k2
     real(dl) a,a2, iqg, rhomass,a_massive, ep
+    real(dl) tol !EFTCAMB mod tolerance for horizon entry rootfinder
+    logical success ! EFTCAMB mod success of horizon entry rootfinder
     integer l,i, nu_i, j, ind
     integer, parameter :: i_clxg=1,i_clxr=2,i_clxc=3, i_clxb=4, &
         i_qg=5,i_qr=6,i_vb=7,i_pir=8, i_eta=9, i_aj3r=10,i_clxde=11,i_vde=12
@@ -2007,7 +2071,7 @@
 
     ! EFTCAMB MOD START: compute the time at which turn on EFT.
     EV%EFTturnOnTime = State%DeltaTime( 0._dl, CP%EFTCAMB%EFTCAMB_pert_turn_on )
-    ! EFTCAMB MOD END
+    ! EFTCAMB MODE END
 
     y=0
 
@@ -2032,6 +2096,27 @@
 
     a=tau*State%adotrad*(1+omtau/4)
     a2=a*a
+
+    ! EFTCAMB MOD START:
+    ! compute the time at which to start attempting QSA on hold minsup
+    if (CP%EFTCAMB%EFTCAMB_do_QSA) then
+        tol       = 1.d-12
+        ! The lower bound is selected as (when k mode would enter horizon if radiation dominated)/10
+        ! This is computed as (H(a_init)/k)*a_init/10
+        EV%QSAturnOnSF = zbrent(helper_adotoa, (helper_adotoa(a)/k)*a/10, 1.0_dl, tol, k, success)
+        if ( success ) then
+            EV%tau_switch_QSA = State%DeltaTime(0._dl, EV%QSAturnOnSF)
+        end if
+    end if
+
+    ! if cannot find horizon entry, too large scale to enter horizon
+    ! so QSA should never turn on: set turn on to be in the future
+    ! also if we dont want to try QSA, we should never turn it on
+    if ( .not. (CP%EFTCAMB%EFTCAMB_do_QSA .and. success) ) then
+        EV%QSAturnOnSF = 1.01_dl
+        EV%tau_switch_QSA = State%tau0 + 1 !State%DeltaTime(0._dl, EV%QSAturnOnSF) ! check this
+    end if
+    ! EFTCAMB MOD END
 
     initv=0
 
@@ -2164,8 +2249,16 @@
         end do
     end do
 
-    end subroutine initial
+  contains
+        ! small interface function to feed the root finder:
+        function helper_adotoa(a)
+            implicit none
+            real(dl) :: a, helper_adotoa
 
+            helper_adotoa = 1/(a*dtauda(State,a))
+        end function helper_adotoa
+
+    end subroutine initial
 
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
     subroutine initialt(EV,yt,tau)
@@ -2544,9 +2637,7 @@
         call CP%EFTCAMB%model%compute_rhoQPQ( a, CP%eft_par_cache , EV%eft_cache )
         ! compute second order EFT functions:
         call CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, CP%eft_par_cache , EV%eft_cache )
-        !QSA
-        !call CP%EFTCAMB%model%EFTCAMBModelComputeQSMuSigma( a, k, CP%eft_par_cache , EV%eft_cache ) minsup
-        !
+
         cothxor=1._dl/tau
     else
         gpres = gpres_noDE + w_dark_energy_t*grhov_t
@@ -2561,7 +2652,7 @@
     clxq     = 0._dl
     vq       = 0._dl
     pidotdot = 0._dl
-    if ( CP%EFTCAMB%EFTflag/=0 .and. ( EV%EFTCAMBactive .or. DebugEFTCAMB) ) then
+    if ( CP%EFTCAMB%EFTflag/=0 .and. ( EV%EFTCAMBactive .or. DebugEFTCAMB) .and. .not. EV%EFTCAMB_QS ) then
         ! initialize DE perturbations:
         clxq     = ay(EV%w_ix)
         vq       = ay(EV%w_ix+1)
@@ -2571,6 +2662,31 @@
         EV%eft_cache%pidot    = vq
         EV%eft_cache%pidotdot = pidotdot
         ! compute Einstein equations factors:
+        call CP%EFTCAMB%model%compute_Einstein_Factors( a, CP%eft_par_cache , EV%eft_cache )
+    else if ( CP%EFTCAMB%EFTflag/=0 .and. ( EV%EFTCAMBactive .or. DebugEFTCAMB) .and. EV%EFTCAMB_QS ) then
+        EV%eft_cache%dgrho = dgrho
+        EV%eft_cache%dgpi = 0
+        EV%eft_cache%dgq = dgq
+        EV%eft_cache%etak = etak
+        !write(*,*) "RSA", dgrho, dgq, etak
+        call CP%EFTCAMB%model%compute_QSA( a, k, CP%eft_par_cache , EV%eft_cache )
+        clxq     = EV%eft_cache%QS_pi
+        if (EV%eft_cache%tau == EV%QSpiFD_tau) then
+          EV%eft_cache%QS_pidot = (EV%eft_cache%QS_pi - EV%QSpiFD_pi2)/(EV%eft_cache%tau - EV%QSpiFD_tau2)
+          if (EV%eft_cache%tau == EV%QSpiFD_tau2) then
+            write(*,*) "ono"
+            stop
+          end if
+        else
+          EV%eft_cache%QS_pidot = (EV%eft_cache%QS_pi - EV%QSpiFD_pi)/(EV%eft_cache%tau - EV%QSpiFD_tau)
+        end if
+        vq       = EV%eft_cache%QS_pidot
+        pidotdot = 0
+        ! initialize DE perturbations cache:
+        EV%eft_cache%pi       = clxq
+        EV%eft_cache%pidot    = vq
+        EV%eft_cache%pidotdot = pidotdot
+        !write(*,*) "RSA", clxq, vq, pidotdot
         call CP%EFTCAMB%model%compute_Einstein_Factors( a, CP%eft_par_cache , EV%eft_cache )
     end if
     ! EFTCAMB MOD END
@@ -2666,6 +2782,32 @@
         end if
     else if (CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive) then
 
+        if ( EV%EFTCAMB_QS ) then
+            dgpi  = grhor_t*pir + grhog_t*pig
+            if (State%CP%Num_Nu_Massive /= 0) then
+                call MassiveNuVarsOut(EV,ay,ayprime,a, adotoa, dgpi=dgpi)
+            end if
+            EV%eft_cache%dgrho = dgrho
+            EV%eft_cache%dgpi = dgpi
+            EV%eft_cache%dgq = dgq
+            EV%eft_cache%etak = etak
+            call CP%EFTCAMB%model%compute_QSA( a, k, CP%eft_par_cache , EV%eft_cache )
+            clxq     = EV%eft_cache%QS_pi
+            if (EV%eft_cache%tau == EV%QSpiFD_tau) then
+              EV%eft_cache%QS_pidot = (EV%eft_cache%QS_pi - EV%QSpiFD_pi2)/(EV%eft_cache%tau - EV%QSpiFD_tau2)
+            else
+              EV%eft_cache%QS_pidot = (EV%eft_cache%QS_pi - EV%QSpiFD_pi)/(EV%eft_cache%tau - EV%QSpiFD_tau)
+            end if
+            vq       = EV%eft_cache%QS_pidot
+            pidotdot = 0
+            ! initialize DE perturbations cache:
+            EV%eft_cache%pi       = clxq
+            EV%eft_cache%pidot    = vq
+            EV%eft_cache%pidotdot = pidotdot
+            !write(*,*) "QSA", clxq, vq, pidotdot
+            call CP%EFTCAMB%model%compute_Einstein_Factors( a, CP%eft_par_cache , EV%eft_cache )
+        end if
+
         ! compute z, dz, sigma and equation for etak:
         EV%eft_cache%z = 1._dl/EV%eft_cache%EFTeomG*(EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
         z              = EV%eft_cache%z
@@ -2703,7 +2845,7 @@
       if (.not. EV%is_cosmological_constant) &
           call State%CP%DarkEnergy%PerturbationEvolve(ayprime, w_dark_energy_t, &
           EV%w_ix, a, adotoa, k, z, ay)
-    else if ( CP%EFTCAMB%EFTflag/=0 .and. ( EV%EFTCAMBactive .or. DebugEFTCAMB ) ) then
+    else if ( CP%EFTCAMB%EFTflag/=0 .and. ( EV%EFTCAMBactive .or. DebugEFTCAMB ) .and. .not. EV%EFTCAMB_QS) then
       ! compute pi field equation factors:
       call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , EV%eft_cache )
       ! use them:
@@ -2733,7 +2875,7 @@
         ayprime(EV%w_ix)   = 0._dl
         ayprime(EV%w_ix+1) = 0._dl
       end if
-    else
+    else if ( .not. EV%EFTCAMB_QS ) then
       ayprime(EV%w_ix)   = 0._dl
       ayprime(EV%w_ix+1) = 0._dl
     end if
@@ -3141,6 +3283,7 @@
             call MassiveNuVarsOut(EV,ay,ayprime,a, adotoa, dgpi=dgpi, clxnu_all=clxnu, &
                 dgpi_diff=dgpi_diff, pidot_sum=pidot_sum)
         end if
+        EV%eft_cache%dgpi = dgpi
 
         ! EFTCAMB MOD START: standard DE perturbations
         gpres = gpres_noDE + w_dark_energy_t*grhov_t
@@ -3197,7 +3340,13 @@
               ! compute QS quantities:
               call CP%EFTCAMB%model%compute_QS_mu( a, k, CP%eft_par_cache , EV%eft_cache )
               call CP%EFTCAMB%model%compute_QS_Sigma( a, k, CP%eft_par_cache , EV%eft_cache )
-              call CP%EFTCAMB%model%compute_QS_Mu_Sigma( a, k, CP%eft_par_cache , EV%eft_cache )
+              call CP%EFTCAMB%model%compute_QSA( a, k, CP%eft_par_cache , EV%eft_cache )
+              !write(*,*) "chaching", EV%eft_cache%QS_pi, EV%eft_cache%QS_pidot
+              if (EV%eft_cache%tau == EV%QSpiFD_tau) then
+                EV%eft_cache%QS_pidot = (EV%eft_cache%QS_pi - EV%QSpiFD_pi2)/(EV%eft_cache%tau - EV%QSpiFD_tau2)
+              else
+                EV%eft_cache%QS_pidot = (EV%eft_cache%QS_pi - EV%QSpiFD_pi)/(EV%eft_cache%tau - EV%QSpiFD_tau)
+              end if
         end if
         ! metric quantities:
         EV%eft_cache%sigmadot    = EFTsigmadot

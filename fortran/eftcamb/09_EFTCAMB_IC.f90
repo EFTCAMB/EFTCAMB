@@ -258,13 +258,15 @@ contains
 
         end if
 
-        if ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 /= 0._dl ) then
-            y(EV%w_ix)   = -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 )
-            y(EV%w_ix+1) = CP%eft_par_cache%h0_Mpc*(EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )**2*a*EV%eft_cache%adotoa*(EFTpiCdotFunction(a,k)+k*k*EFTpiDdotFunction(a,k))&
-                &  -EFTpiEdot/(EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 ) )
-        else
-            y(EV%w_ix)   = 0._dl
-            y(EV%w_ix+1) = 0._dl
+        if ( .not. EV%EFTCAMB_QS ) then
+            if ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 /= 0._dl ) then
+                y(EV%w_ix)   = -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 )
+                y(EV%w_ix+1) = CP%eft_par_cache%h0_Mpc*(EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )**2*a*EV%eft_cache%adotoa*(EFTpiCdotFunction(a,k)+k*k*EFTpiDdotFunction(a,k))&
+                    &  -EFTpiEdot/(EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 ) )
+            else
+                y(EV%w_ix)   = 0._dl
+                y(EV%w_ix+1) = 0._dl
+            end if
         end if
 
         ! reset the cache:

@@ -78,6 +78,7 @@ class EFTCAMB(F2003Class):
                ("EFTCAMB_stability_time", c_double, "Minimum scale factor at which the code checks for stability of a theory"),
                ("EFTCAMB_stability_threshold", c_double, "Threshold for the stability module to consider the model stable."),
                ("EFTCAMB_model_is_designer", c_bool, "Logical flag that establishes whether the model is designer or not."),
+               ("EFTCAMB_do_QSA", c_bool, "Logical flag that establishes whether to attempt Quasistatic approximation."),
                ]
 
     # Parameters that are used to initialize the class
@@ -409,6 +410,8 @@ class EFTCAMB_timestep_cache(F2003Class):
                 ("pi", c_double),            # the value of the pi field at a given time and scale.
                 ("pidot", c_double),         # the value of the (conformal) time derivative of the pi field at a given time and scale.
                 ("pidotdot", c_double),      # the value of the (conformal) second time derivative of the pi field at a given time and scale.
+                ("QS_pi", c_double),         # the value of the pi field at a given time and scale under QSA
+                ("QS_pidot", c_double),      # the value of the (conformal) time derivative of the pi field at a given time and scale under QSA
                 # 10) scalar perturbations quantities:
                 ("etak", c_double),          # Syncronous gauge \f$ eta*k \f$ perturbation.
                 ("etakdot", c_double),       # Syncronous gauge \f$ \dot{eta}*k \f$ perturbation. This is the Einstein equation that is actually integrated.
@@ -425,6 +428,7 @@ class EFTCAMB_timestep_cache(F2003Class):
                 ("dgpnu", c_double),         # Syncronous gauge massive neutrinos pressure perturbation.
                 ("dgrho", c_double),         # Syncronous gauge total matter density perturbation.
                 ("dgq", c_double),           # Syncronous gauge total matter velocity perturbation.
+                ("dgpi", c_double),          # Syncronous gauge total matter anisotropic stress.
                 # 11) tensor perturbations quantities:
                 ("EFTAT", c_double),         # the value of the tensor equation coefficient A. Refer to the Numerical Notes for the definition.
                 ("EFTBT", c_double),         # the value of the tensor equation coefficient B. Refer to the Numerical Notes for the definition.

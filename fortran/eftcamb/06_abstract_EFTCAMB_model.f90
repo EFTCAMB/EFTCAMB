@@ -86,10 +86,12 @@ module EFTCAMB_abstract_model
         ! compute Sigma and mu
         procedure :: compute_QS_mu               => EFTCAMBModelComputeQSMu                               !< function that computes the quasi-static expression of mu.
         procedure :: compute_QS_Sigma            => EFTCAMBModelComputeQSSigma                            !< function that computes the quasi-static expression of Sigma.
-        procedure :: compute_QS_Mu_Sigma         => EFTCAMBModelComputeQSMuSigma                          !< function that computes the quasi-static expression of Sigma.
+        procedure :: compute_QSA                 => EFTCAMBModelComputeQSA                                !< function that computes the quasi-static expression of mu, Sigma, pi, and pidot
 
         ! stability procedures:
         procedure :: additional_model_stability  => EFTCAMBModelAdditionalModelStability                  !< function that computes model specific stability requirements.
+        ! positivity bounds:
+        procedure :: compute_positivity_bounds           => EFTCAMBModelPositivityBounds                                      !< function that computes the positivity bounds. See thesis Dani de Boe for details.
 
     end type EFTCAMB_model
 
@@ -739,7 +741,7 @@ contains
 
    ! ---------------------------------------------------------------------------------------------
 
-   subroutine EFTCAMBModelComputeQSMuSigma( self, a, k,  eft_par_cache, eft_cache ) ! minsup
+   subroutine EFTCAMBModelComputeQSA( self, a, k,  eft_par_cache, eft_cache ) ! minsup
 
      implicit none
 
@@ -782,9 +784,21 @@ contains
 
      gamma = (B3*C2-B1*C3-(a**2/k**2)*B1*M2)/(B2*C3-C1*B3+(a**2/k**2)*B2*M2)
 
-     eft_cache%QS_sigma_gen = 0.5*eft_cache%QS_mu_gen*(1+gamma)
+     eft_cache%QS_sigma_gen = 0.5*eft_cache%QS_mu_gen*(1+gamma - 2*eft_cache%dgpi/(eft_cache%dgrho +3*eft_cache%dgq*eft_cache%adotoa/k +2*eft_cache%dgpi))
 
-    end subroutine EFTCAMBModelComputeQSMuSigma
+     eft_cache%QS_pi = - eft_par_cache%h0_Mpc*(2*eft_cache%dgrho*(1+ eft_cache%EFTOmegaV)*(a**3*B1*M2 + k**2*(eft_cache%adotoa &
+      & *(B2*C2 - B1*C1) + a*(B1*C3-B3*C2))) + 2*eft_cache%etak* (1+ eft_cache%EFTOmegaV)*a*k*(a**2*M2*(A1*B1-A3*B2)&
+      & + k**2*(C1*(A3*B3-A2*B1)+C2*(A2*B2-A1*B3)+C3*(A1*B1-A3*B2))) + 2*eft_cache%dgpi*(a**3*A3*M2 &
+      & + k**2*(eft_cache%adotoa*(A1*C2-A3*C1) + a*(A3*C3 - A2*C2))))&
+      & / (2*a*k**2*eft_cache%adotoa*(1+eft_cache%EFTOmegaV)*(a**2*M2*(A1*B1-A3*B2)+ k**2*(C1*(A3*B3-A2*B1)+C2*(A2*B2-A1*B3)+C3*(A1*B1-A3*B2))))
+
+     ! eft_cache%QS_pidot = eft_par_cache%h0_Mpc*(2*eft_cache%dgrho*(1+eft_cache%EFTOmegaV)*(a**3*M2*(B1-B2)+k**2*(eft_cache%adotoa*(B2*C2-B1*C1)&
+     !  & + a*(B1*C3-B2*C3+B3*C1-B3*C2))) + 2*eft_cache%etak*(1+eft_cache%EFTOmegaV)*a*k*(a**2*M2*(A1*B1-A3*B2) &
+     !  & + k**2*(C1*(A3*B3-A2*B1)+C2*(A2*B2-A1*B3)+C3*(A1*B1-A3*B2))) + 2*eft_cache%dgpi*(a**3*M2*(A3-A1) &
+     !  & + k**2*(eft_cache%adotoa*(A1*C2-A3*C1)+a*(-A1*C3+A2*C1 - A2*C2 + A3*C3))))/(a**2*M2*(A1*B1-A3*B2) &
+     !  & + k**2*(C1*(A3*B3-A2*B1)+C2*(A2*B2-A1*B3)+C3*(A1*B1-A3*B2)))
+
+    end subroutine EFTCAMBModelComputeQSA
 
 
     ! ---------------------------------------------------------------------------------------------
@@ -803,6 +817,80 @@ contains
         EFTCAMBModelAdditionalModelStability = .True.
 
     end function EFTCAMBModelAdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the LHS of positivity bounds. For details refer to the master thesis of Dani de Boe.
+    subroutine EFTCAMBModelPositivityBounds( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_model)                          :: self          !< the base class
+        real(dl), intent(in)                          :: a             !< the input scale factor.
+        type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(TEFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        real(dl) :: a2, one_plus_omega,adotoa2,adotoa02,NumFactor
+        real(dl) :: D1,N1,N2,N3,N4,N5,N6
+        real(dl) :: Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q8,Q9,tach_pos_num
+
+        a2             = a**2
+        one_plus_omega = 1._dl+eft_cache%EFTOmegaV
+        adotoa2        = eft_cache%adotoa**2
+        adotoa02       = eft_par_cache%h0_mpc**2
+        NumFactor = 2*a*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V + eft_cache%adotoa*(4*eft_cache%EFTGamma3V + a*eft_cache%EFTGamma3P)
+
+        D1 = (-2*eft_cache%EFTc + 3*a*eft_cache%adotoa*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V + (adotoa2 + eft_cache%Hdot*2.)*eft_cache%EFTGamma3V + 2*a*adotoa2*eft_cache%EFTGamma3P)
+
+        N1 = D1 + a * (eft_cache%Hdot *eft_cache%EFTOmegaP + a *adotoa2 * eft_cache%EFTOmegaPP)
+
+        N2 = 4 * a2 * adotoa02 * eft_cache%EFTGamma1V + a * eft_par_cache%h0_mpc* eft_cache%adotoa * (-3*eft_cache%EFTGamma2V + a*eft_cache%EFTGamma2P) + eft_cache%Hdot*(4*eft_cache%EFTGamma3V - a*eft_cache%EFTGamma3P) + &
+             adotoa2 *(-10*eft_cache%EFTGamma3V + a * (eft_cache%EFTGamma3P - a*eft_cache%EFTGamma3PP))
+
+        N3 = -2*eft_cache%EFTcdot + 3*a*eft_par_cache%h0_mpc*(eft_cache%EFTGamma2V*eft_cache%Hdot + adotoa2*(-eft_cache%EFTGamma2V + a*eft_cache%EFTGamma2P)) - &
+              2*eft_cache%Hdot*eft_cache%adotoa*(eft_cache%EFTGamma3V - 3*a*eft_cache%EFTGamma3P) +2*eft_cache%EFTGamma3V*eft_cache%Hdotdot - eft_cache%adotoa**3. * &
+             (2*eft_cache%EFTGamma3V + a*eft_cache%EFTGamma3P - 2*a2*eft_cache%EFTGamma3PP)
+
+        N4 = -2*eft_cache%EFTLambdadot*eft_cache%adotoa + 2*eft_cache%EFTLambdadotdot - a2*eft_cache%adotoa*eft_par_cache%h0_mpc*eft_cache%Hdot*(eft_cache%EFTGamma2P-3*a*eft_cache%EFTGamma2PP) - &
+             eft_cache%adotoa*eft_cache%Hdotdot*(-2*eft_cache%EFTGamma3V+5*a*eft_cache%EFTGamma3P+4*a2*eft_cache%EFTGamma3PP) - &
+             2*eft_cache%EFTGamma3V*(2*eft_cache%Hdot**2. + eft_cache%Hdotdotdot)
+
+        N5 = a2*eft_par_cache%h0_mpc*eft_cache%Hdotdot*eft_cache%EFTGamma2P - a*eft_cache%Hdot**2. * (5*eft_cache%EFTGamma3P+3*a*eft_cache%EFTGamma3PP) - a*eft_cache%Hdotdotdot*eft_cache%EFTGamma3P + &
+             a2**2.*eft_par_cache%h0_mpc*eft_cache%adotoa**3.*eft_cache%EFTGamma2PPP + 36*adotoa2*eft_cache%Hdot*eft_cache%EFTGamma3V - &
+             2*adotoa2*a2*eft_cache%Hdot*(4*eft_cache%EFTGamma3PP+3*a*eft_cache%EFTGamma3PPP)
+
+        N6 =  adotoa2**2. * (24*eft_cache%EFTGamma3V - 12*a*eft_cache%EFTGamma3P + 2*a**3.*eft_cache%EFTGamma3PPP + a2**2.*eft_cache%EFTGamma3PPPP)
+
+       ! ghost-positivity condition:
+       eft_cache%ghostpos = D1
+
+       ! tachyonic-positivity condition:
+       Q1 = (-eft_cache%adotoa*eft_cache%EFTLambdadot + eft_cache%EFTLambdadotdot)*a2
+       Q2 = eft_par_cache%h0_mpc*(eft_cache%Hdotdot - eft_cache%adotoa*eft_cache%Hdot)*a2*eft_cache%EFTGamma2P/2._dl
+       Q3 = 3._dl*eft_par_cache%h0_mpc*eft_cache%adotoa*eft_cache%Hdot*(a**3)*eft_cache%EFTGamma2PP/2._dl
+       Q4 = eft_par_cache%h0_mpc*(eft_cache%adotoa**3)*(a2**2)*eft_cache%EFTGamma2PPP/2._dl
+       Q5 = (-eft_cache%Hdotdotdot-12._dl*eft_cache%adotoa**4+18._dl*eft_cache%adotoa**2*eft_cache%Hdot-2._dl*eft_cache%Hdot**2+eft_cache%adotoa*eft_cache%Hdotdot)*eft_cache%EFTGamma3V
+       Q6 = (a/2._dl)*(-eft_cache%Hdotdotdot + 12._dl*eft_cache%adotoa**4-5._dl*eft_cache%Hdot**2-5._dl*eft_cache%adotoa*eft_cache%Hdotdot)*eft_cache%EFTGamma3P
+       Q7 = -(a2/2._dl)*(3._dl*eft_cache%Hdot**2 + 8._dl*eft_cache%adotoa**2*eft_cache%Hdot+4._dl*eft_cache%Hdotdot*eft_cache%adotoa)*eft_cache%EFTGamma3PP
+       Q8 = -(a**3)*eft_cache%adotoa**2*(3._dl*eft_cache%Hdot + eft_cache%adotoa**2)*eft_cache%EFTGamma3PPP
+       Q9 = -a2**2*eft_cache%adotoa**4*eft_cache%EFTGamma3PPPP/(2._dl)
+       tach_pos_num = Q1 + Q2 + Q3 + Q4 + Q5 + Q6 + Q7 + Q8 + Q9
+
+       ! compute the LHS of positivity bounds:
+       if ( D1 /= 0 ) then
+
+          eft_cache%posbound1 = - (4 * a2*one_plus_omega *adotoa02 * eft_cache%EFTGamma2V**2. + 4*eft_cache%EFTGamma3V**3.*(adotoa2 + 2*eft_cache%Hdot)  + 8*a*adotoa2*one_plus_omega*eft_cache%EFTGamma3V*eft_cache%EFTGamma3P + &
+                                 a2*adotoa2*one_plus_omega*eft_cache%EFTGamma3P**2. + 4 *a* eft_cache%adotoa*eft_par_cache%h0_mpc*eft_cache%EFTGamma2V * (4*one_plus_omega*eft_cache%EFTGamma3V + 3*eft_cache%EFTGamma3V**2. + &
+                                 a * one_plus_omega * eft_cache%EFTGamma3P) + 8*eft_cache%EFTGamma3V**2. * (-eft_cache%EFTc + adotoa2 * ( 2*one_plus_omega + a*eft_cache%EFTGamma3P)))/D1/8*one_plus_omega
+
+          eft_cache%posbound2 = 0.5 * (2*eft_cache%EFTGamma3V * N1/one_plus_omega + 2*a*(eft_cache%Hdot * eft_cache%EFTGamma3P + a *adotoa2 *eft_cache%EFTGamma3PP) + N2 + NumFactor*-N3/D1 + &
+                              NumFactor**2.*( -N4 - N5 + N6  )/D1**2./8   )
+          eft_cache%tachpos = -tach_pos_num/D1
+        else
+          eft_cache%posbound1 = 0
+          eft_cache%posbound2 = 0
+          eft_cache%tachpos   = 0
+      end if
+    end subroutine EFTCAMBModelPositivityBounds
 
 end module EFTCAMB_abstract_model
 
