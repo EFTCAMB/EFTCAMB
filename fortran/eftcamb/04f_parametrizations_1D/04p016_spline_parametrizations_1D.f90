@@ -28,7 +28,7 @@ module EFTCAMB_spline_parametrizations_1D
     use precision
     use IniObjects
     use MpiUtils
-    use splines
+    use EFT_splines
     use EFT_def
     use EFTCAMB_mixed_algorithms
     use linear_interpolation_1D
