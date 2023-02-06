@@ -8,6 +8,8 @@ RECOMBINATION_FILES ?= recfast
 NONLINEAR_FILES     ?= halofit SecondOrderPK
 DARKENERGY_FILES  ?= DarkEnergyFluid DarkEnergyPPF PowellMinimize DarkEnergyQuintessence
 
+EQUATIONS     ?= equations
+
 BISPECTRUM ?= SeparableBispectrum
 
 #Driver program
@@ -28,12 +30,38 @@ DLL_DIR ?= Releaselib
 
 CAMBLIB       = libcamb.a
 
+# EFTCAMB MOD START: added equations eft
 SOURCEFILES      = constants config classes MathUtils subroutines DarkAge21cm \
         DarkEnergyInterface SourceWindows massive_neutrinos model results bessels \
-        $(RECOMBINATION_FILES) $(DARKENERGY_FILES) equations \
+        $(RECOMBINATION_FILES) $(DARKENERGY_FILES) $(EQUATIONS) \
         $(REIONIZATION_FILES) $(POWERSPECTRUM_FILES) $(NONLINEAR_FILES) \
         lensing $(BISPECTRUM) cmbmain camb camb_python
+# EFTCAMB MOD END.
 
+# EFTCAMB MOD START: camb dependencies to ensure order of compilation
+config.o : constants.o
+classes.o : config.o
+MathUtils.o : classes.o
+subroutines.o : MathUtils.o
+DarkAge21cm.o : subroutines.o
+DarkEnergyInterface.o : DarkAge21cm.o
+SourceWindows.o : DarkEnergyInterface.o
+massive_neutrinos.o : SourceWindows.o
+model.o : massive_neutrinos.o
+results.o : model.o
+bessels.o : results.o
+$(RECOMBINATION_FILES).o : bessels.o
+$(patsubst %,%.o,$(DARKENERGY_FILES)) : $(RECOMBINATION_FILES).o
+$(EQUATIONS).o : $(patsubst %,%.o,$(DARKENERGY_FILES))
+$(REIONIZATION_FILES).o : $(EQUATIONS).o
+$(POWERSPECTRUM_FILES).o : $(REIONIZATION_FILES).o
+$(patsubst %,%.o,$(NONLINEAR_FILES)) : $(POWERSPECTRUM_FILES).o
+lensing.o : $(patsubst %,%.o,$(NONLINEAR_FILES))
+$(BISPECTRUM).o : lensing.o
+cmbmain.o : $(BISPECTRUM).o
+camb.o : cmbmain.o
+camb_python.o : camb.o
+# EFTCAMB MOD END.
 
 F90WFLAGS     = -Waliasing -Wampersand -Wconversion -Wc-binding-type -Wintrinsics-std \
         -Wno-tabs -Wintrinsic-shadow -Wline-truncation -Wtarget-lifetime -Wreal-q-constant
@@ -46,14 +74,33 @@ SF90FLAGS      = $(SFFLAGS) $(FFLAGS)
 
 HEALPIXLD     = -L$(HEALPIXDIR)/lib -lhealpix -L$(FITSDIR) -l$(FITSLIB)
 
-
 CAMBOBJ       = $(patsubst %,%.o,$(SOURCEFILES))
+
+# EFTCAMB MOD START: build system
+# get the EFTCAMB directory:
+
+ifneq "$(wildcard ./eftcamb)" ""
+EFTCAMB_DIR ?= $(shell pwd)/eftcamb
+else
+ifneq "$(wildcard ../eftcamb)" ""
+EFTCAMB_DIR ?= $(shell pwd)/../eftcamb
+endif
+endif
+EFTCAMB_APPS=$(EFTCAMB_DIR)/../eftcamb_apps
+CAMB_DIR=$(EFTCAMB_DIR)/..
+#CAMB_DIR=$(abspath .)
+#EFTCAMB_DIR=$(abspath .)/eftcamb
+#EFTCAMB_APPS=$(abspath .)/eftcamb_apps
+
+# include EFTCAMB make file:
+include $(EFTCAMB_DIR)/eftcamb_build.make
+# EFTCAMB MOD END.
 
 FORUTILS_DIR ?= $(FORUTILSPATH)/$(OUTPUT_DIR)/
 python: FORUTILS_DIR=$(FORUTILSPATH)/$(DLL_DIR)/
 
 LIBLINK = -L"$(FORUTILS_DIR)" -lforutils
-	
+
 
 ## CosmoRec
 ifneq (,$(findstring cosmorec,$(RECOMBINATION_FILES)))
@@ -74,6 +121,7 @@ camb: libhyrec.a
 python: libhyrec.a
 endif
 
+.DEFAULT_GOAL := camb
 default: camb
 
 all: camb python libcamb
@@ -110,15 +158,16 @@ camb_exe:
 camblib.so: $(CAMBOBJ)
 	@$(MAKE) -C .. $(MAKEOPT) -f Makefile_main $(DLL_DIR)/camblib.so
 
+# EFTCAMB MOD START: add EFTCAMB files to CAMB library
 libcambobj:
-    LIBCAMBOBJ = $(patsubst %,$(DLL_DIR)/%.o,$(SOURCEFILES))
+    LIBCAMBOBJ = $(patsubst %,$(DLL_DIR)/%.o,$(SOURCEFILES)) $(EFT_SOJ)
+# EFTCAMB MOD END
 
 #cannot link the .a library, or the linker will strip out some things we might need
 $(DLL_DIR)/camblib.so: libcambobj
 	$(F90C) $(SF90FLAGS) $(SMODOUT) $(IFLAG)$(DLL_DIR)/ $(IFLAG)"$(FORUTILS_DIR)"  \
-		$(LIBCAMBOBJ) $(F90CRLINK) $(LIBLINK) -o $(DLL_DIR)/camblib.so
+		$(LIBCAMBOBJ) $(F90CRLINK) $(LIBLINK) -lblas -llapack -o $(DLL_DIR)/camblib.so
 	cp $(DLL_DIR)/camblib.so $(PYCAMB_OUTPUT_DIR)
-
 
 $(CAMBLIB): $(CAMBOBJ)
 	$(AR) -r $@ $(CAMBOBJ)
@@ -128,7 +177,7 @@ camb_fits: libforutils directories writefits.f90 $(CAMBOBJ) $(DRIVER).o
 		$(F90CRLINK) $(LIBLINK) $(HEALPIXLD) -DWRITE_FITS -o $@
 
 #../Makefile ../Makefile_main
-%.o: ../%.f90 compiler.ver 
+%.o: ../%.f90 compiler.ver
 	$(F90C) $(F90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
 
 directories:
@@ -151,7 +200,7 @@ clean:
 	-rm -rf Release* Debug* WinDLL*
 
 delete:
-	rm -f camb	
+	rm -f camb
 	rm -f ../camb/*.so
 
 ## CosmoRec make parts
