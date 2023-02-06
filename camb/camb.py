@@ -26,6 +26,13 @@ def set_feedback_level(level=1):
     config.FeedbackLevel = level
 
 
+def get_feedback_level():
+    """
+    Get the feedback level for internal CAMB calls
+    """
+    return config.FeedbackLevel
+
+
 def get_results(params):
     """
     Calculate results for specified parameters and return :class:`~.results.CAMBdata` instance for getting results.
@@ -165,13 +172,30 @@ def set_params(cp=None, verbose=False, **params):
                 logging.warning(f"Calling {setter.__name__}(**{kwargs})")
             setter(**kwargs)
 
+    # EFTCAMB MOD START
+    # dedicated setter for the initialization of EFTCAMB
+    def EFT_do_set(setter):
+        if verbose:
+            logging.warning("Calling %s(**%s)" % (setter.__name__, params))
+        # get feedback flag:
+        _feedback_level = params.get("feedback_level", 0)
+        # call setter:
+        setter(cp, params, print_header=_feedback_level > 0)
+        # update parameters that are actually used:
+        used_params.update(cp.EFTCAMB.read_parameters())
+
+    # EFTCAMB MOD END
+
     # Note order is important: must call DarkEnergy.set_params before set_cosmology if setting theta rather than H0
     # set_classes allows redefinition of the classes used, so must be called before setting class parameters
     do_set(cp.set_accuracy)
     do_set(cp.set_classes)
     do_set(cp.DarkEnergy.set_params)
     do_set(cp.Reion.set_extra_params)
+    # EFTCAMB MOD START
+    EFT_do_set(cp.EFTCAMB.initialize_parameters)
     do_set(cp.set_cosmology)
+    # EFTCAMB MOD END
     do_set(cp.set_matter_power)
     do_set(cp.set_for_lmax)
     do_set(cp.InitPower.set_params)
@@ -200,6 +224,23 @@ def set_params(cp=None, verbose=False, **params):
                 setattr(obj, par, params[k])
             else:
                 raise CAMBUnknownArgumentError("Unrecognized parameter: %s" % k)
+
+    # EFTCAMB MOD START
+    # Note : positivity bounds are implemented only for some specific cases this check avoid that they are used improperly
+    if cp.EFTCAMB.EFTflag != 0:
+        EFTpars = cp.EFTCAMB.read_parameters()
+        if EFTpars["EFT_positivity_bounds"]:
+            if cp.EFTCAMB.model_name() not in ["OL gamma", "Standard Pure EFT", "K-mouflage", "Scaling Cubic Galileon"]:
+                raise CAMBValueError(
+                    "Higher order derivatives of the EFTfunctions not implemented. Positivity Bounds cannot be calculated properly for %s"
+                    % cp.EFTCAMB.model_name()
+                )
+
+        if cp.EFTCAMB.model_name() in ["Standard Pure EFT"]:
+            if any([EFTpars["PureEFTmodelGamma4"], EFTpars["PureEFTmodelGamma5"], EFTpars["PureEFTmodelGamma6"]]):
+                print("Warning: positivity bounds are implemented up to Gamma3.")
+    # EFTCAMB MOD END
+
     return cp
 
 
@@ -210,6 +251,7 @@ def get_valid_numerical_params(transfer_only=False, **class_names):
     :param transfer_only: if True, exclude parameters that affect only initial power spectrum or non-linear model
     :param class_names: class name parameters that will be used by :meth:`.model.CAMBparams.set_classes`
     :return: set of valid input parameter names for :func:`set_params`
+
     """
     cp = CAMBparams()
     cp.set_classes(**class_names)
@@ -227,6 +269,7 @@ def get_valid_numerical_params(transfer_only=False, **class_names):
     extract_params(cp.DarkEnergy.set_params)
     extract_params(cp.Reion.set_extra_params)
     extract_params(cp.set_cosmology)
+
     if not transfer_only:
         extract_params(cp.InitPower.set_params)
         extract_params(cp.NonLinearModel.set_params)

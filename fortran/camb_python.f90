@@ -56,7 +56,6 @@
 
     contains
 
-
     subroutine GetAllocatableSize(sz, sz_array, sz_object_array)
     Type(PythonClassAllocatable) :: T
     Type(RealAllocatableArray) :: T2

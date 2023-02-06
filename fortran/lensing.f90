@@ -242,7 +242,9 @@
             CTE(l) =  CL%Cl_scalar(l,C_Cross)*fac
         end do
         if (Cphil3(10) > lensing_sanity_check_amplitude) then
-            call AmplitudeError()
+            ! EFTCAMB MOD START: some theories really destroy the Cls
+            ! call AmplitudeError()
+            ! EFTCAMB MOD END.
             return
         end if
         if (lmax > CP%Max_l) then
@@ -259,7 +261,9 @@
                 CEE(l) =  highL_CL_template(l, C_E)*fac2 *sc
                 CTE(l) =  highL_CL_template(l, C_Cross)*fac2*sc
                 if (Cphil3(CP%Max_l+1) > 1e-7) then
-                    call MpiStop('You need to normalize the high-L template so it is dimensionless')
+                    ! EFTCAMB MOD START: some theories really destroy the Cls
+                    ! call MpiStop('You need to normalize the high-L template so it is dimensionless')
+                    ! EFTCAMB MOD END.
                 end if
             end do
         end if
@@ -603,7 +607,9 @@
         end do
 
         if (Cphil3(10) > 1e-7) then
-            call AmplitudeError()
+            ! EFTCAMB MOD START: some theories really destroy the Cls
+            ! call AmplitudeError()
+            ! EFTCAMB MOD END.
             return
         end if
 
@@ -782,7 +788,9 @@
         end do
 
         if (Cphil3(10) > 1e-7) then
-            call AmplitudeError()
+            ! EFTCAMB MOD START: some theories really destroy the Cls
+            ! call AmplitudeError()
+            ! EFTCAMB MOD END.
             return
         end if
 

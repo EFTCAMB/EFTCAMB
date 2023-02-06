@@ -26,8 +26,13 @@ from .baseconfig import (
     numpy_1d_int,
 )
 from .dark_energy import DarkEnergyEqnOfState, DarkEnergyModel
+
+# EFTCAMB MOD START: include EFTCAMB
+from .eftcamb import EFTCAMB, EFTCAMB_parameter_cache
 from .initialpower import InitialPower, SplinedInitialPower
 from .nonlinear import NonLinearModel
+
+# EFTCAMB MOD END.
 from .recombination import RecombinationModel
 from .reionization import ReionizationModel
 from .sources import SourceWindow
@@ -387,6 +392,8 @@ class CAMBparams(F2003Class):
         ("min_l_logl_sampling", c_int, "Minimum L to use log sampling for L"),
         ("SourceWindows", AllocatableObjectArray(SourceWindow)),
         ("CustomSources", CustomSources),
+        ("EFTCAMB", AllocatableObject(EFTCAMB)),
+        ("EFTCAMB_parameter_cache", AllocatableObject(EFTCAMB_parameter_cache))("CustomSources", CustomSources),
     ]
 
     H0: float
@@ -725,12 +732,18 @@ class CAMBparams(F2003Class):
             if cosmomc_theta and thetastar:
                 raise CAMBError("Cannot set both cosmomc_theta and thetastar")
 
+            # EFTCAMB MOD START
+            min_H0 = 100 * np.sqrt(ombh2 + omnuh2 + omnuh2_sterile + omch2)
+            min_H0 = 1.1 * min_H0  # just to make sure we are safely above the limit
+            _H0_thmin = max(theta_H0_range[0], min_H0)
             self.set_H0_for_theta(
                 cosmomc_theta or thetastar,
                 cosmomc_approx=cosmomc_theta is not None,
-                theta_H0_range=theta_H0_range,
+                theta_H0_range=(_H0_thmin, theta_H0_range[1]),
                 setter_H0=setter_H0,
             )
+            # EFTCAMB MOD END
+
         else:
             if H0 is None:
                 raise CAMBError("Must set H0, cosmomc_theta or thetastar")
@@ -802,8 +815,17 @@ class CAMBparams(F2003Class):
         :param recombination_model: name of RecombinationModel class
         :param reionization_model: name of a ReionizationModel class
         """
-        if dark_energy_model:
+
+        # EFTCAMB is initialized using the flags for the darkenergy model
+        # should prevent double counting the DE. When dark_energy_model \= EFTCAMB
+        # EFTCAMB is initialized with EFTflag = 0 (default params)
+        if dark_energy_model == "EFTCAMB":
+            self.EFTCAMB = self.make_class_named("EFTCAMB", EFTCAMB)
+            self.DarkEnergy = self.make_class_named("fluid", DarkEnergyModel)
+        if dark_energy_model != "EFTCAMB":
             self.DarkEnergy = self.make_class_named(dark_energy_model, DarkEnergyModel)
+        # EFTCAMB MOD END.
+
         if initial_power_model:
             self.InitPower = self.make_class_named(initial_power_model, InitialPower)
         if non_linear_model:

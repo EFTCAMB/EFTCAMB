@@ -30,21 +30,32 @@
     Type TThermalNuBackground
         !Quantities for the neutrino background momentum distribution assuming thermal
         real(dl) dam !step in a*m
-        real(dl), dimension(:), allocatable ::  r1,p1,dr1,dp1,ddr1
+        ! EFTCAMB MOD START: add massive neutrinos
+        real(dl) dlnam
+        real(dl), dimension(:), allocatable ::  r1,p1,dr1,dp1,ddr1,ddp1,dddp1,ddddp1
+        ! EFTCAMB MOD END
         real(dl), private :: target_rho
     contains
-    procedure :: init => ThermalNuBackground_init
-    procedure :: rho_P => ThermalNuBackground_rho_P
-    procedure :: rho => ThermalNuBackground_rho
-    procedure :: drho => ThermalNuBackground_drho
+    procedure :: init   => ThermalNuBackground_init
+    procedure :: rho_P  => ThermalNuBackground_rho_P
+    procedure :: rho    => ThermalNuBackground_rho
+    procedure :: drho   => ThermalNuBackground_drho
+    ! EFTCAMB MOD START:
+    procedure :: pidot       => ThermalNuBackground_pidot
+    procedure :: pidotdot    => ThermalNuBackground_pidotdot
+    procedure :: pidotdotdot => ThermalNuBackground_pidotdotdot
+    ! EFTCAMB MOD END.
     procedure :: find_nu_mass_for_rho => ThermalNuBackground_find_nu_mass_for_rho
     end type TThermalNuBackground
 
     Type(TThermalNuBackground), target :: ThermalNuBackground
     class(TThermalNuBackground), pointer :: ThermalNuBack !ifort workaround
 
+    ! EFTCAMB MOD START: compatibility with massive neutrinos
     public fermi_dirac_const,  sum_mnu_for_m1, neutrino_mass_fac, TNuPerturbations, &
-        ThermalNuBackground, ThermalNuBack
+           ThermalNuBackground, ThermalNuBack, TThermalNuBackground
+    ! EFTCAMB MOD END.
+
     contains
 
     subroutine sum_mnu_for_m1(summnu,dsummnu, m1, targ, sgn)
@@ -119,8 +130,17 @@
     if (allocated(this%r1)) return
     ThermalNuBack => ThermalNuBackground !ifort bug workaround
 
-    allocate(this%r1(nrhopn),this%p1(nrhopn),this%dr1(nrhopn),this%dp1(nrhopn),this%ddr1(nrhopn))
+    ! EFTCAMB MOD START: compatibility with massive neutrinos
+    allocate(this%r1(nrhopn),this%p1(nrhopn),this%dr1(nrhopn),this%dp1(nrhopn),this%ddr1(nrhopn),this%ddp1(nrhopn),this%dddp1(nrhopn),this%ddddp1(nrhopn))
+    ! Original code:
+    ! allocate(this%r1(nrhopn),this%p1(nrhopn),this%dr1(nrhopn),this%dp1(nrhopn),this%ddr1(nrhopn))
+    ! EFTCAMB MOD END.
+
     this%dam=(am_max-am_min)/(nrhopn-1)
+
+    ! EFTCAMB MOD START: compatibility with massive neutrinos
+    this%dlnam = -(log(am_min/am_max))/(nrhopn-1)
+    ! EFTCAMB MOD END.
 
     !$OMP PARALLEL DO DEFAULT(SHARED), SCHEDULE(STATIC), &
     !$OMP& PRIVATE(am,rhonu,pnu)
@@ -136,6 +156,12 @@
     call splder(this%r1,this%dr1,nrhopn,spline_data)
     call splder(this%p1,this%dp1,nrhopn,spline_data)
     call splder(this%dr1,this%ddr1,nrhopn,spline_data)
+
+    ! EFTCAMB MOD START: compatibility with massive neutrinos
+    call splder(this%dp1,this%ddp1,nrhopn,spline_data)
+    call splder(this%ddp1,this%dddp1,nrhopn,spline_data)
+    call splder(this%dddp1,this%ddddp1,nrhopn,spline_data)
+    ! EFTCAMB MOD END.
 
     end subroutine ThermalNuBackground_init
 
@@ -202,9 +228,17 @@
         return
     end if
 
+    ! EFTCAMB MOD START: fix for weird expansion history
     d=(am-am_min)/this%dam+1._dl
     i=int(d)
+    i=min(i,nrhopn-1)
+    i=max(i,1)
     d=d-i
+    ! ORIGINAL CODE :
+    !    d=(am-am_min)/this%dam+1._dl
+    !    i=int(d)
+    !    d=d-i
+    ! EFTCAMB MOD END
 
     !  Cubic spline interpolation.
     rhonu=this%r1(i)+d*(this%dr1(i)+d*(3._dl*(this%r1(i+1)-this%r1(i))-2._dl*this%dr1(i) &
@@ -238,9 +272,17 @@
         return
     end if
 
+    ! EFTCAMB MOD START: fix for weird expansion history
     d=(am-am_min)/this%dam+1._dl
     i=int(d)
+    i=min(i,nrhopn-1)
+    i=max(i,1)
     d=d-i
+    ! ORIGINAL CODE :
+    !    d=(am-am_min)/this%dam+1._dl
+    !    i=int(d)
+    !    d=d-i
+    ! EFTCAMB MOD END
 
     !  Cubic spline interpolation.
     rhonu=this%r1(i)+d*(this%dr1(i)+d*(3._dl*(this%r1(i+1)-this%r1(i))-2._dl*this%dr1(i) &
@@ -315,9 +357,19 @@
     else if (am>am_maxp) then
         rhonudot = 3/(2*fermi_dirac_const)*(zeta3*am +( -(15*zeta5)/2 + 2835._dl/16*zeta7/am**2)/am)*adotoa
     else
+
+        ! EFTCAMB MOD START: fix for weird expansion history
         d=(am-am_min)/this%dam+1._dl
         i=int(d)
+        i=min(i,nrhopn-1)
+        i=max(i,1)
         d=d-i
+        ! ORIGINAL CODE :
+        !    d=(am-am_min)/this%dam+1._dl
+        !    i=int(d)
+        !    d=d-i
+        !EFTCAMB MOD END
+
         !  Cubic spline interpolation for rhonudot.
         rhonudot=this%dr1(i)+d*(this%ddr1(i)+d*(3._dl*(this%dr1(i+1)-this%dr1(i)) &
             -2._dl*this%ddr1(i)-this%ddr1(i+1)+d*(this%ddr1(i)+this%ddr1(i+1) &
@@ -327,5 +379,97 @@
     end if
 
     end function ThermalNuBackground_drho
+
+    ! EFTCAMB MOD START: compatibility with massive neutrinos
+    function ThermalNuBackground_pidot(this,am,adotoa,presnu) result (presnudot)
+        class(TThermalNuBackground) :: this
+        real(dl) adotoa,presnu,presnudot
+        real(dl) d
+        real(dl), intent(IN) :: am
+        integer i
+
+        if (am< am_minp) then
+            presnudot = -2*const2*am**2*adotoa/3._dl
+        else if (am>am_maxp) then
+            presnudot = -((15._dl*(4._dl*am**2*zeta5 -189._dl*Zeta7))/(8._dl*am**3*fermi_dirac_const))*adotoa
+        else
+            d=(am-am_min)/this%dam+1._dl
+            i=int(d)
+            i=min(i,nrhopn-1)
+            i=max(i,1)
+            d=d-i
+
+            !  Cubic spline interpolation for pnudot.
+            presnudot=this%dp1(i)+d*(this%ddp1(i)+d*(3._dl*(this%dp1(i+1)-this%dp1(i)) &
+                -2._dl*this%ddp1(i)-this%ddp1(i+1)+d*(this%ddp1(i)+this%ddp1(i+1) &
+                +2._dl*(this%dp1(i)-this%dp1(i+1)))))
+            presnudot=adotoa*presnudot/this%dam*am
+        end if
+
+    end function ThermalNuBackground_pidot
+
+    function ThermalNuBackground_pidotdot(this,am,adotoa,Hdot,presnu,presnudot) result (presnudotdot)
+        class(TThermalNuBackground) :: this
+        real(dl) adotoa,Hdot,presnu,presnudot,presnudotdot
+        real(dl) d
+        real(dl), intent(in) :: am
+        integer i
+
+        if (am< am_minp) then
+            presnudotdot = presnudot*(adotoa +Hdot/adotoa) +am**2*adotoa**2*(-2._dl*const2/3._dl)
+        else if (am>am_maxp) then
+            presnudotdot = presnudot*(adotoa +Hdot/adotoa) +am**2*adotoa**2*(&
+                &-((15._dl*zeta5)/(am**3*fermi_dirac_const)) + (15._dl*(4._dl*am**2*zeta5 -189._dl*Zeta7))/(2._dl*am**5*fermi_dirac_const))
+        else
+
+            d=log(am/am_min)/this%dlnam
+            i=int(d)+1
+            i=min(i,nrhopn-1)
+            i=max(i,1)
+            d=d+1._dl
+            d=d-i
+
+            presnudotdot = this%ddp1(i)+d*(this%dddp1(i)+d*(3._dl*(this%ddp1(i+1)-this%ddp1(i))-2._dl*this%dddp1(i) &
+                -this%dddp1(i+1)+d*(this%dddp1(i)+this%dddp1(i+1)+2._dl*(this%ddp1(i)-this%ddp1(i+1)))))
+
+            presnudotdot = +adotoa**2*presnu*presnudotdot/this%dlnam +Hdot/adotoa*presnudot +presnudot**2/presnu
+
+        end if
+
+    end function ThermalNuBackground_pidotdot
+
+    function ThermalNuBackground_pidotdotdot(this,am,adotoa,Hdot,Hdotdot,presnu,presnudot,presnudotdot) result (presnudotdotdot)
+        class(TThermalNuBackground) :: this
+        real(dl) adotoa,Hdot,Hdotdot,presnu,presnudot,presnudotdot,presnudotdotdot
+        real(dl) d
+        real(dl), intent(in) :: am
+        integer i
+
+        if (am< am_minp) then
+            presnudotdotdot = presnudotdot*( adotoa+Hdot/adotoa )+presnudot*( Hdot+ Hdotdot/adotoa -( Hdot/adotoa )**2 )&
+                &-4._dl/3._dl*const2*( adotoa*Hdot +adotoa**3 )*am**2
+        else if (am>am_maxp) then
+            presnudotdotdot = presnudotdot*( adotoa+Hdot/adotoa )+presnudot*( Hdot+ Hdotdot/adotoa -( Hdot/adotoa )**2 )&
+                & +30._dl*adotoa*Hdot*( zeta5/fermi_dirac_const/am -189._dl/2._dl*zeta7/fermi_dirac_const/am**3 )&
+                & +15._dl*adotoa**3*( -zeta5/fermi_dirac_const/am +1.5_dl*189._dl*zeta7/fermi_dirac_const/am**3 )
+        else
+
+            d=log(am/am_min)/this%dlnam
+            i=int(d)+1
+            i=min(i,nrhopn-1)
+            i=max(i,1)
+            d=d+1._dl
+            d=d-i
+
+            presnudotdotdot = this%dddp1(i)+d*(this%ddddp1(i)+d*(3._dl*(this%dddp1(i+1)-this%dddp1(i))-2._dl*this%ddddp1(i) &
+                -this%ddddp1(i+1)+d*(this%ddddp1(i)+this%ddddp1(i+1)+2._dl*(this%dddp1(i)-this%dddp1(i+1)))))
+
+            presnudotdotdot = presnu*adotoa**4*presnudotdotdot/this%dlnam +3._dl*( presnudotdot*Hdot +presnudot*presnudotdot*adotoa/presnu &
+                &-presnudot**2*Hdot/presnu -presnudot*Hdot**3/adotoa ) -2._dl*presnudot**3/presnu*adotoa +presnu*Hdotdot
+
+        end if
+
+    end function ThermalNuBackground_pidotdotdot
+    ! EFTCAMB MOD END.
 
     end module MassiveNu
