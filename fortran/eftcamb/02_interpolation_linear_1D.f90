@@ -27,7 +27,7 @@
 module linear_interpolation_1D
 
     use precision
-    use splines
+    use EFT_splines
     use EFTCAMB_mixed_algorithms
 
     implicit none

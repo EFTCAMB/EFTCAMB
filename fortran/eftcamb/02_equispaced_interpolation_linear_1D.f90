@@ -29,6 +29,8 @@ module equispaced_linear_interpolation_1D
     use precision
     use EFTCAMB_mixed_algorithms
     use MpiUtils
+    use EFT_splines
+    use splines
 
     implicit none
 

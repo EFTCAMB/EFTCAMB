@@ -1,4 +1,4 @@
-module splines
+module EFT_splines
 
     ! Splines are fully specified by the interpolation points, except that
     ! at the ends, we have the freedom to prescribe the second derivatives.
@@ -385,4 +385,4 @@ contains
         d2poly3=2*c(3)+6*c(4)*dx
     end function
 
-end module
+end module EFT_splines
