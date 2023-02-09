@@ -173,10 +173,10 @@ def set_params(cp=None, verbose=False, **params):
     do_set(cp.set_accuracy)
     do_set(cp.set_classes)
     do_set(cp.DarkEnergy.set_params)
-    # EFTCAMB MOD START
+    # EFTCAMB MOD START: read in parameters
     EFT_do_set(cp.EFTCAMB.initialize_parameters)
-    do_set(cp.set_cosmology)
     # EFTCAMB MOD END
+    do_set(cp.set_cosmology)
     do_set(cp.set_matter_power)
     do_set(cp.set_for_lmax)
     do_set(cp.InitPower.set_params)
@@ -201,19 +201,6 @@ def set_params(cp=None, verbose=False, **params):
                 setattr(obj, par, params[k])
             else:
                 raise CAMBUnknownArgumentError("Unrecognized parameter: %s" % k)
-
-    #EFTCAMB MOD START
-    #Note : positivity bounds are implemented only for some specific cases this check avoid that they are used improperly
-    if cp.EFTCAMB.EFTflag != 0 :
-       EFTpars = cp.EFTCAMB.read_parameters() 
-       if EFTpars['EFT_positivity_bounds'] :
-          if not cp.EFTCAMB.model_name() in ['OL gamma','Standard Pure EFT','K-mouflage','Scaling Cubic Galileon']:
-                raise CAMBValueError('Higher order derivatives of the EFTfunctions not implemented. Positivity Bounds cannot be calculated properly for %s'%cp.EFTCAMB.model_name())
-
-       if cp.EFTCAMB.model_name() in ['Standard Pure EFT']:
-          if any([EFTpars['PureEFTmodelGamma4'],EFTpars['PureEFTmodelGamma5'],EFTpars['PureEFTmodelGamma6']]) : 
-             print('Warning: positivity bounds are implemented up to Gamma3.')
-    #EFTCAMB MOD END
 
     return cp
 
