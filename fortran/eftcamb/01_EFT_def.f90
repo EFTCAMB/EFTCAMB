@@ -29,7 +29,7 @@ module EFT_def
     implicit none
 
     ! EFT compile time flags:
-    character(LEN=*), parameter :: EFTCAMB_version = 'V3.1 Jan23'
+    character(LEN=*), parameter :: EFTCAMB_version = 'V3.1 May23'
 
     integer , parameter :: EFT_names_max_length       = 20    !< maximum length of names for EFT functions and parameters.
     integer , parameter :: EFT_names_latex_max_length = 40    !< maximum length of latex names for EFT functions and parameters.
