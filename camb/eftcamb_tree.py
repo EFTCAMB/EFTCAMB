@@ -191,3 +191,18 @@ def consolidate_tree_properties(tree):
     if len(tree.children) > 0:
         for child in tree.children:
             consolidate_tree_properties(child)
+
+###############################################################################
+# helper to build the whole thing:
+
+
+def eftcamb_tree_helper(**kwargs):
+    """
+    Compute the full EFTCAMB tree
+    """
+    # initialize empty tree:
+    _tree = eftcamb_tree()
+    # compute the tree:
+    generate_eft_tree(eftcamb_params={}, tree=_tree, **kwargs)
+    #
+    return _tree
