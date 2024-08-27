@@ -711,25 +711,7 @@ contains
             & -a**2*eft_cache%EFTOmegaPP*eft_cache%adotoa*( +2._dl*eft_cache%adotoa**2 +3._dl*eft_cache%Hdot )&
             & -(a*eft_cache%adotoa)**3*eft_cache%EFTOmegaPPP &
             & +eft_cache%grhov_t*eft_cache%adotoa*( a*self%PureEFTwDE%first_derivative(a) -3._dl*self%PureEFTwDE%value(a)*(1._dl +self%PureEFTwDE%value(a) ))
-        eft_cache%EFTLambdadotdot = -2._dl*eft_cache%EFTLambdadot*eft_cache%adotoa - 2._dl*a*eft_cache%adotoa*eft_cache%EFTOmegaP &
-            &* (eft_cache%Hdotdot - eft_cache%adotoa*eft_cache%Hdot - eft_cache%adotoa**3) &
-            &- 2._dl*eft_cache%EFTOmegaV*(eft_cache%Hdotdotdot - eft_cache%Hdot**2 - eft_cache%adotoa*eft_cache%Hdotdot &
-            &- 3._dl*eft_cache%adotoa**2*eft_cache%Hdot) - (a**2)*eft_cache%adotoa*(eft_cache%EFTOmegaP*eft_cache%adotoa &
-            &+ a*eft_cache%adotoa*eft_cache%EFTOmegaPP)*(5._dl*eft_cache%adotoa*eft_cache%Hdot+eft_cache%Hdotdot - eft_cache%adotoa**3) &
-            &- a*eft_cache%EFTOmegaP*(5._dl*eft_cache%Hdot**2+5._dl*eft_cache%adotoa*eft_cache%Hdotdot + eft_cache%Hdotdotdot &
-            &- 3._dl*eft_cache%adotoa**2 * eft_cache%Hdot) - (2._dl*a*a*eft_cache%adotoa*eft_cache%EFTOmegaPP*eft_cache%adotoa &
-            &+ a*a*a*eft_cache%adotoa**2 * eft_cache%EFTOmegaPPP + a*a*eft_cache%EFTOmegaPP*eft_cache%Hdot)*(2._dl*eft_cache%adotoa**2 &
-            &+ 3._dl*eft_cache%Hdot) &
-            &- a*a*eft_cache%adotoa*eft_cache%EFTOmegaPP*(4._dl*eft_cache%adotoa*eft_cache%Hdot+3._dl*eft_cache%Hdotdot) &
-            &- 3._dl*(a**3)*eft_cache%adotoa**4 * eft_cache%EFTOmegaPPP - 3._dl*(a**3)*eft_cache%Hdot*eft_cache%adotoa**2 &
-            &* eft_cache%EFTOmegaPPP - (a*eft_cache%adotoa)**4 * eft_cache%EFTOmegaPPPP - (3._dl*eft_cache%adotoa**2 * eft_cache%grhov_t &
-            &* (1._dl + self%PureEFTwDE%value(a)))*(a*self%PureEFTwDE%first_derivative(a)-3._dl*self%PureEFTwDE%value(a)&
-            &* (1._dl + self%PureEFTwDE%value(a))) + (2._dl*eft_cache%adotoa**2*eft_cache%grhov_t)*(a*self%PureEFTwDE%first_derivative(a)&
-            &- 3._dl*self%PureEFTwDE%value(a)*(1._dl+self%PureEFTwDE%value(a))) + (eft_cache%grhov_t*eft_cache%Hdot) &
-            &* (a*self%PureEFTwDE%first_derivative(a) - 3._dl*self%PureEFTwDE%value(a)*(1._dl+self%PureEFTwDE%value(a))) &
-            &+ (eft_cache%grhov_t * eft_cache%adotoa)*(a*eft_cache%adotoa*self%PureEFTwDE%first_derivative(a) &
-            &+ a*a*eft_cache%adotoa*self%PureEFTwDE%second_derivative(a) - 3._dl*a*eft_cache%adotoa*self%PureEFTwDE%first_derivative(a) &
-            &* (1._dl + self%PureEFTwDE%value(a)) - 3._dl*self%PureEFTwDE%value(a)*(1._dl + a*eft_cache%adotoa*self%PureEFTwDE%first_derivative(a)))
+        eft_cache%EFTLambdadotdot = -(a**4*eft_cache%EFTOmegaPPPP*eft_cache%adotoa**4) + eft_cache%EFTOmegaP*(-(a*eft_cache%Hdotdotdot) - 5._dl*a*eft_cache%Hdot**2 - 6._dl*a*eft_cache%Hdotdot*eft_cache%adotoa + 10._dl*a*eft_cache%Hdot*eft_cache%adotoa**2 + a*eft_cache%adotoa**4) + eft_cache%EFTOmegaPP*(-3._dl*a**2*eft_cache%Hdot**2 - 4._dl*a**2*eft_cache%Hdotdot*eft_cache%adotoa - 11._dl*a**2*eft_cache%Hdot*eft_cache%adotoa**2 + a**2*eft_cache%adotoa**4) + eft_cache%EFTOmegaPPP*(-6._dl*a**3*eft_cache%Hdot*eft_cache%adotoa**2 - 3._dl*a**3*eft_cache%adotoa**4) + (-2._dl*eft_cache%Hdotdotdot + 2._dl*eft_cache%Hdot**2 + 6._dl*eft_cache%Hdotdot*eft_cache%adotoa + 2._dl*eft_cache%Hdot*eft_cache%adotoa**2 - 4._dl*eft_cache%adotoa**4)*eft_cache%EFTOmegaV + eft_cache%Hdot*eft_cache%grhov_t*(a*self%PureEFTwDE%first_derivative(a) - 3._dl*self%PureEFTwDE%value(a) - 3._dl*self%PureEFTwDE%value(a)**2) + eft_cache%adotoa**2*eft_cache%grhov_t*(a**2*self%PureEFTwDE%second_derivative(a) + 9._dl*self%PureEFTwDE%value(a) + 18._dl*self%PureEFTwDE%value(a)**2 + 9._dl*self%PureEFTwDE%value(a)**3 - a*self%PureEFTwDE%first_derivative(a)*(5._dl + 9._dl*self%PureEFTwDE%value(a)))
 
     end subroutine EFTCAMBPureEFTstdBackgroundEFTFunctions
 
