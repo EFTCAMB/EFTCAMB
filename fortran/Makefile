@@ -49,7 +49,7 @@ endif
 
 
 ifeq ($(shell test $(ifortVer_major) -gt 15; echo $$?),0)
-COMMON_FFLAGS = -fpp -mkl -qopenmp
+COMMON_FFLAGS = -fpp -qmkl -qopenmp
 else
 COMMON_FFLAGS = -fpp -mkl -openmp
 endif
@@ -92,7 +92,7 @@ compiler_ver = $(shell gfortran -dumpversion 2>&1)
 COMPILER = gfortran
 F90C     = gfortran
 # EFTCAMB MOD START: allow argument mismatch to compile odepack
-COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp  -lblas -llapack
+COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp
 # original code:
 #COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fmax-errors=4 -fopenmp
 # EFTCAMB MOD END
