@@ -5,6 +5,7 @@
 *.so
 *.sm
 *~*
+*.dll
 .metadata
 .project
 .pydevproject
