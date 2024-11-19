@@ -143,8 +143,8 @@ class EFTCAMB(F2003Class):
         """
         if self._read_parameters is None:
             # get the total number of parameters
-            _dummy1 = "{:<200}".format(' ').encode('utf-8')
-            _dummy2 = "{:<200}".format(' ').encode('utf-8')
+            _dummy1 = str(" " * 200).encode('utf-8')
+            _dummy2 = str(" " * 200).encode('utf-8')
             num_params = c_int(0)
             EFTCAMB_get_read_parameters(_dummy1, _dummy2, byref(num_params), byref(c_int(0)))
             num_params = num_params.value
@@ -152,8 +152,8 @@ class EFTCAMB(F2003Class):
             _keys, _values = [], []
             for ind in range(num_params):
                 index = c_int(ind+1)
-                _dummy1 = "{:<200}".format(' ').encode('utf-8')
-                _dummy2 = "{:<200}".format(' ').encode('utf-8')
+                _dummy1 = str(" " * 200).encode('utf-8')
+                _dummy2 = str(" " * 200).encode('utf-8')
                 EFTCAMB_get_read_parameters(_dummy1, _dummy2, byref(index), byref(c_int(1)))
                 _keys.append(copy.deepcopy(_dummy1))
                 _values.append(copy.deepcopy(_dummy2))
