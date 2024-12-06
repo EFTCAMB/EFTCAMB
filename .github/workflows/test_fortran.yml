@@ -4,6 +4,9 @@ on:
   push:
     branches-ignore:
       - "test**"
+      # EFTCAMB MOD START: ignore testing for eftcamb
+      - "eftcamb**"
+      # EFTCAMB MOD END
   pull_request:
 
 jobs:
