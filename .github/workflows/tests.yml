@@ -1,6 +1,12 @@
 name: Python tests
 
-on: [push, pull_request]
+on:
+  # EFTCAMB MOD START: ignore testing for eftcamb
+  push:
+    branches-ignore:
+      - 'eftcamb**'
+  pull_request:
+  # EFTCAMB MOD END
 
 jobs:
   python_tests:
