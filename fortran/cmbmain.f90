@@ -142,12 +142,6 @@
     real(dl), dimension(:), allocatable :: temp_fixq_array
     ! EFTCAMB MOD END.
 
-    ! EFTCAMB MOD START: some quantities:
-    real(dl) :: k_start, k_end
-    integer  :: i
-    real(dl), dimension(:), allocatable :: temp_fixq_array
-    ! EFTCAMB MOD END.
-
     WantLateTime =  CP%DoLensing .or. State%num_redshiftwindows > 0 .or. CP%CustomSources%num_custom_sources>0
 
     if (CP%WantCls) then

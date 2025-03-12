@@ -67,7 +67,6 @@ You will need gfortran 6 or higher installed to compile (usually included with g
 If you have gfortran installed, "python setup.py make" (and other standard setup commands) will build the Fortran
 library on all systems (including Windows without directly using a Makefile).
 
-
 The python wrapper provides a module called "camb" documented in the Python `CAMB documentation <https://camb.readthedocs.io/en/latest/>`_.
 
 After installation you can also run CAMB from the command line reading parameters from a .ini file, e.g.::
@@ -117,6 +116,9 @@ For the part of code that constitutes EFTCAMB see the LICENSE file in ``eftcamb/
 
 ### 8. EFTCAMB source files:
 
+In the folder ``eftcamb`` all the source files for EFTCAMB are stored.
+In an effort to have small and readable files the the naming convention allows to have an
+intuition of the hierarchy of the code from alphabetical order of files.
 
 For this reason we use the following convention for the prefixes:
 

@@ -99,7 +99,7 @@ include $(EFTCAMB_DIR)/eftcamb_build.make
 FORUTILS_DIR ?= $(FORUTILSPATH)/$(OUTPUT_DIR)/
 python: FORUTILS_DIR=$(FORUTILSPATH)/$(DLL_DIR)/
 
-LIBLINK = -L"$(FORUTILS_DIR)" -lforutils -lblas -llapac
+LIBLINK = -L"$(FORUTILS_DIR)" -lforutils -lblas -llapack
 
 
 ## CosmoRec
@@ -166,7 +166,7 @@ libcambobj:
 #cannot link the .a library, or the linker will strip out some things we might need
 $(DLL_DIR)/camblib.so: libcambobj
 	$(F90C) $(SF90FLAGS) $(SMODOUT) $(IFLAG)$(DLL_DIR)/ $(IFLAG)"$(FORUTILS_DIR)"  \
-		$(LIBCAMBOBJ) $(F90CRLINK) $(LIBLINK) -lblas -llapack -o $(DLL_DIR)/camblib.so
+		$(LIBCAMBOBJ) $(F90CRLINK) $(LIBLINK) -o $(DLL_DIR)/camblib.so
 	cp $(DLL_DIR)/camblib.so $(PYCAMB_OUTPUT_DIR)
 
 $(CAMBLIB): $(CAMBOBJ)
