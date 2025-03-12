@@ -6,13 +6,13 @@ CAMB
 :Homepage: https://camb.info/
 
 .. image:: https://img.shields.io/pypi/v/camb.svg?style=flat
-        :target: https://pypi.python.org/pypi/camb/
+   :target: https://pypi.python.org/pypi/camb/
 .. image:: https://img.shields.io/conda/vn/conda-forge/camb.svg
    :target: https://anaconda.org/conda-forge/camb
 .. image:: https://readthedocs.org/projects/camb/badge/?version=latest
    :target: https://camb.readthedocs.io/en/latest
-.. image:: https://travis-ci.com/cmbant/camb.svg?branch=master
-  :target: https://app.travis-ci.com/cmbant/camb/builds
+.. image:: https://github.com/cmbant/camb/actions/workflows/tests.yml/badge.svg?branch=master
+  :target: https://github.com/cmbant/CAMB/actions
 .. image:: https://mybinder.org/badge_logo.svg
   :target: https://mybinder.org/v2/gh/cmbant/CAMB/HEAD?filepath=docs%2FCAMBdemo.ipynb
 
@@ -63,15 +63,13 @@ Then install using::
 
     pip install -e ./CAMB [--user]
 
-You will need gfortran 6 or higher installed to compile. Binary files for Windows are also provided, so these are used instead if no
-gfortran installation is found on Windows machines. If you have gfortran installed, "python setup.py make"
-(and other standard setup commands) will build the Fortran library on all systems (including Windows without directly using a Makefile).
+You will need gfortran 6 or higher installed to compile (usually included with gcc by default).
+If you have gfortran installed, "python setup.py make" (and other standard setup commands) will build the Fortran
+library on all systems (including Windows without directly using a Makefile).
 
-<<<<<<< HEAD
+
 The python wrapper provides a module called "camb" documented in the Python `CAMB documentation <https://camb.readthedocs.io/en/latest/>`_.
 
-=======
->>>>>>> 9a3393f (All the work)
 After installation you can also run CAMB from the command line reading parameters from a .ini file, e.g.::
 
   camb inifiles/planck_2018.ini
@@ -119,21 +117,9 @@ For the part of code that constitutes EFTCAMB see the LICENSE file in ``eftcamb/
 
 ### 8. EFTCAMB source files:
 
-<<<<<<< HEAD
-===================
-=======
-In the folder ``eftcamb`` all the source files for EFTCAMB are stored.
-In an effort to have small and readable files the the naming convention allows to have an
-intuition of the hierarchy of the code from alphabetical order of files.
->>>>>>> 9a3393f (All the work)
 
 For this reason we use the following convention for the prefixes:
 
-<<<<<<< HEAD
-    <a href="https://www.sussex.ac.uk/astronomy/"><img src="https://cdn.cosmologist.info/antony/Sussex_white.svg" style="height:200px" height="200px"></a>
-    <a href="https://erc.europa.eu/"><img src="https://cdn.cosmologist.info/antony/ERC_white.svg" style="height:200px" height="200px"></a>
-    <a href="https://stfc.ukri.org/"><img src="https://cdn.cosmologist.info/antony/STFC_white.svg" style="height:200px" height="200px"></a>
-=======
 * ``01_`` compile time utilities
 * ``02_`` pure algorithms
 * ``03_`` EFTCAMB cache containing the storage for all cosmological quantities of interest
@@ -145,4 +131,3 @@ For this reason we use the following convention for the prefixes:
 * ``09_`` implementation of designer mapping EFT models
 * ``10_`` implementation of full mapping EFT models
 * ``11_`` general EFT algorithms (RGR, stability, init)
->>>>>>> 9a3393f (All the work)

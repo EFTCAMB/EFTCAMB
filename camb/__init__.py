@@ -1,13 +1,14 @@
 # coding: utf8
 """
 
-Python CAMB interface (https://camb.info)
+CAMB, Code for Anisotropies in the Microwave Background (https://camb.info)
+Computational modules are wrapped Fortran 2003, but can be used entirely from Python.
 
 """
 __author__ = "Antony Lewis"
 __contact__ = "antony at cosmologist dot info"
 __url__ = "https://camb.readthedocs.io"
-__version__ = "1.3.8"
+__version__ = "1.5.9"
 
 from . import baseconfig
 
@@ -23,7 +24,7 @@ from . import dark_energy
 from . import nonlinear
 from .model import CAMBparams, TransferParams
 from .results import CAMBdata, MatterTransferData, ClTransferData
-from .reionization import TanhReionization
+from .reionization import TanhReionization, ExpReionization
 from .nonlinear import Halofit
 from .dark_energy import DarkEnergyFluid, DarkEnergyPPF
 from .initialpower import InitialPowerLaw, SplinedInitialPower

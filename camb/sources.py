@@ -46,17 +46,20 @@ class SplinedSourceWindow(SourceWindow):
                            kwargs.pop('k_bias', None), kwargs.pop('bias_kz', None))
         super().__init__(**kwargs)
 
+    def __getstate__(self):
+        raise TypeError("Cannot save class with splines")
+
     def set_table(self, z, W, bias_z=None, k_bias=None, bias_kz=None):
         """
-        Set arrays of z and W(z) for cublic spline interpolation. Note that W(z) is the total count distribution
+        Set arrays of z and W(z) for cubic spline interpolation. Note that W(z) is the total count distribution
         observed, not a fractional selection function on an underlying distribution.
 
         :param z: array of redshift values (monotonically increasing)
         :param W: array of window function values. It must be well enough sampled to smoothly cubic-spline interpolate
         :param bias_z: optional array of bias values at each z for scale-independent bias
-        :param k_bias: optional array of k values for bias
+        :param k_bias: optional array of k values for bias (Mpc^-1)
         :param bias_kz: optional 2D contiguous array for space-dependent bias(k, z).
-                        Must ensure range of k is large enough to cover required vaules.
+                        Must ensure range of k is large enough to cover required values.
 
         """
         if len(W) != len(z) or z[-1] < z[1] or len(z) < 5:

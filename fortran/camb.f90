@@ -32,7 +32,7 @@
             Cdata%OnlyTransfer = .true. !prevent ClTransferToCl
             Cdata%CP%WantTensors = .false.
             CData%CP%WantVectors = .false.
-            call TimeSourcesToCl
+            call TimeSourcesToCl(CData%ClData%CTransScal)
             Cdata%CP%WantTensors = want_tensors
             CData%CP%WantVectors = want_vectors
             Cdata%OnlyTransfer = .false.
@@ -188,7 +188,7 @@
     end subroutine CAMB_GetCls
 
     function CAMB_GetAge(P)
-    !Return age in gigayears, returns -1 on error
+    !Return age in Julian gigayears, returns -1 on error
     type(CAMBparams), intent(in) :: P
     real(dl) CAMB_GetAge
     integer error

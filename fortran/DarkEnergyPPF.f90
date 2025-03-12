@@ -27,7 +27,7 @@
 
     call this%TDarkEnergyEqnOfState%ReadParams(Ini)
     this%cs2_lam = Ini%Read_Double('cs2_lam', 1.d0)
-    if (this%cs2_lam /= 1.d0) error stop 'cs2_lam not supported by PPF model'
+    if (this%cs2_lam /= 1._dl) error stop 'cs2_lam not supported by PPF model'
     call this%setcgammappf
 
     end subroutine TDarkEnergyPPF_ReadParams
@@ -52,6 +52,7 @@
 
     subroutine TDarkEnergyPPF_Init(this, State)
     use classes
+    use config
     class(TDarkEnergyPPF), intent(inout) :: this
     class(TCAMBdata), intent(in), target :: State
 
@@ -61,6 +62,8 @@
     else
         this%num_perturb_equations = 1
     end if
+    if (this%cs2_lam /= 1._dl) &
+        call GlobalError('DarkEnergyPPF does not support varying sound speed',error_unsupported_params)
 
     end subroutine TDarkEnergyPPF_Init
 
@@ -126,7 +129,9 @@
     S_Gamma = grhov_t * (1 + w) * (vT + sigma) * k / adotoa / 2._dl / k2
     ckH = this%c_Gamma_ppf * k / adotoa
 
-    if (ckH * ckH .gt. 3.d1) then ! ckH^2 > 30 ?????????
+    if (ckH * ckH > 1000) then
+        ! Was ckH^2 > 30 originally, but this is better behaved (closer to fluid)
+        ! for some extreme models (thanks Yanhui Yang, Simeon Bird 2024)
         Gamma = 0
         Gammadot = 0.d0
     else

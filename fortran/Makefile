@@ -49,7 +49,7 @@ endif
 
 
 ifeq ($(shell test $(ifortVer_major) -gt 15; echo $$?),0)
-COMMON_FFLAGS = -fpp -mkl -qopenmp
+COMMON_FFLAGS = -fpp -qmkl -qopenmp
 else
 COMMON_FFLAGS = -fpp -mkl -openmp
 endif
@@ -92,7 +92,7 @@ compiler_ver = $(shell gfortran -dumpversion 2>&1)
 COMPILER = gfortran
 F90C     = gfortran
 # EFTCAMB MOD START: allow argument mismatch to compile odepack
-COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp  -lblas -llapack
+COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp
 # original code:
 #COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fmax-errors=4 -fopenmp
 # EFTCAMB MOD END
@@ -101,10 +101,15 @@ FFLAGS = -O3 -w $(COMMON_FFLAGS)
 DEBUGFLAGS = -g -fbacktrace -ffpe-trap=invalid,overflow,zero -fbounds-check $(COMMON_FFLAGS) -DDEBUG
 ifeq ($(shell uname -s),Darwin)
 SFFLAGS = -dynamiclib #-fpic
+ifneq ($(shell echo $(compiler_ver) | awk '{print ($$1 >= 14.0)}'),0)
+SFFLAGS += -static-libgfortran -static-libgcc -static-libquadmath 
+endif
 else
 SFFLAGS = -shared -fpic
 endif
-#SFFLAGS =  -shared -fPIC
+
+
+
 MODOUT =  -J$(OUTPUT_DIR)
 SMODOUT = -J$(DLL_DIR)
 

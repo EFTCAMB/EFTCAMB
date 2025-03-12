@@ -1,16 +1,14 @@
-#!/usr/bin/env python
-
 import sys
 import subprocess
-import re
 import os
 import shutil
 from typing import Any
-from setuptools import setup
+from setuptools import setup, Command, Extension
+from setuptools.command.build_ext import build_ext
 from setuptools.command.build_py import build_py
 from setuptools.command.develop import develop
-from distutils.command.clean import clean
-from distutils.core import Command
+from setuptools.command.install import install
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
 file_dir = os.path.abspath(os.path.dirname(__file__))
 os.chdir(file_dir)
@@ -22,23 +20,6 @@ if _compile.is_windows:
     DLLNAME = 'cambdll.dll'
 else:
     DLLNAME = 'camblib.so'
-
-
-def get_long_description():
-    with open(os.path.join('docs', 'README_pypi.rst')) as f:
-        return f.read()
-
-
-def find_version():
-    version_file = open(os.path.join(file_dir, 'camb', '__init__.py')).read()
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
-    if version_match:
-        version = version_match.group(1)
-        commit = os.getenv('TRAVIS_BUILD_NUMBER')
-        if commit and not os.getenv('TRAVIS_TAG'):
-            version += '.' + commit
-        return version
-    raise RuntimeError("Unable to find version string.")
 
 
 def get_forutils():
@@ -124,7 +105,7 @@ def make_library(cluster=False):
                   'you may need to log off and on again).' % _compile.gfortran_min)
             print('        You can get a Windows gfortran build from https://sourceforge.net/projects/mingw-w64/files/')
             print('        - go to Files, and download MinGW-W64 Online Installer.')
-            print('        Alternatively news versions at https://github.com/niXman/mingw-builds-binaries')
+            print('        Alternatively newer versions at https://github.com/niXman/mingw-builds-binaries')
             if _compile.is_32_bit:
                 raise IOError('No 32bit Windows DLL provided, you need to build or use 64 bit python')
             else:
@@ -199,7 +180,7 @@ def make_library(cluster=False):
         get_forutils()
         print("Compiling source...")
         subprocess.call("make python PYCAMB_OUTPUT_DIR=%s/camb/ CLUSTER_SAFE=%d" %
-                        (pycamb_path, int(cluster)), shell=True)
+                        (pycamb_path, int(cluster if not os.getenv("GITHUB_ACTIONS") else 1)), shell=True)
         subprocess.call("chmod 755 %s" % lib_file, shell=True)
 
     if not os.path.isfile(os.path.join(pycamb_path, 'camb', DLLNAME)):
@@ -259,58 +240,51 @@ class DevelopLibraryCluster(develop):
         develop.run(self)
 
 
-class CleanLibrary(clean):
+class CleanLibrary(MakeLibrary):
 
     def run(self):
         if _compile.is_windows:
             clean_dir(os.path.join(file_dir, 'fortran', 'WinDLL'), rmdir=True)
         else:
             subprocess.call("make clean", shell=True, cwd=os.path.join(file_dir, 'fortran'))
-        clean.run(self)
+
+
+class BDistWheelNonPure(_bdist_wheel):
+    def finalize_options(self):
+        super().finalize_options()
+        self.root_is_pure = False
+
+    def get_tag(self):
+        _, _, plat = super().get_tag()
+        return "py3", "none", plat
+
+
+class InstallPlatlib(install):
+    def finalize_options(self):
+        super().finalize_options()
+        if self.distribution.has_ext_modules():
+            self.install_lib = self.install_platlib
+
+
+class BuildExtCommand(build_ext):
+    """Ensure built extensions are added to the correct path in the wheel."""
+
+    def run(self):
+        pass
 
 
 if __name__ == "__main__":
     setup(name=os.getenv('CAMB_PACKAGE_NAME', 'camb'),
-          version=find_version(),
-          description='Code for Anisotropies in the Microwave Background',
-          long_description=get_long_description(),
-          author='Antony Lewis',
-          url="https://camb.info/",
-          project_urls={
-              'Documentation': 'https://camb.readthedocs.io',
-              'Source': 'https://github.com/cmbant/camb',
-              'Tracker': 'https://github.com/cmbant/camb/issues',
-              'Reference': 'https://arxiv.org/abs/astro-ph/9911177',
-              'Licensing': 'https://github.com/cmbant/CAMB/blob/master/LICENCE.txt'
-          },
           zip_safe=False,
           cmdclass={'build_py': SharedLibrary, 'build_cluster': SharedLibraryCluster,
                     'make': MakeLibrary, 'make_cluster': MakeLibraryCluster, 'clean': CleanLibrary,
-                    'develop': DevelopLibrary, 'develop_cluster': DevelopLibraryCluster},
+                    'develop': DevelopLibrary, 'develop_cluster': DevelopLibraryCluster,
+                    'bdist_wheel': BDistWheelNonPure, 'install': InstallPlatlib,
+                    "build_ext": BuildExtCommand},
+          ext_modules=[Extension("camb.camblib", [])],
           packages=['camb', 'camb.tests'],
           platforms="any",
           package_data={'camb': [DLLNAME, 'HighLExtrapTemplate_lenspotentialCls.dat',
                                  'PArthENoPE_880.2_marcucci.dat', 'PArthENoPE_880.2_standard.dat',
                                  'PRIMAT_Yp_DH_Error.dat', 'PRIMAT_Yp_DH_ErrorMC_2021.dat']},
-          test_suite='camb.tests',
-          entry_points={
-              'console_scripts': [
-                  'camb=camb._command_line:run_command_line',
-              ]},
-          classifiers=[
-              'Development Status :: 5 - Production/Stable',
-              'Operating System :: OS Independent',
-              'Intended Audience :: Science/Research',
-              'Topic :: Scientific/Engineering :: Astronomy',
-              'Programming Language :: Python :: 3',
-              'Programming Language :: Python :: 3.6',
-              'Programming Language :: Python :: 3.7',
-              'Programming Language :: Python :: 3.8',
-              'Programming Language :: Python :: 3.9',
-              'Programming Language :: Python :: 3.10',
-              'Programming Language :: Python :: 3.11'
-          ],
-          keywords=['cosmology', 'CAMB', 'CMB'],
-          install_requires=['scipy>=1.0', 'sympy>=1.0'],
-          python_requires='>=3.6'
           )

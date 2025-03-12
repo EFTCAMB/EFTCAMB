@@ -99,7 +99,7 @@ include $(EFTCAMB_DIR)/eftcamb_build.make
 FORUTILS_DIR ?= $(FORUTILSPATH)/$(OUTPUT_DIR)/
 python: FORUTILS_DIR=$(FORUTILSPATH)/$(DLL_DIR)/
 
-LIBLINK = -L"$(FORUTILS_DIR)" -lforutils
+LIBLINK = -L"$(FORUTILS_DIR)" -lforutils -lblas -llapac
 
 
 ## CosmoRec
