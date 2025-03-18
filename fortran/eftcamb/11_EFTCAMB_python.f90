@@ -244,6 +244,20 @@ contains
   end subroutine EFTCAMB_set_model_name
 
   ! ---------------------------------------------------------------------------------------------
+  !> Subroutine to get EFTCAMB effective w0wa values:
+  subroutine EFTCAMB_get_effective_w0wa_values( EFTCAMB, w0, wa )
+
+    implicit none
+
+    Type(TEFTCAMB)     :: EFTCAMB
+    real(dl)           :: w0        !< the effective w0 value (output)
+    real(dl)           :: wa        !< the effective wa value (output)
+
+    call EFTCAMB%Effective_w_wa(w0, wa)
+    
+  end subroutine EFTCAMB_get_effective_w0wa_values
+
+  ! ---------------------------------------------------------------------------------------------
   !> Subroutine to get the EFT time evolution:
   subroutine EFTCAMB_GetEvolution( this, nq, q, neta, eta, timestep_cache )
 

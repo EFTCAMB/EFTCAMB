@@ -298,7 +298,17 @@
 
                 do itf = 1, CAMB_Pk%num_z
 
-                    call Params%DarkEnergy%Effective_w_wa(this%w_hf, this%wa_hf)
+                    ! EFTCAMB MOD START: get effective equation of state:
+                    if ( allocated(Params%EFTCAMB) ) then
+                        call Params%EFTCAMB%Effective_w_wa(this%w_hf, this%wa_hf)
+                    else
+                        call Params%DarkEnergy%Effective_w_wa(this%w_hf, this%wa_hf)
+                    end if
+                    ! Original code:
+                    ! call Params%DarkEnergy%Effective_w_wa(this%w_hf, this%wa_hf)
+                    ! EFTCAMB MOD END
+
+
                     if (this%halofit_version == halofit_casarini) then
                         ! calculate equivalent w-constant models (w_hf,0) for w_lam+wa_ppf(1-a) models
                         ! [Casarini+ (2009,2016)].
@@ -1046,7 +1056,16 @@
         cosm%om_b=CP%ombh2/h2
         cosm%om_nu=CP%omnuh2/h2
         cosm%om_v=State%omega_de
-        call CP%DarkEnergy%Effective_w_wa(cosm%w, cosm%wa)
+        ! EFTCAMB MOD START: get effective w0wa
+        if ( allocated(CP%EFTCAMB) ) then
+            call CP%EFTCAMB%Effective_w_wa(cosm%w, cosm%wa)
+        else
+            call CP%DarkEnergy%Effective_w_wa(cosm%w, cosm%wa)
+        end if
+        ! Original code:
+        ! call CP%DarkEnergy%Effective_w_wa(cosm%w, cosm%wa)
+        ! EFTCAMB MOD END    
+
         cosm%f_nu=cosm%om_nu/cosm%om_m
         cosm%h=CP%H0/100
         cosm%Tcmb=CP%tcmb
