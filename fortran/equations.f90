@@ -2554,6 +2554,9 @@
     else
         gpres = gpres_noDE + w_dark_energy_t*grhov_t
         adotdota = (adotoa*adotoa-gpres)/2
+        if ( EV%EFTCAMB_printing ) then
+            EV%eft_cache%Hdot = -0.5_dl*EV%eft_cache%adotoa**2 -0.5_dl*gpres
+        end if
     end if
     ! EFTCAMB MOD END.
 

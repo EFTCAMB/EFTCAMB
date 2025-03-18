@@ -87,7 +87,8 @@ module EFTCAMB_main
         real(dl)  :: EFTCAMB_stability_time        !< Minimum scale factor at which the code checks for stability of a theory
         real(dl)  :: EFTCAMB_stability_threshold   !< Threshold for the stability module to consider the model stable.
         logical   :: EFTCAMB_model_is_designer     !< Logical flag that establishes whether the model is designer or not.
-
+        logical   :: EFTCAMB_effective_w0wa        !< Logical flag that establishes whether the model does have an effective w0wa parametrization.
+        
         ! EFTCAMB output root:
         character(LEN=:), allocatable :: outroot   !< The root for auxiliary EFTCAMB output.
 
@@ -107,6 +108,7 @@ module EFTCAMB_main
         procedure :: EFTCAMB_read_model_selection      => read_EFTCAMB_model_selection      !< subroutine that reads the model selection parameters. Just a wrapper to the model specific subroutine.
         procedure :: EFTCAMB_allocate_model_functions  => allocate_EFTCAMB_model_functions  !< subroutine that, based on the model specific selection flags allocates the EFTCAMB model functions.
         procedure :: EFTCAMB_read_model_parameters     => read_EFTCAMB_model_parameters     !< subroutine that reads the model parameters. Just a wrapper to the model specific subroutine.
+        procedure :: Effective_w_wa                    => EFTCAMB_effective_w0wa_values     !< subroutine that sets the effective w0wa values.
         ! python interface:
         procedure, nopass :: SelfPointer => TEFTCAMB_SelfPointer
 
@@ -131,6 +133,10 @@ contains
         self%EFTflag              = Ini%Read_Int( 'EFTflag'            , 0 )
         if ( self%EFTflag == 0 ) return
         ! read the model selection flags:
+        self%PureEFTmodel = 0
+        self%AltParEFTmodel = 0
+        self%DesignerEFTmodel = 0
+        self%FullMappingEFTmodel = 0
         if ( self%EFTflag == 1 ) then
           self%PureEFTmodel         = Ini%Read_Int( 'PureEFTmodel'       , 1 )
         else if ( self%EFTflag == 2 ) then
@@ -161,6 +167,7 @@ contains
         self%EFTCAMB_GR_threshold        = Ini%Read_Double ( 'EFTCAMB_GR_threshold'       , 1.d-8  )
         self%EFTCAMB_stability_time      = Ini%Read_Double ( 'EFTCAMB_stability_time'     , 1.d-10 )
         self%EFTCAMB_stability_threshold = Ini%Read_Double ( 'EFTCAMB_stability_threshold', 0._dl  )
+        self%EFTCAMB_effective_w0wa      = Ini%Read_Logical( 'EFTCAMB_effective_w0wa'     , .false.)
 
         ! Output root for debug purposes:
         outroot = Ini%Read_String('output_root')
@@ -197,6 +204,27 @@ contains
         call self%model%compute_param_number()
 
     end subroutine init_EFTCAMB_model_from_file
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that gets the effective w0wa values.
+    subroutine EFTCAMB_effective_w0wa_values( self, w0, wa )
+
+        implicit none
+
+        class(TEFTCAMB) :: self      !< the base class
+        real(dl)        :: w0        !< the effective w0 value (output)
+        real(dl)        :: wa        !< the effective wa value (output)
+
+        if ( self%EFTCAMB_effective_w0wa ) then
+            w0 = self%model%w0
+            wa = self%model%wa
+        else
+            w0 = -1._dl
+            wa = 0._dl
+        end if
+
+    end subroutine EFTCAMB_effective_w0wa_values
+
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that prints to screen the EFTCAMB header.
@@ -270,10 +298,17 @@ contains
 
         ! check feedback level:
         if ( .not. self%EFTCAMB_feedback_level > 0 ) return
-        ! print feedback flag:
+        ! print settings flags:
         write(*,*)
-        write(*,'(a, I3)') ' EFTCAMB feedback level  =', self%EFTCAMB_feedback_level
-
+        write(*,*) 'EFTCAMB settings:'
+        write(*,*) ' EFTCAMB_feedback_level      =', self%EFTCAMB_feedback_level
+        write(*,*) ' EFTCAMB_back_turn_on        =', self%EFTCAMB_back_turn_on
+        write(*,*) ' EFTCAMB_pert_turn_on        =', self%EFTCAMB_pert_turn_on
+        write(*,*) ' EFTCAMB_GR_threshold        =', self%EFTCAMB_GR_threshold
+        write(*,*) ' EFTCAMB_stability_time      =', self%EFTCAMB_stability_time
+        write(*,*) ' EFTCAMB_stability_threshold =', self%EFTCAMB_stability_threshold
+        write(*,*) ' EFTCAMB_effective_w0wa      =', self%EFTCAMB_effective_w0wa
+        
         ! print stability flags:
         write(*,*)
         write(*,*) 'EFTCAMB stability flags:'
@@ -288,7 +323,7 @@ contains
         write(*,*) ' Mass stability         = ', self%EFT_mass_stability
         write(*,'(a,E12.5)') '  Mass stability rate    = ', self%EFT_mass_stability_rate
         write(*,*) ' Additional priors      = ', self%EFT_additional_priors
-        write(*,*)
+
         ! print model selection flags:
         write(*,*)              'EFTCAMB model flags:'
         write(*,"(A24,I3)")     '   EFTflag             =', self%EFTflag
@@ -521,6 +556,13 @@ contains
 
         ! call the model specific read parameters:
         call self%model%init_model_parameters_from_file( Ini, eft_error )
+
+        ! now store the effective w0wa flag:
+        if (self%EFTCAMB_effective_w0wa .and. self%model%effective_w0wa) then
+            self%EFTCAMB_effective_w0wa = .True.
+        else
+            self%EFTCAMB_effective_w0wa = .False.
+        end if
 
     end subroutine read_EFTCAMB_model_parameters
 

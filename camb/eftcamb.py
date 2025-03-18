@@ -34,6 +34,7 @@ EFTCAMB_get_param_names = camblib.__eftcamb_python_MOD_eftcamb_get_param_names
 EFTCAMB_get_param_labels = camblib.__eftcamb_python_MOD_eftcamb_get_param_labels
 EFTCAMB_get_param_values = camblib.__eftcamb_python_MOD_eftcamb_get_param_values
 EFTCAMB_get_model_name = camblib.__eftcamb_python_MOD_eftcamb_get_model_name
+EFTCAMB_get_effective_w0wa_values = camblib.__eftcamb_python_MOD_eftcamb_get_effective_w0wa_values
 
 # EFTCAMB setters:
 EFTCAMB_set_model_name = camblib.__eftcamb_python_MOD_eftcamb_set_model_name
@@ -68,8 +69,6 @@ class EFTCAMB(F2003Class):
                ("EFT_mass_stability", c_bool, "Flag that decides whether to enforce the physical mass condition. Works up to Horndeski."),
                ("EFT_mass_stability_rate", c_double, "Flag that sets the rate for the mass instability in units of Hubble time."),
                ("EFT_additional_priors", c_bool, "Flag that extablishes whether to use additional priors that are related to the specific model. Each model has the possibility of implementing their own additional stability requirements."),
-               ("EFT_positivity_bounds", c_bool, "Flag that decides whether to enforce the positivity bounds. Works up to Horndeski. "),
-               ("EFT_minkowski_limit", c_bool, "Flag that checks the existence of a healthy Minkowski limit. Works up to Horndeski. "),
                # Working flags
                ("EFTCAMB_feedback_level", c_int, "Amount of feedback that is printed to screen"),
                ("EFTCAMB_back_turn_on", c_double, "Smallest scale factor that the code should consider when computing the background. Set to zero (default), change background at all times."),
@@ -78,6 +77,7 @@ class EFTCAMB(F2003Class):
                ("EFTCAMB_stability_time", c_double, "Minimum scale factor at which the code checks for stability of a theory"),
                ("EFTCAMB_stability_threshold", c_double, "Threshold for the stability module to consider the model stable."),
                ("EFTCAMB_model_is_designer", c_bool, "Logical flag that establishes whether the model is designer or not."),
+               ("EFTCAMB_effective_w0wa", c_bool, "Logical flag that establishes whether the model has effective w0wa or not."),
                ]
 
     # Parameters that are used to initialize the class
@@ -259,6 +259,16 @@ class EFTCAMB(F2003Class):
         """
         _name = "{:<200}".format(name).encode('utf-8')
         EFTCAMB_set_model_name(byref(self), _name)
+
+    def get_effective_w0wa(self):
+        """
+        Returns the effective w0 wa values. 
+        """
+        w0 = c_double(0)
+        wa = c_double(0)
+        EFTCAMB_get_effective_w0wa_values(byref(self), byref(w0), byref(wa))
+        #
+        return w0.value, wa.value
 
     def get_scale_evolution(self, camb_results, q, a):
         # convert scale factor to redshift:
