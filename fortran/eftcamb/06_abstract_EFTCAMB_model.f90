@@ -50,6 +50,10 @@ module EFTCAMB_abstract_model
         character(len=:), allocatable :: name             !< name of the model.
         character(len=:), allocatable :: name_latex       !< latex name of the model.
 
+        logical                       :: effective_w0wa = .False. !< flag that tells whether the model has an effective w0wa model limit.
+        real(dl)                      :: w0 = -1._dl
+        real(dl)                      :: wa = 0._dl
+
     contains
 
         ! initialization of the model:

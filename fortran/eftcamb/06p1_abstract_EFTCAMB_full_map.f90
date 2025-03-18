@@ -114,7 +114,6 @@ contains
         adotoa2 = eft_cache%adotoa**2._dl
 
         one_plus_omega = 1.0_dl + eft_cache%EFTOmegaV
-
   
         eft_cache%Hdot = 1.0_dl/(one_plus_omega+ 0.5_dl*a*eft_cache%EFTOmegaP)*( -0.5_dl*( one_plus_omega +2.0_dl*a*eft_cache%EFTOmegaP +a2*eft_cache%EFTOmegaPP )*eft_cache%adotoa**2 &
                       & -0.5_dl*(eft_cache%gpresm_t ) -0.5_dl*eft_cache%EFTLambda)

@@ -45,6 +45,7 @@ module EFTCAMB_FM_quintessence
     use EFTCAMB_double_exponential_parametrizations_1D
     use EFTCAMB_cosine_parametrizations_1D
     use EFTCAMB_axion_parametrizations_1D
+    use EFTCAMB_power_law_sum_parametrizations_1D
     use MassiveNu
 
     implicit none
@@ -190,6 +191,10 @@ contains
             case(9)
                 allocate( axion_parametrization_1D::self%potential )
                 call self%potential%set_param_names( ['V0', 'm ','n '], ['V_0', 'm  ','n  '] )
+            case(10)
+                allocate( power_law_sum_parametrization_1D::self%potential )
+                call self%potential%set_param_names( ['L0 ', 'V1 ', 'p1 ', 'V2 ', 'p2 ', 'V3 ', 'p3 '], &
+                                                   & ['L_0', 'V_1', 'p_1', 'V_2', 'p_2', 'V_3', 'p_3'] ) 
             case default
                 if (temp_feedback > 0) then
                     write(*,'(a,I3)') 'No model corresponding to potential_model =', self%potential_model
@@ -204,6 +209,9 @@ contains
 
         ! additional initialization of the function:
         call self%potential%init_func_from_file( Ini, eft_error )
+
+        ! initialize w0wa flag:
+        self%effective_w0wa = .true.
 
     end subroutine EFTCAMB5eAllocateModelSelection
 
@@ -236,7 +244,7 @@ contains
         end if
 
         ! pass the potential parameters:
-        if ( self%potential_model<=9 ) then
+        if ( self%potential_model<=10 ) then
             call self%potential%init_parameters(temp)
         end if
 
@@ -257,7 +265,7 @@ contains
             self%phidot_ini    = Ini%Read_Double( 'phidot_ini', 0._dl )
         end if
         ! read V(\phi) parameters:
-        if ( self%potential_model<=9 ) then
+        if ( self%potential_model<=10 ) then
             call self%potential%init_from_file( Ini, eft_error )
         end if
 
@@ -278,7 +286,7 @@ contains
         end if
 
         ! V(\phi) parameters:
-        if ( self%potential_model<=9 ) then
+        if ( self%potential_model<=10 ) then
             self%parameter_number = self%parameter_number +self%potential%parameter_number
         end if
 
@@ -315,7 +323,7 @@ contains
         end if
 
         write(*,*)
-        if ( self%potential_model<=9 ) then
+        if ( self%potential_model<=10 ) then
             call self%potential%feedback( print_params )
         end if
 
@@ -342,7 +350,7 @@ contains
             return
         ! the other parameters are the potential parameters:
         else
-            if ( self%potential_model<=9 ) then
+            if ( self%potential_model<=10 ) then
                 if ( self%drag_initial_conditions ) then
                     call self%potential%parameter_names( i, name )
                 else
@@ -375,7 +383,7 @@ contains
             return
         ! the other parameters are the potential parameters:
         else
-            if ( self%potential_model<=9 ) then
+            if ( self%potential_model<=10 ) then
                 if ( self%drag_initial_conditions ) then
                     call self%potential%parameter_names_latex( i, latexname )
                 else
@@ -408,7 +416,7 @@ contains
             return
         ! the other parameters are the w_DE parameters:
         else
-            if ( self%potential_model<=9 ) then
+            if ( self%potential_model<=10 ) then
                 if ( self%drag_initial_conditions ) then
                     call self%potential%parameter_value( i, value )
                 else
@@ -496,15 +504,15 @@ contains
 
         EFTCAMB5ePotential = 1._dl
         if ( deriv == 0 ) then
-            if ( self%potential_model<=9 ) then
+            if ( self%potential_model<=10 ) then
                 EFTCAMB5ePotential = self%potential%value(phi)
             end if
         else if (deriv == 1 ) then
-            if ( self%potential_model<=9  ) then
+            if ( self%potential_model<=10  ) then
                 EFTCAMB5ePotential = self%potential%first_derivative(phi)
             end if
         else if (deriv == 2) then
-            if ( self%potential_model<=9  ) then
+            if ( self%potential_model<=10  ) then
                 EFTCAMB5ePotential = self%potential%second_derivative(phi)
             end if
         end if
@@ -524,6 +532,7 @@ contains
         character(LEN=*), optional    , intent(in)    :: outroot        !< the output root for the debug files
 
         real(dl) :: TempMin, TempMax, debug_phi, phi_ini, H02, alpha
+        real(dl) :: temp_c, temp_L, temp_cdot, temp_Ldot
         integer  :: Debug_MaxNum, Debug_n
 
         ! some feedback:
@@ -568,7 +577,7 @@ contains
         ! call boundary conditions lookup:
         call self%find_initial_conditions( params_cache, feedback_level, phi_ini, success )
         if ( success ) then
-            if ( feedback_level>1 ) write(*,'(a,E13.4)') '   initial condition phi_ini  = ', phi_ini
+            if ( feedback_level>1 ) write(*,'(a,E13.4)') '   Initial condition phi_ini  = ', phi_ini
         else if ( .not. success ) then
             return
         end if
@@ -593,6 +602,20 @@ contains
 
         ! solve the background equations and store the solution:
         call self%solve_background_equations( params_cache, phi_ini, phidot_ini=self%phidot_ini, H02=H02, only_solve=.False., success=success )
+
+        ! calculate effective w0wa parameters:
+        temp_c = self%EFTc%value(0._dl)
+        temp_L = self%EFTLambda%value(0._dl)
+        temp_cdot = self%EFTc%first_derivative(0._dl)
+        temp_Ldot = self%EFTLambda%first_derivative(0._dl)
+        self%w0 = temp_L / (2._dl*temp_c - temp_L)
+        self%wa = - 2._dl / params_cache%h0_Mpc * (temp_c*temp_Ldot - temp_cdot*temp_L) / (temp_L - 2._dl*temp_c)**2
+
+        ! feedback:
+        if ( feedback_level>1 ) then
+            write(*,'(a,E13.4)') '   Effective w0 = ', self%w0
+            write(*,'(a,E13.4)') '   Effective wa = ', self%wa
+        end if
 
     end subroutine EFTCAMB5eInitBackground
 
@@ -966,8 +989,8 @@ contains
         phi_ini = zbrent(helperH0, min_field, phi_temp, tol, H0_wanted, success)
         if ( success ) then
             if ( feedback_level>2 ) then
-                write(*,*) 'H0 given:', sqrt(H0_wanted)*(c/1000._dl)
-                write(*,*) 'H0 found:', sqrt(helperH0(phi_ini))*(c/1000._dl)
+                write(*,*) '  H0 given:', sqrt(H0_wanted)*(c/1000._dl)
+                write(*,*) '  H0 found:', sqrt(helperH0(phi_ini))*(c/1000._dl)
             end if
             return
         else if (.not.success) then
