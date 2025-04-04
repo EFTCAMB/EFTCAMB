@@ -181,7 +181,7 @@ contains
                 allocate( fourier_parametrization_1D::self%potential )
             case(6)
                 allocate( exponential_parametrization_2_1D::self%potential )
-                call self%potential%set_param_names( ['V0     ', 'lambda '], ['V_0    ', '\lambda'] )
+                call self%potential%set_param_names( ['V0         ', 'EFT_lambda '], ['V_0    ', '\lambda'] )
             case(7)
                 allocate( double_exponential_parametrization_1D::self%potential )
                 call self%potential%set_param_names( ['V1     ', 'lambda1','V2     ', 'lambda2'], ['V_1      ', '\lambda_1','V_2      ', '\lambda_2'] )
@@ -592,7 +592,7 @@ contains
             call file_debug_3%CreateFile( TRIM(outroot)//'background_5e_solution_2.dat' )
             call file_debug_4%CreateFile( TRIM(outroot)//'background_5e_solution_3.dat' )
             write (file_debug_2%unit,'(a)')         '# x a z phi phi_prime phi_prime_prime H2 DHoH Hdot grho_matter gpres_matter'
-            write (file_debug_3%unit,'(a)')         '# x a z Ek_phi Ep_phi DEk_DN DEp_DN rho_phi pres_phi Drho_phi_DN Dpres_phi_DN energy_conservation w_phi lambda'
+            write (file_debug_3%unit,'(a)')         '# x a z Ek_phi Ep_phi DEk_DN DEp_DN rho_phi pres_phi Drho_phi_DN Dpres_phi_DN energy_conservation w_phi EFT_lambda'
             write (file_debug_4%unit,'(a)')         '# x a z omega_r_t omega_m_t omega_nu_t omega_phi_t omega_tot_t'
             call self%solve_background_equations( params_cache, phi_ini, phidot_ini=self%phidot_ini, H02=H02, only_solve=.False., success=success )
             call file_debug_2%close()
@@ -648,7 +648,7 @@ contains
         real(dl) :: grhonu, gpinu, grhormass_t, grho_matter, gpres_matter, grho_m_temp
         real(dl) :: phi, phi_prime, phi_prime_prime, coeff, H2, Hdot, omega_m
         real(dl) :: Ek_phi, Ep_phi, DEk_DN, DEp_DN, rho_phi, pres_phi, w_phi, Drho_phi_DN, Dpres_phi_DN, energy_conservation
-        real(dl) :: omega_r_t, omega_m_t, omega_phi_t, omega_nu_t, omega_tot_t, lambda
+        real(dl) :: omega_r_t, omega_m_t, omega_phi_t, omega_nu_t, omega_tot_t, EFT_lambda
         integer  :: nu_i
 
         ! digest the input:
@@ -914,7 +914,7 @@ contains
 
             energy_conservation = ( Drho_phi_DN +3._dl*( rho_phi+pres_phi ) )/rho_phi
             w_phi               = pres_phi/rho_phi
-            lambda              = abs(self%quintessence_potential(phi,deriv=1))/abs(self%quintessence_potential(phi,deriv=0))
+            EFT_lambda          = abs(self%quintessence_potential(phi,deriv=1))/abs(self%quintessence_potential(phi,deriv=0))
 
             omega_r_t   = (grhog_t +grhor_t)/3._dl/H2
             omega_m_t   = (grhob_t +grhoc_t)/3._dl/H2
@@ -930,7 +930,7 @@ contains
                 end if
                 inquire( unit=file_debug_3%unit, opened=is_open )
                 if ( is_open ) then
-                    write (file_debug_3%unit,'(200ES15.4E3)') x, a, 1._dl/a-1._dl, Ek_phi, Ep_phi, DEk_DN, DEp_DN, rho_phi, pres_phi, Drho_phi_DN, Dpres_phi_DN, energy_conservation, w_phi, lambda
+                    write (file_debug_3%unit,'(200ES15.4E3)') x, a, 1._dl/a-1._dl, Ek_phi, Ep_phi, DEk_DN, DEp_DN, rho_phi, pres_phi, Drho_phi_DN, Dpres_phi_DN, energy_conservation, w_phi, EFT_lambda
                 end if
                 inquire( unit=file_debug_4%unit, opened=is_open )
                 if ( is_open ) then
