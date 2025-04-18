@@ -2588,8 +2588,9 @@
     else if ( CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive ) then
         ! RSA
         z  = 1._dl/EV%eft_cache%EFTeomG*(EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
-        dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*z*(1._dl+EV%eft_cache%EFTeomY -0.5_dl*EV%eft_cache%EFTeomG) &
-            & - 0.5_dl*dgrho/k/(1._dl+EV%eft_cache%EFTOmegaV) -adotoa*EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc) -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+        dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*z*(1._dl+EV%eft_cache%EFTeomY -0.5_dl*EV%eft_cache%EFTeomG/EV%eft_cache%EFTeomQ) &
+                 & - 0.5_dl*dgrho/k/(1._dl+EV%eft_cache%EFTOmegaV)/EV%eft_cache%EFTeomQ -adotoa*EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc)/EV%eft_cache%EFTeomQ -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+        ! dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z + etak - 1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
     end if
     ! EFTCAMB MOD END.
 
