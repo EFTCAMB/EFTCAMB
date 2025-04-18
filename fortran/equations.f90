@@ -2677,7 +2677,7 @@
         EV%eft_cache%z = 1._dl/EV%eft_cache%EFTeomG*(EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
         z              = EV%eft_cache%z
 
-        EV%eft_cache%dz = 1._dl/EV%eft_cache%EFTeomU*(-2*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z +etak -0.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*( grhog_t*clxg +grhor_t*clxr )&
+        EV%eft_cache%dz = 1._dl/EV%eft_cache%EFTeomU*(-2*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z +etak -0.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*( grhog_t*clxg +grhor_t*clxr + 3._dl*dgpnu )&
             & -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
         dz              = EV%eft_cache%dz
 
