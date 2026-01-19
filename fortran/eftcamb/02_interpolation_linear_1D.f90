@@ -29,6 +29,7 @@ module linear_interpolation_1D
     use precision
     use EFT_splines
     use EFTCAMB_mixed_algorithms
+    use MpiUtils
 
     implicit none
 
@@ -55,7 +56,7 @@ module linear_interpolation_1D
         real(dl), allocatable, dimension(:) :: yp             !< array containing the values of the function derivative \f$ yp_i= \frac{d f(x_i)}{dx} \f$.
         real(dl), allocatable, dimension(:) :: ypp            !< array containing the values of the function second derivative \f$ ypp_i= \frac{d^2 f(x_i)}{dx^2} \f$.
         real(dl), allocatable, dimension(:) :: yppp           !< array containing the values of the function third derivative \f$ yppp_i= \frac{d^3 f(x_i)}{dx^3} \f$.
-        !real(dl), allocatable, dimension(:) :: ypppp          !< array containing the values of the function fourth derivative \f$ ypppp_i=\frac{d^3 f(x_i)}{dx^4} \f$.
+        real(dl), allocatable, dimension(:) :: ypppp          !< array containing the values of the function fourth derivative \f$ ypppp_i=\frac{d^3 f(x_i)}{dx^4} \f$.
         real(dl), allocatable, dimension(:) :: yint           !< array containing the values of the function w DE integral \f$ yint_i= \exp\left(-3\int_1^{x_i} \frac{1+f(x)}{x} \, dx \right) \f$.
 
     contains
@@ -69,6 +70,7 @@ module linear_interpolation_1D
         procedure :: fourth_derivative      => LinearIntepolateFunction1DFourthDerivative   !< function that gives the value of the function fourth derivative at a given coordinate x.
         procedure :: integral               => LinearIntepolateFunction1DIntegral           !< function that gives the value of the interpolated w DE integral at a given coordinate x.
         procedure :: initialize_derivatives => LinearIntepolateFunction1DInitDerivatives    !< subroutine that initializes the derivatives if the derivatives vectors are not initialized. The derivative are inferred from the function itself.
+        procedure :: initialize_integration => LinearIntepolateFunction1DInitIntegration    !< subroutine that initializes the integration if the integration vector is not initialized. The integration is inferred from the function itself.
 
     end type linear_interpolate_function_1D
 
@@ -109,7 +111,7 @@ contains
         do i=1, self%num_points-1
             if (self%x(i) > self%x(i+1)) then
                 write(*,*) 'ERROR: the x vector is not ordered'
-                stop 1
+                call MpiStop('EFTCAMB error')
             end if
         end do
 
@@ -122,14 +124,14 @@ contains
         if ( allocated(self%yp)   ) deallocate( self%yp   )
         if ( allocated(self%ypp)  ) deallocate( self%ypp  )
         if ( allocated(self%yppp) ) deallocate( self%yppp )
-        !if ( allocated(self%ypppp) ) deallocate( self%ypppp )
+        if ( allocated(self%ypppp) ) deallocate( self%ypppp )
         if ( allocated(self%yint) ) deallocate( self%yint )
 
         allocate( self%y   ( self%num_points ) )
         allocate( self%yp  ( self%num_points ) )
         allocate( self%ypp ( self%num_points ) )
         allocate( self%yppp( self%num_points ) )
-        !allocate( self%ypppp( self%num_points ) )
+        allocate( self%ypppp( self%num_points ) )
         allocate( self%yint( self%num_points ) )
 
     end subroutine LinearIntepolateFunction1DInit
@@ -409,51 +411,52 @@ contains
         real(dl), intent(in), optional                    :: coeff       !< optional precomputed value of the interpolation coefficient
         real(dl) :: LinearIntepolateFunction1DFourthDerivative  !< the output value of the function
 
-        !integer  :: ind
-        !real(dl) :: x1, x2, y1, y2, mu
+        integer  :: ind
+        real(dl) :: x1, x2, y1, y2, mu
 
-        !! initialize to null value:
-        !LinearIntepolateFunction1DFourthDerivative = self%null_value
-        !if ( self%has_null_value ) then
-        !    ! if outside the interpolation range return the null value:
-        !    if ( x <= self%x_initial .or. x >= self%x_final ) return
-        !else
-        !    ! if below the interpolation range return the first value:
-        !    if ( x <= self%x_initial ) then
-        !        LinearIntepolateFunction1DFourthDerivative = self%ypppp(1)
-        !        return
-        !    end if
-        !    ! if above the interpolation range return the first value:
-        !    if ( x >= self%x_final   ) then
-        !        LinearIntepolateFunction1DFourthDerivative = self%ypppp(self%num_points)
-        !        return
-        !    end if
-        !end if
+        ! initialize to null value:
+        LinearIntepolateFunction1DFourthDerivative = self%null_value
+        if ( self%has_null_value ) then
+           ! if outside the interpolation range return the null value:
+           if ( x <= self%x_initial .or. x >= self%x_final ) return
+        else
+           ! if below the interpolation range return the first value:
+           if ( x <= self%x_initial ) then
+               LinearIntepolateFunction1DFourthDerivative = self%ypppp(1)
+               return
+           end if
+           ! if above the interpolation range return the first value:
+           if ( x >= self%x_final   ) then
+               LinearIntepolateFunction1DFourthDerivative = self%ypppp(self%num_points)
+               return
+           end if
+        end if
 
-        !! return the index of the point:
-        !if ( present(index) ) then
-        !    ind = index
-        !else
-        !    call hunt( self%x, self%num_points, x, ind)
-        !end if
+        ! return the index of the point:
+        if ( present(index) ) then
+           ind = index
+        else
+           call hunt( self%x, self%num_points, x, ind)
+        end if
 
-        !! get the interpolation coefficient:
-        !if ( present(coeff) ) then
-        !    mu = coeff
-        !else
-        !    ! store the x values:
-        !    x1  = self%x(ind)
-        !    x2  = self%x(ind+1)
-        !    ! compute the linear interpolation coefficient:
-        !    mu  = (x-x1)/(x2-x1)
-        !end if
+        ! get the interpolation coefficient:
+        if ( present(coeff) ) then
+           mu = coeff
+        else
+           ! store the x values:
+           x1  = self%x(ind)
+           x2  = self%x(ind+1)
+           ! compute the linear interpolation coefficient:
+           mu  = (x-x1)/(x2-x1)
+        end if
 
-        !! store the y values:
-        !y1  = self%ypppp(ind)
-        !y2  = self%ypppp(ind+1)
+        ! store the y values:
+        y1  = self%ypppp(ind)
+        y2  = self%ypppp(ind+1)
 
-        !! compute the linear interpolation:
-        LinearIntepolateFunction1DFourthDerivative = 0._dl!y1*( 1._dl -mu ) +y2*mu
+        ! compute the linear interpolation:
+        LinearIntepolateFunction1DFourthDerivative = y1*( 1._dl -mu ) +y2*mu
+        ! LinearIntepolateFunction1DFourthDerivative = 0._dl
 
     end function LinearIntepolateFunction1DFourthDerivative
 
@@ -537,29 +540,47 @@ contains
         ! compute the third derivative:
         call spline3ders( self%x, self%ypp, self%x, dummy, self%yppp, dummy2 )
         ! compute the fourth derivative:
-        !call spline3ders( self%x, self%yppp, self%x, dummy, self%ypppp, dummy2 )
+        call spline3ders( self%x, self%yppp, self%x, dummy, self%ypppp, dummy2 )
 
         ! apply the Jacobian:
         if ( present(jacobian) ) then
             self%yp = jacobian*self%yp
             self%ypp = jacobian*self%ypp
             self%yppp = jacobian*self%yppp
-            !self%ypppp = jacobian*self%ypppp
+            self%ypppp = jacobian*self%ypppp
         end if
 
         ! set the derivatives to zero at the boundary for continuity:
         self%yp(1)   = 0._dl
         self%ypp(1)  = 0._dl
         self%yppp(1) = 0._dl
-        !self%ypppp(1) = 0._dl
+        self%ypppp(1) = 0._dl
         self%yp(self%num_points)   = 0._dl
         self%ypp(self%num_points)  = 0._dl
         self%yppp(self%num_points) = 0._dl
-        !self%ypppp(self%num_points) = 0._dl
+        self%ypppp(self%num_points) = 0._dl
 
     end subroutine LinearIntepolateFunction1DInitDerivatives
 
     ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the integration vector of \f$ yint_i= \exp\left(-3\int_1^{x_i} \frac{1+f(x)}{x} \, dx \right) \f$. Only meaningful if we are parameterizing w_DE(a)
+    subroutine LinearIntepolateFunction1DInitIntegration( self )
+
+        implicit none
+
+        class(linear_interpolate_function_1D)  :: self        !< the base class
+
+        integer                              :: i
+        real(dl)                             :: b
+
+        self%yint(self%num_points) = 1._dl
+        do i=self%num_points-1, 1, -1
+            b = (self%x(i)*self%y(i+1) - self%x(i+1)*self%y(i))/(self%x(i) - self%x(i+1))
+            self%yint(i) = self%yint(i+1)*(self%x(i)/self%x(i+1))**(-3._dl*(1._dl+b))*exp(-3._dl*(self%y(i)-self%y(i+1)))
+        end do
+
+
+    end subroutine LinearIntepolateFunction1DInitIntegration
 
 end module linear_interpolation_1D
 

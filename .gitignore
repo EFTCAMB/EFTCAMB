@@ -3,6 +3,7 @@
 *.a
 *.o
 *.so
+*.dll
 *.sm
 *~*
 *.dll
@@ -24,6 +25,7 @@ WinDLL/
 *.user
 *.save
 *.log
+*.out
 .idea
 .DS_Store
 *egg*
@@ -57,7 +59,7 @@ testfile*
 
 # Ignore all .dat and .ini files except those already tracked in git
 *.dat
-*.ini
+# *.ini
 *compatibility.txt
 camb_test.py
 temp_test.py

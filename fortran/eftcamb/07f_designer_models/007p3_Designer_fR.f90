@@ -119,6 +119,10 @@ contains
 
         ! read model selection flags:
         self%EFTwDE             = Ini%Read_Int( 'EFTwDE', 0 )
+        ! read precision parameters
+        self%designer_num_points = Ini%Read_Int( 'model_background_num_points', 6000 )
+        self%x_initial = Log( Ini%Read_Double( 'model_background_a_ini', 1d-8 ) )
+        self%x_final = Log( Ini%Read_Double( 'model_background_a_final', 1._dl ) )
 
     end subroutine EFTCAMBDesignerFRReadModelSelectionFromFile
 
@@ -251,7 +255,7 @@ contains
             Debug_MaxNum = 1000
             do Debug_n = 1, Debug_MaxNum
                 debug_A = TempMin +REAL(Debug_n-1)*(TempMax-TempMin)/REAL(Debug_MaxNum-1)
-                call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.True., success=success )
+                call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.True., success=success, feedback_level=feedback_level )
                 write(file_debug_1%unit,*) debug_A, B0
             end do
             call file_debug_1%close()
@@ -259,7 +263,7 @@ contains
             print*, 'EFTCAMB DEBUG ( f(R) designer ): Printing F(R) results'
             call file_debug_2%CreateFile( TRIM(outroot)//'debug_designer_fR_solution.dat' )
             debug_A = 1.0_dl
-            call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.False., success=success )
+            call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.False., success=success, feedback_level=feedback_level )
             call file_debug_2%close()
         end if
 
@@ -267,13 +271,13 @@ contains
         call self%find_initial_conditions( params_cache, feedback_level, A_ini, success )
 
         ! solve the background equations and store the solution:
-        call self%solve_designer_equations( params_cache, A_ini, B0, only_B0=.False., success=success )
+        call self%solve_designer_equations( params_cache, A_ini, B0, only_B0=.False., success=success, feedback_level=feedback_level )
 
     end subroutine EFTCAMBDesignerFRInitBackground
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that solves the designer f(R) background equations.
-    subroutine EFTCAMBDesignerFRSolveDesignerEquations( self, params_cache, A, B0, only_B0, success )
+    subroutine EFTCAMBDesignerFRSolveDesignerEquations( self, params_cache, A, B0, only_B0, success, feedback_level )
 
         implicit none
 
@@ -283,6 +287,7 @@ contains
         real(dl), intent(out)                        :: B0            !< present day value of B.
         logical , optional                           :: only_B0       !< logical flag that tells the code wether to compute only B0 or also the EFT functions.
         logical , intent(out)                        :: success       !< whether the calculation ended correctly or not
+        integer , intent(in)                         :: feedback_level   !< whether be noisy
 
         integer, parameter :: num_eq = 2   !<  Number of equations
 
@@ -380,8 +385,14 @@ contains
             call DLSODA ( derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, RWORK, LRW, IWORK, LIW, jacobian, JacobianMode)
             ! check istate for LSODA good completion:
             if ( istate < 0 ) then
-                success = .False.
-                return
+                if ( istate == -1 ) then
+                    if ( feedback_level>1 ) write(*,*) 'DLSODA excessive work'
+                    istate = 1
+                else
+                    success = .False.
+                    if ( feedback_level>1 ) write(*,*) 'DLSODA failed with code:', istate
+                    return
+                end if
             end if
             ! compute output EFT functions if needed:
             if ( .not. only_B0 ) then
@@ -825,7 +836,7 @@ contains
             real(dl) :: DesFR_BfuncA !< value of B0
             real(dl) :: B0
 
-            call self%solve_designer_equations( params_cache, A, B0, only_B0=.True., success=success )
+            call self%solve_designer_equations( params_cache, A, B0, only_B0=.True., success=success, feedback_level=feedback_level )
 
             DesFR_BfuncA = B0
 

@@ -190,7 +190,7 @@ def create_file_objs(files=None, macros={}):
 
 def get_uses(infile=None, macros={}):
     "Return which modules are used in infile after expanding macros"
-    p=re.compile("^\s*use\s*(?P<moduse>\w*)\s*(,)?\s*(only)?\s*(:)?.*?$|^\s*submodule\s*\((?P<moduse2>\w*)\)\s*",re.IGNORECASE).match
+    p=re.compile(r"^\s*use\s*(?P<moduse>\w*)\s*(,)?\s*(only)?\s*(:)?.*?$|^\s*submodule\s*\((?P<moduse2>\w*)\)\s*",re.IGNORECASE).match
 
     uses=[]
 
@@ -214,7 +214,7 @@ def get_uses(infile=None, macros={}):
 
 def get_contains(infile=None):
     "Return all the modules that are in infile"
-    p=re.compile("^\s*module\s*(?P<modname>\w*?)\s*$",re.IGNORECASE).match
+    p=re.compile(r"^\s*module\s*(?P<modname>\w*?)\s*$",re.IGNORECASE).match
 
     contains=[]
 

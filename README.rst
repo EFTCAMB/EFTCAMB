@@ -1,32 +1,3 @@
-===================
-CAMB
-===================
-:CAMB: Code for Anisotropies in the Microwave Background
-:Author: Antony Lewis and Anthony Challinor
-:Homepage: https://camb.info/
-
-.. image:: https://img.shields.io/pypi/v/camb.svg?style=flat
-   :target: https://pypi.python.org/pypi/camb/
-.. image:: https://img.shields.io/conda/vn/conda-forge/camb.svg
-   :target: https://anaconda.org/conda-forge/camb
-.. image:: https://readthedocs.org/projects/camb/badge/?version=latest
-   :target: https://camb.readthedocs.io/en/latest
-.. image:: https://github.com/cmbant/camb/actions/workflows/tests.yml/badge.svg?branch=master
-  :target: https://github.com/cmbant/CAMB/actions
-.. image:: https://mybinder.org/badge_logo.svg
-  :target: https://mybinder.org/v2/gh/cmbant/CAMB/HEAD?filepath=docs%2FCAMBdemo.ipynb
-
-Description and installation
-=============================
-
-CAMB is a cosmology code for calculating cosmological observables, including
-CMB, lensing, source count and 21cm angular power spectra, matter power spectra, transfer functions
-and background evolution. The code is in Python, with numerical code implemented in fast modern Fortran.
-
-See the `CAMB python example notebook <https://camb.readthedocs.io/en/latest/CAMBdemo.html>`_ for a
-quick introduction to how to use the CAMB Python package.
-
-=======
 EFTCAMB
 =======
 
@@ -34,68 +5,70 @@ EFTCAMB
 
 This folder contains the EFTCAMB code.
 
-### 1. EFTCAMB Requirements:
+### 1. A Direct Installation Procedure:
 
-Compiling EFTCAMB requires a modern fortran compiler capable of handeling F2008 features.
-These includes:
+To get started with the EFTCAMB and its Python wrapper, you need to first download the entire package using Git:
 
-	ifort v>15.0 (?)
-	gcc/gfortran v>6.0
+ 	git clone https://github.com/EFTCAMB/EFTCAMB.git
 
-To use other parts of the code, like the test or documentation parts other requirements have to be met.
-These include a fully fledged python installation. We warmly suggest to install a
-bundled package like (https://www.continuum.io/downloads).
+Next, it's recommended to create a new environment and install the necessary dependencies before compiling and using the Python wrapper:
 
-A docker with all the required libraries is available at [dockerhub](https://hub.docker.com/r/eftcamb/eftbox/).
+    gfortran; lapack; numpy; python; sympy; scipy; packaging
 
-### 2. Installation procedure:
+For example, using conda, you can create a new environment and install the required packages with the following command:
 
-For a standard non-editable installation use::
+    conda create -n EFTCAMB_env gfortran lapack numpy python sympy scipy packaging -c conda-forge
 
-    pip install camb [--user]
+**Note for Mac Users:**
+If you're using a Mac with an Apple Silicon chip (e.g., M1, M2), ensure you install the appropriate version of gfortran for your architecture (arm64), for example:
 
-The --user is optional and only required if you don't have write permission to your main python installation.
-To install from source, clone from github using::
+    conda create -n EFTCAMB_env gfortran_osx-arm64 ... -c conda-forge
 
-    git clone --recursive https://github.com/EFTCAMB/EFTCAMB.git
+You can verify that you're using the correct version of gfortran by executing:
 
-Then install using::
+    which gfortran
 
-    pip install -e ./CAMB [--user]
+Finally, navigate to the package directory and install the package in editable mode:
 
-For development, install with dev dependencies and setup pre-commit hooks::
+    cd fortran
+    make python
 
-    pip install -e ./CAMB[dev] [--user]
-    pre-commit install
+When you want to use the package by the python wrapper, import it where you compile, for example:
 
-See `CONTRIBUTING.md <CONTRIBUTING.md>`_ for full development setup instructions.
+    camb_installation_path = './../../'
+    camb_path = os.path.realpath(os.path.join(os.getcwd(),camb_installation_path))
+    sys.path.insert(0,camb_path)
+    print('camb path:', camb_path)
+    import camb
 
-You will need gfortran installed to compile (usually included with gcc by default).
-If you have gfortran installed, "python setup.py make" (and other standard setup commands) will build the Fortran
-library on all systems (including Windows without directly using a Makefile).
+### 2. Documentation:
 
-The python wrapper provides a module called "camb" documented in the Python `CAMB documentation <https://camb.readthedocs.io/en/latest/>`_.
+The contents of EFTCAMB are listed in this chart:
 
-After installation you can also run CAMB from the command line reading parameters from a .ini file, e.g.::
+![Chart](/find_your_model/EFTCAMB_STRUCTURE(Charts).png)
 
-  camb inifiles/planck_2018.ini
-
-To compile the Fortran command-line code run "make camb" in the fortran directory.
-
-### 3. Examples:
-
-
-### 4. Documentation:
 
 We provide a set of notes that contain all the details and formulas of the EFTCAMB implementation:
 
-* *EFTCAMB/EFTCosmoMC: Numerical Notes v2.0*
+* *EFTCAMB/EFTCosmoMC: Numerical Notes v3.0*
     Bin Hu, Marco Raveri, Noemi Frusciante, Alessandra Silvestri, [arXiv:1405.3590 [astro-ph.CO]](http://arxiv.org/abs/1405.3590)
 
 The EFTCAMB source files documentation is automatically built at any modification of the code and can
 be found at [this link](https://eftcamb.github.io/EFTCAMB/).
 
-### 5. Citing this work:
+Besides above documentation, there are several flowchart or markdown files helping you easily find your model flags and set parameters in “find_your_model" folder.
+
+### 3. Examples and Usage with Cobaya:
+
+The EFTCAMB distribution contains a folder called ``example`` that can be used to produce some example notebooks for brief instruction and sevral example input files of cobaya for sampling and statistical modelling.
+
+To use cobaya, just follow the instruction at:
+
+https://readthedocs.org/projects/cobaya/badge/?version=latest
+
+The example folder is an example of how to select EFTCAMB flags and set parameters needed from the flags. You can copy the folder and replace the input files to produce single purpose packages to easily produce and plot results.
+
+### 4. Citing this work:
 
 If you use the EFTCAMB/EFTCosmoMC package, please refer the original CAMB/ CosmoMC paper and ours:
 
@@ -112,16 +85,25 @@ This is the usual, fair way of giving credit to contributors to a
 scientific result. In addition, it helps us justify our effort in
 developing the EFTCAMB code as an academic undertaking.
 
-### 6. Licence Information:
+### 5. Licence Information:
 
 EFTCAMB is a modification of the CAMB code.
 The code part of CAMB that is not modified is copyrighted by the CAMB authors and released under their licence.
 
 For the part of code that constitutes EFTCAMB see the LICENSE file in ``eftcamb/LICENSE``.
 
-### 7. Build system target:
+### 6. Build system target:
 
-### 8. EFTCAMB source files:
+In addition to CAMB makefile targets EFTCAMB comes with the additional:
+
+* ``eftcamb``: to compile EFTCAMB;
+* ``eftcamb_apps``: to compile EFTCAMB applications like the EFTCAMB benchmarker;
+* ``eftcamb_dep``: to automatically sort out EFTCAMB source file dependencies;
+* ``eftcamb_doc``: to build the EFTCAMB automatic documentation;
+* ``intel_profile``: to compile EFTCAMB with the options that allow profiling with the VTUNE profiler;
+* ``profile``: to compile EFTCAMB with the options that allow general profiling;
+
+### 7. EFTCAMB source files:
 
 In the folder ``eftcamb`` all the source files for EFTCAMB are stored.
 In an effort to have small and readable files the the naming convention allows to have an
@@ -129,14 +111,16 @@ intuition of the hierarchy of the code from alphabetical order of files.
 
 For this reason we use the following convention for the prefixes:
 
-* ``01_`` compile time utilities
-* ``02_`` pure algorithms
-* ``03_`` EFTCAMB cache containing the storage for all cosmological quantities of interest
-* ``04_`` general parametrizations for 1D functions
-* ``05_`` general parametrizations for 2D functions
-* ``06_`` abstract implementation of EFT models
-* ``07_`` implementation of pure EFT models
-* ``08_`` implementation of alternative EFT parametrizations
-* ``09_`` implementation of designer mapping EFT models
-* ``10_`` implementation of full mapping EFT models
-* ``11_`` general EFT algorithms (RGR, stability, init)
+* ``01_`` compile time utilities;
+* ``02_`` pure and general purpose algorithms;
+* ``03_`` EFTCAMB cache containing the storage for all cosmological quantities of interest;
+* ``04_`` general parametrizations for 1D functions;
+* ``05_`` general parametrizations for 2D functions;
+* ``06_`` abstract implementation of EFT models;
+* ``07_`` implementation of pure EFT models;
+* ``08_`` implementation of alternative EFT parametrizations;
+* ``09_`` implementation of designer mapping EFT models;
+* ``10_`` implementation of full mapping EFT models;
+* ``11_`` general EFT algorithms (RGR, stability, init);
+
+If you modify or add one or more files make sure to issue ``make eftcamb_dep`` before compiling the code to ensure that all dependencies are properly sorted out and built.

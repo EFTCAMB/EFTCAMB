@@ -230,15 +230,21 @@ def set_params(cp=None, verbose=False, **params):
     if cp.EFTCAMB.EFTflag != 0:
         EFTpars = cp.EFTCAMB.read_parameters()
         if EFTpars["EFT_positivity_bounds"]:
-            if cp.EFTCAMB.model_name() not in ["OL gamma", "Standard Pure EFT", "K-mouflage", "Scaling Cubic Galileon"]:
+            if cp.EFTCAMB.model_name() not in [
+                "OL gamma",
+                "Standard Pure EFT",
+                "K-mouflage",
+                "Scaling Cubic Galileon",
+                "RPHalphaDE",
+            ]:
                 raise CAMBValueError(
                     "Higher order derivatives of the EFTfunctions not implemented. Positivity Bounds cannot be calculated properly for %s"
                     % cp.EFTCAMB.model_name()
                 )
+            if cp.EFTCAMB.model_name() in ["Standard Pure EFT"]:
+                if any([EFTpars["PureEFTmodelGamma4"], EFTpars["PureEFTmodelGamma5"], EFTpars["PureEFTmodelGamma6"]]):
+                    print("Warning: positivity bounds are implemented up to Gamma3.")
 
-        if cp.EFTCAMB.model_name() in ["Standard Pure EFT"]:
-            if any([EFTpars["PureEFTmodelGamma4"], EFTpars["PureEFTmodelGamma5"], EFTpars["PureEFTmodelGamma6"]]):
-                print("Warning: positivity bounds are implemented up to Gamma3.")
     # EFTCAMB MOD END
 
     return cp

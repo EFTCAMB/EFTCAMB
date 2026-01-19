@@ -252,6 +252,10 @@ contains
         call self%OL_Kineticity%init_from_file( Ini, eft_error )
         call self%OL_Braiding%init_from_file  ( Ini, eft_error )
         call self%OL_Tensor%init_from_file    ( Ini, eft_error )
+        ! read precision parameters
+        self%interpolation_num_points = Ini%Read_Int( 'model_background_num_points', 2100 )
+        self%x_initial = Log( Ini%Read_Double( 'model_background_a_ini', 1d-9 ) )
+        self%x_final = Log( Ini%Read_Double( 'model_background_a_final', 1._dl ) )
 
     end subroutine EFTCAMBOLInitModelParametersFromFile
 
@@ -747,11 +751,11 @@ contains
                 ! check istate for LSODA good completion:
                 if ( istate < 0 ) then
                     if ( istate == -1 ) then
-                        write(*,*) 'DLSODA excessive work'
+                        if ( feedback_level>1 ) write(*,*) 'DLSODA excessive work'
                         istate = 1
                     else
                         success = .False.
-                        write(*,*) 'DLSODA failed with code:', istate
+                        if ( feedback_level>1 ) write(*,*) 'DLSODA failed with code:', istate
                         deallocate(rwork,iwork)
                         return
                     end if
@@ -796,11 +800,11 @@ contains
                 ! check istate for LSODA good completion:
                 if ( istate < 0 ) then
                     if ( istate == -1 ) then
-                        write(*,*) 'DLSODA excessive work'
+                        if ( feedback_level>1 ) write(*,*) 'DLSODA excessive work'
                         istate = 1
                     else
                         success = .False.
-                        write(*,*) 'DLSODA failed with code:', istate
+                        if ( feedback_level>1 ) write(*,*) 'DLSODA failed with code:', istate
                         return
                     end if
                 end if
@@ -837,10 +841,10 @@ contains
             ! check istate for LSODA good completion:
             if ( istate < 0 ) then
                 if ( istate == -1 ) then
-                    write(*,*) 'DLSODA excessive work'
+                    if ( feedback_level>1 ) write(*,*) 'DLSODA excessive work'
                 else
                     success = .False.
-                    write(*,*) 'DLSODA failed with code:', istate
+                    if ( feedback_level>1 ) write(*,*) 'DLSODA failed with code:', istate
                     return
                 end if
             end if

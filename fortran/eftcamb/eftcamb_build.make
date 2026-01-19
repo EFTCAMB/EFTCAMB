@@ -20,6 +20,7 @@
 # get the eftcamb sources:
 EFTCAMB_SOURCES_FILES := $(wildcard $(EFTCAMB_DIR)/*.f90) $(wildcard $(EFTCAMB_DIR)/*/*.f90)
 EFTCAMB_SOURCES_FILES += $(wildcard $(EFTCAMB_DIR)/*.f) $(wildcard $(EFTCAMB_DIR)/*/*.f)
+EFTCAMB_CSOURCE_FILES := $(wildcard $(EFTCAMB_DIR)/*.c) $(wildcard $(EFTCAMB_DIR)/*/*.c)
 
 # replace the relevant suffix:
 EFT_TEMP_1 := $(patsubst %.f90,%,$(EFTCAMB_SOURCES_FILES))
@@ -27,10 +28,20 @@ EFT_TEMP_1 := $(patsubst %.f,%,$(EFT_TEMP_1))
 EFT_TEMP_2 := $(notdir $(EFT_TEMP_1))
 EFT_FILES  := $(addsuffix .o, $(EFT_TEMP_2))
 
+EFT_CTEMP_1 := $(patsubst %.c,%,$(EFTCAMB_CSOURCE_FILES))
+EFT_CTEMP_2 := $(notdir $(EFT_CTEMP_1))
+EFT_CFILES  := $(addsuffix .o, $(EFT_CTEMP_2))
+
 # files for eftcamb:
 #EFT_OBJ = $(addprefix $(OUTPUT_DIR)/, $(EFT_FILES))
 EFT_OBJ = $(EFT_FILES)
 EFT_SOJ = $(addprefix $(DLL_DIR)/, $(EFT_FILES))
+
+EFT_COBJ = $(EFT_CFILES)
+EFT_CSOJ = $(addprefix $(DLL_DIR)/, $(EFT_CFILES))
+
+CC = gcc
+CFLAGS = -lm -O3 -ffast-math -fPIC
 
 # how to build EFTCAMB files:
 %.o: $(EFTCAMB_DIR)/%.f90
@@ -53,9 +64,22 @@ $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.f
 $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/*/%.f
 	$(F90C) $(SF90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
 
+%.o: $(EFTCAMB_DIR)/%.c
+	$(CC) $(CFLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
+%.o: $(EFTCAMB_DIR)/*/%.c
+	$(CC) $(CFLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
+
+$(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.c
+	$(CC) $(CFLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
+$(DLL_DIR)/%.o: $(EFTCAMB_DIR)/*/%.c
+	$(CC) $(CFLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
+
 # add the EFTCAMB files to the standard ones:
 CAMBOBJ += $(EFT_OBJ)
 CAMBSO  += $(EFT_SOJ)
+
+CAMBOBJ += $(EFT_COBJ)
+CAMBSO  += $(EFT_CSOJ)
 
 # EFTCAMB dependencies:
 eftcamb_dep: $(EFTCAMB_SOURCES_FILES)

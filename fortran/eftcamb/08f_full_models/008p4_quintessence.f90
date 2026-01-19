@@ -147,6 +147,11 @@ contains
         ! read the initial condition flag:
         self%drag_initial_conditions = Ini%Read_Logical( 'drag_initial_conditions', .False. )
 
+        ! read precision parameters
+        self%interpolation_num_points = Ini%Read_Int( 'model_background_num_points', 1100 )
+        self%x_initial = Log( Ini%Read_Double( 'model_background_a_ini', 1d-8 ) )
+        self%x_final = Log( Ini%Read_Double( 'model_background_a_final', 1.1_dl ) )
+
     end subroutine EFTCAMB5eReadModelSelectionFromFile
 
     ! ---------------------------------------------------------------------------------------------

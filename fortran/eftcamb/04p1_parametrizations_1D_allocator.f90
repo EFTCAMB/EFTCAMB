@@ -51,6 +51,7 @@ module EFTCAMB_parametrizations_1D
     use EFTCAMB_step_parametrizations_1D
     use EFTCAMB_steplog_parametrizations_1D
     use EFTCAMB_spline_parametrizations_1D
+    use EFTCAMB_spline5_parametrizations_1D
 
     implicit none
 
@@ -98,6 +99,10 @@ contains
                 allocate( steplog_parametrization_1D::in_function )
             case(9)
                 allocate( spline_parametrization_1D::in_function )
+            case(10)
+                allocate( spline5_parametrization_1D::in_function )
+            case(11)
+                allocate( exponential_parametrization_2_1D::in_function )
             case default
                 if (feedback > 0) then
                     write(*,'(a,I3)') 'No model corresponding to flag =', model_flag

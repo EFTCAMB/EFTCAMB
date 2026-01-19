@@ -95,6 +95,8 @@ module EFTCAMB_full_Scaling_Cubic
         ! CAMB related procedures:
         procedure :: compute_background_EFT_functions  => EFTCAMBScalingCubicBackgroundEFTFunctions   !< subroutine that computes the value of the background EFT functions at a given time.
         procedure :: compute_secondorder_EFT_functions => EFTCAMBScalingCubicSecondOrderEFTFunctions  !< subroutine that computes the value of the second order EFT functions at a given time.
+        procedure :: compute_adotoa                    => EFTCAMBScalingCubicComputeAdotoa        !< subroutine that computes adotoa = H.
+        procedure :: compute_H_derivs                  => EFTCAMBScalingCubicComputeHubbleDer     !< subroutine that computes the two derivatives wrt conformal time of H.
 
         ! stability procedures:
         procedure :: additional_model_stability        => EFTCAMBScalingCubicAdditionalModelStability !< function that computes model specific stability requirements.
@@ -117,6 +119,11 @@ contains
         type(TIniFile)                          :: Ini       !< Input ini file
         integer                                 :: eft_error !< error code: 0 all fine, 1 initialization failed
 
+        ! read precision parameters
+        self%designer_num_points = Ini%Read_Int( 'model_background_num_points', 10000 )
+        self%x_initial = Log( Ini%Read_Double( 'model_background_a_ini', 1._dl/(1.5*10._dl**(5._dl)+1._dl) ) )
+        self%x_final = Log( Ini%Read_Double( 'model_background_a_final', 1._dl ) )
+        
     end subroutine EFTCAMBScalingCubicReadModelSelectionFromFile
 
     ! ---------------------------------------------------------------------------------------------
@@ -582,8 +589,8 @@ contains
                  &- 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta2)*y2*y2p + (1._dl - 2._dl*self%SCG_A*self%SCG_lambda &
                  &+ 2._dl*self%SCG_A*self%SCG_beta1)*y1*y1p))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
 
-          x1pp = (1._dl/sqrt(6._dl))*fprime - hprime*x1 - h*x1p
-          
+          x1pp = (1._dl/sqrt(6._dl))*fprime - hprime*x1 - h*x1p         
+
 
           ! 3) compute the x_i functions: more derivatives needed
           self%fun_x1%y(ind) = y(1)
@@ -1005,6 +1012,103 @@ contains
 
 
     end subroutine EFTCAMBScalingCubicSecondOrderEFTFunctions
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes adotoa = H.
+    subroutine EFTCAMBScalingCubicComputeAdotoa( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_Scaling_Cubic)                  :: self          !< the base class
+        real(dl), intent(in)                          :: a             !< the input scale factor
+        type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(TEFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        real(dl)    :: temp
+
+        eft_cache%grhom_t = (eft_par_cache%grhornomass +  eft_par_cache%grhog)/a**2+(eft_par_cache%grhob + eft_par_cache%grhoc)/a
+        temp = 1.0_dl/(1.0_dl + eft_cache%EFTOmegaV+ a*eft_cache%EFTOmegaP)*(eft_cache%grhom_t + 2.0_dl*eft_cache%EFTc -eft_cache%EFTLambda )/3.0_dl
+        eft_cache%adotoa = sqrt(temp)
+
+    end subroutine EFTCAMBScalingCubicComputeAdotoa
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the two derivatives wrt conformal time of H.
+    subroutine EFTCAMBScalingCubicComputeHubbleDer( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_Scaling_Cubic)                    :: self          !< the base class
+        real(dl), intent(in)                            :: a             !< the input scale factor
+        type(TEFTCAMB_parameter_cache), intent(inout)   :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(TEFTCAMB_timestep_cache ), intent(inout)   :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        real(dl) :: x1, x1p, x1pp, x1ppp, y1, y1p, y1pp, y2, y2p, y2pp, OmegaRad, OmegaRadprime, OmegaRadpprime
+        real(dl) :: f, fprime, ft, h, hprime, hpprime, ht, htt, grhom, grhorad, H2, adotoa, Hdot, Hdotdot
+        real(dl):: mu, x
+        integer  :: ind
+
+        x   = log(a)
+        grhom   = eft_par_cache%grhob + eft_par_cache%grhoc
+        grhorad = eft_par_cache%grhornomass +  eft_par_cache%grhog
+
+
+        call self%fun_x1%precompute(x, ind, mu )
+        x1    = self%fun_x1%value(x, index=ind, coeff=mu)
+        y1    = self%fun_y1%value(x, index=ind, coeff=mu)
+        y2    = self%fun_y2%value(x, index=ind, coeff=mu)
+
+        H2= (grhorad/exp(x)**4+grhom/exp(x)**3)/((1._dl - x1**2._dl - y1**2._dl - y2**2._dl - 2._dl*self%SCG_A*x1*(sqrt(6._dl) - self%SCG_lambda*x1))*3._dl)
+        
+        OmegaRad= (grhorad/exp(x)**4)/(3._dl*(H2))
+
+        f = (3._dl*(-3._dl*self%SCG_A + sqrt(6._dl)*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*x1 + 3._dl*self%SCG_A*(1._dl &
+              &- 2._dl*self%SCG_A*self%SCG_lambda)*x1**2._dl + self%SCG_A*OmegaRad - 3._dl*self%SCG_A*y2**2._dl + self%SCG_beta2*y2**2._dl &
+              &- 3._dl*self%SCG_A*y1**2._dl + self%SCG_beta1*y1**2._dl))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
+
+        h = ((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*OmegaRad - 3._dl*(1._dl + 12._dl*self%SCG_A**2._dl &
+              &- 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*sqrt(6._dl)*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1 &
+              &+ ((1._dl - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl)*x1**2._dl + (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda &
+              &- 2._dl*self%SCG_A*self%SCG_beta2)*y2**2._dl - y1**2._dl + 2._dl*self%SCG_A*self%SCG_lambda*y1**2._dl &
+              &- 2._dl*self%SCG_A*self%SCG_beta1*y1**2._dl))/(2._dl + 12._dl*self%SCG_A**2._dl - 4._dl*self%SCG_A*self%SCG_lambda)
+
+        x1p = (1._dl/sqrt(6._dl))*f - x1*h
+        y1p = -sqrt(3._dl/2._dl)*self%SCG_beta1*x1*y1 - y1*h
+        y2p = -sqrt(3._dl/2._dl)*self%SCG_beta2*x1*y2 - y2*h
+
+        OmegaRadprime = -2._dl*OmegaRad*(2._dl+h)
+
+        fprime = (-3._dl*(-self%SCG_A*OmegaRadprime + (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*(-sqrt(6._dl) + 6._dl*self%SCG_A*x1)*x1p &
+                 &+ 6._dl*self%SCG_A*y2*y2p - 2._dl*self%SCG_beta2*y2*y2p + 6._dl*self%SCG_A*y1*y1p - 2._dl*self%SCG_beta1*y1*y1p))/(1._dl &
+                 &+ 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
+
+	    hprime = ((1._dl/2._dl)*OmegaRadprime*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda) + 3._dl*((-1._dl &
+                 &+ 2._dl*self%SCG_A*self%SCG_lambda)*(sqrt(6._dl)*self%SCG_A + x1 - 2._dl*self%SCG_A*self%SCG_lambda*x1)*x1p + (1._dl &
+                 &- 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta2)*y2*y2p + (1._dl - 2._dl*self%SCG_A*self%SCG_lambda &
+                 &+ 2._dl*self%SCG_A*self%SCG_beta1)*y1*y1p))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
+
+        ! second derivatives
+
+        x1pp  = (1._dl/sqrt(6._dl))*fprime - hprime*x1 - h*x1p
+        y1pp  = -sqrt(1.5_dl) *self%SCG_beta1*(x1p*y1 + x1*y1p) - hprime*y1 - h*y1p
+        y2pp  = -sqrt(1.5_dl) *self%SCG_beta2*(x1p*y2 + x1*y2p) - hprime*y2 - h*y2p
+
+        OmegaRadpprime = -2._dl*OmegaRadprime*(2._dl+h) - 2._dl*OmegaRad*hprime
+
+        hpprime = - 1._dl/(1._dl + 2._dl*self%SCG_A*(3._dl *self%SCG_A - self%SCG_lambda)) * (0.5_dl*OmegaRadpprime*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl) + 3._dl *( - (1 - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl*x1p**2._dl &
+                  + (2._dl*self%SCG_A*self%SCG_lambda -1._dl)*(sqrt(6._dl)*self%SCG_A + x1 - 2._dl*self%SCG_A*self%SCG_lambda*x1)*x1pp + (1._dl-2._dl*self%SCG_A*self%SCG_lambda+2._dl*self%SCG_A*self%SCG_beta1)*(y1p**2._dl+y1*y1pp) &
+                  + (1._dl + 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta2)*(y2p**2._dl + y2*y2pp) ) )
+          
+        adotoa=sqrt(H2)*a
+        ht = adotoa*hprime
+        Hdot=adotoa**2._dl*( 1._dl+h )
+        htt = adotoa**2*hpprime + Hdot*hprime
+        eft_cache%Hdot = Hdot
+        Hdotdot = 2*adotoa*Hdot*( 1._dl+h ) + adotoa**2*ht
+        eft_cache%Hdotdot = Hdotdot
+        eft_cache%Hdotdotdot = adotoa**2*htt + 4._dl*adotoa*Hdot*ht + 2._dl*adotoa*Hdotdot*(1._dl+h) + 2._dl*Hdot**2*(1._dl+h)
+    
+    end subroutine EFTCAMBScalingCubicComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes model specific stability requirements.

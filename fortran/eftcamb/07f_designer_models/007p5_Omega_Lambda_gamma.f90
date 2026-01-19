@@ -23,7 +23,7 @@
 !! The perturbations are described wuth the gamma functions.
 !! Please refer to the numerical notes for details.
 
-!> @author Marco Raveri, Simone Peirone
+!> @author Marco Raveri, Simone Peirone, Gen Ye
 
 module EFTCAMB_Omega_Lambda_gamma
 
@@ -77,6 +77,7 @@ module EFTCAMB_Omega_Lambda_gamma
         integer  :: interpolation_num_points = 2500                      !< Number of points sampled by the background solver code.
         real(dl) :: x_initial                = log(10._dl**(-9._dl))     !< log(a start)
         real(dl) :: x_final                  = log(1.1_dl)               !< log(a final)
+        real(dl) :: OL_Omega_min             = -0.95_dl                  !< Reject the model as unstable if Omega goes below this value when EFT_additional_priors set to true.
 
     contains
 
@@ -101,6 +102,9 @@ module EFTCAMB_Omega_Lambda_gamma
         procedure :: initialize_background             => EFTCAMBOLInitBackground              !< subroutine that initializes the background of the Omega Lambda model.
         procedure :: solve_background_equations        => EFTCAMBOLSolveBackgroundEquations    !< subroutine that solves the OmegaLambda background equations.
 
+        ! model stability:
+        procedure :: additional_model_stability        => EFTCAMBOLAdditionalModelStability    !< function that computes model specific stability requirements.
+
     end type EFTCAMB_OmegaLambda_gamma
 
     ! ---------------------------------------------------------------------------------------------
@@ -123,6 +127,11 @@ contains
         self%OLGamma1model     = Ini%Read_Int( 'OLGamma1model', 0 )
         self%OLGamma2model     = Ini%Read_Int( 'OLGamma2model', 0 )
         self%OLGamma3model     = Ini%Read_Int( 'OLGamma3model', 0 )
+        ! read precision parameters
+        self%interpolation_num_points = Ini%Read_Int( 'model_background_num_points', 2500 )
+        self%x_initial = Log( Ini%Read_Double( 'model_background_a_ini', 1d-9 ) )
+        self%x_final = Log( Ini%Read_Double( 'model_background_a_final', 1.1_dl ) )
+        self%OL_Omega_min = Ini%Read_Double( 'OL_Omega_min', -0.95_dl )
 
     end subroutine EFTCAMBOLReadModelSelectionFromFile
 
@@ -537,6 +546,7 @@ contains
 
         eft_cache%EFTLambda    = self%EFTLambda%value( x, index=ind, coeff=mu )
         eft_cache%EFTLambdadot = self%EFTLambda%first_derivative( x, index=ind, coeff=mu )
+        eft_cache%EFTLambdadotdot = self%EFTLambda%second_derivative( x, index=ind, coeff=mu )
 
     end subroutine EFTCAMBOLBackgroundEFTFunctions
 
@@ -636,7 +646,8 @@ contains
         class(EFTCAMB_OmegaLambda_gamma)             :: self             !< the base class.
         type(TEFTCAMB_parameter_cache), intent(in)   :: params_cache     !< a EFTCAMB parameter cache containing cosmological parameters.
         logical , intent(out)                        :: success          !< whether the calculation ended correctly or not
-        integer , intent(in)                         :: feedback_level   !< whether the calculation ended correctly or not
+        integer , intent(in)                         :: feedback_level   !< level of feedback from the background code. 0=none; 1=some; 2=chatty.
+
 
         integer, parameter :: num_eq = 1   !<  Number of equations
 
@@ -715,7 +726,7 @@ contains
                 ! check istate for LSODA good completion:
                 if ( istate < 0 ) then
                     if ( istate == -1 ) then
-                        write(*,*) 'DLSODA excessive work'
+                        if ( feedback_level>1 ) write(*,*) 'DLSODA excessive work'
                         istate = 1
                     else
                         success = .False.
@@ -760,12 +771,19 @@ contains
                 ! set the time step:
                 t1 = self%EFTc%x(i-1)
                 t2 = self%EFTc%x(i)
+                ! check if function parametrizations are regular
+                a = exp(t1)
+                if (.not. self%OL_Gamma1%compute_function_stability(a) .and. self%OL_Gamma2%compute_function_stability(a) .and. self%OL_Gamma3%compute_function_stability(a) .and. self%OL_Lambda%compute_function_stability(a) .and. self%OL_Omega%compute_function_stability(a)) then
+                    write(*,*) 'One or multiple EFT functions are not regular'
+                    success = .False.
+                    return
+                end if
                 ! solve the system:
                 call DLSODA ( derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, RWORK, LRW, IWORK, LIW, jacobian, JacobianMode)
                 ! check istate for LSODA good completion:
                 if ( istate < 0 ) then
                     if ( istate == -1 ) then
-                        write(*,*) 'DLSODA excessive work'
+                        if ( feedback_level>1 ) write(*,*) 'DLSODA excessive work'
                         istate = 1
                     else
                         success = .False.
@@ -811,7 +829,7 @@ contains
                 ! check istate for LSODA good completion:
                 if ( istate < 0 ) then
                     if ( istate == -1 ) then
-                        write(*,*) 'DLSODA excessive work'
+                        if ( feedback_level>1 ) write(*,*) 'DLSODA excessive work'
                         istate = 1
                     else
                         success = .False.
@@ -862,7 +880,7 @@ contains
             end if
 
             grho_matter  = grhob_t +grhoc_t +grhog_t +grhor_t +grhonu_tot
-            gpres_matter = gpinu_tot + ( +grhog_t +grhor_t )/3._dl
+            gpres_matter = gpinu_tot + ( grhog_t +grhor_t )/3._dl
 
             ! 3) compute Omega and its time derivatives:
             ! compute the EFT functions:
@@ -949,16 +967,15 @@ contains
                 & +0.5_dl*( grho_matter + gpres_matter ) &
                 & -0.5_dl*a**3*params_cache%h0_Mpc**2*(1._dl-omega_m)*self%OL_Lambda%first_derivative(a) )
             self%EFTLambda%yp(ind) = -3._dl*params_cache%h0_Mpc**2*adotoa*(1._dl-omega_m)*( self%OL_Lambda%first_derivative(a) )*a**3
+            self%EFTLambda%ypp(ind) = -3._dl*params_cache%h0_Mpc**2*(1._dl-omega_m)*(a**3)*( self%OL_Lambda%second_derivative(a)*a*adotoa**2 + self%OL_Lambda%first_derivative(a)*adotoa**2 + self%OL_Lambda%first_derivative(a)*Hdot )
 
-            ! 4) compute auxiliary quantities:
-            w_DE       = ( -2._dl*Hdot -adotoa2 -gpres_matter )/( 3._dl*adotoa2 -grho_matter )
-            w_eff      = -1._dl/3._dl -2._dl/3._dl*Hdot/adotoa2
-
-            ! 5) debug code:
+            ! 4) debug code:
             if ( DebugEFTCAMB ) then
-                 write (file_1%unit,'(20ES15.4E3)') x, a, y, ydot, adotoa**2, ( grho_matter +params_cache%grhov*a2 )/3._dl, (adotoa**2-( grho_matter +params_cache%grhov*a2 )/3._dl)/adotoa**2, w_eff, w_DE, ( -2._dl*Hdot -adotoa2 -gpres_matter ), ( 3._dl*adotoa2 -grho_matter )
-                 write (file_2%unit,'(20ES15.4E3)') x, a, adotoa**2, self%EFTc%y(ind), self%EFTc%yp(ind), self%EFTLambda%y(ind), self%EFTLambda%yp(ind), -params_cache%grhov*a2, (self%EFTLambda%y(ind)+params_cache%grhov*a2)/(params_cache%grhov*a2), self%OL_Lambda%value(a)
-                 write (file_3%unit,'(20ES15.4E3)') x, a, adotoa**2, ( 3._dl*adotoa2 -grho_matter )/3._dl/adotoa**2, (grhob_t +grhoc_t)/3._dl/adotoa**2, (grhog_t +grhor_t)/3._dl/adotoa**2, (grhonu_tot)/3._dl/adotoa**2
+                w_DE       = ( -2._dl*Hdot -adotoa2 -gpres_matter )/( 3._dl*adotoa2 -grho_matter )
+                w_eff      = -1._dl/3._dl -2._dl/3._dl*Hdot/adotoa2
+                write (file_1%unit,'(20ES15.4E3)') x, a, y, ydot, adotoa**2, ( grho_matter +params_cache%grhov*a2 )/3._dl, (adotoa**2-( grho_matter +params_cache%grhov*a2 )/3._dl)/adotoa**2, w_eff, w_DE, ( -2._dl*Hdot -adotoa2 -gpres_matter ), ( 3._dl*adotoa2 -grho_matter )
+                write (file_2%unit,'(20ES15.4E3)') x, a, adotoa**2, self%EFTc%y(ind), self%EFTc%yp(ind), self%EFTLambda%y(ind), self%EFTLambda%yp(ind), -params_cache%grhov*a2, (self%EFTLambda%y(ind)+params_cache%grhov*a2)/(params_cache%grhov*a2), self%OL_Lambda%value(a)
+                write (file_3%unit,'(20ES15.4E3)') x, a, adotoa**2, ( 3._dl*adotoa2 -grho_matter )/3._dl/adotoa**2, (grhob_t +grhoc_t)/3._dl/adotoa**2, (grhog_t +grhor_t)/3._dl/adotoa**2, (grhonu_tot)/3._dl/adotoa**2
             end if
 
         end subroutine output
@@ -966,5 +983,23 @@ contains
     end subroutine EFTCAMBOLSolveBackgroundEquations
 
     ! ---------------------------------------------------------------------------------------------
+    !> Function that computes model specific stability requirements. Currently only check if all EFT functions are regular
+    function EFTCAMBOLAdditionalModelStability( self, a, eft_par_cache, eft_cache )
+
+        implicit none
+
+        class(EFTCAMB_OmegaLambda_gamma)                   :: self          !< the base class
+        real(dl), intent(in)                               :: a             !< the input scale factor.
+        type(TEFTCAMB_parameter_cache), intent(inout)      :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
+        type(TEFTCAMB_timestep_cache ), intent(inout)      :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
+
+        logical :: EFTCAMBOLAdditionalModelStability          !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
+
+        EFTCAMBOLAdditionalModelStability = self%OL_Gamma1%compute_function_stability(a) .and. self%OL_Gamma2%compute_function_stability(a) .and. self%OL_Gamma3%compute_function_stability(a) .and. self%OL_Lambda%compute_function_stability(a) .and. self%OL_Omega%compute_function_stability(a)
+        
+        ! Ensures that 1+Omega positive for stable gravity, imposing > -0.95 for nemeric stability, by Gen
+        EFTCAMBOLAdditionalModelStability = EFTCAMBOLAdditionalModelStability .and. (self%OL_Omega%value(a) > self%OL_Omega_min)
+
+    end function EFTCAMBOLAdditionalModelStability
 
 end module EFTCAMB_Omega_Lambda_gamma

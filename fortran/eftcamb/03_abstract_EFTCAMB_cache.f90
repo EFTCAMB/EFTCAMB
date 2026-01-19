@@ -93,6 +93,12 @@ module EFTCAMB_cache
         integer  :: Nu_mass_eigenstates                   !< number of mass eigenstates
         real(dl), allocatable, dimension(:) :: grhormass  !< densities of neutrinos in each mass eigenstate \f$ 8 \pi G_{N} \rho_{ m\nu }(t_0) \f$
         real(dl), allocatable, dimension(:) :: nu_masses  !< neutrino masses
+        ! 5a) Horndeski module: EDE shooting parameters
+        real(dl) :: maxfrac_hdsk           !< max of Horndeski field energy fraction
+        real(dl) :: z_maxfrac_hdsk         !< redshift where Horndeski field energy fraction peaks
+        ! 5b) Horndeski module: designer approach products
+        ! real(dl), allocatable, dimension(:) :: designer_hdsk_phi      !< reconstructed value of the Horndeski field phi
+        ! real(dl), allocatable, dimension(:) :: designer_hdsk_V        !< reconstructed value of the Horndeski field potential
 
     contains
 
@@ -135,7 +141,7 @@ module EFTCAMB_cache
         real(dl) :: Hdot          !< the value of \f$ d\mathcal{H} /d \tau \f$ at the given scale factor.
         real(dl) :: Hdotdot       !< the value of \f$ d^2 \mathcal{H} / d \tau^2 \f$ at the given scale factor.
         real(dl) :: Hdotdotdot    !< the value of \f$ d^3 \mathcal{H} / d \tau^3 \f$ at the given scale factor.
-        ! 5) EFT functions:
+        ! 5a) EFT functions:
         real(dl) :: EFTOmegaV       !< the value of Omega \f$ \Omega(a) \f$.
         real(dl) :: EFTOmegaP       !< the value of the derivative wrt scale factor of Omega \f$ d \Omega(a) / da \f$.
         real(dl) :: EFTOmegaPP      !< the value of the second derivative wrt scale factor of Omega \f$ d^2 \Omega(a) / da^2 \f$.
@@ -166,6 +172,42 @@ module EFTCAMB_cache
         real(dl) :: EFTGamma5P      !< the value of the derivative wrt scale factor of Gamma 5 \f$  d \gamma_5(a) / da \f$.
         real(dl) :: EFTGamma6V      !< the value of Gamma 6 \f$ \gamma_6(a) \f$.
         real(dl) :: EFTGamma6P      !< the value of the derivative wrt scale factor of Gamma 6 \f$  d \gamma_6(a) / da \f$.
+        ! 5b) alternative EFT functions
+        real(dl) :: alphaB          !< the value of the Horndeski function \f$ \alpha_B \f$
+        real(dl) :: alphaBdot       !< the value of the derivative wrt conformal time of alphaB \f$ \dot{\alpha}_B \f$
+        real(dl) :: alphaT          !< the Horndeski function \f$ \alpha_T \f$
+        real(dl) :: alphaTdot       !< the value of the derivative wrt conformal time of alphaT \f$ \dot{\alpha}_T \f$
+        real(dl) :: alphaK          !< the value of the Horndeski function \f$ \alpha_K \f$
+        real(dl) :: alphaKdot       !< the value of the derivative wrt conformal time of alphaK \f$ \dot{\alpha}_K \f$
+        real(dl) :: alphaM          !< the value of the Horndeski function \f$ \alpha_M \f$
+        real(dl) :: alphaMdot       !< the value of the derivative wrt conformal time of alphaK \f$ \dot{\alpha}_M \f$
+        real(dl) :: Meff2           !< the value of the effective Planck mass over today's measured value \f$ M_*^2/m_0^2 \f$
+        ! 5c) delta phi perturbation coefficients
+        real(dl) :: spi1            !< the coefficient before delta_phi_prime on the LHS of the delta_phi equation, see the appendix of XXXX.XXXX
+        real(dl) :: spi2            !< the coefficient before delta_phi on the LHS of the delta_phi equation, see the appendix of XXXX.XXXX
+        real(dl) :: spi3            !< the coefficient before k^2*delta_phi on the LHS of the delta_phi equation, see the appendix of XXXX.XXXX
+        real(dl) :: spih            !< the coefficient before h_prime on the RHS of the delta_phi equation, see the appendix of XXXX.XXXX
+        real(dl) :: spie            !< the coefficient before k^2*eta on the RHS of the delta_phi equation, see the appendix of XXXX.XXXX
+        real(dl) :: spim            !< the coefficient before P_matter on the RHS of the delta_phi equation, see the appendix of XXXX.XXXX
+        real(dl) :: s00             !< the coefficient before delta_phi in the modified 00 einstein equation, see the appendix of XXXX.XXXX
+        real(dl) :: s00k            !< the coefficient before k^2*delta_phi in the modified 00 einstein equation, see the appendix of XXXX.XXXX
+        real(dl) :: s00p            !< the coefficient before delta_phi_prime in the modified 00 einstein equation, see the appendix of XXXX.XXXX
+        real(dl) :: s0i             !< the coefficient before delta_phi in the modified 0i einstein equation, see the appendix of XXXX.XXXX
+        real(dl) :: s0ip            !< the coefficient before delta_phi_prime in the modified 0i einstein equation, see the appendix of XXXX.XXXX
+        real(dl) :: sii             !< the coefficient before delta_phi in the modified ii einstein equation, see the appendix of XXXX.XXXX
+        real(dl) :: siik            !< the coefficient before k^2*delta_phi in the modified ii einstein equation, see the appendix of XXXX.XXXX
+        real(dl) :: siip            !< the coefficient before delta_phi_prime in the modified ii einstein equation, see the appendix of XXXX.XXXX
+        real(dl) :: siipp           !< the coefficient before delta_phi_prime_prime in the modified ii einstein equation, see the appendix of XXXX.XXXX
+        real(dl) :: sij             !< the coefficient before delta_phi in the modified ij einstein equation, see the appendix of XXXX.XXXX
+        real(dl) :: sijdot          !< the derivative wrt conformal time of the coefficient before delta_phi in the modified ij einstein equation, see the appendix of XXXX.XXXX
+        ! 5d) background scalar field
+        real(dl) :: phi_scf         !< the background value of the scalar field phi
+        real(dl) :: V_scf           !< the value of the scalar field potential
+        real(dl) :: dphi            !< the derivative of the scalar field phi wrt conformal time
+        real(dl) :: ddphi           !< the second derivative of the scalar field phi wrt conformal time  
+        real(dl) :: dddphi          !< the third derivative of the scalar field phi wrt conformal time
+        ! 5e) scalar field time scale
+        real(dl) :: dtau_hdsk       !< the conformal time difference between two nearby points of phi=0, estimation of the field evolution timescale if it is oscillating
         ! 6) other background quantities:
         real(dl) :: grhoq           !< the value of the effective density of the Q field. Refer to the Numerical Notes for the definition.
         real(dl) :: gpresq          !< the value of the effective pressure of the Q field. Refer to the Numerical Notes for the definition.
@@ -194,10 +236,14 @@ module EFTCAMB_cache
         real(dl) :: EFTpiD1         !< the value of the pi field equation coefficient D1. Scale independent part of D. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTpiD2         !< the value of the pi field equation coefficient D2. Part proportional to \f$ k^2 \f$. Refer to the Numerical Notes for the definition.
         real(dl) :: EFTpiE          !< the value of the pi field equation coefficient E. Refer to the Numerical Notes for the definition.
-        ! 9) pi field quantities:
+        ! 9a) pi field quantities:
         real(dl) :: pi            !< the value of the pi field at a given time and scale.
         real(dl) :: pidot         !< the value of the (conformal) time derivative of the pi field at a given time and scale.
         real(dl) :: pidotdot      !< the value of the (conformal) second time derivative of the pi field at a given time and scale.
+        ! 9b) delta_phi field quantities:
+        real(dl) :: delta_phi       !< the value of the scalar field perturbation delta_phi
+        real(dl) :: delta_phidot    !< the value of the derivative wrt conformal time of the scalar field perturbation delta_phi
+        real(dl) :: delta_phidotdot !< the value of the second derivative wrt conformal time of the scalar field perturbation delta_phi
         ! 10) scalar perturbations quantities:
         real(dl) :: etak          !< Syncronous gauge \f$ eta*k \f$ perturbation.
         real(dl) :: etakdot       !< Syncronous gauge \f$ \dot{eta}*k \f$ perturbation. This is the Einstein equation that is actually integrated.
@@ -326,6 +372,42 @@ contains
         self%EFTGamma5P      = 0._dl
         self%EFTGamma6V      = 0._dl
         self%EFTGamma6P      = 0._dl
+        ! 5b) alternative EFT functions
+        self%alphaB = 0._dl
+        self%alphaBdot = 0._dl
+        self%alphaT = 0._dl
+        self%alphaTdot = 0._dl
+        self%alphaK = 0._dl
+        self%alphaKdot = 0._dl
+        self%alphaM = 0._dl
+        self%alphaMdot = 0._dl
+        self%Meff2 = 0._dl
+        ! 5c) delta phi perturbation coefficients
+        self%spi1 = 0._dl
+        self%spi2 = 0._dl
+        self%spi3 = 0._dl
+        self%spih = 0._dl
+        self%spie = 0._dl
+        self%spim = 0._dl
+        self%s00 = 0._dl
+        self%s00k = 0._dl
+        self%s00p = 0._dl
+        self%s0i = 0._dl
+        self%s0ip = 0._dl
+        self%sii = 0._dl
+        self%siik = 0._dl
+        self%siip = 0._dl
+        self%siipp = 0._dl
+        self%sij = 0._dl
+        self%sijdot = 0._dl
+        ! 5d) background scalar field
+        self%phi_scf = 0._dl
+        self%V_scf = 0._dl
+        self%dphi = 0._dl
+        self%ddphi = 0._dl
+        self%dddphi = 0._dl
+        ! 5e) scalar field time scale
+        self%dtau_hdsk = 0._dl
         ! 6) other background quantities:
         self%grhoq         = 0._dl
         self%gpresq        = 0._dl
@@ -358,6 +440,10 @@ contains
         self%pi            = 0._dl
         self%pidot         = 0._dl
         self%pidotdot      = 0._dl
+        ! 9b) delta_phi field quantities:
+        self%delta_phi = 0._dl
+        self%delta_phidot = 0._dl
+        self%delta_phidotdot = 0._dl
         ! 10) perturbations quantities:
         self%etak          = 0._dl
         self%etakdot       = 0._dl
@@ -411,13 +497,15 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that check if an element of the TEFTCAMB_timestep_cache is Nan.
-    subroutine EFTCAMBTimestepCacheIsNan( self, HaveNan )
+    subroutine EFTCAMBTimestepCacheIsNan( self, HaveNan, feedback_level )
 
         implicit none
 
         class(TEFTCAMB_timestep_cache), intent(in) :: self    !< The base class.
         logical, intent(out)                       :: HaveNan !< Logical variable which describes the presence of a Nan variable.
                                                               !< If an element of the TEFTCAMB_timestep_cache is Nan, you get HaveNan=.True.
+        integer, intent(in)                        :: feedback_level
+
         HaveNan = .False.
         HaveNan = check( HaveNan, self%a, 'a' )
         HaveNan = check( HaveNan, self%tau, 'tau' )
@@ -437,7 +525,7 @@ contains
         HaveNan = check( HaveNan, self%gpinu_tot, 'gpinu_tot' )
         HaveNan = check( HaveNan, self%grhonudot_tot, 'grhonudot_tot' )
         HaveNan = check( HaveNan, self%gpinudot_tot, 'gpinudot_tot' )
-        HaveNan = check( HaveNan, self%gpinudotdot_tot, 'gpinudot_tot' )
+        HaveNan = check( HaveNan, self%gpinudotdot_tot, 'gpinudotdot_tot' )
         HaveNan = check( HaveNan, self%adotoa, 'adotoa' )
         HaveNan = check( HaveNan, self%Hdot, 'Hdot' )
         HaveNan = check( HaveNan, self%Hdotdot, 'Hdotdot' )
@@ -472,6 +560,38 @@ contains
         HaveNan = check( HaveNan, self%EFTGamma5P, 'EFTGamma5P' )
         HaveNan = check( HaveNan, self%EFTGamma6V, 'EFTGamma6V' )
         HaveNan = check( HaveNan, self%EFTGamma6P, 'EFTGamma6P' )
+        HaveNan = check( HaveNan, self%alphaB, 'alphaB' )
+        HaveNan = check( HaveNan, self%alphaBdot, 'alphaBdot' )
+        HaveNan = check( HaveNan, self%alphaT, 'alphaT' )
+        HaveNan = check( HaveNan, self%alphaTdot, 'alphaTdot' )
+        HaveNan = check( HaveNan, self%alphaK, 'alphaK' )
+        HaveNan = check( HaveNan, self%alphaKdot, 'alphaKdot' )
+        HaveNan = check( HaveNan, self%alphaM, 'alphaM' )
+        HaveNan = check( HaveNan, self%alphaMdot, 'alphaMdot' )
+        HaveNan = check( HaveNan, self%Meff2, 'Meff2' )
+        HaveNan = check( HaveNan, self%spi1, 'spi1' )
+        HaveNan = check( HaveNan, self%spi2, 'spi2' )
+        HaveNan = check( HaveNan, self%spi3, 'spi3' )
+        HaveNan = check( HaveNan, self%spih, 'spih' )
+        HaveNan = check( HaveNan, self%spie, 'spie' )
+        HaveNan = check( HaveNan, self%spim, 'spim' )
+        HaveNan = check( HaveNan, self%s00, 's00' )
+        HaveNan = check( HaveNan, self%s00k, 's00k' )
+        HaveNan = check( HaveNan, self%s00p, 's00p' )
+        HaveNan = check( HaveNan, self%s0i, 's0i' )
+        HaveNan = check( HaveNan, self%s0ip, 's0ip' )
+        HaveNan = check( HaveNan, self%sii, 'sii' )
+        HaveNan = check( HaveNan, self%siik, 'siik' )
+        HaveNan = check( HaveNan, self%siip, 'siip' )
+        HaveNan = check( HaveNan, self%siipp, 'siipp' )
+        HaveNan = check( HaveNan, self%sij, 'sij' )
+        HaveNan = check( HaveNan, self%sijdot, 'sijdot' )
+        HaveNan = check( HaveNan, self%phi_scf, 'phi_scf' )
+        HaveNan = check( HaveNan, self%V_scf, 'V_scf' )
+        HaveNan = check( HaveNan, self%dphi, 'dphi' )
+        HaveNan = check( HaveNan, self%ddphi, 'ddphi' )
+        HaveNan = check( HaveNan, self%dddphi, 'dddphi' )
+        HaveNan = check( HaveNan, self%dtau_hdsk, 'dtau_hdsk' )
         HaveNan = check( HaveNan, self%grhoq, 'grhoq' )
         HaveNan = check( HaveNan, self%gpresq, 'gpresq' )
         HaveNan = check( HaveNan, self%grhodotq, 'grhodotq' )
@@ -500,6 +620,9 @@ contains
         HaveNan = check( HaveNan, self%pi, 'pi' )
         HaveNan = check( HaveNan, self%pidot, 'pidot' )
         HaveNan = check( HaveNan, self%pidotdot, 'pidotdot' )
+        HaveNan = check( HaveNan, self%delta_phi, 'delta_phi' )
+        HaveNan = check( HaveNan, self%delta_phidot, 'delta_phidot' )
+        HaveNan = check( HaveNan, self%delta_phidotdot, 'delta_phidotdot' )
         HaveNan = check( HaveNan, self%etak, 'etak' )
         HaveNan = check( HaveNan, self%etakdot, 'etakdot' )
         HaveNan = check( HaveNan, self%z, 'z' )
@@ -550,7 +673,7 @@ contains
           character(*) :: name
 
           check = temp_nan .or. IsNaN(quantity)
-          if ( check ) then
+          if ( check .and. feedback_level > 1 ) then
             write(*,*) name, ' is NaN'
           end if
 
@@ -810,6 +933,8 @@ contains
         self%grhok       = 0._dl
         self%Num_Nu_Massive       = 0
         self%Nu_mass_eigenstates  = 0
+        self%maxfrac_hdsk   = 0._dl
+        self%z_maxfrac_hdsk = 0._dl
 
     end subroutine EFTCAMBParameterCacheInit
 
