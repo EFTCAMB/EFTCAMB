@@ -92,7 +92,10 @@ compiler_ver = $(shell gfortran -dumpversion 2>&1)
 COMPILER = gfortran
 F90C     = gfortran
 # EFTCAMB MOD START: allow argument mismatch to compile odepack
-COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp
+# lapack flags
+BLASFLAG = -lblas
+LAPACK_FLAG = -llapack
+COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp $(BLASFLAG)
 # original code:
 #COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fmax-errors=4 -fopenmp
 # EFTCAMB MOD END
@@ -114,7 +117,7 @@ MODOUT =  -J$(OUTPUT_DIR)
 SMODOUT = -J$(DLL_DIR)
 
 ifneq ($(FISHER),)
-F90CRLINK += -lblas -llapack
+F90CRLINK += $(BLAS_FLAG) $(LAPACK_FLAG)
 endif
 
 ifeq ($(shell uname -s),Darwin)

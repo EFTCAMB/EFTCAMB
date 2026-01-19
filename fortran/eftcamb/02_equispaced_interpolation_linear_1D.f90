@@ -72,6 +72,7 @@ module equispaced_linear_interpolation_1D
         procedure :: fourth_derivative      => EquispacedLinearIntepolateFunction1DFourthDerivative   !< function that gives the value of the function fourth derivative at a given coordinate x.
         procedure :: integral               => EquispacedLinearIntepolateFunction1DIntegral           !< function that gives the value of the interpolated w DE integral at a given coordinate x.
         procedure :: initialize_derivatives => EquispacedLinearIntepolateFunction1DInitDerivatives    !< subroutine that initializes the derivatives if the derivatives vectors are not initialized. The derivative are inferred from the function itself.
+        procedure :: initialize_integration => EquispacedLinearIntepolateFunction1DInitIntegration    !< subroutine that initializes the integration vector. Jacobian is not supported now. by Gen
 
     end type equispaced_linear_interpolate_function_1D
 
@@ -576,6 +577,25 @@ contains
         end if
 
     end subroutine EquispacedLinearIntepolateFunction1DInitDerivatives
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the integration vector of \f$ yint_i= \exp\left(-3\int_1^{x_i} \frac{1+f(x)}{x} \, dx \right) \f$. Only meaningful if we are parameterizing w_DE(a)
+    subroutine EquispacedLinearIntepolateFunction1DInitIntegration( self )
+
+        implicit none
+
+        class(equispaced_linear_interpolate_function_1D)  :: self        !< the base class
+
+        integer                              :: i
+        real(dl)                             :: b
+
+        self%yint(self%num_points) = 1._dl
+        do i=self%num_points-1, 1, -1
+            b = (self%x(i)*self%y(i+1) - self%x(i+1)*self%y(i))/(self%x(i) - self%x(i+1))
+            self%yint(i) = self%yint(i+1)*(self%x(i)/self%x(i+1))**(-3._dl*(1._dl+b))*exp(-3._dl*(self%y(i)-self%y(i+1)))
+        end do
+
+    end subroutine EquispacedLinearIntepolateFunction1DInitIntegration
 
     ! ---------------------------------------------------------------------------------------------
 

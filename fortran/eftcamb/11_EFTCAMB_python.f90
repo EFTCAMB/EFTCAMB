@@ -29,6 +29,7 @@ module EFTCAMB_python
     use IniObjects
     use results
     use EFTCAMB_stability
+    use MassiveNu
 
     implicit none
 
@@ -341,6 +342,59 @@ contains
     end do
 
   end subroutine GetEFTOutputEvolutionFork
+
+  ! ---------------------------------------------------------------------------------------------
+  !> Subroutine to get the EFT functions at scale factor a (no recomputation):
+  subroutine EFTCAMB_GetEFTFunctions( State, na, as, etas, timestep_cache)
+    Type(CAMBdata)                :: State
+    integer, intent(in)           :: na
+    real(dl), intent(in)          :: as(na)
+    real(dl), intent(in)          :: etas(na)
+    type(TEFTCAMB_timestep_cache) :: timestep_cache(na)
+
+    integer i, nu_i
+    real(dl) :: grhonu, gpnu, grhonu_i, gpnu_i, grhormass_t
+    real(dl) :: a
+
+    do i = 1, na
+      a = as(i)
+      timestep_cache(i)%a = a
+      timestep_cache(i)%tau = etas(i)
+      timestep_cache(i)%grhob_t = State%CP%eft_par_cache%grhob / a
+      timestep_cache(i)%grhoc_t = State%CP%eft_par_cache%grhoc / a
+      timestep_cache(i)%grhor_t = State%CP%eft_par_cache%grhornomass / a / a
+      timestep_cache(i)%grhog_t = State%CP%eft_par_cache%grhog / a / a
+      grhonu = 0._dl
+      gpnu = 0._dl
+      if ( State%CP%eft_par_cache%Num_Nu_massive /= 0 ) then
+        do nu_i = 1, State%CP%eft_par_cache%Nu_mass_eigenstates
+          grhormass_t = State%CP%eft_par_cache%grhormass(nu_i) / a / a
+          grhonu_i = 0._dl
+          gpnu_i = 0._dl
+          call ThermalNuBack%rho_P( a * State%CP%eft_par_cache%nu_masses(nu_i), grhonu_i, gpnu_i )
+          grhonu = grhonu + grhormass_t*grhonu_i
+          gpnu = gpnu + grhormass_t*gpnu_i
+        end do
+      end if
+      timestep_cache(i)%grhom_t = timestep_cache(i)%grhob_t + timestep_cache(i)%grhoc_t + timestep_cache(i)%grhor_t + timestep_cache(i)%grhog_t + grhonu
+      timestep_cache(i)%grhoa2 = timestep_cache(i)%grhom_t/a**4
+      timestep_cache(i)%gpresm_t = gpnu + ( timestep_cache(i)%grhog_t + timestep_cache(i)%grhor_t )/3._dl
+      if ( State%CP%EFTCAMB%EFTCAMB_model_is_designer ) then
+        call State%CP%EFTCAMB%model%compute_background_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
+        call State%CP%EFTCAMB%model%compute_adotoa( a, State%CP%eft_par_cache, timestep_cache(i) )
+        call State%CP%EFTCAMB%model%compute_H_derivs( a, State%CP%eft_par_cache, timestep_cache(i) )
+        call State%CP%EFTCAMB%model%compute_rhoQPQ( a, State%CP%eft_par_cache, timestep_cache(i) )
+        call State%CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
+      else
+        call State%CP%EFTCAMB%model%compute_adotoa( a, State%CP%eft_par_cache, timestep_cache(i) )
+        call State%CP%EFTCAMB%model%compute_H_derivs( a, State%CP%eft_par_cache, timestep_cache(i) )
+        call State%CP%EFTCAMB%model%compute_rhoQPQ( a, State%CP%eft_par_cache, timestep_cache(i) )
+        call State%CP%EFTCAMB%model%compute_background_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
+        call State%CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
+      end if
+    end do
+
+  end subroutine EFTCAMB_GetEFTFunctions
 
   ! ---------------------------------------------------------------------------------------------
 

@@ -53,7 +53,7 @@ module EFTCAMB_spline_parametrizations_1D
         type(linear_interpolate_function_1D)  :: interpolation  !< auxiliary interpolation function
 
         ! internal variables:
-        real(dl), dimension(:,:), allocatable :: cy, cyp, cypp, cyppp !< internal coefficients for the spline interpolation
+        real(dl), dimension(:,:), allocatable :: cy, cyp, cypp, cyppp, cypppp, cyint !< internal coefficients for the spline interpolation
 
     contains
 
@@ -118,22 +118,27 @@ contains
         self%interpolation%y = self%pixels
         ! initialize derivatives:
         call self%interpolation%initialize_derivatives()
+        ! initialize integration:
+        call self%interpolation%initialize_integration()
         ! create the spline coefficients:
         if ( allocated(self%cy)    ) deallocate( self%cy    )
         if ( allocated(self%cyp)   ) deallocate( self%cyp   )
         if ( allocated(self%cypp)  ) deallocate( self%cypp  )
         if ( allocated(self%cyppp) ) deallocate( self%cyppp )
-!        if ( allocated(self%cypppp) ) deallocate( self%cypppp )
+        if ( allocated(self%cypppp) ) deallocate( self%cypppp )
+        if ( allocated(self%cyint) ) deallocate( self%cyint )
         allocate( self%cy   (5, self%num_pixels-1) )
         allocate( self%cyp  (5, self%num_pixels-1) )
         allocate( self%cypp (5, self%num_pixels-1) )
         allocate( self%cyppp(5, self%num_pixels-1) )
- !       allocate( self%cypppp(6, self%num_pixels-1) )
+        allocate( self%cypppp(5, self%num_pixels-1) )
+        allocate( self%cyint (5, self%num_pixels-1) )
         call spline3pars( self%x_coord, self%interpolation%y, [2, 2], [0._dl, 0._dl], self%cy )
         call spline3pars( self%x_coord, self%interpolation%yp, [2, 2], [0._dl, 0._dl], self%cyp )
         call spline3pars( self%x_coord, self%interpolation%ypp, [2, 2], [0._dl, 0._dl], self%cypp )
         call spline3pars( self%x_coord, self%interpolation%yppp, [2, 2], [0._dl, 0._dl], self%cyppp )
-        !call spline3pars( self%x_coord, self%interpolation%ypppp, [2, 2], [0._dl, 0._dl], self%cypppp )
+        call spline3pars( self%x_coord, self%interpolation%ypppp, [2, 2], [0._dl, 0._dl], self%cypppp )
+        call spline3pars( self%x_coord, self%interpolation%yint, [2, 2], [0._dl, 0._dl], self%cyint )
 
     end subroutine Spline1DInitParams
 
@@ -420,18 +425,19 @@ contains
         type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: Spline1DFourthDerivative                             !< the output value
 
-        !real(dl) :: x_temp
-        !integer  :: ind, ip
+        real(dl) :: x_temp
+        integer  :: ind, ip
 
-        !Spline1DFourthDerivative = self%null_value
-        !if ( x <= self%interpolation%x_initial .or. x >= self%interpolation%x_final ) return
-        !! if inside return the cubic spline value:
-        !ip = iixmin(x, self%x_coord, 0 )
-        Spline1DFourthDerivative = 0._dl!poly3 (x, self%cypppp(:, ip))
+        Spline1DFourthDerivative = self%null_value
+        if ( x <= self%interpolation%x_initial .or. x >= self%interpolation%x_final ) return
+        ! if inside return the cubic spline value:
+        ip = iixmin(x, self%x_coord, 0 )
+        Spline1DFourthDerivative = poly3 (x, self%cypppp(:, ip))
+        ! Spline1DFourthDerivative = 0._dl
 
         !< Only up to third order spline is implemented >!
-        write(*,*) 'Spline1DFourthDerivative is not implemented'
-        write(*,*) 'Calculations cannot proceed.'
+        ! write(*,*) 'Spline1DFourthDerivative is not implemented'
+        ! write(*,*) 'Calculations cannot proceed.'
     end function Spline1DFourthDerivative
 
     ! ---------------------------------------------------------------------------------------------
@@ -443,13 +449,22 @@ contains
         class(spline_parametrization_1D)                    :: self      !< the base class
         real(dl), intent(in)                                :: x         !< the input scale factor
         type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
-        real(dl) :: Spline1DIntegral                                     !< the output value
+        real(dl) :: Spline1DIntegral   
+        
+        real(dl) :: x_temp
+        integer  :: ind, ip
 
         Spline1DIntegral = 0._dl
+        if ( x <= self%interpolation%x_initial .or. x >= self%interpolation%x_final ) return
+        ! if inside return the cubic spline value:
+        ip = iixmin(x, self%x_coord, 0 )
+        Spline1DIntegral = poly3 (x, self%cyint(:, ip))!< the output value
+
+        ! Spline1DIntegral = 0._dl
         !< No analytic solution >!
-        write(*,*) 'Spline1DIntegral is not implemented.'
-        write(*,*) 'Calculations cannot proceed.'
-        call MpiStop('EFTCAMB error')
+        ! write(*,*) 'Spline1DIntegral is not implemented.'
+        ! write(*,*) 'Calculations cannot proceed.'
+        ! call MpiStop('EFTCAMB error')
 
     end function Spline1DIntegral
 

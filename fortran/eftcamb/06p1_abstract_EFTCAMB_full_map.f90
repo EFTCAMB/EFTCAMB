@@ -199,6 +199,8 @@ contains
                 gpres        = (grhog_t+grhor_t)/3._dl
                 ! add radiation, massless neutrinos and Lambda to total background density:
                 grho = grho_matter +grhor_t +grhog_t
+                temp_cache%grhonu_tot = 0._dl
+                temp_cache%gpinu_tot  = 0._dl
                 if ( temp_par_cache%Num_Nu_Massive /= 0 ) then
                     do nu_i = 1, temp_par_cache%Nu_mass_eigenstates
                         EFT_grhonu    = 0._dl
@@ -230,6 +232,8 @@ contains
                 ! Massive neutrinos mod:
                 temp_cache%grhonu_tot = 0._dl
                 temp_cache%gpinu_tot  = 0._dl
+                temp_cache%grhonudot_tot = 0._dl
+                temp_cache%gpinudot_tot = 0._dl
                 if ( temp_par_cache%Num_Nu_Massive /= 0 ) then
                     do nu_i = 1, temp_par_cache%Nu_mass_eigenstates
                         EFT_grhonu    = 0._dl
@@ -243,7 +247,6 @@ contains
                         temp_cache%grhonudot_tot = temp_cache%grhonudot_tot + grhormass_t*(ThermalNuBack%drho(a*temp_par_cache%nu_masses(nu_i) ,adotoa) -4._dl*adotoa*EFT_grhonu)
                         temp_cache%gpinudot_tot  = temp_cache%gpinudot_tot  + grhormass_t*(ThermalNuBack%pidot(a*temp_par_cache%nu_masses(nu_i),adotoa, EFT_gpinu )&
                             & -4._dl*adotoa*EFT_gpinu)
-                        temp_cache%gpinudotdot_tot = 0._dl
                     end do
                 end if
                 ! compute pressure dot:
@@ -254,24 +257,25 @@ contains
                 ! Massive neutrinos mod:
                 temp_cache%grhonu_tot = 0._dl
                 temp_cache%gpinu_tot  = 0._dl
+                temp_cache%grhonudot_tot = 0._dl
+                temp_cache%gpinudot_tot = 0._dl
+                temp_cache%gpinudotdot_tot = 0._dl
                 if ( temp_par_cache%Num_Nu_Massive /= 0 ) then
                     do nu_i = 1, temp_par_cache%Nu_mass_eigenstates
                         EFT_grhonu    = 0._dl
                         EFT_gpinu     = 0._dl
                         EFT_grhonudot = 0._dl
                         EFT_gpinudot  = 0._dl
-                        EFT_gpinudotdot = 0._dl
                         grhormass_t=temp_par_cache%grhormass(nu_i)/a**2
                         call ThermalNuBack%rho_P(a*temp_par_cache%nu_masses(nu_i),EFT_grhonu,EFT_gpinu)
                         temp_cache%grhonu_tot = temp_cache%grhonu_tot + grhormass_t*EFT_grhonu
                         temp_cache%gpinu_tot  = temp_cache%gpinu_tot  + grhormass_t*EFT_gpinu
                         temp_cache%grhonudot_tot = temp_cache%grhonudot_tot + grhormass_t*(ThermalNuBack%drho(a*temp_par_cache%nu_masses(nu_i) ,adotoa) -4._dl*adotoa*EFT_grhonu)
-                        temp_cache%gpinudot_tot  = temp_cache%gpinudot_tot  + grhormass_t*(ThermalNuBack%pidot(a*temp_par_cache%nu_masses(nu_i),adotoa, EFT_gpinu )&
+                        EFT_gpinudot = ThermalNuBack%pidot(a*temp_par_cache%nu_masses(nu_i),adotoa, EFT_gpinu )
+                        temp_cache%gpinudot_tot  = temp_cache%gpinudot_tot  + grhormass_t*(EFT_gpinudot&
                             & -4._dl*adotoa*EFT_gpinu)
-                        temp_cache%gpinudotdot_tot = temp_cache%gpinudotdot_tot -4._dl*adotoa*grhormass_t*(ThermalNuBack%pidot(a*temp_par_cache%nu_masses(nu_i),adotoa,EFT_gpinu)&
-                            &-4._dl*adotoa*EFT_gpinu)+ grhormass_t*(ThermalNuBack%pidotdot(a*temp_par_cache%nu_masses(nu_i),adotoa,eft_cache%Hdot,EFT_gpinu,EFT_gpinudot)&
-                            &-4._dl*eft_cache%Hdot*EFT_gpinu &
-                            &-4._dl*adotoa*ThermalNuBack%pidot(a*temp_par_cache%nu_masses(nu_i),adotoa,EFT_gpinu))
+                        temp_cache%gpinudotdot_tot = temp_cache%gpinudotdot_tot -4._dl*adotoa*grhormass_t*(EFT_gpinudot-4._dl*adotoa*EFT_gpinu) &
+                        & + grhormass_t*(ThermalNuBack%pidotdot(a*temp_par_cache%nu_masses(nu_i),adotoa,eft_cache%Hdot,EFT_gpinu,EFT_gpinudot) - 4._dl*eft_cache%Hdot*EFT_gpinu - 4._dl*adotoa*EFT_gpinudot)
                     end do
                 end if
                 ! compute pressure ddot:

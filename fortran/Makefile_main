@@ -99,7 +99,9 @@ include $(EFTCAMB_DIR)/eftcamb_build.make
 FORUTILS_DIR ?= $(FORUTILSPATH)/$(OUTPUT_DIR)/
 python: FORUTILS_DIR=$(FORUTILSPATH)/$(DLL_DIR)/
 
+
 LIBLINK = -L"$(FORUTILS_DIR)" -lforutils -lblas -llapack
+
 
 
 ## CosmoRec
@@ -120,6 +122,8 @@ LIBLINK += -L$(HYREC_PATH) -lhyrec
 camb: libhyrec.a
 python: libhyrec.a
 endif
+
+LIBLINK += $(BLASFLAG)
 
 .DEFAULT_GOAL := camb
 default: camb
@@ -160,7 +164,7 @@ camblib.so: $(CAMBOBJ)
 
 # EFTCAMB MOD START: add EFTCAMB files to CAMB library
 libcambobj:
-    LIBCAMBOBJ = $(patsubst %,$(DLL_DIR)/%.o,$(SOURCEFILES)) $(EFT_SOJ)
+    LIBCAMBOBJ = $(patsubst %,$(DLL_DIR)/%.o,$(SOURCEFILES)) $(EFT_SOJ) $(EFT_CSOJ)
 # EFTCAMB MOD END
 
 #cannot link the .a library, or the linker will strip out some things we might need

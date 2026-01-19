@@ -116,6 +116,11 @@ contains
         ! read model selection flags:
         self%Kmimic = Ini%Read_Logical( 'Kmimic', .False. )
 
+        ! read precision parameters
+        self%background_num_points = Ini%Read_Int( 'model_background_num_points', 1000 )
+        self%x_initial = Log( Ini%Read_Double( 'model_background_a_ini', 1d-9 ) )
+        self%x_final = Log( Ini%Read_Double( 'model_background_a_final', 1._dl ) )
+
     end subroutine EFTCAMBKmouflageReadModelSelectionFromFile
 
     ! ---------------------------------------------------------------------------------------------

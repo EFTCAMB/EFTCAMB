@@ -30,7 +30,7 @@ module EFTCAMB_mixed_algorithms
 
     private
 
-    public hunt, integer_to_string, string, dfridr, double_NaN
+    public hunt, integer_to_string, string, dfridr, double_NaN, log1p
 
     !----------------------------------------------------------------------------------------
     !> This is a utility type that allows to handle strings arrays. It is used because
@@ -157,6 +157,63 @@ contains
 12      continue
         return
     end function dfridr
+
+    !----------------------------------------------------------------------------------------
+    !> Algorithm to compute log(1+x)
+    function log1p( x0 )
+        !    
+        !   Double precision function program
+        !   to compute a special exponential function,
+        !       log1p(x) = log(1+x),
+        !   accurately by minimax rational approximation
+        !
+        !   "dlog1p" keeps 16 digit accuracy for arbitrary argument
+        !   while runs 20 % faster than dlog(x) itself
+        !
+        !   Author: Fukushima, T. <Toshio.Fukushima@nao.ac.jp>
+        !   Date: 2019/10/30
+        !
+        implicit none
+        
+        real(dl), intent(in) :: x0
+        real(dl) x1, x2, x4, log1p
+        !
+        real(dl), parameter  :: a1=0.99999999999999999405_dl
+        real(dl), parameter  :: a2=2.45235728562912886048_dl
+        real(dl), parameter  :: a3=2.17053627298972253249_dl
+        real(dl), parameter  :: a4=0.83928994566440838378_dl
+        real(dl), parameter  :: a5=0.13520496594993836479_dl
+        real(dl), parameter  :: a6=0.00682631751459270270_dl
+        real(dl), parameter  :: a7=0.00002291289324181940_dl
+        real(dl), parameter  :: b1=2.95235728562912599232_dl
+        real(dl), parameter  :: b2=3.31338158247117791600_dl
+        real(dl), parameter  :: b3=1.76186164168333482938_dl
+        real(dl), parameter  :: b4=0.44976458082070468584_dl
+        real(dl), parameter  :: b5=0.04896199808811261680_dl
+        real(dl), parameter  :: b6=0.00157389087429218809_dl
+        !
+        !   bit loss occurs when -1/2 <= x <= 1
+        !
+        if(x0.lt.-0.5_dl.or.x0.gt.1._dl) then
+            log1p=log(1._dl+x0)
+        !
+        !   1/2 <= x < 0: log1p(x)=-log1p(x/(1+x))
+        !
+        elseif(x0.lt.0._dl) then
+            x1=-x0/(1._dl+x0)
+            x2=x1*x1; x4=x2*x2
+            log1p=-x1*(((a1+x1*a2)+x2*(a3+x1*a4))+x4*((a5+x1*a6)+x2*a7)) &
+                /(((1._dl+x1*b1)+x2*(b2+x1*b3))+x4*((b4+x1*b5)+x2*b6))
+        !
+        !   0 <= x <= 1
+        !
+        else
+            x1=x0
+            x2=x1*x1; x4=x2*x2
+            log1p=x1*(((a1+x1*a2)+x2*(a3+x1*a4))+x4*((a5+x1*a6)+x2*a7)) &
+                /(((1._dl+x1*b1)+x2*(b2+x1*b3))+x4*((b4+x1*b5)+x2*b6))
+        endif
+    end function log1p
 
     !----------------------------------------------------------------------------------------
 

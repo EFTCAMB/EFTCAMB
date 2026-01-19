@@ -198,7 +198,7 @@ contains
         end if
 
         ! 2) everything inside the time-step cache should not be a NaN:
-        call eft_cache%is_nan( EFT_HaveNan_timestep )
+        call eft_cache%is_nan( EFT_HaveNan_timestep, input_EFTCAMB%EFTCAMB_feedback_level )
         if ( EFT_HaveNan_timestep ) then
             EFTTestStability = .false.
             if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') '   Model has Nan in the timestep cache'
@@ -375,6 +375,24 @@ contains
             end if
         end if
 
+        ! 9) enforce positivity bounds:
+        ! works up to Horndeski
+        if ( input_EFTCAMB%EFT_positivity_bounds ) then
+            if (( eft_cache%posbound1 < 0._dl ) .or. ( eft_cache%posbound2 < 0._dl ) ) then
+                EFTTestStability = .false.
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') ' Positivity bounds are violated'
+            end if
+        end if
+
+        ! 10) check the existence of a healthy Minkowski limit:
+        ! works up to Horndeski
+        if ( input_EFTCAMB%EFT_minkowski_limit ) then
+            if (( -eft_cache%ghostpos <= 0 ) .or. ( -eft_cache%tachpos < 0 ) ) then
+                EFTTestStability = .false.
+                if ( input_EFTCAMB%EFTCAMB_feedback_level > 1 ) write(*,'(a)') 'Healthy Minkowski limit does not exist'
+            end if
+        end if
+
     end function EFTTestStability
 
     ! ---------------------------------------------------------------------------------------------
@@ -413,6 +431,8 @@ contains
         eft_cache%grhor_t = params_cache%grhornomass/a/a ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
         eft_cache%grhog_t = params_cache%grhog/a/a       ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
         ! Massive neutrinos terms:
+        eft_cache%grhonu_tot = 0._dl
+        eft_cache%gpinu_tot = 0._dl
         if ( params_cache%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, params_cache%Nu_mass_eigenstates
                 grhonu      = 0._dl
@@ -442,6 +462,10 @@ contains
         end select
         ! compute massive neutrinos stuff:
         ! Massive neutrinos mod:
+        eft_cache%gpinudot_tot = 0._dl
+        eft_cache%grhonu_tot = 0._dl
+        eft_cache%grhonudot_tot = 0._dl
+        eft_cache%gpinudot_tot = 0._dl
         if ( params_cache%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, params_cache%Nu_mass_eigenstates
                 grhonu      = 0._dl
@@ -464,11 +488,29 @@ contains
         ! compute remaining quantities related to H:
         call input_model%compute_H_derivs( a, params_cache , eft_cache )
         ! compute second derivative of massive neutrino pressure
+        eft_cache%gpinudot_tot = 0._dl
+        eft_cache%grhonu_tot = 0._dl
+        eft_cache%grhonudot_tot = 0._dl
+        eft_cache%gpinudot_tot = 0._dl
+        eft_cache%gpinudotdot_tot = 0._dl
         if ( params_cache%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, params_cache%Nu_mass_eigenstates
-                eft_cache%gpinudotdot_tot = eft_cache%gpinudotdot_tot -4._dl*eft_cache%adotoa*grhormass_t*(ThermalNuBack%pidot(a*params_cache%nu_masses(nu_i),eft_cache%adotoa,gpinu)&
+                grhonu      = 0._dl
+                gpinu       = 0._dl
+                grhonudot   = 0._dl
+                gpinudot    = 0._dl
+                grhormass_t = params_cache%grhormass(nu_i)/a**2
+                call ThermalNuBack%rho_P( a*params_cache%nu_masses(nu_i), grhonu, gpinu )
+                eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*grhonu
+                eft_cache%gpinu_tot  = eft_cache%gpinu_tot  + grhormass_t*gpinu
+                eft_cache%grhonudot_tot = eft_cache%grhonudot_tot + grhormass_t*( ThermalNuBack%drho(a*params_cache%nu_masses(nu_i) ,eft_cache%adotoa)&
+                    & -4._dl*eft_cache%adotoa*grhonu)
+                gpinudot = ThermalNuBack%pidot(a*params_cache%nu_masses(nu_i),eft_cache%adotoa, gpinu )
+                eft_cache%gpinudot_tot  = eft_cache%gpinudot_tot  + grhormass_t*( gpinudot&
+                    & -4._dl*eft_cache%adotoa*gpinu)
+                eft_cache%gpinudotdot_tot = eft_cache%gpinudotdot_tot -4._dl*eft_cache%adotoa*grhormass_t*(gpinudot&
                 -4._dl*eft_cache%adotoa*gpinu)+ grhormass_t*(ThermalNuBack%pidotdot(a*params_cache%nu_masses(nu_i),eft_cache%adotoa,eft_cache%Hdot,gpinu,gpinudot)&
-                -4._dl*eft_cache%Hdot*gpinu -4._dl*eft_cache%adotoa*ThermalNuBack%pidot(a*params_cache%nu_masses(nu_i),eft_cache%adotoa,gpinu))
+                -4._dl*eft_cache%Hdot*gpinu -4._dl*eft_cache%adotoa*gpinudot)
             end do
         end if
         ! compute pressure ddot:
@@ -490,6 +532,8 @@ contains
         call input_model%compute_tensor_factors( a, params_cache , eft_cache )
         ! Compute kinetic, gradient and mass terms:
         call input_model%compute_stability_factors( a, params_cache , eft_cache )
+        ! Compute positivity bounds:
+        call input_model%compute_positivity_bounds( a, params_cache , eft_cache )
 
         if ( a>input_EFTCAMB%EFTCAMB_pert_turn_on .and. input_EFTCAMB%EFT_mass_stability ) then
           call input_model%compute_additional_derivs( a, params_cache , eft_cache )

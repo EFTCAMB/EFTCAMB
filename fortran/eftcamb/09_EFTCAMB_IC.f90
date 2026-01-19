@@ -123,6 +123,10 @@ contains
         adotoa   = EV%eft_cache%adotoa
         ! compute massive neutrinos stuff:
         ! Massive neutrinos mod:
+        EV%eft_cache%grhonu_tot    = 0._dl
+        EV%eft_cache%gpinu_tot     = 0._dl
+        EV%eft_cache%grhonudot_tot = 0._dl
+        EV%eft_cache%gpinudot_tot  = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl
@@ -145,13 +149,13 @@ contains
         EV%eft_cache%gpresdotm_t = -4._dl*adotoa*( grhog_t+grhor_t )/3._dl +EV%eft_cache%gpinudot_tot
         ! compute remaining quantities related to H:
         call CP%EFTCAMB%model%compute_H_derivs( a, CP%eft_par_cache , EV%eft_cache )
-        ! compute second derivative of massive neutrino pressure 
+        ! compute second derivative of massive neutrino pressure
+        EV%eft_cache%grhonu_tot    = 0._dl
+        EV%eft_cache%gpinu_tot     = 0._dl
+        EV%eft_cache%grhonudot_tot = 0._dl
+        EV%eft_cache%gpinudot_tot  = 0._dl
+        EV%eft_cache%gpinudotdot_tot = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
-            EV%eft_cache%grhonu_tot    = 0._dl
-            EV%eft_cache%gpinu_tot     = 0._dl
-            EV%eft_cache%grhonudot_tot = 0._dl
-            EV%eft_cache%gpinudot_tot  = 0._dl
-            EV%eft_cache%gpinudotdot_tot = 0._dl
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl
                 EFT_gpinu     = 0._dl
@@ -161,14 +165,15 @@ contains
                 call ThermalNuBack%rho_P(a*State%nu_masses(nu_i),EFT_grhonu,EFT_gpinu)
                 EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
                 EV%eft_cache%gpinu_tot  = EV%eft_cache%gpinu_tot  + grhormass_t*EFT_gpinu
-                EV%eft_cache%gpinudot_tot  = EV%eft_cache%gpinudot_tot  + grhormass_t*(ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa, EFT_gpinu )&
+                EFT_gpinudot = ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa,EFT_gpinu)
+                EV%eft_cache%gpinudot_tot  = EV%eft_cache%gpinudot_tot  + grhormass_t*(EFT_gpinudot&
                     & -4._dl*adotoa*EFT_gpinu)
                 EV%eft_cache%grhonudot_tot = EV%eft_cache%grhonudot_tot + grhormass_t*(ThermalNuBack%drho(a*State%nu_masses(nu_i) ,adotoa)&
                     & -4._dl*adotoa*EFT_grhonu)
                 EV%eft_cache%gpinudotdot_tot = EV%eft_cache%gpinudotdot_tot - 4._dl*adotoa*grhormass_t*&
-                (ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa,EFT_gpinu)-4._dl*adotoa*EFT_gpinu) &
+                (EFT_gpinudot-4._dl*adotoa*EFT_gpinu) &
                 + grhormass_t*(ThermalNuBack%pidotdot(a*State%nu_masses(nu_i),adotoa,EV%eft_cache%Hdot,EFT_gpinu,EFT_gpinudot)-4._dl*EV%eft_cache%Hdot*EFT_gpinu &
-                & -4._dl*adotoa*ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa,EFT_gpinu))
+                & -4._dl*adotoa*EFT_gpinudot)
             end do
         end if
         ! compute pressure ddot:
@@ -258,13 +263,21 @@ contains
 
         end if
 
-        if ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 /= 0._dl ) then
-            y(EV%w_ix)   = -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 )
-            y(EV%w_ix+1) = CP%eft_par_cache%h0_Mpc*(EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )**2*a*EV%eft_cache%adotoa*(EFTpiCdotFunction(a,k)+k*k*EFTpiDdotFunction(a,k))&
-                &  -EFTpiEdot/(EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 ) )
-        else
+        if ( CP%EFTCAMB%EFTCAMB_evolve_delta_phi ) then
+            ! for now use zero IC for delta phi
             y(EV%w_ix)   = 0._dl
             y(EV%w_ix+1) = 0._dl
+            ! this is h_prime = 2kz
+            if ( CP%EFTCAMB%EFTCAMB_evolve_metric_h ) y(EV%w_ix+2) = 2._dl * k * z
+        else
+            if ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 /= 0._dl ) then
+                y(EV%w_ix)   = -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 )
+                y(EV%w_ix+1) = CP%eft_par_cache%h0_Mpc*(EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )**2*a*EV%eft_cache%adotoa*(EFTpiCdotFunction(a,k)+k*k*EFTpiDdotFunction(a,k))&
+                    &  -EFTpiEdot/(EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 ) )
+            else
+                y(EV%w_ix)   = 0._dl
+                y(EV%w_ix+1) = 0._dl
+            end if
         end if
 
         ! reset the cache:
@@ -305,7 +318,9 @@ contains
 
         ! add radiation, massless neutrinos and Lambda to total background density:
         grho = grho_matter +grhor_t +grhog_t
-
+        ! Massive neutrinos mod
+        eft_cache%grhonu_tot = 0._dl
+        eft_cache%gpinu_tot = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl
@@ -349,6 +364,8 @@ contains
         ! Massive neutrinos mod:
         eft_cache%grhonu_tot = 0._dl
         eft_cache%gpinu_tot  = 0._dl
+        eft_cache%grhonudot_tot = 0._dl
+        eft_cache%gpinudot_tot = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl
@@ -424,7 +441,9 @@ contains
 
         ! add radiation, massless neutrinos and Lambda to total background density:
         grho = grho_matter +grhor_t +grhog_t
-
+        ! Massive neutrinos mod:
+        eft_cache%grhonu_tot = 0._dl
+        eft_cache%gpinu_tot = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl
@@ -468,6 +487,8 @@ contains
         ! Massive neutrinos mod:
         eft_cache%grhonu_tot = 0._dl
         eft_cache%gpinu_tot  = 0._dl
+        eft_cache%grhonudot_tot = 0._dl
+        eft_cache%gpinudot_tot = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl

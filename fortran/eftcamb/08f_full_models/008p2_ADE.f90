@@ -114,6 +114,11 @@ contains
 
         ! read model selection flags:
 
+        ! read precision parameters
+        self%background_num_points = Ini%Read_Int( 'model_background_num_points', 1500 )
+        self%x_initial = Log( Ini%Read_Double( 'model_background_a_ini', 1d-10 ) )
+        self%x_final = Log( Ini%Read_Double( 'model_background_a_final', 1._dl ) )
+
     end subroutine EFTCAMBADEReadModelSelectionFromFile
 
     ! ---------------------------------------------------------------------------------------------

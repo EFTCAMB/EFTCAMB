@@ -76,6 +76,8 @@ module EFTCAMB_abstract_parametrizations_1D
         procedure( ParametrizedFunction1DThirdDerivative  ), deferred :: third_derivative  !< function that returns the third derivative of the function. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.
         procedure( ParametrizedFunction1DFourthDerivative ), deferred :: fourth_derivative !< function that returns the fourth derivative of the function. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.
         procedure( ParametrizedFunction1DIntegral         ), deferred :: integral          !< function that returns the strange integral that we need for w_DE. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.
+        ! function stability
+        procedure :: compute_function_stability => ParametrizedFunction1DStability         !< function that checks whether the parametrized function is regular or stable
 
     end type parametrized_function_1D
 
@@ -432,6 +434,19 @@ contains
     end subroutine ParametrizedFunction1DParameterNamesLatex
 
     ! ---------------------------------------------------------------------------------------------
+    !> Function that computes function parametrization specific stability requirements. Currently only implemented for Pade
+    function ParametrizedFunction1DStability( self, x, eft_cache )
+
+        implicit none
+
+        class(parametrized_function_1D)                     :: self      !< the base class
+        real(dl), intent(in)                                :: x         !< the input scale factor
+        type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        logical :: ParametrizedFunction1DStability                       !< True if the parameterized function is considered regular or stable
+
+        ParametrizedFunction1DStability = .True.
+
+    end function ParametrizedFunction1DStability
 
 end module EFTCAMB_abstract_parametrizations_1D
 

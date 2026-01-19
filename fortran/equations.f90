@@ -613,8 +613,14 @@
     ! EFTCAMB MOD START
     if ( CP%EFTCAMB%EFTFlag/=0 ) then
         EV%w_ix = neq+1
-        neq=neq+2
-        maxeq=maxeq+2
+        if ( CP%EFTCAMB%EFTCAMB_evolve_delta_phi .and. CP%EFTCAMB%EFTCAMB_evolve_metric_h ) then
+            ! we integrate delta_phi, delta_phi_prime, h_prime
+            neq=neq+3
+            maxeq=maxeq+3
+        else
+            neq=neq+2
+            maxeq=maxeq+2
+        end if
     else
         !Dark energy
         if (.not. CP%DarkEnergy%is_cosmological_constant) then
@@ -746,8 +752,14 @@
     end if
     if ( (CP%EFTCAMB%EFTflag/=0.and.EVout%EFTCAMBactive).or.&
         &(CP%EFTCAMB%EFTflag/=0.and.EV%EFTCAMBactive)) then
-        yout(EVout%w_ix)=y(EV%w_ix)
-        yout(EVout%w_ix+1)=y(EV%w_ix+1)
+        if ( CP%EFTCAMB%EFTCAMB_evolve_delta_phi ) then
+            yout(EVout%w_ix)=y(EV%w_ix)
+            yout(EVout%w_ix+1)=y(EV%w_ix+1)
+            if ( CP%EFTCAMB%EFTCAMB_evolve_metric_h ) yout(EVout%w_ix+2)=y(EV%w_ix+2)
+        else
+            yout(EVout%w_ix)=y(EV%w_ix)
+            yout(EVout%w_ix+1)=y(EV%w_ix+1)
+        end if
     end if
     ! EFTCAMB MOD END
 
@@ -1792,12 +1804,13 @@
     if (num_custom_sources>0) &
         EV%CustomSources => sources(State%CLdata%CTransScal%NumSources - num_custom_sources+1:)
     call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
+
     nullify(EV%OutputSources, EV%CustomSources)
 
     ! EFTCAMB MOD START: debug printing
     if(DebugEFTCAMB) then
       ! check the cache:
-      call EV%eft_cache%is_nan( IsNaN )
+      call EV%eft_cache%is_nan( IsNaN, 10 )
       if ( IsNaN ) then
           write(*,'(a)') 'Model has Nan in the timestep cache'
           stop
@@ -2010,6 +2023,11 @@
 
     ! EFTCAMB MOD START: compute the time at which turn on EFT.
     EV%EFTturnOnTime = State%DeltaTime( 0._dl, CP%EFTCAMB%EFTCAMB_pert_turn_on )
+    if ( CP%EFTCAMB%EFTflag /= 0 .and. EV%EFTturnOnTime < EV%ThermoData%tauminn ) then
+        call GlobalError(FormatString('EFTCAMB starts before thermo tauminn, ' //&
+            'EFT_pert_turn_on, EFTturnOnTime, tauminn = %f, %f, %f.', CP%EFTCAMB%EFTCAMB_pert_turn_on, EV%EFTturnOnTime, EV%ThermoData%tauminn))
+        return
+    end if
     ! EFTCAMB MOD END
 
     y=0
@@ -2374,7 +2392,15 @@
     ! EFTCAMB MOD START: some additional variables:
     real(dl) clxq, vq, dgpnu, EFT_grhonu, EFT_gpinu, EFT_grhonudot, EFT_gpinudot, EFT_gpinudotdot, grhormass_t
     real(dl) pidotdot, EFTLensing, EFTISW, EFTsigmadot, EFTsigmadotdot, EFT_Psi, EFT_Phi, EFT_PsiDot, EFT_PhiDot, EFTetakdot
+    real(dl) dphi, ddphi, dddphi, dphi_safe
+    real(dl) delta_phi, delta_phi_dot, delta_phi_ddot ! delta_phi equation variables
+    real(dl) metric_h_dot, metric_h_ddot ! h' and h''
+    real(dl) spi1,spi2,spi3,spih,spie,spim,s00,s00k,s00p,s0i,s0ip,sii,siik,siip,siipp,sij, sijdot ! delta_phi related coefficients
+    real(dl) alphaB, alphaT, alphaM, alphaK, alphaBdot, alphaTdot, alphaMdot, alphaKdot, Meff2 ! EFT functions
+    real(dl) vx_source_00, vx_source_0i, vx_source_ij, vx_source_ij_dot, dp_DE, dp_matter ! scalar field related source terms
     ! EFTCAMB MOD END.
+
+    real(dl) :: pigddot,E2ddot
 
     k=EV%k_buf
     k2=EV%k2_buf
@@ -2387,7 +2413,7 @@
     end if
 
     ! copy variables:
-    etak = ay(ix_etak) ! conformal time
+    etak = ay(ix_etak) ! sync gauge metric perturbation eta*k
     clxc = ay(ix_clxc) ! cdm density perturbations
     clxb = ay(ix_clxb) ! baryons density perturbations
     vb   = ay(ix_vb)   ! baryons velocity perturbations
@@ -2478,12 +2504,11 @@
     ! EFTCAMB MOD START: fill in the massive neutrinos variables in cache
     if ( CP%EFTCAMB%EFTFlag /= 0 .or. EV%EFTCAMB_printing ) then
         ! compute massive neutrinos stuff:
+        EV%eft_cache%grhonu_tot    = 0._dl
+        EV%eft_cache%gpinu_tot     = 0._dl
+        EV%eft_cache%grhonudot_tot = 0._dl
+        EV%eft_cache%gpinudot_tot  = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
-            EV%eft_cache%grhonu_tot    = 0._dl
-            EV%eft_cache%gpinu_tot     = 0._dl
-            EV%eft_cache%grhonudot_tot = 0._dl
-            EV%eft_cache%gpinudot_tot  = 0._dl
-            EV%eft_cache%gpinudotdot_tot = 0._dl
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl
                 EFT_gpinu     = 0._dl
@@ -2508,12 +2533,12 @@
         ! compute remaining quantities related to H:
         call CP%EFTCAMB%model%compute_H_derivs( a, CP%eft_par_cache , EV%eft_cache )
         ! compute second derivative of massive neutrino pressure:
+        EV%eft_cache%grhonu_tot    = 0._dl
+        EV%eft_cache%gpinu_tot     = 0._dl
+        EV%eft_cache%grhonudot_tot = 0._dl
+        EV%eft_cache%gpinudot_tot  = 0._dl
+        EV%eft_cache%gpinudotdot_tot = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
-            EV%eft_cache%grhonu_tot    = 0._dl
-            EV%eft_cache%gpinu_tot     = 0._dl
-            EV%eft_cache%grhonudot_tot = 0._dl
-            EV%eft_cache%gpinudot_tot  = 0._dl
-            EV%eft_cache%gpinudotdot_tot = 0._dl
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl
                 EFT_gpinu     = 0._dl
@@ -2523,14 +2548,15 @@
                 call ThermalNuBack%rho_P(a*State%nu_masses(nu_i),EFT_grhonu,EFT_gpinu)
                 EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
                 EV%eft_cache%gpinu_tot  = EV%eft_cache%gpinu_tot  + grhormass_t*EFT_gpinu
-                EV%eft_cache%gpinudot_tot  = EV%eft_cache%gpinudot_tot  + grhormass_t*(ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa, EFT_gpinu )&
+                EFT_gpinudot = ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa, EFT_gpinu )
+                EV%eft_cache%gpinudot_tot  = EV%eft_cache%gpinudot_tot  + grhormass_t*(EFT_gpinudot&
                     & -4._dl*adotoa*EFT_gpinu)
                 EV%eft_cache%grhonudot_tot = EV%eft_cache%grhonudot_tot + grhormass_t*(ThermalNuBack%drho(a*State%nu_masses(nu_i) ,adotoa)&
                     & -4._dl*adotoa*EFT_grhonu)
                 EV%eft_cache%gpinudotdot_tot = EV%eft_cache%gpinudotdot_tot - 4._dl*adotoa*grhormass_t*&
-                (ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa,EFT_gpinu)-4._dl*adotoa*EFT_gpinu) &
+                (EFT_gpinudot-4._dl*adotoa*EFT_gpinu) &
                 + grhormass_t*(ThermalNuBack%pidotdot(a*State%nu_masses(nu_i),adotoa,EV%eft_cache%Hdot,EFT_gpinu,EFT_gpinudot)-4._dl*EV%eft_cache%Hdot*EFT_gpinu &
-                & -4._dl*adotoa*ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa,EFT_gpinu))
+                & -4._dl*adotoa*EFT_gpinudot)
             end do
         end if
         ! compute pressure ddot:
@@ -2564,20 +2590,80 @@
     dgrho = dgrho_matter
 
     ! EFTCAMB MOD START: initialization of DE perturbations.
-    clxq     = 0._dl
-    vq       = 0._dl
-    pidotdot = 0._dl
-    if ( CP%EFTCAMB%EFTflag/=0 .and. ( EV%EFTCAMBactive .or. DebugEFTCAMB) ) then
-        ! initialize DE perturbations:
-        clxq     = ay(EV%w_ix)
-        vq       = ay(EV%w_ix+1)
-        pidotdot = ayprime(EV%w_ix+1)
-        ! initialize DE perturbations cache:
-        EV%eft_cache%pi       = clxq
-        EV%eft_cache%pidot    = vq
-        EV%eft_cache%pidotdot = pidotdot
-        ! compute Einstein equations factors:
-        call CP%EFTCAMB%model%compute_Einstein_Factors( a, CP%eft_par_cache , EV%eft_cache )
+    if ( CP%EFTCAMB%EFTCAMB_evolve_delta_phi ) then
+        dphi           = 0._dl
+        ddphi          = 0._dl
+        dddphi         = 0._dl
+        dphi_safe      = 1.d-30
+        delta_phi      = 0._dl
+        delta_phi_dot  = 0._dl
+        delta_phi_ddot = 0._dl
+        metric_h_dot   = 0._dl
+        metric_h_ddot  = 0._dl
+        if ( CP%EFTCAMB%EFTflag/=0 .and. ( EV%EFTCAMBactive .or. DebugEFTCAMB) ) then
+            ! copy scalar field precomputed quantities
+            dphi = EV%eft_cache%dphi
+            ddphi = EV%eft_cache%ddphi
+            dddphi = EV%eft_cache%dddphi
+            if ( dphi > 0._dl ) then
+                dphi_safe = MAX(dphi, 1.d-20)
+            else
+                dphi_safe = MIN(dphi, -1.d-20)
+            end if
+            spi1   = EV%eft_cache%spi1
+            spi2   = EV%eft_cache%spi2
+            spi3   = EV%eft_cache%spi3
+            spih   = EV%eft_cache%spih
+            spie   = EV%eft_cache%spie
+            spim   = EV%eft_cache%spim
+            s00    = EV%eft_cache%s00
+            s00k   = EV%eft_cache%s00k
+            s00p   = EV%eft_cache%s00p
+            s0i    = EV%eft_cache%s0i
+            s0ip   = EV%eft_cache%s0ip
+            sii    = EV%eft_cache%sii
+            siik   = EV%eft_cache%siik
+            siip   = EV%eft_cache%siip
+            siipp  = EV%eft_cache%siipp
+            sij    = EV%eft_cache%sij
+            sijdot = EV%eft_cache%sijdot
+            alphaB = -2._dl*EV%eft_cache%alphaB ! convert from the EFTCAMB definition to the Bellini&Sawicki convention 
+            alphaBdot = -2._dl*EV%eft_cache%alphaBdot
+            alphaK = EV%eft_cache%alphaK
+            alphaKdot = EV%eft_cache%alphaKdot
+            alphaT = EV%eft_cache%alphaT
+            alphaTdot = EV%eft_cache%alphaTdot
+            alphaM = EV%eft_cache%alphaM
+            alphaMdot = EV%eft_cache%alphaMdot
+            Meff2  = EV%eft_cache%Meff2
+            ! copy DE perturbations:
+            delta_phi      = ay(EV%w_ix)
+            delta_phi_dot  = ay(EV%w_ix+1)
+            if ( CP%EFTCAMB%EFTCAMB_evolve_metric_h ) metric_h_dot = ay(EV%w_ix+2)
+            ! initialize DE perturbations cache:
+            EV%eft_cache%delta_phi       = delta_phi
+            EV%eft_cache%delta_phidot    = delta_phi_dot
+            EV%eft_cache%delta_phidotdot = 0._dl
+            EV%eft_cache%pi              = CP%eft_par_cache%h0_Mpc*delta_phi/dphi_safe
+            EV%eft_cache%pidot           = 0._dl
+            EV%eft_cache%pidotdot        = 0._dl
+        end if
+    else
+        clxq     = 0._dl
+        vq       = 0._dl
+        pidotdot = 0._dl
+        if ( CP%EFTCAMB%EFTflag/=0 .and. ( EV%EFTCAMBactive .or. DebugEFTCAMB) ) then
+            ! initialize DE perturbations:
+            clxq     = ay(EV%w_ix)
+            vq       = ay(EV%w_ix+1)
+            pidotdot = ayprime(EV%w_ix+1)
+            ! initialize DE perturbations cache:
+            EV%eft_cache%pi       = clxq
+            EV%eft_cache%pidot    = vq
+            EV%eft_cache%pidotdot = pidotdot
+            ! compute Einstein equations factors:
+            call CP%EFTCAMB%model%compute_Einstein_Factors( a, CP%eft_par_cache , EV%eft_cache )
+        end if
     end if
     ! EFTCAMB MOD END
 
@@ -2587,10 +2673,39 @@
         dz = -adotoa*z - 0.5_dl*dgrho/k
     else if ( CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive ) then
         ! RSA
+
         z  = 1._dl/EV%eft_cache%EFTeomG*(EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
         dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*z*(1._dl+EV%eft_cache%EFTeomY -0.5_dl*EV%eft_cache%EFTeomG/EV%eft_cache%EFTeomQ) &
                  & - 0.5_dl*dgrho/k/(1._dl+EV%eft_cache%EFTOmegaV)/EV%eft_cache%EFTeomQ -adotoa*EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc)/EV%eft_cache%EFTeomQ -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
         ! dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z + etak - 1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+
+        if ( CP%EFTCAMB%EFTCAMB_evolve_delta_phi ) then
+            ! RSA does not affect computation of h' and z = h'/2k 
+            if ( CP%EFTCAMB%EFTCAMB_evolve_metric_h ) then 
+                z = 0.5_dl * metric_h_dot / k
+            else
+                vx_source_00 = s00p * delta_phi_dot + (s00 + s00k * k2) * delta_phi
+                metric_h_dot = (4._dl * k * etak + 2._dl * dgrho / Meff2) / (2._dl - alphaB) / adotoa + vx_source_00
+                z = 0.5_dl * metric_h_dot / k
+            end if
+            ! delta pressure without radiation (RSA)
+            dp_matter = dgpnu
+            ! compute delta_phi'', negelecting dgrho_rad (RSA)
+            delta_phi_ddot =  -2._dl * (1._dl + spi1) * adotoa * delta_phi_dot - ((1._dl + spi2) * k2 + spi3 * adotoa * adotoa) * delta_phi + spih * metric_h_dot + spie * k * etak / adotoa + spim * dp_matter
+            ! compute h'' neglecting radiation
+            metric_h_ddot = - (2._dl + alphaM) * adotoa * metric_h_dot + 2._dl * (1._dl + alphaT) * k * etak - 3._dl * a2 * dp_matter / Meff2 + (siipp * delta_phi_ddot + siip * delta_phi_dot + (sii + siik * k2) * delta_phi)
+            dz = 0.5_dl * metric_h_ddot / k
+        else
+            z  = 1._dl/EV%eft_cache%EFTeomG*(EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
+            ! original code
+            ! dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*z*(1._dl+EV%eft_cache%EFTeomY -0.5_dl*EV%eft_cache%EFTeomG) &
+            !     & - 0.5_dl*dgrho/k/(1._dl+EV%eft_cache%EFTOmegaV) -adotoa*EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc) -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+            ! original code missing Q, adding back
+            ! dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*z*(1._dl+EV%eft_cache%EFTeomY -0.5_dl*EV%eft_cache%EFTeomG/EV%eft_cache%EFTeomQ) &
+            !     & - 0.5_dl*dgrho/k/(1._dl+EV%eft_cache%EFTOmegaV)/EV%eft_cache%EFTeomQ -adotoa*EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc)/EV%eft_cache%EFTeomQ -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+            ! use the one with etak instead
+            dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z + etak - 0.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*( 3._dl*dgpnu ) - 1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+        end if
     end if
     ! EFTCAMB MOD END.
 
@@ -2609,7 +2724,7 @@
         clxr=ay(EV%r_ix)
         qr  =ay(EV%r_ix+1)
         pir =ay(EV%r_ix+2)
-    endif
+    end if
 
     pig=0
     if (EV%no_phot_multpoles) then
@@ -2668,26 +2783,56 @@
             EV%eft_cache%etak = etak
             EV%eft_cache%etakdot = ayprime(ix_etak)
             EV%eft_cache%z = z
-            EV%eft_cache%dz = -2*adotoa*z +etak -0.5_dl/k*( grhog_t*clxg +grhor_t*clxr )
+            EV%eft_cache%dz = -2*adotoa*z +etak -0.5_dl/k*( grhog_t*clxg +grhor_t*clxr + 3._dl*dgpnu )
             EV%eft_cache%sigma = sigma
         end if
     else if (CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive) then
 
-        ! compute z, dz, sigma and equation for etak:
-        EV%eft_cache%z = 1._dl/EV%eft_cache%EFTeomG*(EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
-        z              = EV%eft_cache%z
+        if ( CP%EFTCAMB%EFTCAMB_evolve_delta_phi ) then
+            ! 1) compute h' and z = h'/2k
+            if ( CP%EFTCAMB%EFTCAMB_evolve_metric_h ) then 
+                z = 0.5_dl * metric_h_dot / k
+            else
+                vx_source_00 = s00p * delta_phi_dot + (s00 + s00k * k2) * delta_phi
+                metric_h_dot = (4._dl * k * etak + 2._dl * dgrho / Meff2) / (2._dl - alphaB) / adotoa + vx_source_00
+                z = 0.5_dl * metric_h_dot / k
+            end if
+            EV%eft_cache%z = z
+            ! compute pressure perturbation of all matter except for DE
+            dp_matter = (dgpnu + grhog_t*clxg/3._dl + grhor_t*clxr/3._dl) / a2
+            ! compute delta_phi''
+            delta_phi_ddot =  -2._dl * (1._dl + spi1) * adotoa * delta_phi_dot - ((1._dl + spi2) * k2 + spi3 * adotoa * adotoa) * delta_phi + spih * metric_h_dot + spie * k * etak / adotoa + spim * dp_matter
+            ! compute h'' and dz = h''/2k (ii eq)
+            metric_h_ddot = - (2._dl + alphaM) * adotoa * metric_h_dot + 2._dl * (1._dl + alphaT) * k * etak - 3._dl * a2 * dp_matter / Meff2 + (siipp * delta_phi_ddot + siip * delta_phi_dot + (sii + siik * k2) * delta_phi)
+            dz = 0.5_dl * metric_h_ddot / k
+            EV%eft_cache%dz = dz
+            if ( CP%EFTCAMB%EFTCAMB_evolve_metric_h ) ayprime(EV%w_ix+2) = metric_h_ddot
+            ! compute eta equation (0i eq) and sigma = (h' + 6 eta')/2k
+            vx_source_0i = s0ip * delta_phi_dot + s0i * delta_phi
+            ayprime(ix_etak) = 0.5_dl*dgq/Meff2 + k*vx_source_0i
+            sigma = (metric_h_dot + 6._dl*ayprime(ix_etak)/k)/(2._dl*k)
+            EV%eft_cache%etak = etak
+            EV%eft_cache%etakdot = ayprime(ix_etak)
+            EV%eft_cache%sigma = sigma
+        else
+        
+            ! compute z, dz, sigma and equation for etak:
+            EV%eft_cache%z = 1._dl/EV%eft_cache%EFTeomG*(EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl+EV%eft_cache%EFTOmegaV)) + EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
+            z              = EV%eft_cache%z
 
-        EV%eft_cache%dz = 1._dl/EV%eft_cache%EFTeomU*(-2*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z +etak -0.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*( grhog_t*clxg +grhor_t*clxr + 3._dl*dgpnu )&
-            & -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
-        dz              = EV%eft_cache%dz
+            EV%eft_cache%dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomY)*z +etak -0.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*( grhog_t*clxg +grhor_t*clxr + 3._dl*dgpnu )&
+                & -1.5_dl/k/(1._dl+EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+            dz              = EV%eft_cache%dz
 
-        EV%eft_cache%sigma = 1._dl/EV%eft_cache%EFTeomX*(z*EV%eft_cache%EFTeomU +1.5_dl*dgq/(k2*(1._dl+EV%eft_cache%EFTOmegaV)) +EV%eft_cache%EFTeomF/CP%eft_par_cache%h0_Mpc)
-        sigma              = EV%eft_cache%sigma
+            EV%eft_cache%sigma = 1._dl/EV%eft_cache%EFTeomX*(z*EV%eft_cache%EFTeomU +1.5_dl*dgq/(k2*(1._dl+EV%eft_cache%EFTOmegaV)) +EV%eft_cache%EFTeomF/CP%eft_par_cache%h0_Mpc)
+            sigma              = EV%eft_cache%sigma
 
-        ! Eom:
-        ayprime(ix_etak)   = ( 0.5_dl*dgq/(1._dl+EV%eft_cache%EFTOmegaV) + k2/3._dl*EV%eft_cache%EFTeomF/CP%eft_par_cache%h0_Mpc + k2/3._dl*(EV%eft_cache%EFTeomU -EV%eft_cache%EFTeomX)*z )/EV%eft_cache%EFTeomX
-        EV%eft_cache%etak = etak
-        EV%eft_cache%etakdot = ayprime(ix_etak)
+            ! Eom:
+            ayprime(ix_etak)   = ( 0.5_dl*dgq/(1._dl+EV%eft_cache%EFTOmegaV) + k2/3._dl*EV%eft_cache%EFTeomF/CP%eft_par_cache%h0_Mpc + k2/3._dl*(EV%eft_cache%EFTeomU -EV%eft_cache%EFTeomX)*z )/EV%eft_cache%EFTeomX
+            EV%eft_cache%etak = etak
+            EV%eft_cache%etakdot = ayprime(ix_etak)
+
+        end if
 
     end if
     ! EFTCAMB MOD END
@@ -2711,35 +2856,46 @@
           call State%CP%DarkEnergy%PerturbationEvolve(ayprime, w_dark_energy_t, &
           EV%w_ix, a, adotoa, k, z, ay)
     else if ( CP%EFTCAMB%EFTflag/=0 .and. ( EV%EFTCAMBactive .or. DebugEFTCAMB ) ) then
-      ! compute pi field equation factors:
-      call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , EV%eft_cache )
-      ! use them:
-      if ( ( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )==0._dl) then       ! strategies to adopt if the theory does not propagate an additional dof
-          if ( ( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )==0._dl ) then
-              vq                 = 0._dl
-              ay(EV%w_ix)        = 0._dl
-              ay(EV%w_ix+1)      = 0._dl
-              ayprime(EV%w_ix)   = 0._dl
-              ayprime(EV%w_ix+1) = 0._dl
-          else
-              vq                 = -( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 )*clxq/( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 ) -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )
-              ay(EV%w_ix+1)      = vq
-              ayprime(EV%w_ix)   = vq
-              ayprime(EV%w_ix+1) = 0._dl
-          end if
-      else
-        ayprime(EV%w_ix)   =  EV%eft_cache%pidot
-        ayprime(EV%w_ix+1) = -( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )*EV%eft_cache%pidot &
-            & - ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )*EV%eft_cache%pi &
-            & - CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )
-      end if
-      ! store in cache:
-      EV%eft_cache%pidot    = ayprime(EV%w_ix)
-      EV%eft_cache%pidotdot = ayprime(EV%w_ix+1)
-      if ( .not. EV%EFTCAMBactive .and. DebugEFTCAMB ) then
-        ayprime(EV%w_ix)   = 0._dl
-        ayprime(EV%w_ix+1) = 0._dl
-      end if
+        if ( CP%EFTCAMB%EFTCAMB_evolve_delta_phi ) then
+            ! already computed in the previous step
+            ayprime(EV%w_ix) = delta_phi_dot
+            ayprime(EV%w_ix+1) = delta_phi_ddot
+            ! store in cache, including the pi field
+            EV%eft_cache%delta_phidot = delta_phi_dot
+            EV%eft_cache%delta_phidotdot = delta_phi_ddot
+            EV%eft_cache%pidot = CP%eft_par_cache%h0_Mpc*( delta_phi_dot/dphi_safe - ddphi*delta_phi/dphi_safe/dphi_safe )
+            EV%eft_cache%pidotdot = CP%eft_par_cache%h0_Mpc*( delta_phi_ddot/dphi_safe - 2._dl*delta_phi_dot*ddphi/dphi_safe/dphi_safe + delta_phi*(2._dl*ddphi*ddphi/dphi_safe - dddphi)/dphi_safe/dphi_safe )
+        else
+            ! compute pi field equation factors:
+            call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , EV%eft_cache )
+            ! use them:
+            if ( ( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )==0._dl) then       ! strategies to adopt if the theory does not propagate an additional dof
+                if ( ( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )==0._dl ) then
+                    vq                 = 0._dl
+                    ay(EV%w_ix)        = 0._dl
+                    ay(EV%w_ix+1)      = 0._dl
+                    ayprime(EV%w_ix)   = 0._dl
+                    ayprime(EV%w_ix+1) = 0._dl
+                else
+                    vq                 = -( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 )*clxq/( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 ) -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )
+                    ay(EV%w_ix+1)      = vq
+                    ayprime(EV%w_ix)   = vq
+                    ayprime(EV%w_ix+1) = 0._dl
+                end if
+            else
+                ayprime(EV%w_ix)   =  EV%eft_cache%pidot
+                ayprime(EV%w_ix+1) = -( EV%eft_cache%EFTpiB1 +k2*EV%eft_cache%EFTpiB2 )/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )*EV%eft_cache%pidot &
+                    & - ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )*EV%eft_cache%pi &
+                    & - CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiA1 +k2*EV%eft_cache%EFTpiA2 )
+            end if
+            ! store in cache:
+            EV%eft_cache%pidot    = ayprime(EV%w_ix)
+            EV%eft_cache%pidotdot = ayprime(EV%w_ix+1)
+            if ( .not. EV%EFTCAMBactive .and. DebugEFTCAMB ) then
+                ayprime(EV%w_ix)   = 0._dl
+                ayprime(EV%w_ix+1) = 0._dl
+            end if
+        end if
     else
       ayprime(EV%w_ix)   = 0._dl
       ayprime(EV%w_ix+1) = 0._dl
@@ -2803,6 +2959,8 @@
         slip = - (2*adotoa/(1+pb43) + dopacity/opacity)* (vb-3._dl/4*qg) &
             +(-adotdota*vb-k/2*adotoa*clxg +k*(cs2*clxbdot-clxgdot/4))/(opacity*(1+pb43))
 
+        qgdot = k*(clxg/4._dl-pig/2._dl) +opacity*slip
+
         if (second_order_tightcoupling) then
             ! by Francis-Yan Cyr-Racine simplified (inconsistently) by AL assuming flat
             !AL: First order slip seems to be fine here to 2e-4
@@ -2815,8 +2973,13 @@
             if ( CP%EFTCAMB%EFTflag==0 .or. .not. EV%EFTCAMBactive ) then
                 sigmadot = -2*adotoa*sigma-dgs/k+etak
             else if (CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive) then
-                sigmadot = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomV)*sigma +etak&
-                    & -dgs/k/(1._dl+EV%eft_cache%EFTOmegaV) +EV%eft_cache%EFTeomN/CP%eft_par_cache%h0_Mpc)
+                if ( CP%EFTCAMB%EFTCAMB_evolve_delta_phi ) then
+                    vx_source_ij = sij * delta_phi
+                    sigmadot =  - (2._dl + alphaM)*adotoa*sigma + (1._dl + alphaT)*etak - dgs/k/Meff2 + k*vx_source_ij
+                else
+                    sigmadot = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomV)*sigma +etak&
+                        & -dgs/k/(1._dl+EV%eft_cache%EFTOmegaV) +EV%eft_cache%EFTeomN/CP%eft_par_cache%h0_Mpc)
+                end if
             end if
             ! EFTCAMB MOD END
 
@@ -3181,30 +3344,43 @@
               EV%eft_cache%QS_sigma_gen = 1._dl
         ! in EFT:
         else if (CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive) then
-              ! Metric quantities:
-              EFTsigmadot= 1._dl/EV%eft_cache%EFTeomX*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomV)*sigma +etak&
-                      & -1._dl/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV) +EV%eft_cache%EFTeomN/CP%eft_par_cache%h0_Mpc)
-              EFTsigmadotdot = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*(1._dl+EV%eft_cache%EFTeomV)*(EV%eft_cache%Hdot*sigma+adotoa*EFTsigmadot)&
-                  & -2._dl*adotoa*sigma*EV%eft_cache%EFTeomVdot +EV%eft_cache%etakdot &
-                  & +a*adotoa*EV%eft_cache%EFTOmegaP/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV)**2&
-                  & -1._dl/(1._dl+EV%eft_cache%EFTOmegaV)*(2._dl*adotoa*dgpi/k+diff_rhopi/k)&
-                  & -EV%eft_cache%EFTeomXdot*EFTsigmadot+EV%eft_cache%EFTeomNdot/CP%eft_par_cache%h0_Mpc)
-              EFT_Psi = ( EFTsigmadot +EV%eft_cache%adotoa*EV%eft_cache%sigma )/k
-              EFT_Phi = ( etak -EV%eft_cache%adotoa*EV%eft_cache%sigma )/k
-              EFT_PsiDot = EFTsigmadotdot/k +adotoa*EFTsigmadot/k +EV%eft_cache%Hdot*sigma/k
-              EFT_PhiDot = EV%eft_cache%etakdot/k -adotoa*EFTsigmadot/k -EV%eft_cache%Hdot*sigma/k
-              EFTLensing = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomV)*sigma +(1._dl+EV%eft_cache%EFTeomX)*etak&
-                  & -1._dl/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV) +EV%eft_cache%EFTeomN/CP%eft_par_cache%h0_Mpc)
-              EFTISW     = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*(1._dl+EV%eft_cache%EFTeomV)*(EV%eft_cache%Hdot*sigma+ adotoa*EFTsigmadot)&
-                  & -2._dl*adotoa*sigma*EV%eft_cache%EFTeomVdot + 0.5_dl*dgq*(1._dl+EV%eft_cache%EFTeomX)/EV%eft_cache%EFTeomX/(1._dl+EV%eft_cache%EFTOmegaV)&
-                  & +a*adotoa*EV%eft_cache%EFTOmegaP/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV)**2&
-                  & -1._dl/(1._dl+EV%eft_cache%EFTOmegaV)*(2._dl*adotoa*dgpi/k+diff_rhopi/k)&
-                  & +(1._dl+EV%eft_cache%EFTeomX)/EV%eft_cache%EFTeomX*k2/3._dl/CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTeomF +(1._dl+EV%eft_cache%EFTeomX)/EV%eft_cache%EFTeomX*k2/3._dl*(EV%eft_cache%EFTeomU -EV%eft_cache%EFTeomX)*z &
-                  & -EV%eft_cache%EFTeomXdot*EFTsigmadot +EV%eft_cache%EFTeomNdot/CP%eft_par_cache%h0_Mpc)
-              ! compute QS quantities:
-              call CP%EFTCAMB%model%compute_QS_mu( a, k, CP%eft_par_cache , EV%eft_cache )
-              call CP%EFTCAMB%model%compute_QS_Sigma( a, k, CP%eft_par_cache , EV%eft_cache )
-              call CP%EFTCAMB%model%compute_QS_Mu_Sigma( a, k, CP%eft_par_cache , EV%eft_cache )
+            ! Metric quantities:
+            if ( CP%EFTCAMB%EFTCAMB_evolve_delta_phi ) then
+                vx_source_ij = sij * delta_phi
+                vx_source_ij_dot = sijdot*delta_phi + sij*delta_phi_dot
+                EFTsigmadot    = - (2._dl + alphaM)*adotoa*sigma + (1._dl + alphaT)*etak - dgpi/k/Meff2 + k*vx_source_ij
+                EFTsigmadotdot = - alphaMdot*adotoa*sigma - (2._dl + alphaM)*EV%eft_cache%Hdot*sigma - (2._dl + alphaM)*adotoa*EFTsigmadot + alphaTdot*etak + (1._dl + alphaT)*EV%eft_cache%etakdot - (2._dl*adotoa*dgpi + diff_rhopi)/k/Meff2 + dgpi/k/Meff2*alphaM*adotoa + k*vx_source_ij_dot
+                EFT_Psi        = ( EFTsigmadot + adotoa*EV%eft_cache%sigma )/k
+                EFT_Phi        = ( etak - adotoa*EV%eft_cache%sigma )/k
+                EFT_PsiDot     = ( EFTsigmadotdot + EV%eft_cache%Hdot*EV%eft_cache%sigma + adotoa*EFTsigmadot )/k
+                EFT_PhiDot     = ( EV%eft_cache%etakdot - EV%eft_cache%Hdot*EV%eft_cache%sigma - adotoa*EFTsigmadot )/k
+                EFTLensing     = EFTsigmadot + etak
+                EFTISW         = EFTsigmadotdot + EV%eft_cache%etakdot
+            else
+                EFTsigmadot= 1._dl/EV%eft_cache%EFTeomX*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomV)*sigma +etak&
+                        & -1._dl/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV) +EV%eft_cache%EFTeomN/CP%eft_par_cache%h0_Mpc)
+                EFTsigmadotdot = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*(1._dl+EV%eft_cache%EFTeomV)*(EV%eft_cache%Hdot*sigma+adotoa*EFTsigmadot)&
+                    & -2._dl*adotoa*sigma*EV%eft_cache%EFTeomVdot +EV%eft_cache%etakdot &
+                    & +a*adotoa*EV%eft_cache%EFTOmegaP/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV)**2&
+                    & -1._dl/(1._dl+EV%eft_cache%EFTOmegaV)*(2._dl*adotoa*dgpi/k+diff_rhopi/k)&
+                    & -EV%eft_cache%EFTeomXdot*EFTsigmadot+EV%eft_cache%EFTeomNdot/CP%eft_par_cache%h0_Mpc)
+                EFT_Psi = ( EFTsigmadot +EV%eft_cache%adotoa*EV%eft_cache%sigma )/k
+                EFT_Phi = ( etak -EV%eft_cache%adotoa*EV%eft_cache%sigma )/k
+                EFT_PsiDot = EFTsigmadotdot/k +adotoa*EFTsigmadot/k +EV%eft_cache%Hdot*sigma/k
+                EFT_PhiDot = EV%eft_cache%etakdot/k -adotoa*EFTsigmadot/k -EV%eft_cache%Hdot*sigma/k
+                EFTLensing = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*adotoa*(1._dl+EV%eft_cache%EFTeomV)*sigma +(1._dl+EV%eft_cache%EFTeomX)*etak&
+                    & -1._dl/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV) +EV%eft_cache%EFTeomN/CP%eft_par_cache%h0_Mpc)
+                EFTISW     = 1._dl/EV%eft_cache%EFTeomX*(-2._dl*(1._dl+EV%eft_cache%EFTeomV)*(EV%eft_cache%Hdot*sigma+ adotoa*EFTsigmadot)&
+                    & -2._dl*adotoa*sigma*EV%eft_cache%EFTeomVdot + 0.5_dl*dgq*(1._dl+EV%eft_cache%EFTeomX)/EV%eft_cache%EFTeomX/(1._dl+EV%eft_cache%EFTOmegaV)&
+                    & +a*adotoa*EV%eft_cache%EFTOmegaP/k*dgpi/(1._dl+EV%eft_cache%EFTOmegaV)**2&
+                    & -1._dl/(1._dl+EV%eft_cache%EFTOmegaV)*(2._dl*adotoa*dgpi/k+diff_rhopi/k)&
+                    & +(1._dl+EV%eft_cache%EFTeomX)/EV%eft_cache%EFTeomX*k2/3._dl/CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTeomF +(1._dl+EV%eft_cache%EFTeomX)/EV%eft_cache%EFTeomX*k2/3._dl*(EV%eft_cache%EFTeomU -EV%eft_cache%EFTeomX)*z &
+                    & -EV%eft_cache%EFTeomXdot*EFTsigmadot +EV%eft_cache%EFTeomNdot/CP%eft_par_cache%h0_Mpc)
+            end if
+            ! compute QS quantities:
+            call CP%EFTCAMB%model%compute_QS_mu( a, k, CP%eft_par_cache , EV%eft_cache )
+            call CP%EFTCAMB%model%compute_QS_Sigma( a, k, CP%eft_par_cache , EV%eft_cache )
+            call CP%EFTCAMB%model%compute_QS_Mu_Sigma( a, k, CP%eft_par_cache , EV%eft_cache )
         end if
         ! metric quantities:
         EV%eft_cache%sigmadot    = EFTsigmadot
@@ -3284,22 +3460,28 @@
                   diff_rhopi+ k*sigma*(gpres + grho))/k2
               !time derivative of shear
               sigmadot = -adotoa*sigma - 1.0d0/2.0d0*dgpi/k + k*phi
-              !Temperature source terms, after integrating by parts in conformal time
+              
+            else if (CP%EFTCAMB%EFTflag/=0 .and. EV%EFTCAMBactive) then
+                sigmadot = EV%eft_cache%sigmadot
             end if
             ! EFTCAMB MOD END.
 
             !quadrupole source derivatives; polter = pi_g/10 + 3/5 E_2
             polter = pig/10+9._dl/15*E(2)
             polterdot = (1.0d0/10.0d0)*pigdot + (3.0d0/5.0d0)*Edot(2)
-            polterddot = -2.0d0/25.0d0*adotoa*dgq/(k*EV%Kf(1)) - 4.0d0/75.0d0*adotoa* &
-                k*sigma - 4.0d0/75.0d0*dgpi - 2.0d0/75.0d0*dgrho/EV%Kf(1) - 3.0d0/ &
-                50.0d0*k*octgdot*EV%Kf(2) + (1.0d0/25.0d0)*k*qgdot - 1.0d0/5.0d0 &
-                *k*EV%Kf(2)*Edot(3) + (-1.0d0/10.0d0*pig + (7.0d0/10.0d0)* &
-                polter - 3.0d0/5.0d0*E(2))*dopacity + (-1.0d0/10.0d0*pigdot &
-                + (7.0d0/10.0d0)*polterdot - 3.0d0/5.0d0*Edot(2))*opacity
+            ! polterddot = -2.0d0/25.0d0*adotoa*dgq/(k*EV%Kf(1)) - 4.0d0/75.0d0*adotoa* &
+            !     k*sigma - 4.0d0/75.0d0*dgpi - 2.0d0/75.0d0*dgrho/EV%Kf(1) - 3.0d0/ &
+            !     50.0d0*k*octgdot*EV%Kf(2) + (1.0d0/25.0d0)*k*qgdot - 1.0d0/5.0d0 &
+            !     *k*EV%Kf(2)*Edot(3) + (-1.0d0/10.0d0*pig + (7.0d0/10.0d0)* &
+            !     polter - 3.0d0/5.0d0*E(2))*dopacity + (-1.0d0/10.0d0*pigdot &
+            !     + (7.0d0/10.0d0)*polterdot - 3.0d0/5.0d0*Edot(2))*opacity
+            pigddot = 2._dl/5._dl*k*qgdot - 3._dl/5._dl*k*octgdot - dopacity*(pig - polter) - opacity*(pigdot - polterdot) + 8._dl/15._dl*k*sigmadot
+            E2ddot = -dopacity*(E(2) - polter) - opacity*(Edot(2) - polterdot) - k/3._dl*Edot(3)
+            polterddot = pigddot/10._dl + 3._dl/5._dl*E2ddot
 
             !2phi' term (\phi' + \psi' in Newtonian gauge), phi is the Weyl potential
             ! EFTCAMB MOD START: modified sources quantities
+            !Temperature source terms, after integrating by parts in conformal time
             if (CP%EFTCAMB%EFTflag==0.or. .not. EV%EFTCAMBactive) then
               if ( CP%EFTCAMB%EFTflag /= 0 ) then
                   ISW = -2._dl*sigma*( EV%eft_cache%Hdot -2._dl*adotoa**2 ) -2._dl*adotoa*etak +dgq -diff_rhopi/k
@@ -3575,6 +3757,7 @@
 
     ! EFTCAMB MOD START: additional variables
     real(dl) gpres, EFT_grhonu, EFT_gpinu, EFT_grhonudot, EFT_gpinudot, grhormass_t
+    real(dl) ct2, Meff2, alphaM
     ! EFTCAMB MOD END.
 
     k2=EV%k2_buf
@@ -3605,8 +3788,9 @@
       EV%eft_cache%grhor_t     = State%grhornomass/a2
       EV%eft_cache%grhog_t     = State%grhog/a2
       ! compute massive neutrino contribution:
+      EV%eft_cache%grhonu_tot    = 0._dl
+      EV%eft_cache%gpinu_tot     = 0._dl
       if ( CP%Num_Nu_Massive /= 0 ) then
-          EV%eft_cache%grhonu_tot    = 0._dl
           EV%eft_cache%gpinu_tot     = 0._dl
           do nu_i = 1, State%CP%Nu_mass_eigenstates
               EFT_grhonu    = 0._dl
@@ -3618,6 +3802,7 @@
           end do
       end if
       EV%eft_cache%grhom_t     = EV%eft_cache%grhob_t +EV%eft_cache%grhoc_t +EV%eft_cache%grhor_t +EV%eft_cache%grhog_t +EV%eft_cache%grhonu_tot
+      EV%eft_cache%gpresm_t = (+EV%eft_cache%grhor_t +EV%eft_cache%grhog_t)/3._dl +EV%eft_cache%gpinu_tot
       ! compute the other things:
       if ( .not. CP%EFTCAMB%EFTCAMB_model_is_designer ) then
           ! background for full models. Here the expansion history is computed from the
@@ -3634,12 +3819,11 @@
       adotoa   = EV%eft_cache%adotoa
       if ( a >= CP%EFTCAMB%EFTCAMB_pert_turn_on ) then
         ! compute massive neutrinos stuff:
+        EV%eft_cache%grhonu_tot    = 0._dl
+        EV%eft_cache%gpinu_tot     = 0._dl
+        EV%eft_cache%grhonudot_tot = 0._dl
+        EV%eft_cache%gpinudot_tot  = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
-            EV%eft_cache%grhonu_tot    = 0._dl
-            EV%eft_cache%gpinu_tot     = 0._dl
-            EV%eft_cache%grhonudot_tot = 0._dl
-            EV%eft_cache%gpinudot_tot  = 0._dl
-            EV%eft_cache%gpinudotdot_tot  = 0._dl
             do nu_i = 1, State%CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl
                 EFT_gpinu     = 0._dl
@@ -3660,12 +3844,12 @@
         ! compute remaining quantities related to H:
         call CP%EFTCAMB%model%compute_H_derivs( a, CP%eft_par_cache , EV%eft_cache )
         ! compute second derivative of massive neutrino pressure:
+        EV%eft_cache%grhonu_tot    = 0._dl
+        EV%eft_cache%gpinu_tot     = 0._dl
+        EV%eft_cache%grhonudot_tot = 0._dl
+        EV%eft_cache%gpinudot_tot  = 0._dl
+        EV%eft_cache%gpinudotdot_tot  = 0._dl
         if ( CP%Num_Nu_Massive /= 0 ) then
-            EV%eft_cache%grhonu_tot    = 0._dl
-            EV%eft_cache%gpinu_tot     = 0._dl
-            EV%eft_cache%grhonudot_tot = 0._dl
-            EV%eft_cache%gpinudot_tot  = 0._dl
-            EV%eft_cache%gpinudotdot_tot  = 0._dl
             do nu_i = 1, State%CP%Nu_mass_eigenstates
                 EFT_grhonu    = 0._dl
                 EFT_gpinu     = 0._dl
@@ -3677,10 +3861,13 @@
                 EV%eft_cache%gpinu_tot  = EV%eft_cache%gpinu_tot  + grhormass_t*EFT_gpinu
                 EV%eft_cache%grhonudot_tot = EV%eft_cache%grhonudot_tot + grhormass_t*(ThermalNuBack%drho(a*State%nu_masses(nu_i) ,adotoa)&
                     & -4._dl*adotoa*EFT_grhonu)
+                EFT_gpinudot = ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa, EFT_gpinu )
+                EV%eft_cache%gpinudot_tot  = EV%eft_cache%gpinudot_tot  + grhormass_t*(EFT_gpinudot&
+                    & -4._dl*adotoa*EFT_gpinu)
                 EV%eft_cache%gpinudotdot_tot = EV%eft_cache%gpinudotdot_tot - 4._dl*adotoa*grhormass_t*&
-                (ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa,EFT_gpinu)-4._dl*adotoa*EFT_gpinu)  + grhormass_t &
+                (EFT_gpinudot-4._dl*adotoa*EFT_gpinu)  + grhormass_t &
                 *(ThermalNuBack%pidotdot(a*State%nu_masses(nu_i),adotoa,EV%eft_cache%Hdot,EFT_gpinu,EFT_gpinudot)-4._dl*EV%eft_cache%Hdot*EFT_gpinu &
-                & -4._dl*adotoa*ThermalNuBack%pidot(a*State%nu_masses(nu_i),adotoa,EFT_gpinu))
+                & -4._dl*adotoa*EFT_gpinudot)
             end do
         end if
         ! compute pressure ddot:
@@ -3839,11 +4026,19 @@
         endif
     else if ( CP%EFTCAMB%EFTflag/=0 .and. a >= CP%EFTCAMB%EFTCAMB_pert_turn_on ) then
 
-        call CP%EFTCAMB%model%compute_tensor_factors( a, CP%eft_par_cache , EV%eft_cache )
+        if ( CP%EFTCAMB%EFTCAMB_evolve_delta_phi ) then
+            Meff2 = EV%eft_cache%Meff2
+            alphaM = EV%eft_cache%alphaM
+            ct2 = 1._dl + EV%eft_cache%alphaT
 
-        aytprime(ixt_shear)= -EV%eft_cache%EFTBT/EV%eft_cache%EFTAT*shear &
-            & +EV%eft_cache%EFTDT/EV%eft_cache%EFTAT*k*Hchi &
-            & -rhopi/k/EV%eft_cache%EFTAT
+            aytprime(ixt_shear) =  -(2._dl + alphaM)*adotoa*shear + k*ct2*Hchi - rhopi/k/Meff2
+        else
+            call CP%EFTCAMB%model%compute_tensor_factors( a, CP%eft_par_cache , EV%eft_cache )
+
+            aytprime(ixt_shear)= -EV%eft_cache%EFTBT/EV%eft_cache%EFTAT*shear &
+                & +EV%eft_cache%EFTDT/EV%eft_cache%EFTAT*k*Hchi &
+                & -rhopi/k/EV%eft_cache%EFTAT
+        end if
 
     end if
     ! EFTCAMB MOD END.

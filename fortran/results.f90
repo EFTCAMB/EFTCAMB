@@ -501,6 +501,10 @@
 
         ! EFTCAMB MOD START:initialize the EFTCAMB parameter choice
         if ( this%CP%EFTCAMB%EFTFlag /= 0 ) then
+          ! 0) make some noise if nonlinear is on
+          if ( this%CP%NonLinear /= NonLinear_none ) then
+              if (this%CP%EFTCAMB%EFTCAMB_feedback_level > 0) write(*,*) "Warning: You have nonlinear=", this%CP%NonLinear, " with EFTCAMB active. Nonlinearity has not been worked out for general DE/MG theories. Set feedback_level=0 to mute this warning."
+          end if
           ! 1) parameter cache:
           call this%CP%eft_par_cache%initialize()
           !    - relative densities:
@@ -542,23 +546,30 @@
               return
           end if
 
-          ! 3) compute the return to GR of the theory:
-          call EFTCAMBReturnToGR( this%CP%EFTCAMB%model, this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_pert_turn_on, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold )
-          this%CP%EFTCAMB%EFTCAMB_pert_turn_on = RGR_time
-          call EFTCAMBReturnToGR_feedback( this%CP%EFTCAMB%EFTCAMB_feedback_level, this%CP%EFTCAMB%model, this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_pert_turn_on, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold )
+          if ( .not. this%CP%EFTCAMB%EFTCAMB_skip_RGR ) then
 
-          ! 4) compute wether the theory is stable or not:
-          k_max = 10._dl
-          call EFTCAMB_Stability_Check( success, this%CP%EFTCAMB, this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_stability_time, 1._dl, k_max )
-          if ( .not. success ) then
-              global_error_flag         = 1
-              global_error_message      = 'EFTCAMB: theory unstable'
-              if (present(error)) error = global_error_flag
-              ! 5) final feedback:
-              if ( this%CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
-                  write(*,'(a)') '***************************************************************'
-              end if
-              return
+            ! 3) compute the return to GR of the theory:
+            call EFTCAMBReturnToGR( this%CP%EFTCAMB%model, this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_pert_turn_on, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold )
+            this%CP%EFTCAMB%EFTCAMB_pert_turn_on = RGR_time
+            call EFTCAMBReturnToGR_feedback( this%CP%EFTCAMB%EFTCAMB_feedback_level, this%CP%EFTCAMB%model, this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_pert_turn_on, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold )
+          end if
+
+          if ( .not. this%CP%EFTCAMB%EFTCAMB_skip_stability ) then
+
+            ! 4) compute wether the theory is stable or not:
+            k_max = 10._dl
+            call EFTCAMB_Stability_Check( success, this%CP%EFTCAMB, this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_stability_time, 1._dl, k_max )
+            if ( .not. success ) then
+                global_error_flag         = 1
+                global_error_message      = 'EFTCAMB: theory unstable'
+                if (present(error)) error = global_error_flag
+                ! 5) final feedback:
+                if ( this%CP%EFTCAMB%EFTCAMB_feedback_level > 1 ) then
+                    write(*,'(a)') '***************************************************************'
+                end if
+                return
+            end if
+
           end if
 
           ! 5) final feedback:
@@ -684,8 +695,14 @@
     real(dl), intent(IN) :: a1,a2
     real(dl), optional, intent(in) :: in_tol
 
-    atol = PresentDefault(tol/1000/exp(this%CP%Accuracy%AccuracyBoost*this%CP%Accuracy%IntTolBoost-1), in_tol)
-    CAMBdata_DeltaTime = Integrate_Romberg(this, dtauda,a1,a2,atol)
+    ! EFTCAMB MOD START: use precomputed tau table in EFTCAMB instead
+    if ( this%CP%EFTCAMB%EFTFlag /= 0 .and. this%CP%EFTCAMB%EFTCAMB_use_background ) then
+        CAMBdata_DeltaTime = this%CP%EFTCAMB%model%compute_DeltaTau( a1, a2 )
+    ! EFTCAMB MOD END
+    else
+        atol = PresentDefault(tol/1000/exp(this%CP%Accuracy%AccuracyBoost*this%CP%Accuracy%IntTolBoost-1), in_tol)
+        CAMBdata_DeltaTime = Integrate_Romberg(this, dtauda,a1,a2,atol)
+    end if
 
     end function CAMBdata_DeltaTime
 
@@ -750,8 +767,14 @@
     real(dl), optional, intent(in) :: in_tol
     real(dl) CAMBdata_DeltaPhysicalTimeGyr, atol
 
-    atol = PresentDefault(1d-4/exp(this%CP%Accuracy%AccuracyBoost-1), in_tol)
-    CAMBdata_DeltaPhysicalTimeGyr = Integrate_Romberg(this, dtda,a1,a2,atol)*Mpc/c/Gyr
+    ! EFTCAMB MOD START: use precomputed t table in EFTCAMB instead
+    if ( this%CP%EFTCAMB%EFTFlag /= 0 .and. this%CP%EFTCAMB%EFTCAMB_use_background ) then
+        CAMBdata_DeltaPhysicalTimeGyr = this%CP%EFTCAMB%model%compute_DeltaCosmicT( a1, a2 )*Mpc/c/Gyr
+    ! EFTCAMB MOD END
+    else
+        atol = PresentDefault(1d-4/exp(this%CP%Accuracy%AccuracyBoost-1), in_tol)
+        CAMBdata_DeltaPhysicalTimeGyr = Integrate_Romberg(this, dtda,a1,a2,atol)*Mpc/c/Gyr
+    end if
     end function CAMBdata_DeltaPhysicalTimeGyr
 
     subroutine CAMBdata_DeltaPhysicalTimeGyrArr(this, arr, a1, a2, n, tol)
@@ -914,7 +937,13 @@
     class(CAMBdata) :: this
     real(dl), intent(in) :: z
 
-    CAMBdata_sound_horizon = Integrate_Romberg(this,dsound_da_exact,1d-9,1/(z+1),1e-6_dl)
+    ! EFTCAMB MOD START: use precomputed rs table in EFTCAMB instead
+    if ( this%CP%EFTCAMB%EFTFlag /= 0 .and. this%CP%EFTCAMB%EFTCAMB_use_background ) then
+        CAMBdata_sound_horizon = this%CP%EFTCAMB%model%compute_SoundHorizon(1._dl/(z+1._dl))
+    ! EFTCAMB MOD END
+    else
+        CAMBdata_sound_horizon = Integrate_Romberg(this,dsound_da_exact,1d-9,1/(z+1),1e-6_dl)
+    end if
 
     end function CAMBdata_sound_horizon
 
@@ -1001,7 +1030,13 @@
 
     astar = 1/(1+zstar)
     atol = 1e-6
-    rs = Integrate_Romberg(this,dsound_da_approx,1d-8,astar,atol)
+    ! EFTCAMB MOD START: use precomputed rs table in EFTCAMB instead
+    if ( this%CP%EFTCAMB%EFTFlag /= 0 .and. this%CP%EFTCAMB%EFTCAMB_use_background ) then
+        rs = this%CP%EFTCAMB%model%compute_SoundHorizon(astar)
+    ! EFTCAMB MOD END
+    else
+        rs = Integrate_Romberg(this,dsound_da_approx,1d-8,astar,atol)
+    end if
     DA = this%AngularDiameterDistance(zstar)/astar
     CAMBdata_CosmomcTheta = rs/DA
 

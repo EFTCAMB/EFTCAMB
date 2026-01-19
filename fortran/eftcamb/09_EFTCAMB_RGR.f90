@@ -186,6 +186,8 @@ contains
         eft_cache%grhor_t = params_cache%grhornomass/a2  ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
         eft_cache%grhog_t = params_cache%grhog/a2        ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
         ! Massive neutrinos terms:
+        eft_cache%grhonu_tot = 0._dl
+        eft_cache%gpinu_tot  = 0._dl
         if ( params_cache%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, params_cache%Nu_mass_eigenstates
                 grhonu    = 0._dl
@@ -219,6 +221,8 @@ contains
         ! Massive neutrinos mod:
         eft_cache%grhonu_tot = 0._dl
         eft_cache%gpinu_tot  = 0._dl
+        eft_cache%grhonudot_tot = 0._dl
+        eft_cache%gpinudot_tot = 0._dl
         if ( params_cache%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, params_cache%Nu_mass_eigenstates
                 grhonu    = 0._dl
@@ -245,6 +249,9 @@ contains
         ! Massive neutrinos mod:
         eft_cache%grhonu_tot = 0._dl
         eft_cache%gpinu_tot  = 0._dl
+        eft_cache%grhonudot_tot = 0._dl
+        eft_cache%gpinudot_tot = 0._dl
+        eft_cache%gpinudotdot_tot = 0._dl
         if ( params_cache%Num_Nu_Massive /= 0 ) then
             do nu_i = 1, params_cache%Nu_mass_eigenstates
                 grhonu    = 0._dl
@@ -258,12 +265,13 @@ contains
                 eft_cache%gpinu_tot  = eft_cache%gpinu_tot  + grhormass_t*gpinu
                 eft_cache%grhonudot_tot = eft_cache%grhonudot_tot + grhormass_t*( ThermalNuBack%drho(a*params_cache%nu_masses(nu_i), adotoa)&
                     & -4._dl*adotoa*grhonu )
-                eft_cache%gpinudot_tot  = eft_cache%gpinudot_tot  + grhormass_t*( ThermalNuBack%pidot(a*params_cache%nu_masses(nu_i),adotoa, gpinu )&
+                gpinudot = ThermalNuBack%pidot(a*params_cache%nu_masses(nu_i),eft_cache%adotoa, gpinu )
+                eft_cache%gpinudot_tot  = eft_cache%gpinudot_tot  + grhormass_t*( gpinudot&
                     & -4._dl*adotoa*gpinu )
-                eft_cache%gpinudotdot_tot = eft_cache%gpinudotdot_tot -4._dl*adotoa*grhormass_t*(ThermalNuBack%pidot(a*params_cache%nu_masses(nu_i),adotoa,gpinu)&
+                eft_cache%gpinudotdot_tot = eft_cache%gpinudotdot_tot -4._dl*adotoa*grhormass_t*(gpinudot&
                             &-4._dl*adotoa*gpinu)+ grhormass_t*(ThermalNuBack%pidotdot(a*params_cache%nu_masses(nu_i),adotoa,eft_cache%Hdot,gpinu,gpinudot)&
                             &-4._dl*eft_cache%Hdot*gpinu &
-                            &-4._dl*adotoa*ThermalNuBack%pidot(a*params_cache%nu_masses(nu_i),adotoa,gpinu))
+                            &-4._dl*adotoa*gpinudot)
             end do
         end if
         ! compute pressure ddot:

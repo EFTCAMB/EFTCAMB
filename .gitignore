@@ -3,6 +3,7 @@
 *.a
 *.o
 *.so
+*.dll
 *.sm
 *~*
 *.dll
@@ -24,6 +25,7 @@ WinDLL/
 *.user
 *.save
 *.log
+*.out
 .idea
 .DS_Store
 *egg*
@@ -39,4 +41,5 @@ Advisor/
 Inspector/
 .ipynb_checkpoints
 camb/HighLExtrapTemplate_lenspotentialCls.dat
+__pycache__
 .vscode/

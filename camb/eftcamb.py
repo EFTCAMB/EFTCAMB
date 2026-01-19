@@ -5,7 +5,7 @@ This file contains the basic tools to interface EFTCAMB to camb.
 
 """
 
-from .baseconfig import gfortran, camblib, F2003Class, fortran_class, CAMBError
+from .baseconfig import gfortran, camblib, F2003Class, fortran_class, CAMBError, AllocatableArrayDouble
 from ctypes import c_bool, c_int, byref, c_double, POINTER, create_string_buffer
 from . import model
 import copy
@@ -45,6 +45,9 @@ EFTCAMB_check_stability = camblib.__eftcamb_stability_MOD_eftcamb_stability_chec
 # EFTCAMB printing variables:
 EFTCAMB_quantities_evolution = camblib.__eftcamb_python_MOD_eftcamb_getevolution
 
+# EFTCAMB printing EFT functions (no recomputation):
+EFTCAMB_eftfunctions = camblib.__eftcamb_python_MOD_eftcamb_geteftfunctions
+
 ###############################################################################
 # EFTCAMB classes:
 ###############################################################################
@@ -61,14 +64,23 @@ class EFTCAMB(F2003Class):
                ("AltParEFTmodel", c_int, "Model selection flag for alternative EFT parameterization"),
                ("DesignerEFTmodel", c_int, "Model selection flag for designer EFT models"),
                ("FullMappingEFTmodel", c_int, "Model selection flag for full mapping EFT models"),
+
                # Stability flags
-               ("EFT_ghost_math_stability ", c_bool, "Flag that decides whether to enforce the mathematical ghost condition. This is less conservative than the physical requirement. Enforces the condition on both scalar and tensor sectors"),
+               ("EFT_ghost_math_stability", c_bool, "Flag that decides whether to enforce the mathematical ghost condition. This is less conservative than the physical requirement. Enforces the condition on both scalar and tensor sectors"),
                ("EFT_mass_math_stability", c_bool, "Flag that decides whether to enforce the mathematical mass condition. This should prevent fast growing instabilities but is not fully rigorous. Use is deprecated"),
                ("EFT_ghost_stability", c_bool, "Flag that decides whether to enforce the physical ghost condition. Works up to Horndeski."),
                ("EFT_gradient_stability", c_bool, "Flag that decides whether to enforce the physical gradient condition. Works up to Horndeski."),
                ("EFT_mass_stability", c_bool, "Flag that decides whether to enforce the physical mass condition. Works up to Horndeski."),
                ("EFT_mass_stability_rate", c_double, "Flag that sets the rate for the mass instability in units of Hubble time."),
                ("EFT_additional_priors", c_bool, "Flag that extablishes whether to use additional priors that are related to the specific model. Each model has the possibility of implementing their own additional stability requirements."),
+               # Positvity bounds flags
+               ("EFT_positivity_bounds", c_bool, "Flag that decides whether to enforce the positivity bounds. Works up to Horndeski. "),
+               ("EFT_minkowski_limit", c_bool, "Flag that checks the existence of a healthy Minkowski limit. Works up to Horndeski. "),
+               # QSA flags
+               ("EFT_check_QSA", c_bool, "Flag that decides whether check QSA of mu"),
+               ("EFT_QSA_threshold", c_double, "Tolerence for relative difference between (mu,sigma) and that of QSA"),
+               ("EFT_QSA_time", c_double, "Minimum scale factor at which the code checks for QSA"),
+               ("EFT_QSA_k", c_double, "Minimum k at which the code checks for QSA "),
                # Working flags
                ("EFTCAMB_feedback_level", c_int, "Amount of feedback that is printed to screen"),
                ("EFTCAMB_back_turn_on", c_double, "Smallest scale factor that the code should consider when computing the background. Set to zero (default), change background at all times."),
@@ -77,6 +89,11 @@ class EFTCAMB(F2003Class):
                ("EFTCAMB_stability_time", c_double, "Minimum scale factor at which the code checks for stability of a theory"),
                ("EFTCAMB_stability_threshold", c_double, "Threshold for the stability module to consider the model stable."),
                ("EFTCAMB_model_is_designer", c_bool, "Logical flag that establishes whether the model is designer or not."),
+               ("EFTCAMB_use_background", c_bool, "Whether use the background conformal time, cosmic time and sound horizon computed by EFTCAMB instead of integrating them in CAMB. Currently only supported by the Horndeski module."),
+               ("EFTCAMB_evolve_delta_phi", c_bool, "Flag that decides whether integrate delta_phi instead of pi for covariant theories"),
+               ("EFTCAMB_evolve_metric_h", c_bool, "Flag that decides whether integrate h' instead of using constraints"),
+               ("EFTCAMB_skip_stability", c_bool, "Flag that decides whether skip all stability checks."),
+               ("EFTCAMB_skip_RGR", c_bool, "Flag that decides whether skip the return to GR checks."),
                ("EFTCAMB_effective_w0wa", c_bool, "Logical flag that establishes whether the model has effective w0wa or not."),
                ]
 
@@ -310,11 +327,71 @@ class EFTCAMB(F2003Class):
         results = np.ctypeslib.as_array(results)
         #
         return fields, results
+    
+    def get_eft_functions(self, camb_results, a):
+        """
+        Get the EFT functions (those depends only on the background) of the input EFTCAMB model.
+
+        :param camb_results: a :class:`~.results.CAMBdata`
+        :param a: array of requested scale factors to output
+        """
+        # convert scale factor to redshift:
+        if np.isscalar(a):
+            z = 1./np.array([a], dtype=np.float64) - 1.
+        else:
+            z = 1./np.array(a, dtype=np.float64) - 1.
+        # then to conformal time:
+        eta = camb_results.conformal_time(z)
+        # digest the input scale factor array:
+        times = np.asfortranarray(np.atleast_1d(a), dtype=np.float64)
+        etas = np.asfortranarray(np.atleast_1d(eta), dtype=np.float64)
+        # prepare the output array with the time step cache type:
+        results = (EFTCAMB_timestep_cache * times.shape[0])()
+        # call the fortran function:
+        EFTCAMB_eftfunctions(byref(camb_results),
+                             byref(c_int(times.shape[0])),
+                             times.ctypes.data_as(POINTER(c_double)),
+                             etas.ctypes.data_as(POINTER(c_double)),
+                             byref(results)
+                             )
+        fields = results[0].variables()
+        results = np.ctypeslib.as_array(results)
+        return fields, results
 
 @fortran_class
 class EFTCAMB_parameter_cache(F2003Class):
     _fortran_class_module_ = 'EFTCAMB_cache'
     _fortran_class_name_ = 'TEFTCAMB_parameter_cache'
+
+    _fields_ = [
+        # 1) relative densities:
+        ("omegac", c_double),
+        ("omegab", c_double),
+        ("omegav", c_double),
+        ("omegak", c_double),
+        ("omegan", c_double),
+        ("omegag", c_double),
+        ("omegar", c_double),
+        # 2) Hubble constant:
+        ("h0", c_double),
+        ("h0_Mpc", c_double),
+        # 3) densities:
+        ("grhog", c_double),
+        ("grhornomass", c_double),
+        ("grhoc", c_double),
+        ("grhob", c_double),
+        ("grhov", c_double),
+        ("grhok", c_double),
+        # 4) massive neutrinos:
+        ("Num_Nu_Massive", c_int),
+        ("Nu_mass_eigenstates", c_int),
+        ("grhormass", AllocatableArrayDouble),
+        ("nu_masses", AllocatableArrayDouble),
+        # 5a) Horndeski module: EDE shooting parameters
+        ("maxfrac_hdsk", c_double),
+        ("z_maxfrac_hdsk", c_double),
+        # 5b) Horndeski module: designer approach products
+    ]
 
 
 @fortran_class
@@ -387,6 +464,42 @@ class EFTCAMB_timestep_cache(F2003Class):
                 ("EFTGamma5P", c_double),    # the value of the derivative wrt scale factor of Gamma 5 \f$  d \gamma_5(a) / da \f$.
                 ("EFTGamma6V", c_double),    # the value of Gamma 6 \f$ \gamma_6(a) \f$.
                 ("EFTGamma6P", c_double),    # the value of the derivative wrt scale factor of Gamma 6 \f$  d \gamma_6(a) / da \f$.
+                # 5b) alternative EFT functions
+                ("alphaB", c_double),        # the value of the Horndeski function \f$ \alpha_B \f$
+                ("alphaBdot", c_double),     # the value of the derivative wrt conformal time of alphaB \f$ \dot{\alpha}_B \f$
+                ("alphaT", c_double),        # the value of the Horndeski function \f$ \alpha_T \f$
+                ("alphaTdot", c_double),     # the value of the derivative wrt conformal time of alphaT \f$ \dot{\alpha}_T \f$
+                ("alphaK", c_double),        # the value of the Horndeski function \f$ \alpha_K \f$
+                ("alphaKdot", c_double),     # the value of the derivative wrt conformal time of alphaK \f$ \dot{\alpha}_K \f$
+                ("alphaM", c_double),        # the value of the Horndeski function \f$ \alpha_M \f$
+                ("alphaMdot", c_double),     # the value of the derivative wrt conformal time of alphaK \f$ \dot{\alpha}_M \f$
+                ("Meff2", c_double),         # the value of the effective Planck mass over today's measured value \f$ M_*^2/m_0^2 \f$
+                # 5c) delta phi perturbation coefficients
+                ("spi1", c_double),          # the coefficient before delta_phi_prime on the LHS of the delta_phi equation, see the appendix of XXXX.XXXX
+                ("spi2", c_double),          # the coefficient before delta_phi on the LHS of the delta_phi equation, see the appendix of XXXX.XXXX
+                ("spi3", c_double),          # the coefficient before k^2*delta_phi on the LHS of the delta_phi equation, see the appendix of XXXX.XXXX
+                ("spih", c_double),          # the coefficient before h_prime on the RHS of the delta_phi equation, see the appendix of XXXX.XXXX
+                ("spie", c_double),          # the coefficient before k^2*eta on the RHS of the delta_phi equation, see the appendix of XXXX.XXXX
+                ("spim", c_double),          # the coefficient before P_matter on the RHS of the delta_phi equation, see the appendix of XXXX.XXXX
+                ("s00", c_double),           # the coefficient before delta_phi in the modified 00 einstein equation, see the appendix of XXXX.XXXX
+                ("s00k", c_double),          # the coefficient before k^2*delta_phi in the modified 00 einstein equation, see the appendix of XXXX.XXXX
+                ("s00p", c_double),          # the coefficient before delta_phi_prime in the modified 00 einstein equation, see the appendix of XXXX.XXXX
+                ("s0i", c_double),           # the coefficient before delta_phi in the modified 0i einstein equation, see the appendix of XXXX.XXXX
+                ("s0ip", c_double),          # the coefficient before delta_phi_prime in the modified 0i einstein equation, see the appendix of XXXX.XXXX
+                ("sii", c_double),           # the coefficient before delta_phi in the modified ii einstein equation, see the appendix of XXXX.XXXX
+                ("siik", c_double),          # the coefficient before k^2*delta_phi in the modified ii einstein equation, see the appendix of XXXX.XXXX
+                ("siip", c_double),          # the coefficient before delta_phi_prime in the modified ii einstein equation, see the appendix of XXXX.XXXX
+                ("siipp", c_double),         # the coefficient before delta_phi_prime_prime in the modified ii einstein equation, see the appendix of XXXX.XXXX
+                ("sij", c_double),           # the coefficient before delta_phi in the modified ij einstein equation, see the appendix of XXXX.XXXX
+                ("sijdot", c_double),        # the derivative wrt conformal time of the coefficient before delta_phi in the modified ij einstein equation, see the appendix of XXXX.XXXX
+                # 5d) background scalar field
+                ("phi_scf", c_double),       # the background value of the scalar field phi
+                ("V_scf", c_double),         # the value of the scalar field potential
+                ("dphi", c_double),          # the derivative of the scalar field phi wrt conformal time
+                ("ddphi", c_double),         # the second derivative of the scalar field phi wrt conformal time  
+                ("dddphi", c_double),        # the third derivative of the scalar field phi wrt conformal time
+                # 5e) scalar field time scale
+                ("dtau_hdsk", c_double),     # the conformal time difference between two nearby points of phi=0, estimation of the field evolution timescale if it is oscillating
                 # 6) other background quantities:
                 ("grhoq", c_double),         # the value of the effective density of the Q field. Refer to the Numerical Notes for the definition.
                 ("gpresq", c_double),        # the value of the effective pressure of the Q field. Refer to the Numerical Notes for the definition.
@@ -419,6 +532,10 @@ class EFTCAMB_timestep_cache(F2003Class):
                 ("pi", c_double),            # the value of the pi field at a given time and scale.
                 ("pidot", c_double),         # the value of the (conformal) time derivative of the pi field at a given time and scale.
                 ("pidotdot", c_double),      # the value of the (conformal) second time derivative of the pi field at a given time and scale.
+                # 9b) delta_phi field quantities:
+                ("delta_phi", c_double),       # the value of the scalar field perturbation delta_phi
+                ("delta_phidot", c_double),    # the value of the derivative wrt conformal time of the scalar field perturbation delta_phi
+                ("delta_phidotdot", c_double), # the value of the second derivative wrt conformal time of the scalar field perturbation delta_phi
                 # 10) scalar perturbations quantities:
                 ("etak", c_double),          # Syncronous gauge \f$ eta*k \f$ perturbation.
                 ("etakdot", c_double),       # Syncronous gauge \f$ \dot{eta}*k \f$ perturbation. This is the Einstein equation that is actually integrated.

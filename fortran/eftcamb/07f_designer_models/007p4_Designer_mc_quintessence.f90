@@ -119,6 +119,27 @@ contains
         ! allocate Gamma6:
         if ( allocated(self%PureEFTGamma6) ) deallocate(self%PureEFTGamma6)
         allocate( zero_parametrization_1D::self%PureEFTGamma6 )
+        ! allocate Omega_ODE:
+        if ( allocated(self%PureEFTOmega_ODE) ) deallocate(self%PureEFTOmega_ODE)
+        allocate( zero_parametrization_1D::self%PureEFTOmega_ODE )
+        ! allocate Gamma1_ODE:
+        if ( allocated(self%PureEFTGamma1_ODE) ) deallocate(self%PureEFTGamma1_ODE)
+        allocate( zero_parametrization_1D::self%PureEFTGamma1_ODE )
+        ! allocate Gamma2_ODE:
+        if ( allocated(self%PureEFTGamma2_ODE) ) deallocate(self%PureEFTGamma2_ODE)
+        allocate( zero_parametrization_1D::self%PureEFTGamma2_ODE )
+        ! allocate Gamma3_ODE:
+        if ( allocated(self%PureEFTGamma3_ODE) ) deallocate(self%PureEFTGamma3_ODE)
+        allocate( zero_parametrization_1D::self%PureEFTGamma3_ODE )
+        ! allocate Gamma4_ODE:
+        if ( allocated(self%PureEFTGamma4_ODE) ) deallocate(self%PureEFTGamma4_ODE)
+        allocate( zero_parametrization_1D::self%PureEFTGamma4_ODE )
+        ! allocate Gamma5_ODE:
+        if ( allocated(self%PureEFTGamma5_ODE) ) deallocate(self%PureEFTGamma5_ODE)
+        allocate( zero_parametrization_1D::self%PureEFTGamma5_ODE )
+        ! allocate Gamma6_ODE:
+        if ( allocated(self%PureEFTGamma6_ODE) ) deallocate(self%PureEFTGamma6_ODE)
+        allocate( zero_parametrization_1D::self%PureEFTGamma6_ODE )
 
         ! initialize the names:
         call self%PureEFTOmega%set_name ( 'EFTOmega' , '\Omega'       )
@@ -129,6 +150,13 @@ contains
         call self%PureEFTGamma4%set_name( 'EFTGamma4', '\gamma^{(4)}' )
         call self%PureEFTGamma5%set_name( 'EFTGamma5', '\gamma^{(5)}' )
         call self%PureEFTGamma6%set_name( 'EFTGamma6', '\gamma^{(6)}' )
+        call self%PureEFTOmega_ODE%set_name ( 'EFTOmega_ODE' , '\Omega_{ODE}'       )
+        call self%PureEFTGamma1_ODE%set_name( 'EFTGamma1_ODE', '\gamma^{(1)}_{ODE}' )
+        call self%PureEFTGamma2_ODE%set_name( 'EFTGamma2_ODE', '\gamma^{(2)}_{ODE}' )
+        call self%PureEFTGamma3_ODE%set_name( 'EFTGamma3_ODE', '\gamma^{(3)}_{ODE}' )
+        call self%PureEFTGamma4_ODE%set_name( 'EFTGamma4_ODE', '\gamma^{(4)}_{ODE}' )
+        call self%PureEFTGamma5_ODE%set_name( 'EFTGamma5_ODE', '\gamma^{(5)}_{ODE}' )
+        call self%PureEFTGamma6_ODE%set_name( 'EFTGamma6_ODE', '\gamma^{(6)}_{ODE}' )
 
         ! additional initialization of the function:
         call self%PureEFTwDE%init_func_from_file( Ini, eft_error )
