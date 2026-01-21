@@ -28,7 +28,7 @@ class CMB_plots:
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
-        stream.set_xscale('Log')
+        stream.set_xscale('log')
         stream.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
         # set labels
         stream.set_xlabel(r'$l$')
@@ -43,7 +43,7 @@ class CMB_plots:
             self.CV_p, = stream.plot(xval, np.array([ 1. for _temp in xval ]), color = 'k')
             self.TT_p, = stream.plot( xval, -yval, color = self.color, linestyle=self.negative_line_style )
             # set log scale
-            stream.set_yscale('Log')
+            stream.set_yscale('log')
             # set limits and label
             stream.set_ylim(self.comparison_min, self.comparison_max)
             stream.set_ylabel(r'$\Delta C_l^{TT}/ \sigma_l^{TT}$')
@@ -55,8 +55,8 @@ class CMB_plots:
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
-        stream.set_xscale('Log')
-        stream.set_yscale('Log')
+        stream.set_xscale('log')
+        stream.set_yscale('log')
         # set labels
         stream.set_xlabel(r'$l$')
         stream.set_ylabel(r'$l(l+1)C_l^{EE}/ 2\pi$')
@@ -69,7 +69,7 @@ class CMB_plots:
             # plot in units of cosmic variance
             self.CV_p, = stream.plot(xval, np.array([ 1. for _temp in xval ]), color = 'k')
             self.EE_p, = stream.plot(xval, -yval, color = self.color, linestyle=self.negative_line_style)
-            stream.set_yscale('Log')
+            stream.set_yscale('log')
             stream.set_ylim(self.comparison_min, self.comparison_max)
             stream.set_ylabel(r'$\Delta C_l^{EE}/ \sigma_l^{EE}$')
 
@@ -81,8 +81,8 @@ class CMB_plots:
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
-        stream.set_xscale('Log')
-        stream.set_yscale('Log')
+        stream.set_xscale('log')
+        stream.set_yscale('log')
         # set labels
         stream.set_xlabel(r'$l$')
         stream.set_ylabel(r'$l(l+1)C_l^{TE}/ 2\pi$')
@@ -93,7 +93,7 @@ class CMB_plots:
         # setup if comparison:
         if self.comparison:
             self.CV_p, = stream.plot(xval, np.array([ 1. for _temp in xval ]), color = 'k')
-            stream.set_yscale('Log')
+            stream.set_yscale('log')
             stream.set_ylim(self.comparison_min, self.comparison_max)
             stream.set_ylabel(r'$\Delta C_l^{TE}/ \sigma_l^{TE}$')
 
@@ -105,8 +105,8 @@ class CMB_plots:
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
-        stream.set_xscale('Log')
-        stream.set_yscale('Log')
+        stream.set_xscale('log')
+        stream.set_yscale('log')
         # set labels
         stream.set_xlabel(r'$l$')
         stream.set_ylabel(r'$l(l+1)C_l^{BB}/ 2\pi$')
@@ -127,7 +127,7 @@ class CMB_plots:
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
-        stream.set_xscale('Log')
+        stream.set_xscale('log')
         stream.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
         # set labels
         stream.set_xlabel(r'$l$')
@@ -141,7 +141,7 @@ class CMB_plots:
             ycosmicvar = np.array(self.CosmicVariance(xval))*100.
             self.Phi_p, = stream.plot(xval, -yval, color = self.color, linestyle=self.negative_line_style)
             self.CV_p, = stream.plot(xval, ycosmicvar, color = 'k')
-            stream.set_yscale('Log')
+            stream.set_yscale('log')
             stream.set_ylim(self.comparison_min*10., self.comparison_max*10.)
             stream.set_ylabel(r'$\Delta C_l^{\Phi\Phi}/ C_l^{\Phi\Phi} (\%) $')
 
@@ -153,7 +153,7 @@ class CMB_plots:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         stream.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
         # set axes scales
-        stream.set_xscale('Log')
+        stream.set_xscale('log')
         # set labels
         stream.set_xlabel(r'$l$')
         stream.set_ylabel(r'$l^3 C_l^{\Phi T}$')
@@ -166,7 +166,7 @@ class CMB_plots:
             ycosmicvar = np.array(self.CosmicVariance(xval))*100.
             self.PhiT_p, = stream.plot(xval, -yval, color = self.color, linestyle=self.negative_line_style)
             self.CV_p, = stream.plot(xval, ycosmicvar, color = 'k')
-            stream.set_yscale('Log')
+            stream.set_yscale('log')
             stream.set_ylim(self.comparison_min*10., self.comparison_max*10.)
             stream.set_ylabel(r'$\Delta C_l^{\Phi T}/ C_l^{\Phi T} (\%) $')
 
@@ -180,8 +180,8 @@ class CMB_plots:
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
-        stream.set_xscale('Log')
-        stream.set_yscale('Log')
+        stream.set_xscale('log')
+        stream.set_yscale('log')
         # set labels
         stream.set_xlabel(r'$l$')
         stream.set_ylabel(r'$l(l+1)C_l/ 2\pi$')
@@ -204,8 +204,8 @@ class CMB_plots:
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
-        stream.set_xscale('Log')
-        stream.set_yscale('Log')
+        stream.set_xscale('log')
+        stream.set_yscale('log')
         # set labels
         stream.set_xlabel(r'$k$')
         stream.set_ylabel(r'$P(k)$')
@@ -215,7 +215,7 @@ class CMB_plots:
             stream.yaxis.tick_right()
         # setup if comparison:
         if self.comparison:
-            stream.set_yscale('Log')
+            stream.set_yscale('log')
             stream.set_ylim(self.comparison_min*10., self.comparison_max*10.)
             stream.set_ylabel(r'$\Delta P(k)/ P(k) (\%) $')
 
@@ -227,8 +227,8 @@ class CMB_plots:
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
-        stream.set_xscale('Log')
-        stream.set_yscale('Log')
+        stream.set_xscale('log')
+        stream.set_yscale('log')
         # set labels
         stream.set_ylabel(r'$T(k)$')
         # set the position of axes and label:
@@ -237,6 +237,6 @@ class CMB_plots:
             stream.yaxis.tick_right()
         # setup if comparison:
         if self.comparison:
-            stream.set_yscale('Log')
+            stream.set_yscale('log')
             stream.set_ylim(self.comparison_min*10., self.comparison_max*10.)
             stream.set_ylabel(r'$\Delta T(k)/ T(k) (\%) $')

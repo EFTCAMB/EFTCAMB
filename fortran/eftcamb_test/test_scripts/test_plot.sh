@@ -33,7 +33,19 @@ source $SCRIPT_PATH/paths.sh
 source $SCRIPT_PATH/colors.sh
 
 # get the number of cores. Plotting is slow so we need to parallelize it
-NPROCS=$(nproc --all)
+if command -v nproc >/dev/null 2>&1; then
+  NPROCS=$(nproc --all)
+elif command -v getconf >/dev/null 2>&1; then
+  NPROCS=$(getconf _NPROCESSORS_ONLN)
+elif command -v sysctl >/dev/null 2>&1; then
+  NPROCS=$(sysctl -n hw.ncpu)
+else
+  NPROCS=1
+fi
+
+if [ -z "$NPROCS" ] || [ "$NPROCS" -lt 1 ]; then
+  NPROCS=1
+fi
 
 # definitions:
 PLOTTER=$TEST_PYTHON_DIR/compare_Cls.py    # plotter
