@@ -262,7 +262,7 @@ class CAMB_results_plot:
 
             if ind==1:
                 plots.TT_plot(temp, xvalues, yvalues)
-                temp.set_yscale('Log')
+                temp.set_yscale('log')
                 temp.set_title('TT power spectrum')
             elif ind == 2:
                 plots.EE_plot(temp, xvalues, yvalues)

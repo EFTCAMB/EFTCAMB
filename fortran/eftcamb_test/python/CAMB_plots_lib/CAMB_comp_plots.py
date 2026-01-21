@@ -223,7 +223,7 @@ class CAMB_results_compare_plot:
                 plots_2.TT_plot(temp, l_values, yvalues_2)
                 yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.TT_plot(temp_comp, l_values, yvalues_comp)
-                temp_comp.set_yscale('Log')
+                temp_comp.set_yscale('log')
                 temp.set_title('TT power spectrum')
 
             elif ind == 2: # EE power spectrum:
@@ -475,7 +475,7 @@ class CAMB_results_compare_plot:
                 plots_2.TT_plot(temp, l_values, yvalues_2)
                 yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.TT_plot(temp_comp, l_values, yvalues_comp)
-                temp_comp.set_yscale('Log')
+                temp_comp.set_yscale('log')
                 temp.set_title('TT power spectrum')
 
             elif ind == 2:
@@ -606,7 +606,7 @@ class CAMB_results_compare_plot:
                 plots_2.TT_plot(temp, l_values, yvalues_2)
                 yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.TT_plot(temp_comp, l_values, yvalues_comp)
-                temp.set_yscale('Log')
+                temp.set_yscale('log')
                 temp.set_title('TT power spectrum')
 
             elif ind == 2:
@@ -745,7 +745,7 @@ class CAMB_results_compare_plot:
                 plots_2.TT_plot(temp, l_values, yvalues_2)
                 yvalues_comp = yvalues_comp/np.sqrt(2./(2.*l_values+1.))
                 plots_compa.TT_plot(temp_comp, l_values, yvalues_comp)
-                temp.set_yscale('Log')
+                temp.set_yscale('log')
                 temp.set_title('TT power spectrum')
 
             elif ind == 2:
