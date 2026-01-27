@@ -95,7 +95,7 @@ F90C     = gfortran
 # lapack flags
 BLASFLAG = -lblas
 LAPACK_FLAG = -llapack
-COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp $(BLASFLAG)
+COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp $(BLASFLAG) $(LAPACK_FLAG)
 # original code:
 #COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fmax-errors=4 -fopenmp
 # EFTCAMB MOD END
