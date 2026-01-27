@@ -123,8 +123,6 @@ camb: libhyrec.a
 python: libhyrec.a
 endif
 
-LIBLINK += $(BLASFLAG)
-
 .DEFAULT_GOAL := camb
 default: camb
 
