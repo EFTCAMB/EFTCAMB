@@ -100,7 +100,7 @@ FORUTILS_DIR ?= $(FORUTILSPATH)/$(OUTPUT_DIR)/
 python: FORUTILS_DIR=$(FORUTILSPATH)/$(DLL_DIR)/
 
 
-LIBLINK = -L"$(FORUTILS_DIR)" -lforutils -lblas -llapack
+LIBLINK = -L"$(FORUTILS_DIR)" -lforutils $(BLASFLAG) $(LAPACK_FLAG)
 
 
 
