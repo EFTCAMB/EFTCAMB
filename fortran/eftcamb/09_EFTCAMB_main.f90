@@ -65,7 +65,7 @@ module EFTCAMB_main
     type, extends(TCambComponent) :: TEFTCAMB
 
         ! EFTCAMB model selection flags:
-        integer   :: EFTflag              !< Main EFTCAMB model selection flag. Decides one of the four modes to run EFTCAMB.
+        integer   :: EFTflag = 0              !< Main EFTCAMB model selection flag. Decides one of the four modes to run EFTCAMB.
         integer   :: PureEFTmodel         !< Model selection flag for pure EFT models.
         integer   :: AltParEFTmodel       !< Model selection flag for alternative EFT parametrizations.
         integer   :: DesignerEFTmodel     !< Model selection flag for designer mapping EFT models.
@@ -107,6 +107,7 @@ module EFTCAMB_main
         logical   :: EFTCAMB_evolve_metric_h       !< Flag that decides whether integrate h' instead of using constraints.
         logical   :: EFTCAMB_skip_stability        !< Flag that decides whether skip all stability checks.
         logical   :: EFTCAMB_skip_RGR              !< Flag that decides whether skip the return to GR checks.
+        logical   :: EFTCAMB_write_background = .false.   !< Flag whether output background quantities when called from ini
 
         ! EFTCAMB output root:
         character(LEN=:), allocatable :: outroot   !< The root for auxiliary EFTCAMB output.
@@ -207,6 +208,7 @@ contains
         self%EFTCAMB_evolve_metric_h          = Ini%Read_Logical( 'EFTCAMB_evolve_metric_h', .false. )
         self%EFTCAMB_skip_stability           = Ini%Read_Logical('EFTCAMB_skip_stability', .false.)
         self%EFTCAMB_skip_RGR                 = Ini%Read_Logical('EFTCAMB_skip_RGR', .false.)
+        self%EFTCAMB_write_background         = Ini%Read_Logical( 'EFTCAMB_write_background', .false. )
 
         ! Output root for debug purposes:
         outroot = Ini%Read_String('output_root')

@@ -811,7 +811,7 @@
     end if
 
     ! EFTCAMB MOD START: output of background quantities iw
-    call output_background( outroot, State )
+    if (P%EFTCAMB%EFTCAMB_write_background) call output_background( outroot, State )
     ! EFTCAMB MOD END.
 
     CAMB_RunFromIni = .true.

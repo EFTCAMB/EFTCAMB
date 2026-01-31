@@ -822,7 +822,7 @@ class CAMBparams(F2003Class):
         if dark_energy_model == "EFTCAMB":
             self.EFTCAMB = self.make_class_named("EFTCAMB", EFTCAMB)
             self.DarkEnergy = self.make_class_named("fluid", DarkEnergyModel)
-        if dark_energy_model != "EFTCAMB":
+        elif dark_energy_model:
             self.DarkEnergy = self.make_class_named(dark_energy_model, DarkEnergyModel)
         # EFTCAMB MOD END.
 

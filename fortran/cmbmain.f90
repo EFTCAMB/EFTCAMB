@@ -620,10 +620,10 @@
 
         ! EFTCAMB MOD START: small fix
         q_switch_lowk1 = min(CP%Transfer%kmax,0.7/State%taurst)
-        dlog_lowk1=2*boost
+        dlog_lowk1=max(2*boost, k_per_logint)
 
         q_switch_lowk = min(CP%Transfer%kmax,8/State%taurst)
-        dlog_lowk=8*boost
+        dlog_lowk=max(8*boost*2.5, k_per_logint)
 
         ! original camb code
         ! q_switch_lowk1 = 0.7/State%taurst
@@ -1153,6 +1153,8 @@
                         if (abs(tau-State%Transfer_Times(itf-1)) > 5.e-5_dl .and. abs(tau-State%Transfer_Times(itf-1))/tau > 5.e-5_dl) then
                             ! EFTCAMB MOD END.
                             write(*,*) 'WARNING: mismatch in integrated times (CAMB: CalcScalarSources)'
+                            global_error_flag = 1
+                            return
                         end if
                     end if
                 endif

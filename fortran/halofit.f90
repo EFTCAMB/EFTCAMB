@@ -299,7 +299,7 @@
                 do itf = 1, CAMB_Pk%num_z
 
                     ! EFTCAMB MOD START: get effective equation of state:
-                    if ( allocated(Params%EFTCAMB) ) then
+                    if ( allocated(Params%EFTCAMB) .and. Params%EFTCAMB%EFTflag /= 0 ) then
                         call Params%EFTCAMB%Effective_w_wa(this%w_hf, this%wa_hf)
                     else
                         call Params%DarkEnergy%Effective_w_wa(this%w_hf, this%wa_hf)
@@ -1057,7 +1057,7 @@
         cosm%om_nu=CP%omnuh2/h2
         cosm%om_v=State%omega_de
         ! EFTCAMB MOD START: get effective w0wa
-        if ( allocated(CP%EFTCAMB) ) then
+        if ( allocated(CP%EFTCAMB) .and. CP%EFTCAMB%EFTflag /= 0 ) then
             call CP%EFTCAMB%Effective_w_wa(cosm%w, cosm%wa)
         else
             call CP%DarkEnergy%Effective_w_wa(cosm%w, cosm%wa)

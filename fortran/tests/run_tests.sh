@@ -2,6 +2,9 @@ set -e
 
 python --version
 gfortran --version
+# EFTCAMB MOD START
+gcc --version
+# EFTCAMB MOD END
 
 pushd fortran
 

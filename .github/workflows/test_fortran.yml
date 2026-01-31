@@ -28,6 +28,14 @@ jobs:
       - name: Install python requirements
         run: python -m pip install numpy
 
+      # EFTCAMB MOD START
+      # install lapack and blas library
+      - name: Install BLAS and LAPACK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libblas-dev liblapack-dev
+      # EFTCAMB MOD END
+
       - name: Run Build and Test Script
         run: bash fortran/tests/run_tests.sh
 
