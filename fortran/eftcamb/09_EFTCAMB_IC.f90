@@ -47,6 +47,7 @@ contains
         real(dl) :: dgrho_matter, dgq, dgpnu, grho, adotoa, EFT_grhonu, EFT_gpinu, EFT_grhonudot
         real(dl) :: EFT_gpinudot, grhormass_t, adotdota, cothxor, cs2, dopacity, dgrho, z, dz, EFT_gpinudotdot
         real(dl) :: clxr, qr, pir, clxg, qg, pig, opacity, vb, clxc, clxb, EFTpiEdot
+        real(dl) :: Omega0, Gamma10, Gamma20, Gamma30
         real(dl) :: wnu_arr(max_nu)
 
         integer  :: nu_i
@@ -246,6 +247,11 @@ contains
         ! compute pi field equation factors:
         call CP%EFTCAMB%model%compute_pi_factors( a, CP%eft_par_cache , EV%eft_cache )
 
+        Omega0  = EV%eft_cache%EFTOmegaV
+        Gamma10 = EV%eft_cache%EFTGamma1V
+        Gamma20 = EV%eft_cache%EFTGamma2V
+        Gamma30 = EV%eft_cache%EFTGamma3V
+
         if ( EV%eft_cache%EFTGamma1V /= 0._dl .or. EV%eft_cache%EFTGamma2V /= 0._dl .or. &
             &EV%eft_cache%EFTGamma3V /= 0._dl .or. EV%eft_cache%EFTGamma4V /= 0._dl .or. &
             &EV%eft_cache%EFTGamma5V /= 0._dl .or. EV%eft_cache%EFTGamma6V /= 0._dl ) then
@@ -270,14 +276,51 @@ contains
             ! this is h_prime = 2kz
             if ( CP%EFTCAMB%EFTCAMB_evolve_metric_h ) y(EV%w_ix+2) = 2._dl * k * z
         else
-            if ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 /= 0._dl ) then
-                y(EV%w_ix)   = -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 )
-                y(EV%w_ix+1) = CP%eft_par_cache%h0_Mpc*(EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )**2*a*EV%eft_cache%adotoa*(EFTpiCdotFunction(a,k)+k*k*EFTpiDdotFunction(a,k))&
+            select case (CP%EFTCAMB%EFT_IC_type)
+            ! --- CASE 1: Standard EFTCAMB / GR ---
+            case (1)
+                if ( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 /= 0._dl ) then
+                    y(EV%w_ix)   = -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 )
+                    y(EV%w_ix+1) = CP%eft_par_cache%h0_Mpc*(EV%eft_cache%EFTpiE/( EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2  )**2*a*EV%eft_cache%adotoa*(EFTpiCdotFunction(a,k)+k*k*EFTpiDdotFunction(a,k))&
                     &  -EFTpiEdot/(EV%eft_cache%EFTpiC +k2*EV%eft_cache%EFTpiD1 +k2**2*EV%eft_cache%EFTpiD2 ) )
-            else
+                else
+                    y(EV%w_ix)   = 0._dl
+                    y(EV%w_ix+1) = 0._dl
+                end if
+            case (2)
+                ! --- CASE 2: Constant Omega ---
+                y(EV%w_ix)   = CP%eft_par_cache%h0_Mpc*(1._dl/4._dl)*((1._dl+EV%eft_cache%EFTOmegaV)/(5._dl+3._dl*EV%eft_cache%EFTOmegaV))*k2*(tau)**3
+                y(EV%w_ix+1) =  CP%eft_par_cache%h0_Mpc*(3._dl/4._dl)*((1._dl+EV%eft_cache%EFTOmegaV)/(5._dl+3._dl*EV%eft_cache%EFTOmegaV))*k2*(tau)**2
+
+            case (3)
+                ! --- CASE 3: Constant Gamma + Constant Omega ---
+                
+                ! -- Pi Field (y) --
+                y(EV%w_ix) =  ((k2 * EV%eft_cache%tau**3 * CP%eft_par_cache%h0_Mpc * &
+                    (3._dl*Gamma30**2 + 2._dl*Omega0*(1._dl+Omega0) + Gamma30*(4._dl+5._dl*Omega0))) / &
+                    (8._dl*(3._dl*Gamma30*(1._dl+Omega0) + Omega0*(5._dl+3._dl*Omega0)))) - &
+                    ((9._dl * k2 * EV%eft_cache%tau**4 * (CP%eft_par_cache%h0_Mpc)**2 * Gamma20 * (Gamma30+Omega0) * &
+                    (5._dl+3._dl*Gamma30+3._dl*Omega0) * &
+                    (4._dl*Gamma30 + 3._dl*Gamma30**2 + 2._dl*Omega0 + 5._dl*Gamma30*Omega0 + 2._dl*Omega0**2)) / &
+                    (160._dl*(1._dl+Gamma30+Omega0) * &
+                    (3._dl*Gamma30+5._dl*Omega0+3._dl*Gamma30*Omega0+3._dl*Omega0**2) * &
+                    (3._dl*Gamma30+8._dl*Omega0+6._dl*Gamma30*Omega0+6._dl*Omega0**2)))
+
+                ! -- Pi Velocity (y+1) --
+                y(EV%w_ix+1) =  3._dl*((k2 * EV%eft_cache%tau**2 * CP%eft_par_cache%h0_Mpc * &
+                    (3._dl*Gamma30**2 + 2._dl*Omega0*(1._dl+Omega0) + Gamma30*(4._dl+5._dl*Omega0))) / &
+                    (8._dl*(3._dl*Gamma30*(1._dl+Omega0) + Omega0*(5._dl+3._dl*Omega0)))) - &
+                    4._dl*((9._dl * k2 * EV%eft_cache%tau**3 * (CP%eft_par_cache%h0_Mpc)**2 * Gamma20 * (Gamma30+Omega0) * &
+                    (5._dl+3._dl*Gamma30+3._dl*Omega0) * &
+                    (4._dl*Gamma30 + 3._dl*Gamma30**2 + 2._dl*Omega0 + 5._dl*Gamma30*Omega0 + 2._dl*Omega0**2)) / &
+                    (160._dl*(1._dl+Gamma30+Omega0) * &
+                    (3._dl*Gamma30+5._dl*Omega0+3._dl*Gamma30*Omega0+3._dl*Omega0**2) * &
+                    (3._dl*Gamma30+8._dl*Omega0+6._dl*Gamma30*Omega0+6._dl*Omega0**2)))
+                
+            case default
                 y(EV%w_ix)   = 0._dl
                 y(EV%w_ix+1) = 0._dl
-            end if
+            end select
         end if
 
         ! reset the cache:

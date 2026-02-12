@@ -1969,6 +1969,8 @@
     real(dl) Rp15,tau,x,x2,x3,om,omtau, &
         Rc,Rb,Rv,Rg,grhonu,chi
     real(dl) k,k2
+    real(dl) Omega0,Gamma10,Gamma20,Gamma30
+    real(dl) :: a_eval
     real(dl) a,a2, iqg, rhomass,a_massive, ep
     integer l,i, nu_i, j, ind
     integer, parameter :: i_clxg=1,i_clxr=2,i_clxc=3, i_clxb=4, &
@@ -2059,16 +2061,132 @@
     !  Set adiabatic initial conditions
 
     chi=1  !Get transfer function for chi
-    initv(1,i_clxg)=-chi*EV%Kf(1)/3*x2*(1-omtau/5)
-    initv(1,i_clxr)= initv(1,i_clxg)
-    initv(1,i_clxb)=0.75_dl*initv(1,i_clxg)
-    initv(1,i_clxc)=initv(1,i_clxb)
-    initv(1,i_qg)=initv(1,i_clxg)*x/9._dl
-    initv(1,i_qr)=-chi*EV%Kf(1)*(4*Rv+23)/Rp15*x3/27
-    initv(1,i_vb)=0.75_dl*initv(1,i_qg)
-    initv(1,i_pir)=chi*4._dl/3*x2/Rp15*(1+omtau/4*(4*Rv-5)/(2*Rv+15))
-    initv(1,i_aj3r)=chi*4/21._dl/Rp15*x3
-    initv(1,i_eta)=-chi*2*EV%Kf(1)*(1 - x2/12*(-10._dl/Rp15 + EV%Kf(1)))
+    ! EFTCAMB MOD START
+    if (CP%EFTCAMB%EFTFlag == 0 .or. CP%EFTCAMB%EFT_IC_type == 1) then
+        initv(1,i_clxg)=-chi*EV%Kf(1)/3*x2*(1-omtau/5)
+        initv(1,i_clxr)= initv(1,i_clxg)
+        initv(1,i_clxb)=0.75_dl*initv(1,i_clxg)
+        initv(1,i_clxc)=initv(1,i_clxb)
+        initv(1,i_qg)=initv(1,i_clxg)*x/9._dl
+        initv(1,i_qr)=-chi*EV%Kf(1)*(4*Rv+23)/Rp15*x3/27
+        initv(1,i_vb)=0.75_dl*initv(1,i_qg)
+        initv(1,i_pir)=chi*4._dl/3*x2/Rp15*(1+omtau/4*(4*Rv-5)/(2*Rv+15))
+        initv(1,i_aj3r)=chi*4/21._dl/Rp15*x3
+        initv(1,i_eta)=-chi*2*EV%Kf(1)*(1 - x2/12*(-10._dl/Rp15 + EV%Kf(1)))
+    elseif (CP%EFTCAMB%EFTflag /= 0 .and. CP%EFTCAMB%EFT_IC_type /= 1) then
+        ! Evaluate EFT functions at the EFT perturbation turn-on time:
+        a_eval = CP%EFTCAMB%EFTCAMB_pert_turn_on
+
+        ! Also respect the background safety floor:
+        a_eval = max(a_eval, CP%EFTCAMB%EFTCAMB_back_turn_on)
+
+        call CP%EFTCAMB%model%compute_background_EFT_functions(a_eval, CP%eft_par_cache, EV%eft_cache)
+
+        Omega0  = EV%eft_cache%EFTOmegaV
+        Gamma10 = EV%eft_cache%EFTGamma1V
+        Gamma20 = EV%eft_cache%EFTGamma2V
+        Gamma30 = EV%eft_cache%EFTGamma3V
+
+        select case (CP%EFTCAMB%EFT_IC_type)
+        case (2)
+            ! -----------------------------------------------------------
+            ! CASE 2: Modified Gravity (Constant Omega)
+            ! -----------------------------------------------------------
+            ! Omega0  = 0.2_dl
+            
+            initv(1,i_clxg) = -chi*EV%Kf(1)*5/3._dl*(1._dl+Omega0)/(5._dl+3._dl*Omega0)*x2
+            initv(1,i_clxr) = initv(1,i_clxg)
+            initv(1,i_clxb) = 0.75_dl*initv(1,i_clxg)
+            initv(1,i_clxc) = initv(1,i_clxb)
+            
+            initv(1,i_qg)   = initv(1,i_clxg)*x/9._dl
+            
+            initv(1,i_qr)   = -chi*EV%Kf(1) * &
+                            ((115._dl+20._dl*Rv+99._dl*Omega0)/(15._dl+4._dl*Rv+15._dl*Omega0)) * &
+                            (1._dl+Omega0)/(5._dl+3._dl*Omega0)*x3*(1/27._dl)
+            
+            initv(1,i_vb)   = 0.75_dl*initv(1,i_qg)
+            
+            initv(1,i_pir)  = chi*4._dl/3._dl*x2*(1._dl+Omega0)/(15._dl+4*Rv+15._dl*Omega0)
+            
+            initv(1,i_aj3r) = chi*4/21._dl*((1._dl+Omega0)/(15._dl+4._dl*Rv+15._dl*Omega0))*x3
+            
+            initv(1,i_eta)  = -2*(1 + x2*(5/12._dl)*(-5._dl-4._dl*Rv-9._dl*Omega0)/(15._dl+4._dl*Rv+15._dl*Omega0) * &
+                            ((1._dl+Omega0)/(5._dl+3._dl*Omega0)))  
+
+            ! write(*,'(a,1pe12.5)') 'IC a_eval = ', a_eval
+            ! write(*,'(a,1pe12.5)') 'IC Omega0 = ', Omega0 
+        case (3)
+            ! -----------------------------------------------------------
+            ! CASE 3: Modified Gravity (Constant Gamma + Constant Omega)
+            ! -----------------------------------------------------------
+        
+            ! 1. CLXG
+            initv(1,i_clxg) = - chi*EV%Kf(1)*( ( x2 * (6._dl*Gamma30 + 9._dl*Gamma30**2 + 10._dl*Omega0 + 15._dl*Gamma30*Omega0 + 10._dl*Omega0**2) )) / &
+                (6._dl * (3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2)) + ( 3._dl * x2*tau * CP%eft_par_cache%h0_Mpc * (3._dl*Gamma30 - 2._dl*Omega0) * &
+                    ((Gamma20*Gamma30 + Gamma20*Omega0) * (4._dl*Gamma30 + 3._dl*Gamma30**2 + 2._dl*Omega0 + 5._dl*Gamma30*Omega0 + 2._dl*Omega0**2)) ) / &
+                (20._dl * (1._dl + Gamma30 + Omega0) * (3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2) * &
+                (3._dl*Gamma30 + 8._dl*Omega0 + 6._dl*Gamma30*Omega0 + 6._dl*Omega0**2))
+                initv(1,i_clxr) = initv(1,i_clxg)
+                initv(1,i_clxb) = 0.75_dl*initv(1,i_clxg)
+                initv(1,i_clxc) = initv(1,i_clxb)
+                initv(1,i_qg) = initv(1,i_clxg)*x/9._dl
+                initv(1,i_qr) =  (4/3._dl)*(( - (x3*(138._dl*Gamma30 + 24._dl*Rv*Gamma30 + 225._dl*Gamma30**2 + 36._dl*Rv*Gamma30**2 + 135._dl*Gamma30**3 + &
+                230._dl*Omega0 + 40._dl*Rv*Omega0 + 561._dl*Gamma30*Omega0 + 60._dl*Rv*Gamma30*Omega0 + &
+                360._dl*Gamma30**2*Omega0 + 428._dl*Omega0**2 + 40._dl*Rv*Omega0**2 + 423._dl*Gamma30*Omega0**2 + 198._dl*Omega0**3) ) / &
+                (72._dl*(15._dl+4._dl*Rv+15._dl*Gamma30+15._dl*Omega0)*(3._dl*Gamma30+5._dl*Omega0+3._dl*Gamma30*Omega0+3._dl*Omega0**2) ) +&
+                (3*x3*tau*(CP%eft_par_cache%h0_Mpc*Gamma20*Gamma30 + CP%eft_par_cache%h0_Mpc*Gamma20*Omega0) * &
+                (15._dl*Gamma30 + 6._dl*Rv*Gamma30 + 45._dl*Gamma30**2 - 110._dl*Omega0 - 4._dl*Rv*Omega0 - 45._dl*Gamma30*Omega0 - 90._dl*Omega0**2) * &
+                (4._dl*Gamma30 + 3._dl*Gamma30**2 + 2._dl*Omega0 + 5._dl*Gamma30*Omega0 + 2._dl*Omega0**2) ) / &
+                ((320._dl*(1._dl+Gamma30+Omega0)*(15._dl+2._dl*Rv+15._dl*Gamma30+15._dl*Omega0)* &
+                (3._dl*Gamma30+5._dl*Omega0+3._dl*Gamma30*Omega0+3._dl*Omega0**2)*(3._dl*Gamma30+8._dl*Omega0+6._dl*Gamma30*Omega0+6._dl*Omega0**2) ) )))
+
+            initv(1,i_vb) = 0.75_dl*initv(1,i_qg)
+            initv(1,i_pir) = 2._dl *((( (x2*(6._dl*Gamma30 + 10._dl*Omega0 + 12._dl*Gamma30*Omega0 + 16._dl*Omega0**2 + 6._dl*Gamma30*Omega0**2 + 6._dl*Omega0**3)) / &
+            (3._dl*(15._dl+4._dl*Rv+15._dl*Gamma30+15._dl*Omega0) * &
+                (3._dl*Gamma30+5._dl*Omega0+3._dl*Gamma30*Omega0+3._dl*Omega0**2))) &
+            + ((3*x2*tau*(CP%eft_par_cache%h0_Mpc*Gamma20*Gamma30 + CP%eft_par_cache%h0_Mpc*Gamma20*Omega0) * &
+                (4._dl*Gamma30 + 3._dl*Gamma30**2 + 2._dl*Omega0 + 5._dl*Gamma30*Omega0 + 2._dl*Omega0**2)) / &
+                (8._dl*(1._dl+Gamma30+Omega0) * &
+                (15._dl+2._dl*Rv+15._dl*Gamma30+15._dl*Omega0) * &
+                (3._dl*Gamma30+5._dl*Omega0+3._dl*Gamma30*Omega0+3._dl*Omega0**2)) )))
+
+        
+            initv(1,i_aj3r) =(2/7._dl)*(( (x3*(6._dl*Gamma30 + 10._dl*Omega0 + 12._dl*Gamma30*Omega0 + 16._dl*Omega0**2 + 6._dl*Gamma30*Omega0**2 + 6._dl*Omega0**3)) / &
+            (3._dl*(15._dl+4._dl*Rv+15._dl*Gamma30+15._dl*Omega0) * &
+                (3._dl*Gamma30+5._dl*Omega0+3._dl*Gamma30*Omega0+3._dl*Omega0**2)))) &
+            & + ((3/14._dl)*x3 * tau *((3*(CP%eft_par_cache%h0_Mpc*Gamma20*Gamma30 + CP%eft_par_cache%h0_Mpc*Gamma20*Omega0) * &
+            (4._dl*Gamma30 + 3._dl*Gamma30**2 + 2._dl*Omega0 + 5._dl*Gamma30*Omega0 + 2._dl*Omega0**2)) / &
+            (8._dl*(1._dl+Gamma30+Omega0) * &
+                (15._dl+2._dl*Rv+15._dl*Gamma30+15._dl*Omega0) * &
+                (3._dl*Gamma30+5._dl*Omega0+3._dl*Gamma30*Omega0+3._dl*Omega0**2)) ) ) 
+
+            initv(1,i_eta) =   -chi*2._dl*EV%Kf(1)*(1._dl - ((x2*(30._dl*Gamma30 + 24._dl*Rv*Gamma30 + 225._dl*Gamma30**2 + 36._dl*Rv*Gamma30**2 + 135._dl*Gamma30**3 + &
+            50._dl*Omega0 + 40._dl*Rv*Omega0 + 345._dl*Gamma30*Omega0 + 60._dl*Rv*Gamma30*Omega0 + &
+            360._dl*Gamma30**2*Omega0 + 140._dl*Omega0**2 + 40._dl*Rv*Omega0**2 + 315._dl*Gamma30*Omega0**2 + &
+            90._dl*Omega0**3)) / (24._dl*(15._dl + 4._dl*Rv + 15._dl*Gamma30 + 15._dl*Omega0) * &
+            (3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2))) + &
+            ((3._dl*x2*tau*(CP%eft_par_cache%h0_Mpc*Gamma20*Gamma30 + CP%eft_par_cache%h0_Mpc*Gamma20*Omega0) * &
+            (4._dl*Gamma30 + 3._dl*Gamma30**2 + 2._dl*Omega0 + 5._dl*Gamma30*Omega0 + 2._dl*Omega0**2) * &
+            (165._dl*Gamma30 + 12._dl*Rv*Gamma30 + 90._dl*Gamma30**2 + 140._dl*Omega0 - 8._dl*Rv*Omega0 + 180._dl*Gamma30*Omega0 + 90._dl*Omega0**2)) / &
+            (160._dl*(1._dl + Gamma30 + Omega0) * (15._dl + 2._dl*Rv + 15._dl*Gamma30 + 15._dl*Omega0) * &
+            (3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2) * (3._dl*Gamma30 + 8._dl*Omega0 + &
+            6._dl*Gamma30*Omega0 + 6._dl*Omega0**2))) + &
+            ((3._dl*x3*x*(CP%eft_par_cache%h0_Mpc*Gamma20*Gamma30 + CP%eft_par_cache%h0_Mpc*Gamma20*Omega0) * &
+            (4._dl*Gamma30 + 3._dl*Gamma30**2 + 2._dl*Omega0 + 5._dl*Gamma30*Omega0 + 2._dl*Omega0**2) * &
+            (165._dl*Gamma30 + 12._dl*Rv*Gamma30 + 90._dl*Gamma30**2 + 140._dl*Omega0 - 8._dl*Rv*Omega0 + 180._dl*Gamma30*Omega0 + 90._dl*Omega0**2)) / &
+            (160._dl*(1._dl + Gamma30 + Omega0) * (15._dl + 2._dl*Rv + 15._dl*Gamma30 + 15._dl*Omega0) * &
+            (3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2) * (3._dl*Gamma30 + 8._dl*Omega0 + &
+            6._dl*Gamma30*Omega0 + 6._dl*Omega0**2))))
+            ! write(*,'(a,1pe12.5)') 'IC a_eval = ', a_eval
+            ! write(*,'(a,1pe12.5)') 'IC Omega0 = ', Omega0
+            ! write(*,'(a,1pe12.5)') 'IC Gamma1 = ', Gamma10
+            ! write(*,'(a,1pe12.5)') 'IC Gamma2 = ', Gamma20
+            ! write(*,'(a,1pe12.5)') 'IC Gamma3 = ', Gamma30
+        case default
+            call MpiStop('Invalid EFT_IC_type: Must be 1 (GR), 2 (MG-Omega), or 3 (MG-Omega+Gamma)')
+        end select
+    end if
 
     if (CP%Scalar_initial_condition/= initial_adiabatic) then
         !CDM isocurvature
