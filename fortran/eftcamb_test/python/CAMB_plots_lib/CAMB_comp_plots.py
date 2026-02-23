@@ -138,7 +138,11 @@ class CAMB_results_compare_plot:
         plots_compa   = CMB_plots()
 
         plots_1.color          = self.color1
+        plots_1.line_style = "-"
+        plots_1.negative_line_style = "-"
         plots_2.color          = self.color2
+        plots_2.line_style = "--"
+        plots_2.negative_line_style = "--"
         plots_compa.color      = self.color_compa
         plots_compa.comparison = True
         plots_compa.axes_label_position = 'right'
@@ -309,7 +313,11 @@ class CAMB_results_compare_plot:
         plots_compa   = CMB_plots()
 
         plots_1.color          = self.color1
+        plots_1.line_style = "-"
+        plots_1.negative_line_style = "-"
         plots_2.color          = self.color2
+        plots_2.line_style = "--"
+        plots_2.negative_line_style = "--"
         plots_compa.color      = self.color_compa
         plots_compa.comparison = True
         plots_compa.axes_label_position = 'right'
@@ -426,7 +434,11 @@ class CAMB_results_compare_plot:
         plots_compa   = CMB_plots()
 
         plots_1.color          = self.color1
+        plots_1.line_style = "-"
+        plots_1.negative_line_style = "-"
         plots_2.color          = self.color2
+        plots_2.line_style = "--"
+        plots_2.negative_line_style = "--"
         plots_compa.color      = self.color_compa
         plots_compa.comparison = True
         plots_compa.axes_label_position = 'right'
@@ -557,7 +569,11 @@ class CAMB_results_compare_plot:
         plots_compa   = CMB_plots()
 
         plots_1.color          = self.color1
+        plots_1.line_style = "-"
+        plots_1.negative_line_style = "-"
         plots_2.color          = self.color2
+        plots_2.line_style = "--"
+        plots_2.negative_line_style = "--"
         plots_compa.color      = self.color_compa
         plots_compa.comparison = True
         plots_compa.axes_label_position = 'right'
@@ -696,7 +712,11 @@ class CAMB_results_compare_plot:
         plots_compa   = CMB_plots()
 
         plots_1.color          = self.color1
+        plots_1.line_style = "-"
+        plots_1.negative_line_style = "-"
         plots_2.color          = self.color2
+        plots_2.line_style = "--"
+        plots_2.negative_line_style = "--"
         plots_compa.color      = self.color_compa
         plots_compa.comparison = True
         plots_compa.axes_label_position = 'right'
@@ -831,7 +851,11 @@ class CAMB_results_compare_plot:
         plots_compa   = CMB_plots()
 
         plots_1.color          = self.color1
+        plots_1.line_style = "-"
+        plots_1.negative_line_style = "-"
         plots_2.color          = self.color2
+        plots_2.line_style = "--"
+        plots_2.negative_line_style = "--"
         plots_compa.color      = self.color_compa
         plots_compa.comparison = True
         plots_compa.axes_label_position = 'right'

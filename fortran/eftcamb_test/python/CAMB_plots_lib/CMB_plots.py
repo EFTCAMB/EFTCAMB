@@ -10,6 +10,7 @@ class CMB_plots:
     # general plot settings:
     color               = 'red'        # default color of the plot
     axes_label_position = 'left'       # position of the y axes and y axes label
+    line_style          = '-'
     negative_line_style = '--'
     # comparison plot settings:
     comparison     = False             # if the plot is a comparison of spectra or just the plot
@@ -24,7 +25,7 @@ class CMB_plots:
     def TT_plot(self, stream, xval, yval):
         """ CMB temperature power spectrum plot """
         # do the plot:
-        self.TT_p, = stream.plot( xval, yval, color = self.color )
+        self.TT_p, = stream.plot( xval, yval, color = self.color, linestyle=self.line_style )
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
@@ -51,7 +52,7 @@ class CMB_plots:
     def EE_plot(self,stream, xval, yval):
         """ CMB E mode polarization power spectrum plot """
         # do the plot:
-        self.EE_p, = stream.plot(xval, yval, color = self.color)
+        self.EE_p, = stream.plot(xval, yval, color = self.color, linestyle=self.line_style)
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
@@ -76,7 +77,7 @@ class CMB_plots:
     def TE_plot(self,stream, xval, yval):
         """ CMB temperature E mode polarization cross correlation power spectrum plot """
         # do the plot:
-        self.TE_p, = stream.plot(xval, yval, color = self.color)
+        self.TE_p, = stream.plot(xval, yval, color = self.color, linestyle=self.line_style)
         self.TE_p, = stream.plot(xval, -yval, color = self.color, linestyle=self.negative_line_style)
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
@@ -100,7 +101,7 @@ class CMB_plots:
     def BB_plot(self,stream, xval, yval):
         """ CMB B mode polarization power spectrum plot """
         # do the plot:
-        self.BB_p, = stream.plot(xval, yval, color = self.color)
+        self.BB_p, = stream.plot(xval, yval, color = self.color, linestyle=self.line_style)
         self.BB_p, = stream.plot(xval, -yval, color = self.color, linestyle=self.negative_line_style)
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
@@ -123,7 +124,7 @@ class CMB_plots:
     def Phi_plot(self,stream, xval, yval):
         """ CMB lensing power spectrum plot """
         # do the plot:
-        self.Phi_p, = stream.plot(xval, yval, color = self.color)
+        self.Phi_p, = stream.plot(xval, yval, color = self.color, linestyle=self.line_style)
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         # set axes scales
@@ -148,7 +149,7 @@ class CMB_plots:
     def PhiT_plot(self,stream, xval, yval):
         """ CMB lensing and temperature cross correlation power spectrum plot """
         # do the plot:
-        self.PhiT_p, = stream.plot(xval, yval, color = self.color)
+        self.PhiT_p, = stream.plot(xval, yval, color = self.color, linestyle=self.line_style)
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
         stream.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
@@ -175,7 +176,7 @@ class CMB_plots:
         # take the abs value of y-val
         yval = np.array(yval)
         # do the plot:
-        self.Generic_Cl_plot, = stream.plot(xval, yval, color = self.color)
+        self.Generic_Cl_plot, = stream.plot(xval, yval, color = self.color, linestyle=self.line_style)
         self.Generic_Cl_plot, = stream.plot(xval, -yval, color = self.color, linestyle=self.negative_line_style)
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
@@ -194,12 +195,12 @@ class CMB_plots:
             ycosmicvar = np.array(self.CosmicVariance(xval))*100.
             self.CV_p, = stream.plot(xval, ycosmicvar, color = 'k')
             stream.set_ylim(self.comparison_min*10., self.comparison_max*10.)
-            stream.set_ylabel(r'$\Delta C_l^{\Phi T}/ C_l^{\Phi T} (\%) $')
+            stream.set_ylabel(r'$\Delta C_l/ C_l (\%) $')
 
     def Matter_plot(self,stream, xval, yval):
         """ Matter power spectrum plot """
         # do the plot:
-        self.Matter_p, = stream.plot(xval, yval, color = self.color)
+        self.Matter_p, = stream.plot(xval, yval, color = self.color, linestyle=self.line_style)
         self.Matter_p, = stream.plot(xval, -yval, color = self.color, linestyle=self.negative_line_style)
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
@@ -222,7 +223,7 @@ class CMB_plots:
     def Transfer_plot(self,stream, xval, yval):
         """ Transfer functions plot """
         # do the plot:
-        self.Transfer_p, = stream.plot(xval, yval, color = self.color)
+        self.Transfer_p, = stream.plot(xval, yval, color = self.color, linestyle=self.line_style)
         self.Transfer_p, = stream.plot(xval, -yval, color = self.color, linestyle=self.negative_line_style)
         # set x axes boundary:
         stream.set_xlim(np.amin(xval),np.amax(xval))
