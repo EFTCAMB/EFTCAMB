@@ -393,7 +393,7 @@ class CAMBparams(F2003Class):
         ("SourceWindows", AllocatableObjectArray(SourceWindow)),
         ("CustomSources", CustomSources),
         ("EFTCAMB", AllocatableObject(EFTCAMB)),
-        ("EFTCAMB_parameter_cache", AllocatableObject(EFTCAMB_parameter_cache))("CustomSources", CustomSources),
+        ("EFTCAMB_parameter_cache", AllocatableObject(EFTCAMB_parameter_cache)),
     ]
 
     H0: float

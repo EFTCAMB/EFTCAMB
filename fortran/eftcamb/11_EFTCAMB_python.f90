@@ -24,7 +24,7 @@
 
 !> @author Marco Raveri
 
-module EFTCAMB_python
+    module EFTCAMB_python
 
     use IniObjects
     use results
@@ -35,35 +35,35 @@ module EFTCAMB_python
 
     type(TIniFile), private   :: Ini
 
-contains
+    contains
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Helper function to strip all whitespaces
-  function helper_stripspaces(string)
-      character(len=*) :: string
-      character(len=:), allocatable :: helper_stripspaces
-      integer :: stringLen
-      integer :: last, actual
-      stringLen = len (string)
-      last = 1
-      actual = 1
-      do while (actual < stringLen)
-          if (string(last:last) == ' ') then
-              actual = actual + 1
-              string(last:last) = string(actual:actual)
-              string(actual:actual) = ' '
-          else
-              last = last + 1
-              if (actual < last) &
-                  actual = last
-          endif
-      end do
-      helper_stripspaces = trim(string)
-  end function
+    ! ---------------------------------------------------------------------------------------------
+    !> Helper function to strip all whitespaces
+    function helper_stripspaces(string)
+    character(len=*) :: string
+    character(len=:), allocatable :: helper_stripspaces
+    integer :: stringLen
+    integer :: last, actual
+    stringLen = len (string)
+    last = 1
+    actual = 1
+    do while (actual < stringLen)
+        if (string(last:last) == ' ') then
+            actual = actual + 1
+            string(last:last) = string(actual:actual)
+            string(actual:actual) = ' '
+        else
+            last = last + 1
+            if (actual < last) &
+                actual = last
+        endif
+    end do
+    helper_stripspaces = trim(string)
+    end function
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to initialize EFTCAMB from python
-  subroutine initialize_EFTCAMB_from_py_read_params( key, nkey, value, nvalue, mode ) bind( c, name='initialize_EFTCAMB_from_py_read_params_' )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to initialize EFTCAMB from python
+    subroutine initialize_EFTCAMB_from_py_read_params( key, nkey, value, nvalue, mode ) bind( c, name='initialize_EFTCAMB_from_py_read_params_' )
 
     use iso_c_binding
 
@@ -79,26 +79,26 @@ contains
 
     ! initialize local copies:
     do i=1, nkey
-      f_key(i:i) = key(i)(1:1)
+        f_key(i:i) = key(i)(1:1)
     end do
     do i=1, nvalue
-      f_value(i:i) = value(i)(1:1)
+        f_value(i:i) = value(i)(1:1)
     end do
 
     ! if mode == 0 then create the INI (virtual) file
     if (mode == 0) then
         call Ini%Close()
         call Ini%Init( ignoreDuplicates=.True. )
-    ! if mode == 1 append settings to the INI file
+        ! if mode == 1 append settings to the INI file
     else if (mode == 1) then
         call Ini%AddString( trim(helper_stripspaces(f_key)), trim(helper_stripspaces(f_value)) )
     end if
 
-  end subroutine initialize_EFTCAMB_from_py_read_params
+    end subroutine initialize_EFTCAMB_from_py_read_params
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to initialize EFTCAMB from python
-  subroutine initialize_EFTCAMB_from_py( State, eft_error )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to initialize EFTCAMB from python
+    subroutine initialize_EFTCAMB_from_py( State, eft_error )
 
     implicit none
 
@@ -114,15 +114,15 @@ contains
     call State%CP%EFTCAMB%EFTCAMB_init_from_file(Ini)
     ! call the eftcamb allocation:
     if ( State%CP%EFTCAMB%EFTFlag /= 0 ) then
-      ! initialize the model from file:
-      call State%CP%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
+        ! initialize the model from file:
+        call State%CP%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
     end if
 
-  end subroutine initialize_EFTCAMB_from_py
+    end subroutine initialize_EFTCAMB_from_py
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to get the keys and values that are in the ini file
-  subroutine get_read_parameters( key, value, index, mode )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to get the keys and values that are in the ini file
+    subroutine get_read_parameters( key, value, index, mode )
 
     implicit none
 
@@ -132,18 +132,18 @@ contains
 
     ! if mode == 0 return the number of elements
     if (mode == 0) then
-      index = Ini%ReadValues%Count
-    ! if mode == 1 append settings to the INI file
+        index = Ini%ReadValues%Count
+        ! if mode == 1 append settings to the INI file
     else if (mode == 1) then
-      key   = Ini%ReadValues%Items(index)%P%Name
-      value = Ini%ReadValues%Items(index)%P%Value
+        key   = Ini%ReadValues%Items(index)%P%Name
+        value = Ini%ReadValues%Items(index)%P%Value
     end if
 
-  end subroutine get_read_parameters
+    end subroutine get_read_parameters
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to print EFTCAMB feedback:
-  subroutine EFTCAMB_feedback( EFTCAMB, print_params )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to print EFTCAMB feedback:
+    subroutine EFTCAMB_feedback( EFTCAMB, print_params )
 
     implicit none
 
@@ -155,11 +155,11 @@ contains
     ! print model feedback:
     call EFTCAMB%EFTCAMB_print_model_feedback(print_params)
 
-  end subroutine EFTCAMB_feedback
+    end subroutine EFTCAMB_feedback
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to get number of model parameters:
-  subroutine EFTCAMB_get_num_params( EFTCAMB, num_params )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to get number of model parameters:
+    subroutine EFTCAMB_get_num_params( EFTCAMB, num_params )
 
     implicit none
 
@@ -168,11 +168,11 @@ contains
 
     num_params = EFTCAMB%model%parameter_number
 
-  end subroutine EFTCAMB_get_num_params
+    end subroutine EFTCAMB_get_num_params
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to get parameter names:
-  subroutine EFTCAMB_get_param_names( EFTCAMB, i, name )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to get parameter names:
+    subroutine EFTCAMB_get_param_names( EFTCAMB, i, name )
 
     implicit none
 
@@ -182,11 +182,11 @@ contains
 
     call EFTCAMB%model%parameter_names( i, name )
 
-  end subroutine EFTCAMB_get_param_names
+    end subroutine EFTCAMB_get_param_names
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to get parameter labels:
-  subroutine EFTCAMB_get_param_labels( EFTCAMB, i, name )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to get parameter labels:
+    subroutine EFTCAMB_get_param_labels( EFTCAMB, i, name )
 
     implicit none
 
@@ -196,11 +196,11 @@ contains
 
     call EFTCAMB%model%parameter_names_latex( i, name )
 
-  end subroutine EFTCAMB_get_param_labels
+    end subroutine EFTCAMB_get_param_labels
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to get parameter values:
-  subroutine EFTCAMB_get_param_values( EFTCAMB, i, value )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to get parameter values:
+    subroutine EFTCAMB_get_param_values( EFTCAMB, i, value )
 
     implicit none
 
@@ -210,11 +210,11 @@ contains
 
     call EFTCAMB%model%parameter_values(i, value)
 
-  end subroutine EFTCAMB_get_param_values
+    end subroutine EFTCAMB_get_param_values
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to get the EFTCAMB model name:
-  subroutine EFTCAMB_get_model_name( EFTCAMB, model_name )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to get the EFTCAMB model name:
+    subroutine EFTCAMB_get_model_name( EFTCAMB, model_name )
 
     implicit none
 
@@ -222,16 +222,16 @@ contains
     character(len=200) :: model_name
 
     if (allocated(EFTCAMB%model)) then
-      model_name = EFTCAMB%model%name
+        model_name = EFTCAMB%model%name
     else
-      model_name = ''
+        model_name = ''
     end if
 
-  end subroutine EFTCAMB_get_model_name
+    end subroutine EFTCAMB_get_model_name
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to set the EFTCAMB model name:
-  subroutine EFTCAMB_set_model_name( EFTCAMB, model_name )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to set the EFTCAMB model name:
+    subroutine EFTCAMB_set_model_name( EFTCAMB, model_name )
 
     implicit none
 
@@ -239,14 +239,14 @@ contains
     character(len=200) :: model_name
 
     if (allocated(EFTCAMB%model)) then
-      EFTCAMB%model%name = trim(adjustl(model_name))
+        EFTCAMB%model%name = trim(adjustl(model_name))
     end if
 
-  end subroutine EFTCAMB_set_model_name
+    end subroutine EFTCAMB_set_model_name
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to get EFTCAMB effective w0wa values:
-  subroutine EFTCAMB_get_effective_w0wa_values( EFTCAMB, w0, wa )
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to get EFTCAMB effective w0wa values:
+    subroutine EFTCAMB_get_effective_w0wa_values( EFTCAMB, w0, wa )
 
     implicit none
 
@@ -255,12 +255,12 @@ contains
     real(dl)           :: wa        !< the effective wa value (output)
 
     call EFTCAMB%Effective_w_wa(w0, wa)
-    
-  end subroutine EFTCAMB_get_effective_w0wa_values
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to get the EFT time evolution:
-  subroutine EFTCAMB_GetEvolution( this, nq, q, neta, eta, timestep_cache )
+    end subroutine EFTCAMB_get_effective_w0wa_values
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to get the EFT time evolution:
+    subroutine EFTCAMB_GetEvolution( this, nq, q, neta, eta, timestep_cache )
 
     use GaugeInterface
     use CAMBmain
@@ -297,11 +297,11 @@ contains
     end do
     !$OMP END PARALLEL DO
 
-  end subroutine EFTCAMB_GetEvolution
+    end subroutine EFTCAMB_GetEvolution
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to get the EFT time evolution k mode by kmode:
-  subroutine GetEFTOutputEvolutionFork(this, EV, neta, eta, timestep_cache)
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to get the EFT time evolution k mode by kmode:
+    subroutine GetEFTOutputEvolutionFork(this, EV, neta, eta, timestep_cache)
 
     use GaugeInterface
     use CAMBmain
@@ -325,7 +325,7 @@ contains
     ! do the time loop:
     tau=taustart
     ind=1
-    tol1=tol/exp(CP%Accuracy%AccuracyBoost*CP%Accuracy%IntTolBoost-1)
+    tol1=base_tol/exp(CP%Accuracy%AccuracyBoost*CP%Accuracy%IntTolBoost-1)
     do j = 1, neta
         tauend = eta(j)
         if (tauend<taustart) cycle
@@ -341,11 +341,11 @@ contains
         if (global_error_flag/=0) return
     end do
 
-  end subroutine GetEFTOutputEvolutionFork
+    end subroutine GetEFTOutputEvolutionFork
 
-  ! ---------------------------------------------------------------------------------------------
-  !> Subroutine to get the EFT functions at scale factor a (no recomputation):
-  subroutine EFTCAMB_GetEFTFunctions( State, na, as, etas, timestep_cache)
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine to get the EFT functions at scale factor a (no recomputation):
+    subroutine EFTCAMB_GetEFTFunctions( State, na, as, etas, timestep_cache)
     Type(CAMBdata)                :: State
     integer, intent(in)           :: na
     real(dl), intent(in)          :: as(na)
@@ -357,47 +357,47 @@ contains
     real(dl) :: a
 
     do i = 1, na
-      a = as(i)
-      timestep_cache(i)%a = a
-      timestep_cache(i)%tau = etas(i)
-      timestep_cache(i)%grhob_t = State%CP%eft_par_cache%grhob / a
-      timestep_cache(i)%grhoc_t = State%CP%eft_par_cache%grhoc / a
-      timestep_cache(i)%grhor_t = State%CP%eft_par_cache%grhornomass / a / a
-      timestep_cache(i)%grhog_t = State%CP%eft_par_cache%grhog / a / a
-      grhonu = 0._dl
-      gpnu = 0._dl
-      if ( State%CP%eft_par_cache%Num_Nu_massive /= 0 ) then
-        do nu_i = 1, State%CP%eft_par_cache%Nu_mass_eigenstates
-          grhormass_t = State%CP%eft_par_cache%grhormass(nu_i) / a / a
-          grhonu_i = 0._dl
-          gpnu_i = 0._dl
-          call ThermalNuBack%rho_P( a * State%CP%eft_par_cache%nu_masses(nu_i), grhonu_i, gpnu_i )
-          grhonu = grhonu + grhormass_t*grhonu_i
-          gpnu = gpnu + grhormass_t*gpnu_i
-        end do
-      end if
-      timestep_cache(i)%grhom_t = timestep_cache(i)%grhob_t + timestep_cache(i)%grhoc_t + timestep_cache(i)%grhor_t + timestep_cache(i)%grhog_t + grhonu
-      timestep_cache(i)%grhoa2 = timestep_cache(i)%grhom_t/a**4
-      timestep_cache(i)%gpresm_t = gpnu + ( timestep_cache(i)%grhog_t + timestep_cache(i)%grhor_t )/3._dl
-      if ( State%CP%EFTCAMB%EFTCAMB_model_is_designer ) then
-        call State%CP%EFTCAMB%model%compute_background_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
-        call State%CP%EFTCAMB%model%compute_adotoa( a, State%CP%eft_par_cache, timestep_cache(i) )
-        call State%CP%EFTCAMB%model%compute_H_derivs( a, State%CP%eft_par_cache, timestep_cache(i) )
-        call State%CP%EFTCAMB%model%compute_rhoQPQ( a, State%CP%eft_par_cache, timestep_cache(i) )
-        call State%CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
-      else
-        call State%CP%EFTCAMB%model%compute_adotoa( a, State%CP%eft_par_cache, timestep_cache(i) )
-        call State%CP%EFTCAMB%model%compute_H_derivs( a, State%CP%eft_par_cache, timestep_cache(i) )
-        call State%CP%EFTCAMB%model%compute_rhoQPQ( a, State%CP%eft_par_cache, timestep_cache(i) )
-        call State%CP%EFTCAMB%model%compute_background_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
-        call State%CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
-      end if
+        a = as(i)
+        timestep_cache(i)%a = a
+        timestep_cache(i)%tau = etas(i)
+        timestep_cache(i)%grhob_t = State%CP%eft_par_cache%grhob / a
+        timestep_cache(i)%grhoc_t = State%CP%eft_par_cache%grhoc / a
+        timestep_cache(i)%grhor_t = State%CP%eft_par_cache%grhornomass / a / a
+        timestep_cache(i)%grhog_t = State%CP%eft_par_cache%grhog / a / a
+        grhonu = 0._dl
+        gpnu = 0._dl
+        if ( State%CP%eft_par_cache%Num_Nu_massive /= 0 ) then
+            do nu_i = 1, State%CP%eft_par_cache%Nu_mass_eigenstates
+                grhormass_t = State%CP%eft_par_cache%grhormass(nu_i) / a / a
+                grhonu_i = 0._dl
+                gpnu_i = 0._dl
+                call ThermalNuBack%rho_P( a * State%CP%eft_par_cache%nu_masses(nu_i), grhonu_i, gpnu_i )
+                grhonu = grhonu + grhormass_t*grhonu_i
+                gpnu = gpnu + grhormass_t*gpnu_i
+            end do
+        end if
+        timestep_cache(i)%grhom_t = timestep_cache(i)%grhob_t + timestep_cache(i)%grhoc_t + timestep_cache(i)%grhor_t + timestep_cache(i)%grhog_t + grhonu
+        timestep_cache(i)%grhoa2 = timestep_cache(i)%grhom_t/a**4
+        timestep_cache(i)%gpresm_t = gpnu + ( timestep_cache(i)%grhog_t + timestep_cache(i)%grhor_t )/3._dl
+        if ( State%CP%EFTCAMB%EFTCAMB_model_is_designer ) then
+            call State%CP%EFTCAMB%model%compute_background_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
+            call State%CP%EFTCAMB%model%compute_adotoa( a, State%CP%eft_par_cache, timestep_cache(i) )
+            call State%CP%EFTCAMB%model%compute_H_derivs( a, State%CP%eft_par_cache, timestep_cache(i) )
+            call State%CP%EFTCAMB%model%compute_rhoQPQ( a, State%CP%eft_par_cache, timestep_cache(i) )
+            call State%CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
+        else
+            call State%CP%EFTCAMB%model%compute_adotoa( a, State%CP%eft_par_cache, timestep_cache(i) )
+            call State%CP%EFTCAMB%model%compute_H_derivs( a, State%CP%eft_par_cache, timestep_cache(i) )
+            call State%CP%EFTCAMB%model%compute_rhoQPQ( a, State%CP%eft_par_cache, timestep_cache(i) )
+            call State%CP%EFTCAMB%model%compute_background_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
+            call State%CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
+        end if
     end do
 
-  end subroutine EFTCAMB_GetEFTFunctions
+    end subroutine EFTCAMB_GetEFTFunctions
 
-  ! ---------------------------------------------------------------------------------------------
+    ! ---------------------------------------------------------------------------------------------
 
-end module EFTCAMB_python
+    end module EFTCAMB_python
 
 !----------------------------------------------------------------------------------------

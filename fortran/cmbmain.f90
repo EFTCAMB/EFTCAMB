@@ -1084,7 +1084,7 @@
             write(*,*) '        from tau =',taustart, 'to tau =', State%TimeSteps%points(State%TimeSteps%npoints)
         end if
 
-        tol1=tol/exp(CP%Accuracy%AccuracyBoost-1)
+        tol1=base_tol/exp(CP%Accuracy%AccuracyBoost-1)
         do j=2,State%TimeSteps%npoints
 
             tauend=State%TimeSteps%points(j)
