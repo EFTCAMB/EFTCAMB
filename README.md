@@ -1,51 +1,60 @@
-EFTCAMB
+H-EFTCAMB
 =======
 
 [![Build Status](https://travis-ci.org/EFTCAMB/EFTCAMB.svg?branch=new_features)](https://travis-ci.org/EFTCAMB/EFTCAMB)
 
-This folder contains the EFTCAMB code.
+This folder contains the H-EFTCAMB code.
 
 ### 1. A Direct Installation Procedure:
 
-To get started with the EFTCAMB and its Python wrapper, you need to first download the entire package using Git:
+Before installation, make sure you have the following dependencies installed:
 
- 	git clone https://github.com/EFTCAMB/EFTCAMB.git
+  - gfortran
+  - gcc
+  - lapack
 
-Next, it's recommended to create a new environment and install the necessary dependencies before compiling and using the Python wrapper:
+By default, the blas and lapack library is linked by ``-lblas -llapack``. If a custom library is used, change the variables ``BLASFLAG`` and ``LAPACK_FLAG`` in ``fortran/Makefile`` to point to your local blas and lapack library. The python wrapper further requires the following python packages:
 
-    gfortran; lapack; numpy; python; sympy; scipy; packaging
+  - python3
+  - numpy
+  - sympy
+  - scipy
+  - packaging
 
 For example, using conda, you can create a new environment and install the required packages with the following command:
 
-    conda create -n EFTCAMB_env gfortran lapack numpy python sympy scipy packaging -c conda-forge
+    conda create -n HEFTCAMB_env gfortran gcc lapack numpy python sympy scipy packaging -c conda-forge
 
-**Note for Mac Users:**
-If you're using a Mac with an Apple Silicon chip (e.g., M1, M2), ensure you install the appropriate version of gfortran for your architecture (arm64), for example:
+Clone the H-EFTCAMB code using
 
-    conda create -n EFTCAMB_env gfortran_osx-arm64 ... -c conda-forge
+```
+git clone https://github.com/EFTCAMB/EFTCAMB.git --recursive
+```
 
-You can verify that you're using the correct version of gfortran by executing:
-
-    which gfortran
-
-Finally, navigate to the package directory and install the package in editable mode:
+and navigate to the package directory and compile the code by typing:
 
     cd fortran
-    make python
+    make all
 
-When you want to use the package by the python wrapper, import it where you compile, for example:
+This will compile both the ``camb`` executive and the python wrapper. The executive and python wrapper are independent of each other. If you intend to call H-EFTCAMB only through python (recommended), you can compile the python wrapper only by ``make python``. The compiled python library locates in the folder ``camb`` in the root directory and can be imported in the same way as the original ``CAMB`` by
 
-    camb_installation_path = './../../'
-    camb_path = os.path.realpath(os.path.join(os.getcwd(),camb_installation_path))
-    sys.path.insert(0,camb_path)
-    print('camb path:', camb_path)
-    import camb
+```
+import camb
+```
+
+**Note for Mac Users:**
+If you're using a Mac with an Apple Silicon chip (e.g., M1, M2), make sure you install the appropriate version of fortran and C compilers for your architecture (arm64), for example:
+
+    conda create -n HEFTCAMB_env gfortran_osx-arm64 clang_osx-arm64 lapack numpy python sympy scipy packaging -c conda-forge
+
+and set the environment variable ``CC`` to point to the correct C compiler before installation. You can check the versions by typing `gfortran -v` and `clang -v`. Make sure that your python3 is compiled with the same C compiler.
+
 
 ### 2. Documentation:
 
-The contents of EFTCAMB are listed in this chart:
+The contents of H-EFTCAMB are listed in this chart:
 
-![Chart](/find_your_model/EFTCAMB_STRUCTURE(Charts).png)
+![Chart](/find_your_model/eftcamb_structure_chart.png)
 
 
 We provide a set of notes that contain all the details and formulas of the EFTCAMB implementation:
@@ -53,24 +62,24 @@ We provide a set of notes that contain all the details and formulas of the EFTCA
 * *EFTCAMB/EFTCosmoMC: Numerical Notes v3.0*
     Bin Hu, Marco Raveri, Noemi Frusciante, Alessandra Silvestri, [arXiv:1405.3590 [astro-ph.CO]](http://arxiv.org/abs/1405.3590)
 
-The EFTCAMB source files documentation is automatically built at any modification of the code and can
-be found at [this link](https://eftcamb.github.io/EFTCAMB/).
+with the new additions to H-EFTCAMB described in:
+
+* *H-EFTCAMB: A Cobaya-Integrated, Python-Wrapped Extension of EFTCAMB for Covariant Horndeski Gravity*
+    Gen Ye, Shijie Lin, Jiaming Pan, Dani de Boe, Stan Verhoeve, Marco Raveri, Bin Hu, Noemi Frusciante, Alessandra Silvestri, [arXiv:2603.01662 [gr-qc]](https://arxiv.org/abs/2603.01662)
+
+The H-EFTCAMB source files documentation is automatically built at any modification of the code and can be found at [this link](https://eftcamb.github.io/EFTCAMB/).
 
 Besides above documentation, there are several flowchart or markdown files helping you easily find your model flags and set parameters in “find_your_model" folder.
 
 ### 3. Examples and Usage with Cobaya:
 
-The EFTCAMB distribution contains a folder called ``example`` that can be used to produce some example notebooks for brief instruction and sevral example input files of cobaya for sampling and statistical modelling.
+The H-EFTCAMB distribution contains a folder called ``example`` containing some example notebooks demonstrating how to setup and run various dark energy / modified gravity models and extract results for analysis using the python wrapper. The folder also contains several example Cobaya input files demonstrating how to analyze dark energy / modified gravity models with H-EFTCAMB in Cobaya.
 
-To use cobaya, just follow the instruction at:
-
-https://readthedocs.org/projects/cobaya/badge/?version=latest
-
-The example folder is an example of how to select EFTCAMB flags and set parameters needed from the flags. You can copy the folder and replace the input files to produce single purpose packages to easily produce and plot results.
+For further instructions on the usage of Cobaya, refer to the its documentation at: https://readthedocs.org/projects/cobaya/badge/?version=latest
 
 ### 4. Citing this work:
 
-If you use the EFTCAMB/EFTCosmoMC package, please refer the original CAMB/ CosmoMC paper and ours:
+If you use the EFTCAMB/EFTCosmoMC package, please refer the original CAMB paper and ours:
 
 * *Effective Field Theory of Cosmic Acceleration: an implementation in CAMB*
     Bin Hu, Marco Raveri, Noemi Frusciante, Alessandra Silvestri,
@@ -81,31 +90,35 @@ If you use the EFTCAMB/EFTCosmoMC package, please refer the original CAMB/ Cosmo
     Marco Raveri, Bin Hu, Noemi Frusciante, Alessandra Silvestri,
     [arXiv:1405.1022 [astro-ph.CO]](https://arxiv.org/abs/1405.1022) [Phys.Rev. D90 (2014) 043513](http://journals.aps.org/prd/abstract/10.1103/PhysRevD.90.043513)
 
+
+* *H-EFTCAMB: A Cobaya-Integrated, Python-Wrapped Extension of EFTCAMB for Covariant Horndeski Gravity*
+    Gen Ye, Shijie Lin, Jiaming Pan, Dani de Boe, Stan Verhoeve, Marco Raveri, Bin Hu, Noemi Frusciante, Alessandra Silvestri, [arXiv:2603.01662 [gr-qc]](https://arxiv.org/abs/2603.01662)
+
 This is the usual, fair way of giving credit to contributors to a
 scientific result. In addition, it helps us justify our effort in
-developing the EFTCAMB code as an academic undertaking.
+developing the H-EFTCAMB code as an academic undertaking.
 
 ### 5. Licence Information:
 
-EFTCAMB is a modification of the CAMB code.
+H-EFTCAMB is a modification of the CAMB code.
 The code part of CAMB that is not modified is copyrighted by the CAMB authors and released under their licence.
 
-For the part of code that constitutes EFTCAMB see the LICENSE file in ``eftcamb/LICENSE``.
+For the part of code that constitutes H-EFTCAMB see the LICENSE file in ``eftcamb/LICENSE``.
 
 ### 6. Build system target:
 
-In addition to CAMB makefile targets EFTCAMB comes with the additional:
+In addition to CAMB makefile targets H-EFTCAMB comes with the additional:
 
-* ``eftcamb``: to compile EFTCAMB;
-* ``eftcamb_apps``: to compile EFTCAMB applications like the EFTCAMB benchmarker;
-* ``eftcamb_dep``: to automatically sort out EFTCAMB source file dependencies;
-* ``eftcamb_doc``: to build the EFTCAMB automatic documentation;
-* ``intel_profile``: to compile EFTCAMB with the options that allow profiling with the VTUNE profiler;
-* ``profile``: to compile EFTCAMB with the options that allow general profiling;
+* ``eftcamb``: to compile H-EFTCAMB;
+* ``eftcamb_apps``: to compile H-EFTCAMB applications like the benchmarker;
+* ``eftcamb_dep``: to automatically sort out H-EFTCAMB source file dependencies;
+* ``eftcamb_doc``: to build the H-EFTCAMB automatic documentation;
+* ``intel_profile``: to compile H-EFTCAMB with the options that allow profiling with the VTUNE profiler;
+* ``profile``: to compile H-EFTCAMB with the options that allow general profiling;
 
-### 7. EFTCAMB source files:
+### 7. H-EFTCAMB source files:
 
-In the folder ``eftcamb`` all the source files for EFTCAMB are stored.
+In the folder ``eftcamb`` all the source files for H-EFTCAMB are stored.
 In an effort to have small and readable files the the naming convention allows to have an
 intuition of the hierarchy of the code from alphabetical order of files.
 
@@ -117,10 +130,10 @@ For this reason we use the following convention for the prefixes:
 * ``04_`` general parametrizations for 1D functions;
 * ``05_`` general parametrizations for 2D functions;
 * ``06_`` abstract implementation of EFT models;
-* ``07_`` implementation of pure EFT models;
-* ``08_`` implementation of alternative EFT parametrizations;
-* ``09_`` implementation of designer mapping EFT models;
-* ``10_`` implementation of full mapping EFT models;
-* ``11_`` general EFT algorithms (RGR, stability, init);
+* ``07_`` implementation of models that requires input background;
+* ``08_`` implementation of models that solves for the background;
+* ``09_`` general EFT algorithms (RGR, stability, init);
+* ``10_`` EFT background output support;
+* ``11_`` implementation of functions exposed to the python wrapper;
 
 If you modify or add one or more files make sure to issue ``make eftcamb_dep`` before compiling the code to ensure that all dependencies are properly sorted out and built.

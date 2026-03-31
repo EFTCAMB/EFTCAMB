@@ -1,10 +1,10 @@
 
-This directory contains the core of the EFTCAMB code.
+This directory contains the core of the H-EFTCAMB code.
 
-The EFTCAMB code is copyrighted by the EFTCAMB authors.
+The H-EFTCAMB code is copyrighted by the H-EFTCAMB authors.
 This term refers to the people listed in the file eftcamb/contributors.txt.
 
-The EFTCAMB code is free software;
+The H-EFTCAMB code is free software;
 you can use it, redistribute it, and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
 either version 3 of the License, or (at your option) any later version.
@@ -16,17 +16,17 @@ The full text of the GNU General Public version 3 is quoted below.
 Contributions:
 
 As a contributor to this project, you agree that any of your contributions be
-licensed under the same terms and conditions as the license of the EFTCAMB
+licensed under the same terms and conditions as the license of the H-EFTCAMB
 project granted to you.
 
-The EFTCAMB project does not require copyright assignments for contributions.
-This means that the copyright for code contributions in the EFTCAMB project
+The H-EFTCAMB project does not require copyright assignments for contributions.
+This means that the copyright for code contributions in the H-EFTCAMB project
 is held by its respective contributors who have each agreed to release their
-contributed code under the terms of the EFTCAMB license.
+contributed code under the terms of the H-EFTCAMB license.
 
 --------------------------------------------------------------------------------
 
-Referencing the EFTCAMB code:
+Referencing the H-EFTCAMB code:
 
 In addition to the terms imposed by the GPL v3 or later, we ask for the
 following courtesy:
@@ -34,24 +34,27 @@ following courtesy:
 Every publication presenting numerical results obtained with the help of the
 EFTCAMB code should state its name and cite the following reference:
 
-arXiv:1312.5742, Phys.Rev. D89 (2014) 103530: 
+arXiv:1312.5742, Phys.Rev. D89 (2014) 103530:
 Effective Field Theory of Cosmic Acceleration: an implementation in CAMB
 
 arXiv:1405.1022, Phys.Rev. D90 (2014) 043513:
 Effective Field Theory of Cosmic Acceleration: constraining dark energy with CMB data
 
+arXiv:2603.01662:
+H-EFTCAMB: A Cobaya-Integrated, Python-Wrapped Extension of EFTCAMB for Covariant Horndeski Gravity
+
 In addition please cite the usual CAMB/CosmoMC references.
 
 This is the usual, fair way of giving credit to contributors to a
 scientific result. In addition, it helps us justify our effort in
-developing the EFTCAMB code as an academic undertaking.
+developing the H-EFTCAMB code as an academic undertaking.
 
 --------------------------------------------------------------------------------
 
-Parts of the EFTCAMB distribution under a separate license:
+Parts of the H-EFTCAMB distribution under a separate license:
 
 EFTCAMB uses here and there code developed by others.
-Please note that these codes are copyrighted by others than the EFTCAMB
+Please note that these codes are copyrighted by others than the H-EFTCAMB
 authors and might be covered by different licenses.
 For details, consult the respective webpages.
 When code from other developers is used it is explicitly stated in the header
