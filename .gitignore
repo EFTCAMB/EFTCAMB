@@ -49,6 +49,8 @@ testfile*
 *.a
 *.o
 *.png
+!heftcamb_logo.png
+!eftcamb_structure_chart.png
 *.so
 *.sm
 *~
