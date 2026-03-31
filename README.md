@@ -1,6 +1,8 @@
 H-EFTCAMB
 =======
 
+<img src="heftcamb_logo.png" width=40% height=40%>
+
 [![Build Status](https://travis-ci.org/EFTCAMB/EFTCAMB.svg?branch=new_features)](https://travis-ci.org/EFTCAMB/EFTCAMB)
 
 This folder contains the H-EFTCAMB code.
