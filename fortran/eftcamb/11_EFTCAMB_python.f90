@@ -379,13 +379,13 @@
         timestep_cache(i)%grhom_t = timestep_cache(i)%grhob_t + timestep_cache(i)%grhoc_t + timestep_cache(i)%grhor_t + timestep_cache(i)%grhog_t + grhonu
         timestep_cache(i)%grhoa2 = timestep_cache(i)%grhom_t/a**4
         timestep_cache(i)%gpresm_t = gpnu + ( timestep_cache(i)%grhog_t + timestep_cache(i)%grhor_t )/3._dl
-        if ( State%CP%EFTCAMB%EFTCAMB_model_is_designer ) then
+        if ( .not. State%CP%EFTCAMB%EFTCAMB_model_is_designer ) then
             call State%CP%EFTCAMB%model%compute_background_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
             call State%CP%EFTCAMB%model%compute_adotoa( a, State%CP%eft_par_cache, timestep_cache(i) )
             call State%CP%EFTCAMB%model%compute_H_derivs( a, State%CP%eft_par_cache, timestep_cache(i) )
             call State%CP%EFTCAMB%model%compute_rhoQPQ( a, State%CP%eft_par_cache, timestep_cache(i) )
             call State%CP%EFTCAMB%model%compute_secondorder_EFT_functions( a, State%CP%eft_par_cache, timestep_cache(i) )
-        else
+        else if ( State%CP%EFTCAMB%EFTCAMB_model_is_designer ) then
             call State%CP%EFTCAMB%model%compute_adotoa( a, State%CP%eft_par_cache, timestep_cache(i) )
             call State%CP%EFTCAMB%model%compute_H_derivs( a, State%CP%eft_par_cache, timestep_cache(i) )
             call State%CP%EFTCAMB%model%compute_rhoQPQ( a, State%CP%eft_par_cache, timestep_cache(i) )
