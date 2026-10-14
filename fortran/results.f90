@@ -349,15 +349,23 @@
     logical back_only
     ! Constants in SI units
 
+    ! EFTCAMB MOD START: add things for EFTCAMB initialization
+    real(dl) :: RGR_time
+    logical  :: success
+    real(dl) :: k_max
+    ! EFTCAMB MOD END.
+
     global_error_flag = 0
 
     if ((P%WantTensors .or. P%WantVectors) .and. P%WantTransfer .and. .not. P%WantScalars) then
         call GlobalError('Cannot generate tensor C_l and transfer without scalar C_l', error_unsupported_params)
     end if
 
-    if (.not. allocated(P%DarkEnergy)) then
+    ! EFTCAMB MOD START: no need to check for DarkEnergy allocation if using EFTCAMB
+    if (.not. allocated(P%DarkEnergy) .and. this%CP%EFTCAMB%EFTflag == 0) then
         call GlobalError('DarkEnergy not set', error_darkenergy)
     end if
+    ! EFTCAMB MOD END.
 
     if (.not. DefaultFalse(background_only)) call CheckSupportedParams(P)
 
@@ -382,6 +390,14 @@
         this%CP = P
         this%CP%Max_eta_k = max(this%CP%Max_eta_k, this%CP%Max_eta_k_tensor)
     end if
+
+    ! EFTCAMB MOD START: tighter integration tolerances when EFTCAMB is active.
+    ! The RungeKuttaDP45 perturbation integrator needs IntTolBoost >= 2 to keep the default
+    ! accuracy of stiff EFT models (e.g. Horava, RPH). The input parameters P are not changed.
+    if (allocated(this%CP%EFTCAMB)) then
+        if (this%CP%EFTCAMB%EFTflag /= 0) this%CP%Accuracy%IntTolBoost = max(this%CP%Accuracy%IntTolBoost, 2._dl)
+    end if
+    ! EFTCAMB MOD END.
 
     if (P%WantTransfer .and. .not. back_only) then
         this%CP%WantScalars = .true.
@@ -529,7 +545,96 @@
         else
             this%nu_masses = 0
         end if
-        call this%CP%DarkEnergy%Init(this)
+
+        ! EFTCAMB MOD START:initialize the EFTCAMB parameter choice
+        if (this%CP%EFTCAMB%EFTflag /= 0) then
+            ! 0) make some noise if nonlinear is on
+            if (this%CP%NonLinear /= NonLinear_none) then
+                if (this%CP%EFTCAMB%EFTCAMB_feedback_level > 0) write(*, *) "Warning: You have nonlinear=", &
+                    this%CP%NonLinear, " with EFTCAMB active. Nonlinearity has not been worked out for general " // &
+                    "DE/MG theories. Set feedback_level=0 to mute this warning."
+            end if
+            ! 1) parameter cache:
+            call this%CP%eft_par_cache%initialize()
+            ! - relative densities:
+            this%CP%eft_par_cache%omegac = this%CP%omch2/h2
+            this%CP%eft_par_cache%omegab = this%CP%ombh2/h2
+            this%CP%eft_par_cache%omegav = this%Omega_de
+            this%CP%eft_par_cache%omegak = this%CP%omk
+            this%CP%eft_par_cache%omegan = this%CP%omnuh2/h2
+            this%CP%eft_par_cache%omegag = this%grhog/this%grhocrit
+            this%CP%eft_par_cache%omegar = this%grhornomass/this%grhocrit
+            ! - Hubble constant:
+            this%CP%eft_par_cache%h0 = this%CP%H0
+            this%CP%eft_par_cache%h0_Mpc = this%CP%H0/c*1000._dl
+            ! - densities:
+            this%CP%eft_par_cache%grhog = this%grhog
+            this%CP%eft_par_cache%grhornomass = this%grhornomass
+            this%CP%eft_par_cache%grhoc = this%grhoc
+            this%CP%eft_par_cache%grhob = this%grhob
+            this%CP%eft_par_cache%grhov = this%grhov
+            this%CP%eft_par_cache%grhok = this%grhok
+            ! - massive neutrinos:
+            this%CP%eft_par_cache%Num_Nu_Massive = this%CP%Num_Nu_massive
+            this%CP%eft_par_cache%Nu_mass_eigenstates = this%CP%Nu_mass_eigenstates
+            allocate(this%CP%eft_par_cache%grhormass(max_nu), this%CP%eft_par_cache%nu_masses(max_nu))
+            this%CP%eft_par_cache%grhormass = this%grhormass
+            this%CP%eft_par_cache%nu_masses = this%nu_masses
+
+            call this%CP%EFTCAMB%model%initialize_background(this%CP%eft_par_cache, &
+                this%CP%EFTCAMB%EFTCAMB_feedback_level, success, outroot=this%CP%EFTCAMB%outroot)
+            if (.not. success) then
+                ! the unstable theory makes the code crash only if H0 is well-defined
+                ! workaround to allow for solving the background to define H0 in terms of 100\theta
+                global_error_flag = 1
+                global_error_message = 'EFTCAMB: background solver failed'
+                if (present(error)) error = global_error_flag
+                ! 5) final feedback:
+                if (this%CP%EFTCAMB%EFTCAMB_feedback_level > 1) then
+                    write(*, '(a)') '***************************************************************'
+                end if
+                return
+            end if
+
+            if (.not. this%CP%EFTCAMB%EFTCAMB_skip_RGR) then
+
+                ! 3) compute the return to GR of the theory:
+                call EFTCAMBReturnToGR(this%CP%EFTCAMB%model, this%CP%eft_par_cache, &
+                    this%CP%EFTCAMB%EFTCAMB_pert_turn_on, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold)
+                this%CP%EFTCAMB%EFTCAMB_pert_turn_on = RGR_time
+                call EFTCAMBReturnToGR_feedback(this%CP%EFTCAMB%EFTCAMB_feedback_level, this%CP%EFTCAMB%model, &
+                    this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_pert_turn_on, RGR_time, &
+                    this%CP%EFTCAMB%EFTCAMB_GR_threshold)
+            end if
+
+            if (.not. this%CP%EFTCAMB%EFTCAMB_skip_stability) then
+
+                ! 4) compute wether the theory is stable or not:
+                k_max = 10._dl
+                call EFTCAMB_Stability_Check(success, this%CP%EFTCAMB, this%CP%eft_par_cache, &
+                    this%CP%EFTCAMB%EFTCAMB_stability_time, 1._dl, k_max)
+                if (.not. success) then
+                    global_error_flag = 1
+                    global_error_message = 'EFTCAMB: theory unstable'
+                    if (present(error)) error = global_error_flag
+                    ! 5) final feedback:
+                    if (this%CP%EFTCAMB%EFTCAMB_feedback_level > 1) then
+                        write(*, '(a)') '***************************************************************'
+                    end if
+                    return
+                end if
+
+            end if
+
+            ! 5) final feedback:
+            if (this%CP%EFTCAMB%EFTCAMB_feedback_level > 1) then
+                write(*, '(a)') '***************************************************************'
+            end if
+        else
+            call this%CP%DarkEnergy%Init(this)
+        end if
+        ! EFTCAMB MOD END.
+
         if (global_error_flag == 0) this%tau0 = this%TimeOfz(0._dl)
         if (global_error_flag == 0) then
             this%DMt0 = this%curvature_radius*this%rofChi(this%tau0/this%curvature_radius)
@@ -607,6 +712,9 @@
     if (present(error)) then
         error = 0
     else if (FeedbackLevel > 0 .and. .not. calling_again) then
+        ! EFTCAMB MOD START: print out H0
+        write(*, '("H0                   = ",f9.6)') P%H0
+        ! EFTCAMB MOD END.
         write(*, '("Om_b h^2             = ",f9.6)') P%ombh2
         write(*, '("Om_c h^2             = ",f9.6)') P%omch2
         write(*, '("Om_nu h^2            = ",f9.6)') P%omnuh2
@@ -688,8 +796,15 @@
     real(dl), intent(in) :: a1, a2
     real(dl), intent(in), optional :: in_tol
 
-    atol = PresentDefault(base_tol/1000/exp(this%CP%Accuracy%AccuracyBoost*this%CP%Accuracy%IntTolBoost - 1), in_tol)
-    CAMBdata_DeltaTime = Integrate_Romberg(this, dtauda_obj, a1, a2, atol)
+    ! EFTCAMB MOD START: use precomputed tau table in EFTCAMB instead
+    if (this%CP%EFTCAMB%EFTflag /= 0 .and. this%CP%EFTCAMB%EFTCAMB_use_background) then
+        CAMBdata_DeltaTime = this%CP%EFTCAMB%model%compute_DeltaTau(a1, a2)
+    else
+        atol = &
+            PresentDefault(base_tol/1000/exp(this%CP%Accuracy%AccuracyBoost*this%CP%Accuracy%IntTolBoost - 1), in_tol)
+        CAMBdata_DeltaTime = Integrate_Romberg(this, dtauda_obj, a1, a2, atol)
+    end if
+    ! EFTCAMB MOD END
 
     end function CAMBdata_DeltaTime
 
@@ -755,8 +870,14 @@
     real(dl), intent(in), optional :: in_tol
     real(dl) CAMBdata_DeltaPhysicalTimeGyr, atol
 
-    atol = PresentDefault(1d-4/exp(this%CP%Accuracy%AccuracyBoost - 1), in_tol)
-    CAMBdata_DeltaPhysicalTimeGyr = Integrate_Romberg(this, dtda, a1, a2, atol)*Mpc/c/Gyr
+    ! EFTCAMB MOD START: use precomputed t table in EFTCAMB instead
+    if (this%CP%EFTCAMB%EFTflag /= 0 .and. this%CP%EFTCAMB%EFTCAMB_use_background) then
+        CAMBdata_DeltaPhysicalTimeGyr = this%CP%EFTCAMB%model%compute_DeltaCosmicT(a1, a2)*Mpc/c/Gyr
+    else
+        atol = PresentDefault(1d-4/exp(this%CP%Accuracy%AccuracyBoost - 1), in_tol)
+        CAMBdata_DeltaPhysicalTimeGyr = Integrate_Romberg(this, dtda, a1, a2, atol)*Mpc/c/Gyr
+    end if
+    ! EFTCAMB MOD END
 
     end function CAMBdata_DeltaPhysicalTimeGyr
 
@@ -917,7 +1038,13 @@
     class(CAMBdata) :: this
     real(dl), intent(in) :: z
 
-    CAMBdata_sound_horizon = Integrate_Romberg(this, dsound_da_exact, 1d-9, 1/(z + 1), 1e-6_dl)
+    ! EFTCAMB MOD START: use precomputed rs table in EFTCAMB instead
+    if (this%CP%EFTCAMB%EFTflag /= 0 .and. this%CP%EFTCAMB%EFTCAMB_use_background) then
+        CAMBdata_sound_horizon = this%CP%EFTCAMB%model%compute_SoundHorizon(1._dl/(z + 1._dl))
+    else
+        CAMBdata_sound_horizon = Integrate_Romberg(this, dsound_da_exact, 1d-9, 1/(z + 1), 1e-6_dl)
+    end if
+    ! EFTCAMB MOD END
 
     end function CAMBdata_sound_horizon
 
@@ -1004,7 +1131,13 @@
 
     astar = 1/(1 + zstar)
     atol = 1e-6
-    rs = Integrate_Romberg(this, dsound_da_approx, 1d-8, astar, atol)
+    ! EFTCAMB MOD START: use precomputed rs table in EFTCAMB instead
+    if (this%CP%EFTCAMB%EFTflag /= 0 .and. this%CP%EFTCAMB%EFTCAMB_use_background) then
+        rs = this%CP%EFTCAMB%model%compute_SoundHorizon(astar)
+    else
+        rs = Integrate_Romberg(this, dsound_da_approx, 1d-8, astar, atol)
+    end if
+    ! EFTCAMB MOD END
     DA = this%AngularDiameterDistance(zstar)/astar
     CAMBdata_CosmomcTheta = rs/DA
 
@@ -2071,6 +2204,7 @@
         sqrt(3*(State%grhog + sum(State%grhormass(1:CP%Nu_mass_eigenstates)) + State%grhornomass))
     a0 = this%tauminn*State%adotrad*(1 + om*this%tauminn/4)
     ninverse = nint(background_boost*log(1/a0)/log(1/2d-10)*4000)
+
     if (.not. CP%DarkEnergy%is_cosmological_constant) ninverse = ninverse*2
 
     nlin = ninverse/2
@@ -2707,6 +2841,22 @@
     TimeSampleBoost = State%CP%Accuracy%AccuracyBoost*State%CP%Accuracy%TimeStepBoost
     call TimeSteps%Init()
 
+    ! EFTCAMB MOD START: print out perturbation evolution in debug mode for longer time
+#ifdef DEBUG
+#ifdef fixq
+    call TimeSteps%Add(0.001_dl/fixq, State%taurst, nstep=1000, IsLog=.true.)
+    State%dtaurec = State%dtaurec/10._dl
+#endif
+#ifdef fixq_array
+    call TimeSteps%Add(0.001_dl/minval(fixq_array), State%taurst, nstep=1000, IsLog=.true.)
+    State%dtaurec = State%dtaurec/10._dl
+#endif
+#if  defined (fixq)  || !defined (fixq_array)
+    call TimeSteps%Add(State%taurst/1000._dl, State%taurst, nstep=100, IsLog=.true.)
+#endif
+#endif
+    ! EFTCAMB MOD END.
+
     call TimeSteps%Add_delta(State%taurst, State%taurend, State%dtaurec)
 
     ! Calculating the timesteps after recombination
@@ -2719,6 +2869,17 @@
         !  if (CP%DoLensing) dtau0=dtau0/2
         !  if (CP%AccurateBB) dtau0=dtau0/3 !Need to get C_Phi accurate on small scales
     end if
+
+    ! EFTCAMB MOD START: in debug mode add more points
+#ifdef DEBUG
+#ifdef fixq
+    dtau0 = dtau0/10._dl
+#endif
+#ifdef fixq_array
+    dtau0 = dtau0/10._dl
+#endif
+#endif
+    ! EFTCAMB MOD END.
 
     call TimeSteps%Add_delta(State%taurend, State%tau0, dtau0)
 
@@ -2774,6 +2935,16 @@
 
     if (State%CP%Reion%Reionization) then
         nri0 = int(State%reion_n_steps*TimeSampleBoost)
+        ! EFTCAMB MOD START: denser grid for fixq
+#ifdef DEBUG
+#ifdef fixq
+        nri0 = nri0/10._dl
+#endif
+#ifdef fixq_array
+        nri0 = nri0/10._dl
+#endif
+#endif
+        ! EFTCAMB MOD END.
         ! Steps while reionization going from zero to maximum
         call TimeSteps%Add(State%reion_tau_start, State%reion_tau_complete, nri0)
     end if

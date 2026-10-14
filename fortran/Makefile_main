@@ -8,6 +8,10 @@ RECOMBINATION_FILES ?= recfast
 NONLINEAR_FILES     ?= halofit SPkNonLinear SecondOrderPK ExternalNonLinearRatio
 DARKENERGY_FILES  ?= DarkEnergyFluid DarkEnergyPPF PowellMinimize DarkEnergyQuintessence
 
+# EFTCAMB MOD START: equations file as a variable
+EQUATIONS     ?= equations
+# EFTCAMB MOD END.
+
 BISPECTRUM ?= SeparableBispectrum
 
 #Driver program
@@ -32,12 +36,44 @@ DLL_DIR ?= $(if $(CAMB_BUILD_DIR),$(CAMB_BUILD_DIR)/camb/Releaselib,Releaselib)
 
 CAMBLIB       = libcamb.a
 
+# EFTCAMB MOD START: added equations eft
 SOURCEFILES      = constants config classes MathUtils RungeKuttaDP45 DarkAge21cm \
 	DarkEnergyInterface SourceWindows massive_neutrinos model results bessels \
 	hyperspherical_bessels hyperspherical_bessels_airy hyperspherical_bessels_smallnu hyperspherical_bessels_olver \
-        $(RECOMBINATION_FILES) $(DARKENERGY_FILES) equations \
+        $(RECOMBINATION_FILES) $(DARKENERGY_FILES) $(EQUATIONS) \
         $(REIONIZATION_FILES) $(POWERSPECTRUM_FILES) $(NONLINEAR_FILES) \
         lensing $(BISPECTRUM) cmbmain camb camb_python
+# EFTCAMB MOD END.
+
+# EFTCAMB MOD START: camb dependencies to ensure order of compilation
+config.o : constants.o
+classes.o : config.o
+MathUtils.o : classes.o
+RungeKuttaDP45.o : MathUtils.o
+DarkAge21cm.o : RungeKuttaDP45.o
+DarkEnergyInterface.o : DarkAge21cm.o
+SourceWindows.o : DarkEnergyInterface.o
+massive_neutrinos.o : SourceWindows.o
+model.o : massive_neutrinos.o
+results.o : model.o
+bessels.o : results.o
+hyperspherical_bessels.o : bessels.o
+hyperspherical_bessels_airy.o : hyperspherical_bessels.o
+hyperspherical_bessels_smallnu.o : hyperspherical_bessels_airy.o
+hyperspherical_bessels_olver.o : hyperspherical_bessels_smallnu.o
+$(RECOMBINATION_FILES).o : hyperspherical_bessels_olver.o
+$(patsubst %,%.o,$(DARKENERGY_FILES)) : $(RECOMBINATION_FILES).o
+$(EQUATIONS).o : $(patsubst %,%.o,$(DARKENERGY_FILES))
+$(REIONIZATION_FILES).o : $(EQUATIONS).o
+$(POWERSPECTRUM_FILES).o : $(REIONIZATION_FILES).o
+$(patsubst %,%.o,$(NONLINEAR_FILES)) : $(POWERSPECTRUM_FILES).o
+lensing.o : $(patsubst %,%.o,$(NONLINEAR_FILES))
+$(BISPECTRUM).o : lensing.o
+cmbmain.o : $(BISPECTRUM).o
+camb.o : cmbmain.o
+camb_python.o : camb.o
+# EFTCAMB MOD END.
+
 CAMB_DEPFILES = $(addsuffix .d,$(SOURCEFILES))
 CAMB_DRIVER_DEPFILES = $(CAMB_DEPFILES) $(DRIVER).d
 OUTPUT_LIBRARY_DEPFILES = $(addprefix $(OUTPUT_DIR)/,$(CAMB_DEPFILES))
@@ -66,10 +102,36 @@ SF90FLAGS      = $(SFFLAGS) $(FFLAGS)
 
 CAMBOBJ       = $(patsubst %,%.o,$(SOURCEFILES))
 
+# EFTCAMB MOD START: build system
+# get the EFTCAMB directory:
+
+ifneq "$(wildcard ./eftcamb)" ""
+EFTCAMB_DIR ?= $(shell pwd)/eftcamb
+else
+ifneq "$(wildcard ../eftcamb)" ""
+EFTCAMB_DIR ?= $(shell pwd)/../eftcamb
+endif
+endif
+EFTCAMB_APPS=$(EFTCAMB_DIR)/../eftcamb_apps
+CAMB_DIR=$(EFTCAMB_DIR)/..
+#CAMB_DIR=$(abspath .)
+#EFTCAMB_DIR=$(abspath .)/eftcamb
+#EFTCAMB_APPS=$(abspath .)/eftcamb_apps
+
+# include EFTCAMB make file:
+include $(EFTCAMB_DIR)/eftcamb_build.make
+# EFTCAMB MOD END.
+
 FORUTILS_DIR ?= $(if $(CAMB_BUILD_DIR),$(CAMB_BUILD_DIR)/forutils/$(notdir $(OUTPUT_DIR))/,$(FORUTILSPATH)/$(OUTPUT_DIR)/)
 python: FORUTILS_DIR=$(if $(CAMB_BUILD_DIR),$(CAMB_BUILD_DIR)/forutils/$(notdir $(DLL_DIR))/,$(FORUTILSPATH)/$(DLL_DIR)/)
 
-LIBLINK = -L"$(FORUTILS_DIR)" -lforutils
+
+# EFTCAMB MOD START: link BLAS/LAPACK
+LIBLINK = -L"$(FORUTILS_DIR)" -lforutils $(BLASFLAG) $(LAPACK_FLAG)
+# original code:
+#LIBLINK = -L"$(FORUTILS_DIR)" -lforutils
+# EFTCAMB MOD END.
+
 
 ifneq ($(FISHER),)
 LIBLINK += $(FISHER_LINK)
@@ -95,6 +157,9 @@ camb: libhyrec.a
 python: libhyrec.a
 endif
 
+# EFTCAMB MOD START: the included EFTCAMB make file defines targets, keep camb as the default goal
+.DEFAULT_GOAL := camb
+# EFTCAMB MOD END.
 default: camb
 
 all: camb python libcamb
@@ -133,14 +198,15 @@ camb_exe:
 camblib.so: $(CAMBOBJ)
 	+@$(MAKE) -C $(SOURCE_DIR) $(MAKEOPT) -f Makefile_main $(DLL_DIR)/camblib.so
 
+# EFTCAMB MOD START: add EFTCAMB files to CAMB library
 libcambobj:
-    LIBCAMBOBJ = $(patsubst %,$(DLL_DIR)/%.o,$(SOURCEFILES))
+    LIBCAMBOBJ = $(patsubst %,$(DLL_DIR)/%.o,$(SOURCEFILES)) $(EFT_SOJ) $(EFT_CSOJ)
+# EFTCAMB MOD END
 
 #cannot link the .a library, or the linker will strip out some things we might need
 $(DLL_DIR)/camblib.so: libcambobj
 	$(F90C) $(SF90FLAGS) $(SMODOUT) $(IFLAG)$(DLL_DIR)/ $(IFLAG)"$(FORUTILS_DIR)"  \
 		$(LIBCAMBOBJ) $(F90CRLINK) $(LIBLINK) -o $(DLL_DIR)/camblib.so
-
 
 $(CAMBLIB): $(CAMBOBJ)
 	$(AR) -r $@ $(CAMBOBJ)

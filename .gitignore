@@ -1,4 +1,9 @@
 *.local.*
+# EFTCAMB MOD START: EFTCAMB build and test outputs
+*.x
+*.dll
+*.out
+# EFTCAMB MOD END
 *.mod
 *.a
 *.o
@@ -47,10 +52,19 @@ testfile*
 !ScalEqs.ipynb
 !InitialConditionSeries.ipynb
 !docs/SPk_demo.ipynb
+# EFTCAMB MOD START: keep the EFTCAMB example notebooks
+!example/*.ipynb
+!material/EFTCAMB_example.ipynb
+# EFTCAMB MOD END
 *.dll
 *.a
 *.o
 *.png
+# EFTCAMB MOD START: keep the EFTCAMB images
+!heftcamb_logo.png
+!eftcamb_structure_chart.png
+!fortran/eftcamb_doc/EFTCAMB_Icon.png
+# EFTCAMB MOD END
 *.so
 *.sm
 *~
@@ -58,6 +72,9 @@ testfile*
 *.pdf
 !docs/changelog/flat_bessel_approximations.pdf
 !docs/changelog/hyperspherical_bessels.pdf
+# EFTCAMB MOD START: keep the EFTCAMB model-selection guides
+!find_your_model/*.pdf
+# EFTCAMB MOD END
 .vs
 *.toc
 *.aux
@@ -75,7 +92,10 @@ testfile*
 
 # Ignore all .dat and .ini files except those already tracked in git
 *.dat
-*.ini
+# EFTCAMB MOD START: track the EFTCAMB ini files
+# original code:
+# *.ini
+# EFTCAMB MOD END
 *compatibility.txt
 temp_test.py
 *.layout

@@ -129,7 +129,10 @@
             (P%DoLensing .or. OutData%num_redshiftwindows > 0)) then
             P%WantTransfer = .true.
         end if
+        ! EFTCAMB MOD START:
+        ! call OutData%SetParams(P, call_again=call_again)
         call OutData%SetParams(P)
+        ! EFTCAMB MOD END.
         if (global_error_flag == 0) call cmbmain
         if (global_error_flag /= 0) then
             if (present(error)) error = global_error_flag
@@ -239,6 +242,15 @@
 
     subroutine CAMB_SetDefParams(P)
     use NonLinear
+    ! EFTCAMB MOD START: add the main EFTCAMB object to default parameters
+    use Recombination
+    use EFT_def
+    use EFTCAMB_cache
+    use EFTCAMB_stability
+    use EFTCAMB_ReturnToGR
+    use EFTCAMB_main
+    ! EFTCAMB MOD END.
+
     type(CAMBParams), intent(inout), target :: P
     type(CAMBParams) :: emptyP
 
@@ -253,7 +265,11 @@
     allocate(TInitialPowerLaw :: P%InitPower)
     allocate(TRecfast :: P%Recomb)
     allocate(TTanhReionization :: P%Reion)
-
+    ! EFTCAMB MOD START : allocate the cache and the main EFTCAMB type to default params
+    ! this is done to avoid EFTCAMB have to be initialized explicitly
+    allocate(TEFTCAMB :: P%EFTCAMB)
+    allocate(TEFTCAMB_parameter_cache :: P%eft_par_cache)
+    ! EFTCAMB MOD END.
     end subroutine CAMB_SetDefParams
 
     real(dl) function CAMB_ThetaH0Difference(obj, H0)
@@ -354,10 +370,31 @@
     character(len=len(global_error_message)) :: ErrMsg
     type(TIniFile) :: Ini
     logical bad
+    ! EFTCAMB MOD START: error code of the EFTCAMB model initialization
+    integer :: eft_error
+    ! EFTCAMB MOD END.
 
     call Ini%Open(InputFile, bad, .false.)
     ErrMsg = ''
     CAMB_ReadParamFile = CAMB_ReadParams(P, Ini, ErrMsg)
+    ! EFTCAMB MOD START: read the EFTCAMB flags and initialize the model from the same file (python read_ini)
+    if (CAMB_ReadParamFile) then
+        if (.not. allocated(P%EFTCAMB)) allocate(P%EFTCAMB)
+        if (.not. allocated(P%eft_par_cache)) allocate(P%eft_par_cache)
+        ! keep only the parameters read by EFTCAMB:
+        call Ini%ReadValues%Clear()
+        call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
+        if (P%EFTCAMB%EFTflag /= 0) then
+            eft_error = 0
+            call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
+            if (eft_error > 0) then
+                ErrMsg = 'EFTCAMB: invalid model parameters'
+                CAMB_ReadParamFile = .false.
+            end if
+        end if
+        call P%EFTCAMB%EFTCAMB_store_read_parameters(Ini)
+    end if
+    ! EFTCAMB MOD END.
     call Ini%Close()
     if (ErrMsg /= '') call GlobalError(ErrMsg, error_ini)
 
@@ -821,6 +858,9 @@
     use constants
     use Bispectrum
     use CAMBmain
+    ! EFTCAMB MOD START: output of background quantities
+    use EFTCAMB_background_output
+    ! EFTCAMB MOD END.
     class(TIniFile) :: Ini
     character(len=*), intent(in) :: InputFile
     character(len=*), intent(inout) :: ErrMsg
@@ -835,6 +875,9 @@
     real(dl) :: output_factor
     logical PK_WantTransfer
     type(CAMBdata) :: ActiveState
+    ! EFTCAMB MOD START: output of background quantities
+    integer :: eft_error ! < EFTCAMB error code
+    ! EFTCAMB MOD END.
 
     call SetActiveState(ActiveState)
     CAMB_RunFromIni = .false.
@@ -843,6 +886,38 @@
 
     outroot = Ini%Read_String('output_root')
     if (outroot /= '') outroot = trim(outroot) // '_'
+
+    ! EFTCAMB MOD START: allocate EFTCAMB and model selection
+    if (allocated(P%EFTCAMB)) deallocate(P%EFTCAMB)
+    allocate(P%EFTCAMB)
+    if (allocated(P%eft_par_cache)) deallocate(P%eft_par_cache)
+    allocate(P%eft_par_cache)
+    ! initialize model selection from file:
+    call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
+    ! initialize outroot for debug printing:
+    P%EFTCAMB%outroot = trim(outroot)
+    ! initialize model:
+    if (P%EFTCAMB%EFTflag /= 0) then
+        ! print the EFTCAMB header:
+        call P%EFTCAMB%EFTCAMB_print_header()
+        ! initialize the model from file:
+        call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
+        if (eft_error > 0) then
+            ErrMsg = 'Invalid parameter value'
+            return
+        end if
+        ! print feedback:
+        call P%EFTCAMB%EFTCAMB_print_model_feedback()
+    end if
+
+    ! check compatibility of parameters:
+
+    ! 21 cm sources are not checked for MG effects, have to stop
+    if (P%EFTCAMB%EFTflag /= 0 .and. P%Do21cm) then
+        write(*, *) 'EFTCAMB is not compatible with 21 cm sources so far'
+        error stop 'Invalid parameter'
+    end if
+    ! EFTCAMB MOD END
 
     PK_WantTransfer = Ini%Read_Logical('get_transfer')
     if (PK_WantTransfer) then
@@ -981,6 +1056,10 @@
 
     end if
 
+    ! EFTCAMB MOD START: output of background quantities iw
+    if (P%EFTCAMB%EFTCAMB_write_background) call output_background(outroot, State)
+    ! EFTCAMB MOD END.
+
     CAMB_RunFromIni = .true.
 
     end function CAMB_RunFromIni
@@ -1041,6 +1120,13 @@
         'highL_unlensed_cl_template', highL_unlensed_cl_template)
     call Ini%Read('number_of_threads', ThreadNum)
     call Ini%Read('AccuracyTarget', AccuracyTarget)
+
+    ! EFTCAMB MOD START: in debug mode only use one thread
+#ifdef DEBUG
+    ThreadNum = 1
+#endif
+    ! EFTCAMB MOD END.
+
     call Ini%Read('DebugParam', DebugParam)
     if (Ini%HasKey('enable_olver_source_integration')) &
         call Ini%Read('enable_olver_source_integration', enable_olver_source_integration)

@@ -4,6 +4,9 @@ on:
   push:
     branches-ignore:
       - "test**"
+      # EFTCAMB MOD START: ignore testing for eftcamb
+      - "eftcamb**"
+      # EFTCAMB MOD END
     tags:
       - "fortran-test-artifacts*"
   pull_request:
@@ -44,6 +47,14 @@ jobs:
             upload=true
           fi
           echo "upload=${upload}" >> "${GITHUB_OUTPUT}"
+
+      # EFTCAMB MOD START
+      # install lapack and blas library
+      - name: Install BLAS and LAPACK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libblas-dev liblapack-dev
+      # EFTCAMB MOD END
 
       - name: Run Build and Test Script
         run: python fortran/tests/run_tests.py --reference_branch v2 --verbose_diff_output

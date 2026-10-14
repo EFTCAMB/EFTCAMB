@@ -80,6 +80,11 @@
     procedure :: rho_P => ThermalNuBackground_rho_P
     procedure :: rho => ThermalNuBackground_rho
     procedure :: drho => ThermalNuBackground_drho
+    ! EFTCAMB MOD START:
+    procedure :: pidot => ThermalNuBackground_pidot
+    procedure :: pidotdot => ThermalNuBackground_pidotdot
+    procedure :: pidotdotdot => ThermalNuBackground_pidotdotdot
+    ! EFTCAMB MOD END.
     procedure :: find_nu_mass_for_rho => ThermalNuBackground_find_nu_mass_for_rho
     procedure :: omnuh2_from_mass => ThermalNuBackground_omnuh2_from_mass
     end type TThermalNuBackground
@@ -358,5 +363,109 @@
     end if
 
     end function ThermalNuBackground_drho
+
+    ! EFTCAMB MOD START: compatibility with massive neutrinos
+    pure subroutine nu_pressure_lnam_derivs(am, dP1, dP2, dP3)
+    ! First three derivatives of the massive neutrino pressure, as given by ThermalNuBackground_rho_P,
+    ! with respect to log(a*m). Analytic derivatives of the same series and fits used for the pressure.
+    real(dl), intent(in) :: am
+    real(dl), intent(out) :: dP1, dP2, dP3
+    real(dl) am2, am4, am6, inv_am, inv_am3, pref
+    real(dl) z, zw, zww, zwww, f, f1, f2, f3, fw, fww, fwww
+    real(dl) s, g, gw, gww, gwww, Pw, Pww, Pwww
+    integer i
+
+    if (am <= nu_rhop_am_min) then
+        ! P = (1 - const2*am**2)/3 + am**4*(c0 + c1*am**2), with d(am**n)/dlog(am) = n*am**n
+        am2 = am**2
+        am4 = am2**2
+        am6 = am4*am2
+        dP1 = -2._dl*const2/3._dl*am2 + 4._dl*nu_low_p_c(0)*am4 + 6._dl*nu_low_p_c(1)*am6
+        dP2 = -4._dl*const2/3._dl*am2 + 16._dl*nu_low_p_c(0)*am4 + 36._dl*nu_low_p_c(1)*am6
+        dP3 = -8._dl*const2/3._dl*am2 + 64._dl*nu_low_p_c(0)*am4 + 216._dl*nu_low_p_c(1)*am6
+    else if (am >= nu_rhop_am_max) then
+        ! P = 900/120/fermi_dirac_const*(zeta5/am - 63/4*zeta7/am**3)
+        pref = 900._dl/120._dl/fermi_dirac_const
+        inv_am = 1._dl/am
+        inv_am3 = inv_am**3
+        dP1 = pref*(-zeta5*inv_am + 3._dl*63._dl/4._dl*zeta7*inv_am3)
+        dP2 = pref*(zeta5*inv_am - 9._dl*63._dl/4._dl*zeta7*inv_am3)
+        dP3 = pref*(-zeta5*inv_am + 27._dl*63._dl/4._dl*zeta7*inv_am3)
+    else
+        ! P = f(z)*g(am), with f the pressure fit polynomial in z = z_scale*(am - c)/(am + c)
+        ! and g = 1/(1 + nu_fit_p_denom_scale*am). Derivatives first in am, then converted to log(am).
+        z = ((am - nu_rhop_fit_c)/(am + nu_rhop_fit_c))*nu_rhop_fit_inv_zmax
+        zw = 2._dl*nu_rhop_fit_inv_zmax*nu_rhop_fit_c/(am + nu_rhop_fit_c)**2
+        zww = -2._dl*zw/(am + nu_rhop_fit_c)
+        zwww = -3._dl*zww/(am + nu_rhop_fit_c)
+        ! Horner evaluation of the polynomial and its first three derivatives in z
+        f = nu_fit_p_c(6)
+        f1 = 0._dl
+        f2 = 0._dl
+        f3 = 0._dl
+        do i = 5, 0, -1
+            f3 = f3*z + 3._dl*f2
+            f2 = f2*z + 2._dl*f1
+            f1 = f1*z + f
+            f = f*z + nu_fit_p_c(i)
+        end do
+        fw = f1*zw
+        fww = f2*zw**2 + f1*zww
+        fwww = f3*zw**3 + 3._dl*f2*zw*zww + f1*zwww
+        s = nu_fit_p_denom_scale
+        g = 1._dl/(1._dl + s*am)
+        gw = -s*g**2
+        gww = 2._dl*s**2*g**3
+        gwww = -6._dl*s**3*g**4
+        Pw = fw*g + f*gw
+        Pww = fww*g + 2._dl*fw*gw + f*gww
+        Pwww = fwww*g + 3._dl*fww*gw + 3._dl*fw*gww + f*gwww
+        dP1 = am*Pw
+        dP2 = am*Pw + am**2*Pww
+        dP3 = am*Pw + 3._dl*am**2*Pww + am**3*Pwww
+    end if
+
+    end subroutine nu_pressure_lnam_derivs
+
+    pure function ThermalNuBackground_pidot(this, am, adotoa, presnu) result(presnudot)
+    ! Conformal time derivative of the massive neutrino pressure. presnu is kept for interface compatibility.
+    class(TThermalNuBackground), intent(in) :: this
+    real(dl), intent(in) :: am, adotoa, presnu
+    real(dl) presnudot
+    real(dl) dP1, dP2, dP3
+
+    call nu_pressure_lnam_derivs(am, dP1, dP2, dP3)
+    presnudot = dP1*adotoa
+
+    end function ThermalNuBackground_pidot
+
+    pure function ThermalNuBackground_pidotdot(this, am, adotoa, Hdot, presnu, presnudot) result(presnudotdot)
+    ! Second conformal time derivative of the massive neutrino pressure.
+    ! presnu and presnudot are kept for interface compatibility.
+    class(TThermalNuBackground), intent(in) :: this
+    real(dl), intent(in) :: am, adotoa, Hdot, presnu, presnudot
+    real(dl) presnudotdot
+    real(dl) dP1, dP2, dP3
+
+    call nu_pressure_lnam_derivs(am, dP1, dP2, dP3)
+    presnudotdot = dP2*adotoa**2 + dP1*Hdot
+
+    end function ThermalNuBackground_pidotdot
+
+    pure function ThermalNuBackground_pidotdotdot(this, am, adotoa, Hdot, Hdotdot, presnu, presnudot, &
+        presnudotdot) result(presnudotdotdot)
+    ! Third conformal time derivative of the massive neutrino pressure.
+    ! presnu, presnudot and presnudotdot are kept for interface compatibility.
+    class(TThermalNuBackground), intent(in) :: this
+    real(dl), intent(in) :: am, adotoa, Hdot, Hdotdot, presnu, presnudot, presnudotdot
+    real(dl) presnudotdotdot
+    real(dl) dP1, dP2, dP3
+
+    call nu_pressure_lnam_derivs(am, dP1, dP2, dP3)
+    presnudotdotdot = dP3*adotoa**3 + 3._dl*dP2*adotoa*Hdot + dP1*Hdotdot
+
+    end function ThermalNuBackground_pidotdotdot
+
+    ! EFTCAMB MOD END.
 
     end module MassiveNu
