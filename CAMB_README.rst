@@ -41,12 +41,17 @@ Then install using::
 
     pip install -e ./CAMB [--user]
 
-For development, install with dev dependencies and setup pre-commit hooks::
+.. EFTCAMB MOD START: EFTCAMB does not use the CAMB pre-commit development setup
+.. original text:
+..
+   For development, install with dev dependencies and setup pre-commit hooks::
 
-    pip install -e ./CAMB[dev] [--user]
-    git config core.hooksPath .githooks
+       pip install -e ./CAMB[dev] [--user]
+       git config core.hooksPath .githooks
 
-See `CONTRIBUTING.md <CONTRIBUTING.md>`_ for full development setup instructions.
+   See `CONTRIBUTING.md <CONTRIBUTING.md>`_ for full development setup instructions.
+
+.. EFTCAMB MOD END
 
 You will need gfortran installed to compile (usually included with gcc by default; ifort and, experimentally,
 LLVM flang also work, see `fortran_compilers.rst <docs/source/fortran_compilers.rst>`_).

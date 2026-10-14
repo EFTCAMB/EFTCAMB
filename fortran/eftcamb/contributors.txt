@@ -1,0 +1,32 @@
+Principal developers:
+
+- Bin Hu: Beijing Normal University;
+- Marco Raveri: University of Pennsylvania;
+- Noemi Frusciante: Universidade de Lisboa;
+- Alessandra Silvestri: Instituut Lorentz Leiden University;
+
+Developers (in alphabetical order):
+
+- Giampaolo Benevento: University of Padova;
+- Simone Peirone: Instituut Lorentz Leiden University;
+- Fabrizio Renzi: Instituut Lorentz Leiden University;
+
+Contributors to code developments (in alphabetical order):
+
+- Matteo Rizzato: small fix to the Makefile;
+
+Contributors to theoretical developments (in alphabetical order):
+
+- Bo Yu: bug found in second order operators, fixed in V2;
+
+Acknowledgements:
+
+We are grateful to Carlo Baccigalupi, Nicola Bartolo, Jolyon Bloomfield,
+Matteo Calabrese, Paolo Creminelli, Antonio De Felice, Jerome Gleyzes,
+Alireza Hojjati, Martin Kunz, Stefano Liberati, Matteo Martinelli,
+Sabino Matarrese, Ali Narimani, Valeria Pettorino, Federico Piazza,
+Levon Pogosian, Filippo Vernizzi, Bo Yu and Gong-Bo Zhao for useful
+conversations. We are indebted to Luca Heltai and Riccardo Valdarnini
+for help with numerical algorithms, and to Jorgos Papadomanolakis and
+Daniele Vernieri for help in developing some theoretical aspects.
+Finally, we acknowledge Biagino Frusciante for the realization of the logo.

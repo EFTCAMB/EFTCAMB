@@ -87,6 +87,13 @@ indent_case = 4
 indent_interface = 0
 indent_continuation = 4
 openmp = 0
+# EFTCAMB MOD START: keep the () that BIND(C) requires (02_error_handler.f90);
+# forformat 0.1.4 strips it otherwise and breaks the build.
+strip-empty-args = false
+# EFTCAMB own Fortran sources are not reformatted: forformat 0.1.4 rewrites the Doxygen
+# comment markers !> and !< as ! > and ! <, which Doxygen (eftcamb_doc) does not recognize.
+extend-exclude = ["fortran/eftcamb/**", "fortran/eftcamb_apps/**"]
+# EFTCAMB MOD END
 
 [tool.flake8]
 select = [

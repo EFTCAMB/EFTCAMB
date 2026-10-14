@@ -52,15 +52,27 @@ $(warning ** ifort version lower than 18.0.1 may not work with the Python wrappe
 endif
 
 
+# EFTCAMB MOD START: link MKL (BLAS/LAPACK) with ifort
 ifeq ($(shell test $(ifortVer_major) -gt 15; echo $$?),0)
-COMMON_FFLAGS = -fpp -qopenmp
+COMMON_FFLAGS = -fpp -qmkl -qopenmp
 else
-COMMON_FFLAGS = -fpp -openmp
+COMMON_FFLAGS = -fpp -mkl -openmp
 endif
+# original code:
+#ifeq ($(shell test $(ifortVer_major) -gt 15; echo $$?),0)
+#COMMON_FFLAGS = -fpp -qopenmp
+#else
+#COMMON_FFLAGS = -fpp -openmp
+#endif
+# EFTCAMB MOD END
 COMMON_FFLAGS += -gen-dep=$$*.d
 
 FFLAGS = -fp-model precise -W0 -WB $(COMMON_FFLAGS)
-DEBUGFLAGS =  -g -check all -check noarg_temp_created -traceback -fpe0 $(COMMON_FFLAGS)
+# EFTCAMB MOD START: EFTCAMB debug flags
+DEBUGFLAGS =  -g -check all -check noarg_temp_created -traceback -fpe2 $(COMMON_FFLAGS) -DDEBUG -mkl
+# original code:
+#DEBUGFLAGS =  -g -check all -check noarg_temp_created -traceback -fpe0 $(COMMON_FFLAGS)
+# EFTCAMB MOD END
 
 ifeq ($(shell uname -s),Darwin)
 SFFLAGS = -dynamiclib #-fpic
@@ -98,10 +110,22 @@ ifeq "$(gfortErr)" "0"
 compiler_ver = $(shell gfortran -dumpversion 2>&1)
 COMPILER = gfortran
 F90C     = gfortran
-COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fmax-errors=4 -fopenmp
+# EFTCAMB MOD START: allow argument mismatch to compile odepack
+# lapack flags
+BLASFLAG = -lblas
+LAPACK_FLAG = -llapack
+COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp $(BLASFLAG) $(LAPACK_FLAG)
+# original code:
+#COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fmax-errors=4 -fopenmp
+# EFTCAMB MOD END
 # Using -ffast-math causes differences between Debug and Release configurations.
-FFLAGS = -O3 $(COMMON_FFLAGS)
-DEBUGFLAGS = -g -fbacktrace -ffpe-trap=invalid,overflow,zero -fbounds-check $(COMMON_FFLAGS)
+# EFTCAMB MOD START: silence warnings and define DEBUG in debug builds
+FFLAGS = -O3 -w $(COMMON_FFLAGS)
+DEBUGFLAGS = -g -fbacktrace -ffpe-trap=invalid,overflow,zero -fbounds-check $(COMMON_FFLAGS) -DDEBUG
+# original code:
+#FFLAGS = -O3 $(COMMON_FFLAGS)
+#DEBUGFLAGS = -g -fbacktrace -ffpe-trap=invalid,overflow,zero -fbounds-check $(COMMON_FFLAGS)
+# EFTCAMB MOD END
 ifeq ($(shell uname -s),Darwin)
 SFFLAGS = -dynamiclib #-fpic
 ifneq ($(shell echo $(compiler_ver) | awk '{print ($$1 >= 14.0)}'),0)
@@ -124,7 +148,11 @@ endif
 
 MODOUT =  -J$(OUTPUT_DIR)
 SMODOUT = -J$(DLL_DIR)
-FISHER_LINK = -lblas -llapack
+# EFTCAMB MOD START: use the configurable lapack flags
+FISHER_LINK = $(BLASFLAG) $(LAPACK_FLAG)
+# original code:
+#FISHER_LINK = -lblas -llapack
+# EFTCAMB MOD END
 
 ifeq ($(shell uname -s),Darwin)
 NONNATIVE = 1

@@ -14,7 +14,11 @@ include setup.py
 
 # Package sources and bundled data.
 recursive-include camb *.py
-recursive-include fortran Makefile* *.dat *.?90
+# EFTCAMB MOD START: ship the EFTCAMB sources
+recursive-include fortran Makefile* *.dat *.?90 eftcamb*
+# original code:
+# recursive-include fortran Makefile* *.dat *.?90
+# EFTCAMB MOD END
 recursive-include forutils Makefile* *.?90
 
 include camb/PArthENoPE_880.2_marcucci.dat

@@ -1,0 +1,164 @@
+output: /your/output/path
+
+theory:
+  camb:
+    ignore_obsolete: true
+    requires:
+    - RPHkineticity_ODE0      # <-- alpha_K
+    - RPHbraiding_ODE0        # <-- alpha_B
+    - RPHalphaM_ODE0          # <-- alpha_M
+    path: /your/path/to/EFTCAMB
+    extra_args:
+      bbn_predictor: PArthENoPE_880.2_standard.dat
+      lens_potential_accuracy: 1
+      num_massive_neutrinos: 1
+      nnu: 3.044
+      lmax: 2600
+      dark_energy_model: EFTCAMB
+      EFTflag: 2              # <-- Reparametrized Horndeski
+      AltParEFTmodel: 1       # <-- alpha parametrization
+      RPHwDE: 0               # <-- use w=-1 (LCDM)
+      RPHusealphaM: True
+      RPHkineticitymodel_ODE: 2  # <-- alphaK = cK Omega_DE
+      RPHbraidingmodel_ODE: 2    # <-- alphaB = cB Omega_DE
+      RPHalphaMmodel_ODE: 2      # <-- alphaM = cM Omega_DE
+      EFT_ghost_math_stability: F
+      EFT_mass_math_stability: F
+      EFT_ghost_stability: T
+      EFT_gradient_stability: T
+      EFT_positivity_bounds: F
+      EFT_additional_priors: T
+      EFTCAMB_turn_on_time: 0.1
+      EFTCAMB_stability_time: 0.1
+      feedback_level: 0
+
+likelihood:
+  sn.pantheonplus: null
+  bao.desi_dr2: null
+  planck_2018_lowl.TT: null
+  planck_2018_lowl.EE: null
+  planck_NPIPE_highl_CamSpec.TTTEEE: null
+  planckpr4lensing: null
+
+sampler:
+  #  polychord:
+  #    nprior: 40nlive
+  #    num_repeats: 10d
+  #    precision_criterion: 0.01
+   mcmc:
+    learn_proposal: True
+    oversample_power: 0.4
+    proposal_scale: 1.9
+    Rminus1_stop: 0.01
+
+
+params:
+  ##########################
+  ## EFT of DE parameters ##
+  ##########################
+  RPHbraiding_ODE0:  # <-- alpha_B
+    prior:
+      min: -5
+      max: 5
+    ref: 0.5
+    proposal: 1.0
+    latex: c_B
+  RPHalphaM_ODE0:  # <-- alpha_M
+    prior:
+      min: -5
+      max: 5
+    ref: 1.0
+    proposal: 1.0
+    latex: c_M
+  RPHkineticity_ODE0: 0.01  # <-- alpha_K
+
+  ###########################
+  ## Standard cosmo params ##
+  ###########################
+  logA:
+    prior:
+      min: 1.61
+      max: 3.91
+    ref:
+      dist: norm
+      loc: 3.05
+      scale: 0.001
+    proposal: 0.001
+    latex: \log(10^{10} A_\mathrm{s})
+    drop: true
+  As:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+    latex: A_\mathrm{s}
+  ns:
+    prior:
+      min: 0.8
+      max: 1.2
+    ref:
+      dist: norm
+      loc: 0.965
+      scale: 0.004
+    proposal: 0.002
+    latex: n_\mathrm{s}
+  H0:
+    prior:
+      min: 20
+      max: 100
+    ref:
+      dist: norm
+      loc: 67
+      scale: 2
+    proposal: 2
+    latex: H_0
+  ombh2:
+    prior:
+      dist: norm
+      loc: 0.0222
+      scale: 0.0005
+    ref:
+      dist: norm
+      loc: 0.0222
+      scale: 0.0005
+    proposal: 0.0004
+    latex: \Omega_\mathrm{b} h^2
+  omch2:
+    prior:
+      min: 0.001
+      max: 0.99
+    ref:
+      dist: norm
+      loc: 0.12
+      scale: 0.003
+    proposal: 0.002
+    latex: \Omega_\mathrm{c} h^2
+  tau:
+    prior:
+      min: 0.01
+      max: 0.8
+    ref:
+      dist: norm
+      loc: 0.055
+      scale: 0.006
+    proposal: 0.003
+    latex: \tau_\mathrm{reio}
+
+
+  ####################
+  ## Derived params ##
+  ####################
+  omegam:
+    latex: \Omega_\mathrm{m}
+  omegamh2:
+    derived: 'lambda omegam, H0: omegam*(H0/100)**2'
+    latex: \Omega_\mathrm{m} h^2
+  mnu: 0.06
+  omega_de:
+    latex: \Omega_\Lambda
+  YHe:
+    latex: Y_\mathrm{P}
+  Y_p:
+    latex: Y_P^\mathrm{BBN}
+  DHBBN:
+    derived: 'lambda DH: 10**5*DH'
+    latex: 10^5 \mathrm{D}/\mathrm{H}
+
+

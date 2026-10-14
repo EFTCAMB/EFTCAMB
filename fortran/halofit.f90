@@ -317,7 +317,15 @@
 
                 CAMB_Pk%nonlin_ratio = 1
 
-                call Params%DarkEnergy%Effective_w_wa(w_eff, wa_eff)
+                ! EFTCAMB MOD START: get effective equation of state:
+                if (allocated(Params%EFTCAMB) .and. Params%EFTCAMB%EFTflag /= 0) then
+                    call Params%EFTCAMB%Effective_w_wa(w_eff, wa_eff)
+                else
+                    call Params%DarkEnergy%Effective_w_wa(w_eff, wa_eff)
+                end if
+                ! Original code:
+                ! call Params%DarkEnergy%Effective_w_wa(w_eff, wa_eff)
+                ! EFTCAMB MOD END
 
                 ! Each redshift is independent; hf and pk_fac hold all the per-redshift state
                 !$OMP PARALLEL DO IF(CAMB_Pk%num_z > 1), DEFAULT(SHARED), SCHEDULE(DYNAMIC) &
@@ -1121,7 +1129,16 @@
         cosm%om_b = CP%ombh2/h2
         cosm%om_nu = CP%omnuh2/h2
         cosm%om_v = State%Omega_de
-        call CP%DarkEnergy%Effective_w_wa(cosm%w, cosm%wa)
+        ! EFTCAMB MOD START: get effective w0wa
+        if (allocated(CP%EFTCAMB) .and. CP%EFTCAMB%EFTflag /= 0) then
+            call CP%EFTCAMB%Effective_w_wa(cosm%w, cosm%wa)
+        else
+            call CP%DarkEnergy%Effective_w_wa(cosm%w, cosm%wa)
+        end if
+        ! Original code:
+        ! call CP%DarkEnergy%Effective_w_wa(cosm%w, cosm%wa)
+        ! EFTCAMB MOD END
+
         cosm%f_nu = cosm%om_nu/cosm%om_m
         cosm%h = CP%H0/100
         cosm%Tcmb = CP%TCMB
@@ -1134,6 +1151,11 @@
         use_wiggle = this%halofit_version == halofit_mead2020 .or. this%halofit_version == halofit_mead2020_feedback
         cosm%wiggle_once = use_wiggle .and. cosm%f_nu < this%HMcode_wiggle_max_fnu .and. &
             CP%DarkEnergy%assume_scale_indep_lowz_growth()
+        ! EFTCAMB MOD START: modified gravity can make low-z growth scale dependent
+        if (allocated(CP%EFTCAMB)) then
+            if (CP%EFTCAMB%EFTflag /= 0) cosm%wiggle_once = .false.
+        end if
+        ! EFTCAMB MOD END
         cosm%wiggle_each_z = use_wiggle .and. .not. cosm%wiggle_once
     end associate
 

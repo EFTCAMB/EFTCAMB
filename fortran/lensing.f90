@@ -303,7 +303,9 @@
             CTE(l) = CL%Cl_scalar(l, C_Cross)*fac
         end do
         if (CP%Max_l >= 10 .and. Cphil3(10) > lensing_sanity_check_amplitude) then
-            call AmplitudeError()
+            ! EFTCAMB MOD START: some theories really destroy the Cls
+            ! call AmplitudeError()
+            ! EFTCAMB MOD END.
             return
         end if
         if (lmax > CP%Max_l) then
@@ -323,7 +325,9 @@
                 CTE(l) = highL_CL_template(l, C_Cross)*tail_te_fac*sc
             end do
             if (Cphil3(CP%Max_l + 1) > 1e-7_dl) then
-                call MpiStop('You need to normalize the high-L template so it is dimensionless')
+                ! EFTCAMB MOD START: some theories really destroy the Cls
+                ! call MpiStop('You need to normalize the high-L template so it is dimensionless')
+                ! EFTCAMB MOD END.
             end if
         end if
         if (ALens_Fiducial > 0) then
@@ -440,6 +444,16 @@
 
         call PrepareLensedCLSpectra(State, CL, lmin, lmax, .true., .false., CPP, Cphil3, CTT, CEE, CTE)
         if (global_error_flag /= 0) return
+
+        ! EFTCAMB MOD START: some theories really destroy the Cls, skip lensing
+
+        if (State%CP%Max_l >= 10) then
+
+            if (Cphil3(10) > lensing_sanity_check_amplitude) return
+
+        end if
+
+        ! EFTCAMB MOD END.
 
         lens_contrib = 0
 
@@ -768,6 +782,11 @@
         call PrepareLensedCLSpectra(State, CL, lmin, lmax, .not. CP%Accuracy%AccurateBB, .false., &
             CPP, Cphil3, CTT, CEE, CTE)
         if (global_error_flag /= 0) return
+        ! EFTCAMB MOD START: some theories really destroy the Cls, skip lensing
+        if (State%CP%Max_l >= 10) then
+            if (Cphil3(10) > lensing_sanity_check_amplitude) return
+        end if
+        ! EFTCAMB MOD END.
 
         thread_ix = 1
         !$ thread_ix = OMP_GET_MAX_THREADS()
@@ -994,6 +1013,11 @@
         call SetLensingPotentialSpectrum(State, CPP)
         call PrepareLensedCLSpectra(State, CL, lmin, lmax, .false., .true., CPP, Cphil3, CTT, CEE, CTE)
         if (global_error_flag /= 0) return
+        ! EFTCAMB MOD START: some theories really destroy the Cls, skip lensing
+        if (State%CP%Max_l >= 10) then
+            if (Cphil3(10) > lensing_sanity_check_amplitude) return
+        end if
+        ! EFTCAMB MOD END.
 
         do l = lmin, lmax
             lfacs(l) = l**2*0.5_dl
@@ -1166,6 +1190,16 @@
 
         call PrepareLensedCLSpectra(State, CL, lmin, lmax_sum, .false., .true., CPP, Cphil3, CTT, CEE, CTE)
         if (global_error_flag /= 0) return
+
+        ! EFTCAMB MOD START: some theories really destroy the Cls, skip lensing
+
+        if (State%CP%Max_l >= 10) then
+
+            if (Cphil3(10) > lensing_sanity_check_amplitude) return
+
+        end if
+
+        ! EFTCAMB MOD END.
 
         do l = lmin, lmax_sum
             lfacs(l) = l**2*0.5_dl

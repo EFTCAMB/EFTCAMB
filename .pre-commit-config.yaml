@@ -30,4 +30,8 @@ repos:
     rev: v0.1.4
     hooks:
       - id: forformat
-        exclude: ^forutils/
+        # EFTCAMB MOD START: keep the Doxygen markers of the EFTCAMB sources (see pyproject.toml)
+        exclude: ^(forutils|fortran/eftcamb|fortran/eftcamb_apps)/
+        # original code:
+        # exclude: ^forutils/
+        # EFTCAMB MOD END
