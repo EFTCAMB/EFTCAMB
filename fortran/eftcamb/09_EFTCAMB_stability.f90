@@ -474,6 +474,8 @@
     eft_cache%grhom_t = &
         eft_cache%grhob_t + eft_cache%grhoc_t + eft_cache%grhor_t + eft_cache%grhog_t + eft_cache%grhonu_tot
     eft_cache%gpresm_t = (+eft_cache%grhor_t + eft_cache%grhog_t)/3._dl + eft_cache%gpinu_tot
+    ! total matter density times a^4, used by compute_dtauda (as in dtauda of CAMB):
+    eft_cache%grhoa2 = eft_cache%grhom_t*a**2
     ! compute the other things:
     select type (model_temp => input_model)
         ! compute the background and the background EFT functions.
