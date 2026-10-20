@@ -1183,9 +1183,8 @@ class CAMBdata(F2003Class):
                 log_p_new = np.empty((pk.shape[0], pk.shape[1] + 2))
                 log_p_new[:, :-2] = p_or_log_p
                 delta = logextrap - logkh[-1]
-                # get average slope:
-                num_points = 10
-                dlog = np.mean(np.diff(p_or_log_p[:, -num_points:], axis=1), axis=1) / (logkh[-1] - logkh[-2])
+
+                dlog = (log_p_new[:, -3] - log_p_new[:, -4]) / (logkh[-1] - logkh[-2])
                 log_p_new[:, -1] = log_p_new[:, -3] + dlog * delta
                 log_p_new[:, -2] = log_p_new[:, -3] + dlog * delta * 0.9
                 logkh = np.hstack((logkh, logextrap - delta * 0.1, logextrap))
@@ -1195,10 +1194,13 @@ class CAMBdata(F2003Class):
                 _log_kmax_extrap = np.log(extrap_kmax)
                 _log_kmax = np.log(kmax)
                 _delta_log_k = logkh[-1] - logkh[-2]
-                # Calculate the average slope using the last 10 points
-                num_points = 10
-                _log_Pk_1 = np.log(np.abs(p_or_log_p[:, -num_points:]))
-                _log_slope = np.mean(np.diff(_log_Pk_1, axis=1), axis=1) / _delta_log_k
+                # power law through the last two points (as in the log branch), which must have the same sign:
+                if np.any(p_or_log_p[:, -1] * p_or_log_p[:, -2] <= 0):
+                    raise CAMBValueError(
+                        f"Cannot use extrap_kmax: PK for {var1}, {var2} crosses zero at the largest k computed."
+                    )
+                _log_Pk_1 = np.log(np.abs(p_or_log_p[:, -2:]))
+                _log_slope = (_log_Pk_1[:, -1] - _log_Pk_1[:, -2]) / _delta_log_k
                 _sign = np.sign(p_or_log_p[:, -1])
                 # get the grid:
                 _log_kh_extrap = np.arange(_log_kmax + _delta_log_k, _log_kmax_extrap + _delta_log_k, _delta_log_k)
