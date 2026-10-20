@@ -1175,13 +1175,9 @@
 
     astar = 1/(1 + zstar)
     atol = 1e-6
-    ! EFTCAMB MOD START: use precomputed rs table in EFTCAMB instead
-    if (this%CP%EFTCAMB%EFTflag /= 0 .and. this%CP%EFTCAMB%EFTCAMB_use_background) then
-        rs = this%CP%EFTCAMB%model%compute_SoundHorizon(astar)
-    else
-        rs = Integrate_Romberg(this, dsound_da_approx, 1d-8, astar, atol)
-    end if
-    ! EFTCAMB MOD END
+    ! EFTCAMB MOD: the EFTCAMB_use_background table (exact baryon loading) is not used here: the CosmoMC
+    ! definition needs the approximate R of dsound_da_approx; dtauda already follows the EFT background.
+    rs = Integrate_Romberg(this, dsound_da_approx, 1d-8, astar, atol)
     DA = this%AngularDiameterDistance(zstar)/astar
     CAMBdata_CosmomcTheta = rs/DA
 
