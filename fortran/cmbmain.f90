@@ -915,7 +915,8 @@
     taumin = GetTauStart(maxq)
     ! EFTCAMB MOD START: the thermal history must start before the EFT perturbations turn on
     ! (tauminn = 0.95 taumin); taumin only changes for turn-on times earlier than that.
-    if (CP%EFTCAMB%EFTflag /= 0) then
+    ! Only the scalar equations have EFT perturbations (the tensor pass keeps its thermal history).
+    if (CP%EFTCAMB%EFTflag /= 0 .and. CP%WantScalars) then
         tau_eft_on = State%DeltaTime(0._dl, CP%EFTCAMB%EFTCAMB_pert_turn_on)
         if (tau_eft_on < 0.95_dl*taumin) taumin = tau_eft_on
     end if
