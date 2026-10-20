@@ -732,6 +732,12 @@
             write(*, *) 'source max_eta_k: ', this%CP%Max_eta_k, 'kmax = ', this%CP%Max_eta_k/this%tau0
     end if
 
+    ! EFTCAMB MOD START: 21cm sources use the GR Einstein equations, refuse them for EFT models
+    if (this%CP%EFTCAMB%EFTflag /= 0 .and. this%CP%Do21cm) then
+        call GlobalError('EFTCAMB is not compatible with 21 cm sources so far', error_unsupported_params)
+    end if
+    ! EFTCAMB MOD END.
+
     if ((this%CP%NonLinear == NonLinear_Lens .or. this%CP%NonLinear == NonLinear_both) .and. &
         this%CP%Max_eta_k/this%tau0 > this%CP%Transfer%kmax) then
         this%CP%Transfer%kmax = this%CP%Max_eta_k/this%tau0

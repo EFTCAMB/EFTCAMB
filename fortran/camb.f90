@@ -914,8 +914,8 @@
 
     ! 21 cm sources are not checked for MG effects, have to stop
     if (P%EFTCAMB%EFTflag /= 0 .and. P%Do21cm) then
-        write(*, *) 'EFTCAMB is not compatible with 21 cm sources so far'
-        error stop 'Invalid parameter'
+        ErrMsg = 'EFTCAMB is not compatible with 21 cm sources so far'
+        return
     end if
     ! EFTCAMB MOD END
 
