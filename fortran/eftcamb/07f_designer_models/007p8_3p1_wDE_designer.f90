@@ -905,6 +905,9 @@
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
 
+    ! success is intent(out): set it before any return path that does not fail.
+    success = .true.
+
     ! 1) Cosmological parameters:
     grhom0 = params_cache%grhob + params_cache%grhoc
     grhor0 = 3._dl*params_cache%h0_Mpc**2*(params_cache%omegag + params_cache%omegar)
