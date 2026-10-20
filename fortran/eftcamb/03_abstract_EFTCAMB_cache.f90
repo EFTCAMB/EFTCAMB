@@ -441,11 +441,13 @@
     self%EFTOmegaPPPP = 0._dl
     self%EFTc = 0._dl
     self%EFTcdot = 0._dl
+    self%EFTcdotdot = 0._dl
     self%EFTLambda = 0._dl
     self%EFTLambdadot = 0._dl
     self%EFTLambdadotdot = 0._dl
     self%EFTGamma1V = 0._dl
     self%EFTGamma1P = 0._dl
+    self%EFTGamma1PP = 0._dl
     self%EFTGamma2V = 0._dl
     self%EFTGamma2P = 0._dl
     self%EFTGamma2PP = 0._dl
