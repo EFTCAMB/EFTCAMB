@@ -3948,9 +3948,10 @@
             polter = pig/10 + 9._dl/15*E(2)
             polterdot = (1.0d0/10.0d0)*pigdot + (3.0d0/5.0d0)*Edot(2)
             ! EFTCAMB MOD START: polterddot from the photon equations, with sigmadot instead of the GR constraints
-            pigddot = 2._dl/5._dl*k*qgdot - 3._dl/5._dl*k*octgdot - dopacity*(pig - polter) - &
+            ! (curvature factors Kf(2) on the octupole and E3 terms as in the original CAMB expression)
+            pigddot = 2._dl/5._dl*k*qgdot - 3._dl/5._dl*k*EV%Kf(2)*octgdot - dopacity*(pig - polter) - &
                 opacity*(pigdot - polterdot) + 8._dl/15._dl*k*sigmadot
-            E2ddot = -dopacity*(E(2) - polter) - opacity*(Edot(2) - polterdot) - k/3._dl*Edot(3)
+            E2ddot = -dopacity*(E(2) - polter) - opacity*(Edot(2) - polterdot) - k/3._dl*EV%Kf(2)*Edot(3)
             polterddot = pigddot/10._dl + 3._dl/5._dl*E2ddot
             ! Original code:
             ! polterddot = -2.0d0/25.0d0*adotoa*dgq/(k*EV%Kf(1)) - 4.0d0/75.0d0*adotoa* &
