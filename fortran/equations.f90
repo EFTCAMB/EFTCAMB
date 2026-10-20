@@ -2752,6 +2752,7 @@
         end if
     else
         grhov_t = 0._dl
+        w_dark_energy_t = -1._dl ! not used (grhov_t = 0) but must be defined
     end if
     ! EFTCAMB MOD END.
 
@@ -4260,8 +4261,9 @@
                 end do
             end if
             ! compute pressure ddot:
-            EV%eft_cache%gpresdotdotm_t = -(4._dl/3._dl)*EV%eft_cache%Hdot*(grhog_t + grhor_t) + &
-                (16._dl/3._dl)*(grhog_t + grhor_t)*adotoa**2 + EV%eft_cache%gpinudotdot_tot
+            EV%eft_cache%gpresdotdotm_t = -(4._dl/3._dl)*EV%eft_cache%Hdot* &
+                (EV%eft_cache%grhog_t + EV%eft_cache%grhor_t) + &
+                (16._dl/3._dl)*(EV%eft_cache%grhog_t + EV%eft_cache%grhor_t)*adotoa**2 + EV%eft_cache%gpinudotdot_tot
             ! compute third derivatives of H:
             call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
 
