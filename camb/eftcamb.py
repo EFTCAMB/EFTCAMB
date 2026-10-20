@@ -398,8 +398,16 @@ class EFTCAMB(F2003Class):
         return w0.value, wa.value
 
     def get_scale_evolution(self, camb_results, q, a):
+        """
+        Get the time evolution of the input EFTCAMB model at the requested scale factors.
+
+        :param camb_results: a :class:`~.results.CAMBdata`
+        :param q: wavenumber values to calculate (or array of k values)
+        :param a: array of requested scale factors to output (any order)
+        :return: as :meth:`get_evolution`, with the times in the order of the input scale factors
+        """
         # convert scale factor to redshift:
-        z = 1.0 / a - 1.0
+        z = 1.0 / np.atleast_1d(np.asarray(a, dtype=np.float64)) - 1.0
         # then to conformal time:
         eta = camb_results.conformal_time(z)
         # then call the other function:
@@ -413,7 +421,9 @@ class EFTCAMB(F2003Class):
 
         :param camb_results: a :class:`~.results.CAMBdata`
         :param q: wavenumber values to calculate (or array of k values)
-        :param eta: array of requested conformal times to output
+        :param eta: array of requested conformal times to output (any order)
+        :return: list of field names, and structured array of timestep cache values with shape (len(q), len(eta)),
+            in the order of the input wavenumbers and times
         """
         # digest the input scale array:
         if np.isscalar(q):
@@ -422,8 +432,10 @@ class EFTCAMB(F2003Class):
             k = np.array(q, dtype=np.float64)
         k = np.asfortranarray(k)
         # digest the input time array:
-        times = np.asfortranarray(np.atleast_1d(eta), dtype=np.float64)
-        times = np.sort(times)
+        times = np.asarray(np.atleast_1d(eta), dtype=np.float64)
+        # the Fortran integration needs increasing times: sort them and restore the caller's order on output
+        indices = np.argsort(times)
+        sorted_times = np.asfortranarray(times[indices])
         # prepare the output array with the time step cache type:
         results = (EFTCAMB_timestep_cache * times.shape[0] * k.shape[0])()
         # call the fortran function to do the heavy lifting:
@@ -432,14 +444,16 @@ class EFTCAMB(F2003Class):
             byref(c_int(k.shape[0])),
             k.ctypes.data_as(POINTER(c_double)),
             byref(c_int(times.shape[0])),
-            times.ctypes.data_as(POINTER(c_double)),
+            sorted_times.ctypes.data_as(POINTER(c_double)),
             byref(results),
         )
         config.check_global_error("get_evolution")
-        # now unpackage the results:
+        # now unpackage the results, as [k][time] in the order of the input times:
         fields = results[0][0].variables()
         results = np.ctypeslib.as_array(results)
-        return fields, results
+        i_rev = np.zeros(times.shape, dtype=int)
+        i_rev[indices] = np.arange(times.shape[0])
+        return fields, results[:, i_rev]
 
     def get_eft_functions(self, camb_results, a):
         """
