@@ -449,17 +449,20 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    eft_cache%gpiv_t = -eft_cache%grhov_t
-    eft_cache%Hdot = -0.5_dl*(eft_cache%adotoa**2 + eft_cache%gpresm_t + eft_cache%gpiv_t)
-    eft_cache%Hdotdot = eft_cache%adotoa* &
-        ((eft_cache%grhob_t + eft_cache%grhoc_t)/6._dl + 2._dl*(eft_cache%grhor_t + eft_cache%grhog_t)/3._dl) + &
-        2._dl*eft_cache%adotoa*eft_cache%grhov_t/3._dl + eft_cache%adotoa*eft_cache%grhonu_tot/6._dl - &
-        0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot - 0.5_dl*eft_cache%gpinudot_tot
+    real(dl) :: F, P, Pdot, Pdotdot
 
-    eft_cache%Hdot = &
-        eft_cache%Hdot*sqrt((2._dl + 2._dl*self%Horava_xi - self%Horava_eta)/(3._dl*self%Horava_lambda + 2._dl))
-    eft_cache%Hdotdot = &
-        eft_cache%Hdotdot*sqrt((2._dl + 2._dl*self%Horava_xi - self%Horava_eta)/(3._dl*self%Horava_lambda + 2._dl))
+    ! H^2 = F (grhom_t + grhov_t)/3 with F = G_cosmo/G_N (arXiv:1508.01787, eq. Hubble), and the matter fluid obeying
+    ! the standard continuity equation. P is the total pressure (a^2-weighted), Pdot and Pdotdot its conformal time
+    ! derivatives (gpresdotm_t and gpresdotdotm_t are a^2 times the time derivatives of the matter pressure).
+    F = (2._dl + 2._dl*self%Horava_xi - self%Horava_eta)/(3._dl*self%Horava_lambda + 2._dl)
+    eft_cache%gpiv_t = -eft_cache%grhov_t
+    P = eft_cache%gpresm_t + eft_cache%gpiv_t
+    Pdot = eft_cache%gpresdotm_t + 2._dl*eft_cache%adotoa*P
+    eft_cache%Hdot = -0.5_dl*(eft_cache%adotoa**2 + F*P)
+    eft_cache%Hdotdot = -eft_cache%adotoa*eft_cache%Hdot - 0.5_dl*F*Pdot
+    Pdotdot = eft_cache%gpresdotdotm_t + 4._dl*eft_cache%adotoa*eft_cache%gpresdotm_t + &
+        (2._dl*eft_cache%Hdot + 4._dl*eft_cache%adotoa**2)*P
+    eft_cache%Hdotdotdot = -eft_cache%Hdot**2 - eft_cache%adotoa*eft_cache%Hdotdot - 0.5_dl*F*Pdotdot
 
     end subroutine EFTCAMBHoravaComputeHubbleDer
 
