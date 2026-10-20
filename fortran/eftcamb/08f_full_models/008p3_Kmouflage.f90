@@ -24,6 +24,7 @@
     module EFTCAMB_Kmouflage_Mod
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use FileUtils
@@ -255,7 +256,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBKmouflageParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
         ! other parameters:
     else if (i == 1) then
         name = trim('alphaU')
@@ -287,7 +291,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBKmouflageParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
         ! other parameters:
     else if (i == 1) then
         latexname = trim('\alpha_{U}')
@@ -322,7 +329,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBKmouflageParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
         ! other parameters:
     else if (i == 1) then
         value = self%alphaU
@@ -433,9 +443,10 @@
 
     ! protect against massive neutrinos that are not yet implemented:
     if (params_cache%Num_Nu_Massive /= 0) then
-        write(*, *) 'Massive neutrinos are not implemented for K-mouflage models'
-        write(*, *) 'The value of Num_Nu_Massive should be 0'
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: massive neutrinos are not implemented for K-mouflage models ' // &
+            '(Num_Nu_Massive should be 0)', error_unsupported_params)
+        success = .false.
+        return
     end if
 
     ! initialize interpolating functions:

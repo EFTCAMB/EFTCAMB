@@ -25,6 +25,7 @@
     module EFTCAMB_FM_quintessence
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use FileUtils
@@ -370,7 +371,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMB5eParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
         ! other parameters:
     else if (i == 1 .and. .not. self%drag_initial_conditions) then
         name = trim('phidot_ini')
@@ -403,7 +407,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMB5eParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
         ! other parameters:
     else if (i == 1 .and. .not. self%drag_initial_conditions) then
         latexname = trim('\dot{\phi}_{\rm ini}')
@@ -436,7 +443,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMB5eParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
         ! other parameters:
     else if (i == 1 .and. .not. self%drag_initial_conditions) then
         value = self%phidot_ini

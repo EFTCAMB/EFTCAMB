@@ -28,6 +28,7 @@
     module EFTCAMB_full_Extended_Galileon
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use FileUtils
@@ -208,7 +209,10 @@
     if (i > self%parameter_number) then
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBExtendedGalileonParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the appropriate name:
     if (i == 1) then
@@ -240,7 +244,10 @@
     if (i > self%parameter_number) then
         write(*, *) 'Illegal index for parameter_names_latex.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBExtendedGalileonParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the appropriate name:
     if (i == 1) then
@@ -272,7 +279,10 @@
     if (i > self%parameter_number) then
         write(*, *) 'Illegal index for parameter_value.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBExtendedGalileonParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
     ! return the appropriate name:
     if (i == 0) then

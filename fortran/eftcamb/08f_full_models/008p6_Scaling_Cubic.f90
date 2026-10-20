@@ -27,6 +27,7 @@
     module EFTCAMB_full_Scaling_Cubic
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use FileUtils
@@ -278,18 +279,23 @@
         call self%solve_background(params_cache, tol_l, success=success)
 
         if (sign(1._dl, tol_r) == sign(1._dl, tol_l)) then
-            if (sign(1._dl, tol_r) < 0._dl) then
-                write(*, *) 'Error in the bisection algorithm '
-                write(*, *) 'Negative right tolerance:', tol_r
-                write(*, *) 'Use an higher value for y2_ir'
-                write(*, *) 'Omegav = ', params_cache%omegav
-            else
-                write(*, *) 'Error in the bisection algorithm '
-                write(*, *) 'Positive left tolerance:', tol_l
-                write(*, *) 'No positive values of y2_i allow to recover Omega_{DE}.'
-                write(*, *) 'Omegav = ', params_cache%omegav
+            if (feedback_level > 1) then
+                if (sign(1._dl, tol_r) < 0._dl) then
+                    write(*, *) 'Error in the bisection algorithm '
+                    write(*, *) 'Negative right tolerance:', tol_r
+                    write(*, *) 'Use an higher value for y2_ir'
+                    write(*, *) 'Omegav = ', params_cache%omegav
+                else
+                    write(*, *) 'Error in the bisection algorithm '
+                    write(*, *) 'Positive left tolerance:', tol_l
+                    write(*, *) 'No positive values of y2_i allow to recover Omega_{DE}.'
+                    write(*, *) 'Omegav = ', params_cache%omegav
+                end if
             end if
-            call MpiStop('EFTCAMB error')
+            call GlobalError('EFTCAMB error: the bisection for the initial y2_i failed (same sign of the ' // &
+                'tolerance at both ends): no initial y2_i recovers Omega_DE', error_unsupported_params)
+            success = .false.
+            return
         else
             if (sign(1._dl, tol) == sign(1._dl, tol_r)) then
                 y2_ir = y2_i
@@ -631,7 +637,10 @@
     if (i > self%parameter_number) then
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBScalingCubicParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the appropriate name:
     if (i == 1) then
@@ -671,7 +680,10 @@
     if (i > self%parameter_number) then
         write(*, *) 'Illegal index for parameter_names_latex.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBScalingCubicParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the appropriate name:
     if (i == 1) then
@@ -711,7 +723,10 @@
     if (i > self%parameter_number) then
         write(*, *) 'Illegal index for parameter_value.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBScalingCubicParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
     ! return the appropriate name:
     if (i == 0) then
