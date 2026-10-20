@@ -128,7 +128,7 @@
     implicit none
 
     class(EFTCAMB_Beyond_Horndeski) :: self   !< the base class
-    type(TIniFile)                  :: Ini    !< Input ini file
+    class(TIniFile)                 :: Ini    !< Input ini file
     integer                         :: eft_error     !< error code: 0 all fine, 1 initialization
 
     ! read precision parameters
@@ -145,7 +145,7 @@
     implicit none
 
     class(EFTCAMB_Beyond_Horndeski) :: self         !< the base class
-    type(TIniFile)                  :: Ini          !< Input ini file
+    class(TIniFile)                 :: Ini          !< Input ini file
     integer                         :: eft_error    !< error code: 0 all fine, 1 initialization failed
 
     ! Nothing needs to be done but procedure present because its definition is deferred.
@@ -176,7 +176,7 @@
     implicit none
 
     class(EFTCAMB_Beyond_Horndeski) :: self         !< the base class
-    type(TIniFile)                  :: Ini          !< Input ini file
+    class(TIniFile)                 :: Ini          !< Input ini file
     integer                         :: eft_error    !< error code: 0 all fine, 1 initialization failed
 
     self%bHor_x10 = Ini%Read_Double('Beyond_Horndeski_x10', 0._dl)

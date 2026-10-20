@@ -346,7 +346,7 @@
     implicit none
 
     class(parametrized_function_2D) :: self      !< the base class
-    type(TIniFile)                  :: Ini       !< Input ini file
+    class(TIniFile)                 :: Ini       !< Input ini file
     integer                         :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     !< one more character than the maximum name length, to detect names that would be truncated:

@@ -145,7 +145,7 @@
     implicit none
 
     class(EFTCAMB_5e) :: self      !< the base class
-    type(TIniFile)    :: Ini       !< Input ini file
+    class(TIniFile)   :: Ini       !< Input ini file
     integer           :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -180,7 +180,7 @@
     implicit none
 
     class(EFTCAMB_5e) :: self      !< the base class
-    type(TIniFile)    :: Ini       !< Input ini file
+    class(TIniFile)   :: Ini       !< Input ini file
     integer           :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer           :: temp_feedback
@@ -284,7 +284,7 @@
     implicit none
 
     class(EFTCAMB_5e) :: self      !< the base class
-    type(TIniFile)    :: Ini       !< Input ini file
+    class(TIniFile)   :: Ini       !< Input ini file
     integer           :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read standard parameters:

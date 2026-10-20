@@ -163,7 +163,7 @@
     import EFTCAMB_model
     implicit none
     class(EFTCAMB_model) :: self      !< the base class
-    type(TIniFile)       :: Ini       !< Input ini file
+    class(TIniFile)      :: Ini       !< Input ini file
     integer              :: eft_error !< error code: 0 all fine, 1 initialization failed
     end subroutine EFTCAMBModelReadModelSelectionFromFile
 
@@ -174,7 +174,7 @@
     import EFTCAMB_model
     implicit none
     class(EFTCAMB_model) :: self      !< the base class
-    type(TIniFile)       :: Ini       !< Input ini file for additional initialization
+    class(TIniFile)      :: Ini       !< Input ini file for additional initialization
     integer              :: eft_error !< error code: 0 all fine, 1 initialization failed
     end subroutine EFTCAMBModelAllocateModelSelection
 
@@ -195,7 +195,7 @@
     import EFTCAMB_model
     implicit none
     class(EFTCAMB_model) :: self      !< the base class
-    type(TIniFile)       :: Ini       !< Input ini file
+    class(TIniFile)      :: Ini       !< Input ini file
     integer              :: eft_error !< error code: 0 all fine, 1 initialization failed
     end subroutine EFTCAMBModelInitModelParametersFromFile
 

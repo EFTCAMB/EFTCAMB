@@ -108,7 +108,7 @@
     implicit none
 
     class(EFTCAMB_Extended_Galileon) :: self          !< the base class
-    type(TIniFile)                   :: Ini           !< Input ini file
+    class(TIniFile)                  :: Ini           !< Input ini file
     integer                          :: eft_error     !< error code: 0 all fine, 1 initialization failed
 
     end subroutine EFTCAMBExtendedGalileonReadModelSelectionFromFile
@@ -120,7 +120,7 @@
     implicit none
 
     class(EFTCAMB_Extended_Galileon) :: self        !< the base class
-    type(TIniFile)                   :: Ini         !< Input ini file
+    class(TIniFile)                  :: Ini         !< Input ini file
     integer                          :: eft_error   !< error code: 0 all fine, 1 initialization failed
 
     ! Nothing needs to be done but procedure present because its definition is deferred.
@@ -149,7 +149,7 @@
     implicit none
 
     class(EFTCAMB_Extended_Galileon) :: self      !< the base class
-    type(TIniFile)                   :: Ini       !< Input ini file
+    class(TIniFile)                  :: Ini       !< Input ini file
     integer                          :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     self%S = Ini%Read_Double('ExtendedGalileon_S', 0._dl)

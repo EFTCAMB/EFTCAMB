@@ -192,7 +192,7 @@
     implicit none
 
     class(TEFTCAMB) :: self  !< the base class
-    type(TIniFile)  :: Ini   !< Input ini file
+    class(TIniFile) :: Ini   !< Input ini file
 
     character(len=:), allocatable :: outroot
 
@@ -277,7 +277,7 @@
     implicit none
 
     class(TEFTCAMB) :: self  !< the base class
-    type(TIniFile)  :: Ini   !< Input ini file
+    class(TIniFile) :: Ini   !< Input ini file
 
     integer :: i, num_read
 
@@ -299,7 +299,7 @@
     implicit none
 
     class(TEFTCAMB) :: self      !< the base class
-    type(TIniFile)  :: Ini       !< input ini file
+    class(TIniFile) :: Ini       !< input ini file
     integer         :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     eft_error = 0
@@ -645,7 +645,7 @@
     implicit none
 
     class(TEFTCAMB) :: self      !< the base class
-    type(TIniFile)  :: Ini       !< Input ini file
+    class(TIniFile) :: Ini       !< Input ini file
     integer         :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! check the allocation of the model:
@@ -671,7 +671,7 @@
     implicit none
 
     class(TEFTCAMB) :: self       !< the base class
-    type(TIniFile)  :: Ini        !< Input ini file
+    class(TIniFile) :: Ini        !< Input ini file
     integer         :: eft_error  !< error code: 0 all fine, 1 initialization failed
 
     ! check the allocation of the model:
@@ -696,7 +696,7 @@
     implicit none
 
     class(TEFTCAMB) :: self       !< the base class
-    type(TIniFile)  :: Ini        !< Input ini file
+    class(TIniFile) :: Ini        !< Input ini file
     integer         :: eft_error  !< error code: 0 all fine, 1 initialization failed
 
     ! check the allocation of the model:

@@ -143,7 +143,7 @@
     implicit none
 
     class(EFTCAMB_Scaling_Cubic) :: self      !< the base class
-    type(TIniFile)               :: Ini       !< Input ini file
+    class(TIniFile)              :: Ini       !< Input ini file
     integer                      :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read precision parameters
@@ -161,7 +161,7 @@
     implicit none
 
     class(EFTCAMB_Scaling_Cubic) :: self      !< the base class
-    type(TIniFile)               :: Ini       !< Input ini file
+    class(TIniFile)              :: Ini       !< Input ini file
     integer                      :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     end subroutine EFTCAMBScalingCubicAllocateModelSelection
@@ -192,7 +192,7 @@
     implicit none
 
     class(EFTCAMB_Scaling_Cubic) :: self      !< the base class
-    type(TIniFile)               :: Ini       !< Input ini file
+    class(TIniFile)              :: Ini       !< Input ini file
     integer                      :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     self%SCG_A = Ini%Read_Double('Scaling_Cubic_A', -0.3_dl)

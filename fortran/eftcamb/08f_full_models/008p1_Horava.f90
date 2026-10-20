@@ -105,7 +105,7 @@
     implicit none
 
     class(EFTCAMB_Horava) :: self      !< the base class
-    type(TIniFile)        :: Ini       !< Input ini file
+    class(TIniFile)       :: Ini       !< Input ini file
     integer               :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -120,7 +120,7 @@
     implicit none
 
     class(EFTCAMB_Horava) :: self      !< the base class
-    type(TIniFile)        :: Ini       !< Input ini file
+    class(TIniFile)       :: Ini       !< Input ini file
     integer               :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     end subroutine EFTCAMBHoravaAllocateModelSelection
@@ -157,7 +157,7 @@
     implicit none
 
     class(EFTCAMB_Horava) :: self      !< the base class
-    type(TIniFile)        :: Ini       !< Input ini file
+    class(TIniFile)       :: Ini       !< Input ini file
     integer               :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     self%Horava_eta = Ini%Read_Double('Horava_eta', 0._dl)

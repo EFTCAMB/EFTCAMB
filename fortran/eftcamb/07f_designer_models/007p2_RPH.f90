@@ -170,7 +170,7 @@
     implicit none
 
     class(EFTCAMB_RPH) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read alphaM flag
@@ -214,7 +214,7 @@
     implicit none
 
     class(EFTCAMB_RPH) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer            :: temp_feedback
@@ -465,7 +465,7 @@
     implicit none
 
     class(EFTCAMB_RPH) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     call self%RPH_wDE%init_from_file(Ini, eft_error)

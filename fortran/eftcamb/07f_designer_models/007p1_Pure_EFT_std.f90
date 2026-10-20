@@ -159,7 +159,7 @@
     implicit none
 
     class(EFTCAMB_std_pure_EFT) :: self      !< the base class
-    type(TIniFile)              :: Ini       !< Input ini file
+    class(TIniFile)             :: Ini       !< Input ini file
     integer                     :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -194,7 +194,7 @@
     implicit none
 
     class(EFTCAMB_std_pure_EFT) :: self      !< the base class
-    type(TIniFile)              :: Ini       !< Input ini file
+    class(TIniFile)             :: Ini       !< Input ini file
     integer                     :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer                     :: temp_feedback
@@ -495,7 +495,7 @@
     implicit none
 
     class(EFTCAMB_std_pure_EFT) :: self      !< the base class
-    type(TIniFile)              :: Ini       !< Input ini file
+    class(TIniFile)             :: Ini       !< Input ini file
     integer                     :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     call self%PureEFTOmega%init_from_file (Ini, eft_error)

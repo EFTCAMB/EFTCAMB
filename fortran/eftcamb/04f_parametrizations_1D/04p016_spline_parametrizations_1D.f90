@@ -149,7 +149,7 @@
     implicit none
 
     class(spline_parametrization_1D) :: self      !< the base class
-    type(TIniFile)                   :: Ini       !< Input ini file
+    class(TIniFile)                  :: Ini       !< Input ini file
     integer                          :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     !< one more character than the maximum name length, to detect names that would be truncated:
@@ -190,7 +190,7 @@
     implicit none
 
     class(spline_parametrization_1D) :: self      !< the base class
-    type(TIniFile)                   :: Ini       !< Input ini file
+    class(TIniFile)                  :: Ini       !< Input ini file
     integer                          :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read number of points:

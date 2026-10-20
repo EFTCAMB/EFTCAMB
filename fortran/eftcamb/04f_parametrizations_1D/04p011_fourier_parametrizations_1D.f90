@@ -145,7 +145,7 @@
     implicit none
 
     class(fourier_parametrization_1D) :: self      !< the base class
-    type(TIniFile)                    :: Ini       !< Input ini file
+    class(TIniFile)                   :: Ini       !< Input ini file
     integer                           :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read order of the expansion:

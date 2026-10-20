@@ -27,15 +27,200 @@
     module EFTCAMB_python
 
     use IniObjects
+    use config, only: GlobalError, global_error_flag, error_unsupported_params, error_ini
     use results
     use EFTCAMB_stability
     use MassiveNu
 
     implicit none
 
-    type(TIniFile), private :: Ini
+    !> Ini file used on the python path. A value that cannot be read, or a missing key without default, records an
+    !! error instead of stopping the program (TIniFile ends with error stop, which kills the python interpreter):
+    !! the read then returns the default (or zero) and initialize_EFTCAMB_from_py reports the first error.
+    type, extends(TIniFile) :: TEFTCAMB_python_ini
+        logical :: failed = .false.                       !< whether a read failed since the last reset
+        character(len=:), allocatable :: error_message    !< message of the first read error
+    contains
+    procedure :: Error => EFTCAMB_python_ini_error
+    procedure :: FailStop => EFTCAMB_python_ini_failstop
+    procedure :: Read_Int => EFTCAMB_python_ini_read_int
+    procedure :: Read_Double => EFTCAMB_python_ini_read_double
+    procedure :: Read_Logical => EFTCAMB_python_ini_read_logical
+    procedure :: reset_errors => EFTCAMB_python_ini_reset_errors
+    end type TEFTCAMB_python_ini
+
+    type(TEFTCAMB_python_ini), private :: Ini
 
     contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Records an ini read error (first message kept) instead of stopping.
+    subroutine EFTCAMB_python_ini_error(this, Msg, Key)
+
+    implicit none
+
+    class(TEFTCAMB_python_ini) :: this
+    character(len=*) :: Msg
+    character(len=*), optional :: Key
+    character(len=:), allocatable :: message
+
+    if (present(Key)) then
+        message = 'Error for key "' // trim(Key) // '" : ' // Msg
+    else
+        message = 'Error : ' // Msg
+    end if
+    write(*, *) message
+    if (.not. this%failed) this%error_message = message
+    this%failed = .true.
+
+    end subroutine EFTCAMB_python_ini_error
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Records a failure instead of stopping.
+    subroutine EFTCAMB_python_ini_failstop(this)
+
+    implicit none
+
+    class(TEFTCAMB_python_ini) :: this
+
+    if (.not. this%failed) this%error_message = 'Error reading the EFTCAMB parameters'
+    this%failed = .true.
+
+    end subroutine EFTCAMB_python_ini_failstop
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Clears the recorded read errors.
+    subroutine EFTCAMB_python_ini_reset_errors(this)
+
+    implicit none
+
+    class(TEFTCAMB_python_ini) :: this
+
+    this%failed = .false.
+    this%error_message = ''
+
+    end subroutine EFTCAMB_python_ini_reset_errors
+
+    ! ---------------------------------------------------------------------------------------------
+    !> As TIniFile%Read_Int; on a read error returns the default (or 0).
+    function EFTCAMB_python_ini_read_int(this, Key, Default, min, max, OK) result(value)
+
+    implicit none
+
+    class(TEFTCAMB_python_ini) :: this
+    integer :: value
+    integer, intent(in), optional :: Default, min, max
+    logical, intent(out), optional :: OK
+    character(len=*), intent(in) :: Key
+    character(len=:), pointer :: S
+    integer :: status
+
+    value = 0
+    if (present(Default)) value = Default
+    if (present(OK)) OK = .true.
+    S => this%Read_String(Key, .not. present(Default))
+    if (S == '') then
+        if (present(Default)) then
+            call this%ReadValues%Add(Key, Default)
+        else
+            call this%Error('missing key', Key)
+        end if
+        return
+    end if
+    status = 1
+    if (verify(trim(S), '-+0123456789') == 0) read(S, *, iostat=status) value
+    if (status /= 0) then
+        value = 0
+        if (present(Default)) value = Default
+        if (present(OK)) then
+            OK = .false.
+            return
+        end if
+        call this%Error('error reading integer', Key)
+        return
+    end if
+    if (present(max)) then
+        if (value > max) call this%Error('value > max', Key)
+    end if
+    if (present(min)) then
+        if (value < min) call this%Error('value < min', Key)
+    end if
+
+    end function EFTCAMB_python_ini_read_int
+
+    ! ---------------------------------------------------------------------------------------------
+    !> As TIniFile%Read_Double; on a read error returns the default (or 0).
+    function EFTCAMB_python_ini_read_double(this, Key, Default, min, max) result(value)
+
+    implicit none
+
+    class(TEFTCAMB_python_ini) :: this
+    double precision :: value
+    double precision, intent(in), optional :: Default, min, max
+    character(len=*), intent(in) :: Key
+    character(len=:), pointer :: S
+    integer :: status
+
+    value = 0.d0
+    if (present(Default)) value = Default
+    S => this%Read_String(Key, .not. present(Default))
+    if (S == '') then
+        if (present(Default)) then
+            call this%ReadValues%Add(Key, Default)
+        else
+            call this%Error('missing key', Key)
+        end if
+        return
+    end if
+    read(S, *, iostat=status) value
+    if (status /= 0) then
+        value = 0.d0
+        if (present(Default)) value = Default
+        call this%Error('error reading double', Key)
+        return
+    end if
+    if (present(max)) then
+        if (value > max) call this%Error('value > max', Key)
+    end if
+    if (present(min)) then
+        if (value < min) call this%Error('value < min', Key)
+    end if
+
+    end function EFTCAMB_python_ini_read_double
+
+    ! ---------------------------------------------------------------------------------------------
+    !> As TIniFile%Read_Logical; on a read error returns the default (or false).
+    function EFTCAMB_python_ini_read_logical(this, Key, Default) result(value)
+
+    implicit none
+
+    class(TEFTCAMB_python_ini) :: this
+    logical :: value
+    logical, intent(in), optional :: Default
+    character(len=*), intent(in) :: Key
+    character(len=:), pointer :: S
+    integer :: status
+
+    value = .false.
+    if (present(Default)) value = Default
+    S => this%Read_String(Key, .not. present(Default))
+    if (S == '') then
+        if (present(Default)) then
+            call this%ReadValues%Add(Key, Default)
+        else
+            call this%Error('missing key', Key)
+        end if
+        return
+    end if
+    status = 1
+    if (verify(trim(S), '10TF') == 0) read(S, *, iostat=status) value
+    if (status /= 0) then
+        value = .false.
+        if (present(Default)) value = Default
+        call this%Error('error reading logical', Key)
+    end if
+
+    end function EFTCAMB_python_ini_read_logical
 
     ! ---------------------------------------------------------------------------------------------
     !> Helper function to strip all whitespaces
@@ -90,6 +275,7 @@
     if (mode == 0) then
         call Ini%Close()
         call Ini%Init(ignoreDuplicates=.true.)
+        call Ini%reset_errors()
         ! if mode == 1 append settings to the INI file
     else if (mode == 1) then
         call Ini%AddString(trim(helper_stripspaces(f_key)), trim(helper_stripspaces(f_value)))
@@ -136,18 +322,29 @@
         allocate(P%eft_par_cache)
     end if
     ! read the options in:
+    eft_error = 0
+    global_error_flag = 0
     call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
+    if (global_error_flag /= 0) eft_error = 1
     ! call the eftcamb allocation:
-    if (P%EFTCAMB%EFTflag /= 0) then
+    if (P%EFTCAMB%EFTflag /= 0 .and. eft_error == 0 .and. .not. Ini%failed) then
         ! initialize the model from file:
         call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
-        ! on failure go back to a consistent GR state (no model), the caller raises the error:
-        if (eft_error > 0) then
-            P%EFTCAMB%EFTflag = 0
-            if (allocated(P%EFTCAMB%model)) deallocate(P%EFTCAMB%model)
+        if (global_error_flag /= 0 .and. eft_error == 0) eft_error = 1
+    end if
+    ! a value that could not be read:
+    if (Ini%failed) then
+        eft_error = 2
+        call GlobalError('EFTCAMB: ' // Ini%error_message, error_ini)
+    end if
+    ! on failure go back to a consistent GR state (no model), the caller raises the error:
+    if (eft_error > 0) then
+        P%EFTCAMB%EFTflag = 0
+        if (allocated(P%EFTCAMB%model)) deallocate(P%EFTCAMB%model)
+        ! keep the message of an error raised during the initialization:
+        if (global_error_flag == 0) &
             call GlobalError('EFTCAMB: model initialization failed (invalid or unsupported model parameters, '// &
-                'see the EFTCAMB output)', error_unsupported_params)
-        end if
+            'see the EFTCAMB output)', error_unsupported_params)
     end if
     ! store the parameters that have been read in the EFTCAMB object:
     call P%EFTCAMB%EFTCAMB_store_read_parameters(Ini)

@@ -806,7 +806,7 @@
     implicit none
 
     class(EFTCAMB_Hdsk) :: self      !< the base class
-    type(TIniFile) :: Ini       !< Input ini file
+    class(TIniFile) :: Ini       !< Input ini file
     integer        :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -857,7 +857,7 @@
     implicit none
 
     class(EFTCAMB_Hdsk) :: self      !< the base class
-    type(TIniFile) :: Ini       !< Input ini file
+    class(TIniFile) :: Ini       !< Input ini file
     integer        :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer :: temp_feedback, temp_model
@@ -1157,7 +1157,7 @@
     implicit none
 
     class(EFTCAMB_Hdsk) :: self      !< the base class
-    type(TIniFile) :: Ini       !< Input ini file
+    class(TIniFile) :: Ini       !< Input ini file
     integer        :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer :: i, num_params_model

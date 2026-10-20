@@ -124,7 +124,7 @@
     implicit none
 
     class(EFTCAMB_ADE) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -143,7 +143,7 @@
     implicit none
 
     class(EFTCAMB_ADE) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! nothing to be done here.
@@ -175,7 +175,7 @@
     implicit none
 
     class(EFTCAMB_ADE) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     self%cs2 = Ini%Read_Double('cs2', 1._dl)

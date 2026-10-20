@@ -129,7 +129,7 @@
     implicit none
 
     class(EFTCAMB_Kmouflage) :: self   !< the base class
-    type(TIniFile)           :: Ini    !< Input ini file
+    class(TIniFile)          :: Ini    !< Input ini file
     integer                  :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -149,7 +149,7 @@
     implicit none
 
     class(EFTCAMB_Kmouflage) :: self      !< the base class
-    type(TIniFile)           :: Ini       !< Input ini file
+    class(TIniFile)          :: Ini       !< Input ini file
     integer                  :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! nothing to be done here.
@@ -184,7 +184,7 @@
     implicit none
 
     class(EFTCAMB_Kmouflage) :: self      !< the base class
-    type(TIniFile)           :: Ini       !< Input ini file
+    class(TIniFile)          :: Ini       !< Input ini file
     integer                  :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     self%alphaU = Ini%Read_Double('alphaU', 0.2_dl)
