@@ -840,6 +840,7 @@
     call file_TensorCoeff%CreateFile(trim(outroot) // 'cache_TensorCoeff.dat'    )
     call file_Sources%CreateFile(trim(outroot) // 'cache_Sources.dat'        )
     call file_MetricMG%CreateFile(trim(outroot) // 'cache_MetricMG.dat'       )
+    call file_Posbounds%CreateFile(trim(outroot) // 'cache_Posbounds.dat'     )
 
     ! write the headers:
     write(file_FRW%unit, '(12a)') '# ', 'a ', 'tau ', 'k ', 'adotoa ', 'Hdot ', 'Hdotdot ', 'Hdotdotdot '
