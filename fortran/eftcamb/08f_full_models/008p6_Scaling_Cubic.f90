@@ -36,12 +36,25 @@
     use equispaced_linear_interpolation_1D
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_constant_parametrization_1D
+    use MassiveNu
 
     implicit none
 
     private
 
     public EFTCAMB_Scaling_Cubic
+
+    ! ----------------------------------------------------------------------------------------
+    !> Background state of the Scaling Cubic model at a given time, in N = ln a (primes are d/dN).
+    type :: SCG_background_state
+        real(dl) :: x1, y1, y2, x1p, y1p, y2p, x1pp, y1pp, y2pp, x1ppp
+        real(dl) :: f, fprime, fpprime, h, hprime, hpprime
+        !< H^2 (cosmic time), fluid pressure over H^2 (radiation and massive neutrinos) and its derivatives
+        real(dl) :: H2, OmegaP, OmegaPp, OmegaPpp
+        !< density of matter, radiation and massive neutrinos times a^2
+        real(dl) :: grho_a2
+        real(dl) :: adotoa, Hdot, Hdotdot, Hdotdotdot
+    end type SCG_background_state
 
     ! ----------------------------------------------------------------------------------------
     !> This is the type that contains the definition of the Scaling Cubic model.
@@ -72,7 +85,6 @@
 
         ! some additional parameters
         logical :: debug_flag = .true.
-        logical :: LCDM_background = .false.
 
     contains
 
@@ -188,7 +200,6 @@
     self%SCG_beta2 = Ini%Read_Double('Scaling_Cubic_beta2', 0.7_dl)
     self%SCG_lambda = Ini%Read_Double('Scaling_Cubic_lambda', 154._dl)
     self%debug_flag = Ini%Read_Logical('want_debug', .false.)
-    self%LCDM_background = Ini%Read_Logical('want_LCDM', .false.)
     self%SCG_x10 = (2._dl*sqrt(2._dl/3._dl))/(self%SCG_beta1)
     self%SCG_y10 = &
         sqrt((4._dl/3._dl) + 2._dl*self%SCG_A*(self%SCG_beta1 - (4._dl/3._dl)*self%SCG_lambda))/(self%SCG_beta1)
@@ -210,11 +221,13 @@
     real(dl) :: OmegaDE_0, OmegaDE, OmegaM_0, OmegaRad_0, y2_i, y2_il, y2_ir, tol, tol_r, tol_l, H2, H_0, grhom, &
         grhorad, f, h, w_DE, Omega_G2
     integer :: j, ind, i
-    real(dl) :: aj, xj, mu, x1, y1, y2, OmegaRad
+    real(dl) :: aj, xj, mu, x1, y1, y2, OmegaRad, grho_fl, gp_fl, gp_flp, gp_flpp
+    type(SCG_background_state) :: bg
 
     grhom = params_cache%grhob + params_cache%grhoc
     grhorad = params_cache%grhornomass + params_cache%grhog
-    OmegaDE_0 = 1._dl - params_cache%omegac - params_cache%omegab - params_cache%omegag - params_cache%omegar
+    OmegaDE_0 = 1._dl - params_cache%omegac - params_cache%omegab - params_cache%omegag - params_cache%omegar - &
+        params_cache%omegan
     OmegaRad_0 = params_cache%omegag + params_cache%omegar
     OmegaM_0 = params_cache%omegac + params_cache%omegab
     ! some feedback:
@@ -252,6 +265,11 @@
     call self%solve_background(params_cache, tol, success=success)
     i = 0
     do while (abs(tol) > 1.d-6)
+        if (.not. success .or. i >= 200) then
+            if (feedback_level > 0) write(*, *) 'EFTCAMB Scaling Cubic: background bisection failed.'
+            success = .false.
+            return
+        end if
 
         self%SCG_y20 = y2_ir
         call self%solve_background(params_cache, tol_r, success=success)
@@ -310,12 +328,10 @@
 
         xj = 0._dl
         call self%fun_x1%precompute(xj, ind, mu)
-        OmegaDE_0 = (self%fun_x1%value(xj, index=ind, coeff=mu))**2._dl + &
-            (self%fun_y1%value(xj, index=ind, coeff=mu))**2._dl + &
-            (self%fun_y2%value(xj, index=ind, coeff=mu))**2._dl + &
-            2._dl*self%fun_x1%value(xj, index=ind, coeff=mu)*self%SCG_A* &
-            (sqrt(6._dl) - self%SCG_lambda*self%fun_x1%value(xj, index=ind, coeff=mu))
-        H_0 = sqrt((grhorad + grhom)/((1._dl - OmegaDE_0)*3._dl))
+        OmegaDE_0 = SCGOmegaDE(self, self%fun_x1%value(xj, index=ind, coeff=mu), &
+            self%fun_y1%value(xj, index=ind, coeff=mu), self%fun_y2%value(xj, index=ind, coeff=mu))
+        call SCGFluid(params_cache, 1._dl, grho_fl, gp_fl, gp_flp, gp_flpp)
+        H_0 = sqrt(grho_fl/((1._dl - OmegaDE_0)*3._dl))
         OmegaRad_0 = grhorad/(3._dl*H_0**2)
 
         open(unit=111, action='write', file='SCG_evolution_x1.dat')
@@ -334,28 +350,11 @@
             x1 = self%fun_x1%value(xj, index=ind, coeff=mu)
             y1 = self%fun_y1%value(xj, index=ind, coeff=mu)
             y2 = self%fun_y2%value(xj, index=ind, coeff=mu)
-            OmegaDE = (self%fun_x1%value(xj, index=ind, coeff=mu))**2._dl + &
-                (self%fun_y1%value(xj, index=ind, coeff=mu))**2._dl + &
-                (self%fun_y2%value(xj, index=ind, coeff=mu))**2._dl + &
-                2._dl*self%fun_x1%value(xj, index=ind, coeff=mu)*self%SCG_A* &
-                (sqrt(6._dl) - self%SCG_lambda*self%fun_x1%value(xj, index=ind, coeff=mu))
-            H2 = (grhorad/aj**4 + grhom/aj**3)/((1._dl - OmegaDE)*3._dl)
-
-            OmegaRad = (grhorad/aj**4)/(3._dl*(H2))
-
-            f = (3._dl*(-3._dl*self%SCG_A + sqrt(6._dl)*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*x1 + &
-                3._dl*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1**2._dl + self%SCG_A*OmegaRad - &
-                3._dl*self%SCG_A*y2**2._dl + self%SCG_beta2*y2**2._dl - 3._dl*self%SCG_A*y1**2._dl + &
-                self%SCG_beta1*y1**2._dl))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-            h = ((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*OmegaRad - &
-                3._dl*(1._dl + 12._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda + &
-                2._dl*sqrt(6._dl)*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1 + &
-                ((1._dl - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl)*x1**2._dl + &
-                (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda - 2._dl*self%SCG_A*self%SCG_beta2)*y2**2._dl - y1**2._dl + &
-                2._dl*self%SCG_A*self%SCG_lambda*y1**2._dl - &
-                2._dl*self%SCG_A*self%SCG_beta1*y1**2._dl))/ &
-                (2._dl + 12._dl*self%SCG_A**2._dl - 4._dl*self%SCG_A*self%SCG_lambda)
+            OmegaDE = SCGOmegaDE(self, x1, y1, y2)
+            call SCGState(self, aj, params_cache, x1, y1, y2, bg)
+            H2 = bg%H2
+            f = bg%f
+            h = bg%h
 
             w_DE = (x1**2._dl - y1**2._dl - y2**2._dl - 2._dl*self%SCG_A*(f/3._dl + self%SCG_lambda*x1**2._dl))/ &
                 (x1**2._dl + y1**2._dl + y2**2._dl + 2._dl*self%SCG_A*(sqrt(6._dl)*x1 - self%SCG_lambda*x1**2._dl))
@@ -378,11 +377,10 @@
     ! store energy densities today
     xj = 0._dl
     call self%fun_x1%precompute(xj, ind, mu)
-    OmegaDE_0 = (self%fun_x1%value(xj, index=ind, coeff=mu))**2._dl + &
-        (self%fun_y1%value(xj, index=ind, coeff=mu))**2._dl + (self%fun_y2%value(xj, index=ind, coeff=mu))**2._dl + &
-        2._dl*self%fun_x1%value(xj, index=ind, coeff=mu)*self%SCG_A* &
-        (sqrt(6._dl) - self%SCG_lambda*self%fun_x1%value(xj, index=ind, coeff=mu))
-    H_0 = sqrt((grhorad + grhom)/((1._dl - OmegaDE_0)*3._dl))
+    OmegaDE_0 = SCGOmegaDE(self, self%fun_x1%value(xj, index=ind, coeff=mu), &
+        self%fun_y1%value(xj, index=ind, coeff=mu), self%fun_y2%value(xj, index=ind, coeff=mu))
+    call SCGFluid(params_cache, 1._dl, grho_fl, gp_fl, gp_flp, gp_flpp)
+    H_0 = sqrt(grho_fl/((1._dl - OmegaDE_0)*3._dl))
 
     OmegaM_0 = grhom/(3._dl*H_0**2)
 
@@ -419,7 +417,7 @@
     real(dl), intent(out)                      :: tol
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
 
-    real(dl) :: PPlus, yPlus, CoeffA_Part, yStar, x, OmegaDE_0, OmegaNu_EFT, Omegarad_EFT, grhom, grhorad
+    real(dl) :: x, OmegaDE_0
 
     integer, parameter :: num_eq = 3  !<  Number of equations of the dynamical system
 
@@ -430,10 +428,11 @@
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
 
-    ! 1) Cosmological densities:
-    grhom = params_cache%grhob + params_cache%grhoc
-    grhorad = params_cache%grhornomass + params_cache%grhog
-    OmegaDE_0 = 1._dl - params_cache%omegac - params_cache%omegab - params_cache%omegag - params_cache%omegar
+    ! 1) Dark energy density today (closure, massive neutrinos included):
+    OmegaDE_0 = 1._dl - params_cache%omegac - params_cache%omegab - params_cache%omegag - params_cache%omegar - &
+        params_cache%omegan
+    success = .true.
+    tol = 0._dl
 
     ! 2) Set initial conditions:
     x = self%x_initial
@@ -500,8 +499,7 @@
         end if
         call output(num_eq, i + 1, t2, y)
         if (i == self%fun_x1%num_points - 1) then
-            tol = (OmegaDE_0 - (y(1)**2._dl + y(2)**2._dl + y(3)**2._dl + 2._dl*y(1)*self%SCG_A*(sqrt(6._dl) &
-                - self%SCG_lambda*y(1))))/OmegaDE_0
+            tol = (OmegaDE_0 - SCGOmegaDE(self, y(1), y(2), y(3)))/OmegaDE_0
         end if
 
     end do
@@ -519,34 +517,13 @@
     real(dl), intent(in), dimension(num_eq) :: y      !< input status of the system
     real(dl), intent(out), dimension(num_eq) :: ydot   !< value of the derivative at time x
 
-    real(dl) :: f, h, H2, OmegaRad
+    type(SCG_background_state) :: bg
 
-    ! 1) compute the functionals entering the ODEs
-
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/ &
-        ((1._dl - y(1)**2._dl - y(2)**2._dl - y(3)**2._dl - &
-        2._dl*y(1)*self%SCG_A*(sqrt(6._dl) - self%SCG_lambda*y(1)))*3._dl)
-
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
-
-    h = ((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*OmegaRad - &
-        3._dl*(1._dl + 12._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda + &
-        2._dl*sqrt(6._dl)*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*y(1) + &
-        ((1._dl - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl)*y(1)**2._dl + &
-        (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda - 2._dl*self%SCG_A*self%SCG_beta2)*y(3)**2._dl - y(2)**2._dl + &
-        2._dl*self%SCG_A*self%SCG_lambda*y(2)**2._dl - &
-        2._dl*self%SCG_A*self%SCG_beta1*y(2)**2._dl))/ &
-        (2._dl + 12._dl*self%SCG_A**2._dl - 4._dl*self%SCG_A*self%SCG_lambda)
-
-    f = (3._dl*(-3._dl*self%SCG_A + sqrt(6._dl)*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*y(1) + &
-        3._dl*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*y(1)**2._dl + self%SCG_A*OmegaRad - &
-        3._dl*self%SCG_A*y(3)**2._dl + self%SCG_beta2*y(3)**2._dl - 3._dl*self%SCG_A*y(2)**2._dl + &
-        self%SCG_beta1*y(2)**2._dl))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    ! 2) Get the equations of motion:
-    ydot(1) = (1._dl/sqrt(6._dl))*f - y(1)*h
-    ydot(2) = -sqrt(3._dl/2._dl)*self%SCG_beta1*y(1)*y(2) - y(2)*h
-    ydot(3) = -sqrt(3._dl/2._dl)*self%SCG_beta2*y(1)*y(3) - y(3)*h
+    ! the equations of motion, with the fluid (matter, radiation and massive neutrinos) at this time:
+    call SCGState(self, exp(x), params_cache, y(1), y(2), y(3), bg, order=1)
+    ydot(1) = bg%x1p
+    ydot(2) = bg%y1p
+    ydot(3) = bg%y2p
 
     end subroutine
 
@@ -579,71 +556,18 @@
     real(dl), intent(in)                    :: x      !< time at which the derivatives of the system are computed.
     real(dl), intent(in), dimension(num_eq) :: y      !< input status of the system.
 
-    real(dl) :: f, h, OmegaDE, fprime, hprime
-    real(dl) :: ydot(num_eq), alpha_K, alpha_B, Q_s, Q_t, Sigma, cs2
+    type(SCG_background_state) :: bg
 
-    real(dl) :: x1, y1, y2, x1p, y1p, y2p, x1pp, OmegaRad, OmegaRadprime
+    call SCGState(self, exp(x), params_cache, y(1), y(2), y(3), bg, order=2)
 
-    real(dl) :: a, H2, adotoa, Hdot, temp
-
-    ! 1) call derivs to compute ydot at a given time:
-    call derivs(num_eq, x, y, ydot)
-
-    ! 2) store some quantities
-    x1 = y(1)
-    y1 = y(2)
-    y2 = y(3)
-
-    x1p = ydot(1)
-    y1p = ydot(2)
-    y2p = ydot(3)
-
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/ &
-        ((1._dl - y(1)**2._dl - y(2)**2._dl - y(3)**2._dl - &
-        2._dl*y(1)*self%SCG_A*(sqrt(6._dl) - self%SCG_lambda*y(1)))*3._dl)
-
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
-
-    ! 3) compute the functionals entering the ODEs
-
-    f = (3._dl*(-3._dl*self%SCG_A + sqrt(6._dl)*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*x1 + &
-        3._dl*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1**2._dl + self%SCG_A*OmegaRad - &
-        3._dl*self%SCG_A*y2**2._dl + self%SCG_beta2*y2**2._dl - 3._dl*self%SCG_A*y1**2._dl + &
-        self%SCG_beta1*y1**2._dl))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    h = ((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*OmegaRad - &
-        3._dl*(1._dl + 12._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda + &
-        2._dl*sqrt(6._dl)*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1 + &
-        ((1._dl - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl)*x1**2._dl + &
-        (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda - 2._dl*self%SCG_A*self%SCG_beta2)*y2**2._dl - y1**2._dl + &
-        2._dl*self%SCG_A*self%SCG_lambda*y1**2._dl - &
-        2._dl*self%SCG_A*self%SCG_beta1*y1**2._dl))/ &
-        (2._dl + 12._dl*self%SCG_A**2._dl - 4._dl*self%SCG_A*self%SCG_lambda)
-
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
-
-    fprime = (-3._dl*(-self%SCG_A*OmegaRadprime + &
-        (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*(-sqrt(6._dl) + 6._dl*self%SCG_A*x1)*x1p + &
-        6._dl*self%SCG_A*y2*y2p - 2._dl*self%SCG_beta2*y2*y2p + 6._dl*self%SCG_A*y1*y1p - &
-        2._dl*self%SCG_beta1*y1*y1p))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    hprime = ((1._dl/2._dl)*OmegaRadprime*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda) + &
-        3._dl*((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)* &
-        (sqrt(6._dl)*self%SCG_A + x1 - 2._dl*self%SCG_A*self%SCG_lambda*x1)*x1p + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta2)*y2*y2p + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta1)*y1*y1p))/ &
-        (1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    x1pp = (1._dl/sqrt(6._dl))*fprime - hprime*x1 - h*x1p
-
-    ! 3) compute the x_i functions: more derivatives needed
+    ! store the x_i functions and their derivatives:
     self%fun_x1%y(ind) = y(1)
-    self%fun_x1%yp(ind) = ydot(1)
-    self%fun_x1%ypp(ind) = x1pp
+    self%fun_x1%yp(ind) = bg%x1p
+    self%fun_x1%ypp(ind) = bg%x1pp
     self%fun_y1%y(ind) = y(2)
-    self%fun_y1%yp(ind) = ydot(2)
+    self%fun_y1%yp(ind) = bg%y1p
     self%fun_y2%y(ind) = y(3)
-    self%fun_y2%yp(ind) = ydot(3)
+    self%fun_y2%yp(ind) = bg%y2p
 
     end subroutine
 
@@ -674,22 +598,15 @@
     logical                      :: print_params_temp
 
     ! print general model informations:
-    if (self%LCDM_background) then
-
-        write(*, *) 'LambdaCDM background flag selected'
-        write(*, '(a,a)')    '   Model               =  ', self%name
-        write(*, '(a,I3)')   '   Number of params    =', self%parameter_number
-    else
-        write(*, *)
-        write(*, '(a,a)')    '   Model               =  ', self%name
-        write(*, '(a,I3)')   '   Number of params    =', self%parameter_number
-        write(*, '(a,E13.3)')  '   A              =', self%SCG_A
-        write(*, '(a,E13.3)')  '   beta1          =', self%SCG_beta1
-        write(*, '(a,E13.3)')  '   beta2          =', self%SCG_beta2
-        write(*, '(a,E13.3)')  '   lambda         =', self%SCG_lambda
-        write(*, '(a,E13.3)')  '   x1_0           =', self%SCG_x10
-        write(*, '(a,E13.3)')  '   y1_0           =', self%SCG_y10
-    end if
+    write(*, *)
+    write(*, '(a,a)')    '   Model               =  ', self%name
+    write(*, '(a,I3)')   '   Number of params    =', self%parameter_number
+    write(*, '(a,E13.3)')  '   A              =', self%SCG_A
+    write(*, '(a,E13.3)')  '   beta1          =', self%SCG_beta1
+    write(*, '(a,E13.3)')  '   beta2          =', self%SCG_beta2
+    write(*, '(a,E13.3)')  '   lambda         =', self%SCG_lambda
+    write(*, '(a,E13.3)')  '   x1_0           =', self%SCG_x10
+    write(*, '(a,E13.3)')  '   y1_0           =', self%SCG_y10
 
     ! print the values of the parameters:
     if (present(print_params)) then
@@ -858,90 +775,29 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    integer  :: ind
-
-    real(dl) :: x1, x1p, x1pp, x1ppp, y1, y1p, y1pp, y2, y2p, y2pp, OmegaRad, OmegaRadprime, OmegaRadpprime
-    real(dl) :: f, fprime, fpprime, h, hprime, hpprime, grhom, grhorad, H2, EFTcdot, EFTLAMBDAdot, EFTc, EFTLAMBDA, &
-        adotoa, Hdot
-    real(dl) :: x, mu
+    type(SCG_background_state) :: bg
+    real(dl) :: x1, x1p, x1pp, x1ppp, y1, y1p, y1pp, y2, y2p, y2pp, h, hprime, hpprime, adotoa
+    real(dl) :: C, Cp, LK, LKp, s6A, c2
 
     if (a == 0._dl) return
 
-    x = log(a)
-
-    grhom = eft_par_cache%grhob + eft_par_cache%grhoc
-    grhorad = eft_par_cache%grhornomass + eft_par_cache%grhog
-
-    call self%fun_x1%precompute(x, ind, mu)
-    x1 = self%fun_x1%value(x, index=ind, coeff=mu)
-    y1 = self%fun_y1%value(x, index=ind, coeff=mu)
-    y2 = self%fun_y2%value(x, index=ind, coeff=mu)
-
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/ &
-        ((1._dl - x1**2._dl - y1**2._dl - y2**2._dl - 2._dl*self%SCG_A*x1*(sqrt(6._dl) - self%SCG_lambda*x1))*3._dl)
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
-
-    f = (3._dl*(-3._dl*self%SCG_A + sqrt(6._dl)*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*x1 + &
-        3._dl*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1**2._dl + self%SCG_A*OmegaRad - &
-        3._dl*self%SCG_A*y2**2._dl + self%SCG_beta2*y2**2._dl - 3._dl*self%SCG_A*y1**2._dl + &
-        self%SCG_beta1*y1**2._dl))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    h = ((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*OmegaRad - &
-        3._dl*(1._dl + 12._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda + &
-        2._dl*sqrt(6._dl)*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1 + &
-        ((1._dl - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl)*x1**2._dl + &
-        (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda - 2._dl*self%SCG_A*self%SCG_beta2)*y2**2._dl - y1**2._dl + &
-        2._dl*self%SCG_A*self%SCG_lambda*y1**2._dl - &
-        2._dl*self%SCG_A*self%SCG_beta1*y1**2._dl))/ &
-        (2._dl + 12._dl*self%SCG_A**2._dl - 4._dl*self%SCG_A*self%SCG_lambda)
-
-    ! first derivative
-
-    x1p = (1._dl/sqrt(6._dl))*f - x1*h
-    y1p = -sqrt(3._dl/2._dl)*self%SCG_beta1*x1*y1 - y1*h
-    y2p = -sqrt(3._dl/2._dl)*self%SCG_beta2*x1*y2 - y2*h
-
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
-
-    fprime = (-3._dl*(-self%SCG_A*OmegaRadprime + &
-        (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*(-sqrt(6._dl) + 6._dl*self%SCG_A*x1)*x1p + &
-        6._dl*self%SCG_A*y2*y2p - 2._dl*self%SCG_beta2*y2*y2p + 6._dl*self%SCG_A*y1*y1p - &
-        2._dl*self%SCG_beta1*y1*y1p))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    hprime = ((1._dl/2._dl)*OmegaRadprime*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda) + &
-        3._dl*((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)* &
-        (sqrt(6._dl)*self%SCG_A + x1 - 2._dl*self%SCG_A*self%SCG_lambda*x1)*x1p + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta2)*y2*y2p + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta1)*y1*y1p))/ &
-        (1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    ! second derivatives
-
-    x1pp = (1._dl/sqrt(6._dl))*fprime - hprime*x1 - h*x1p
-    y1pp = -sqrt(1.5_dl)*self%SCG_beta1*(x1p*y1 + x1*y1p) - hprime*y1 - h*y1p
-    y2pp = -sqrt(1.5_dl)*self%SCG_beta2*(x1p*y2 + x1*y2p) - hprime*y2 - h*y2p
-
-    OmegaRadpprime = -2._dl*OmegaRadprime*(2._dl + h) - 2._dl*OmegaRad*hprime
-
-    fpprime = -3._dl/(1._dl + 2._dl*self%SCG_A*(3._dl*self%SCG_A - self%SCG_lambda))* &
-        (-self%SCG_A*OmegaRadpprime + 6._dl*self%SCG_A*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl)*x1p**2._dl + &
-        2._dl*(3._dl*self%SCG_A - self%SCG_beta1)*(y1p**2._dl + y1*y1pp) + &
-        2._dl*(3._dl*self%SCG_A - self%SCG_beta2)*(y2p**2._dl + y2*y2pp))
-
-    hpprime = -1._dl/(1._dl + 2._dl*self%SCG_A*(3._dl*self%SCG_A - self%SCG_lambda))* &
-        (0.5_dl*OmegaRadpprime*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl) + &
-        3._dl*(-(1 - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl*x1p**2._dl + &
-        (2._dl*self%SCG_A*self%SCG_lambda - 1._dl)* &
-        (sqrt(6._dl)*self%SCG_A + x1 - 2._dl*self%SCG_A*self%SCG_lambda*x1)*x1pp + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta1)*(y1p**2._dl + y1*y1pp) + &
-        (1._dl + 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta2)*(y2p**2._dl + y2*y2pp)))
-
-    ! third derivative
-
-    x1ppp = sqrt(1._dl/6._dl)*fpprime - hpprime*x1 - h*x1pp - 2._dl*hprime*x1p
-
-    adotoa = sqrt(H2)*a
-    Hdot = adotoa**2._dl*(1._dl + h)
+    call SCGInterpolatedState(self, a, eft_par_cache, bg)
+    x1 = bg%x1
+    y1 = bg%y1
+    y2 = bg%y2
+    x1p = bg%x1p
+    y1p = bg%y1p
+    y2p = bg%y2p
+    x1pp = bg%x1pp
+    y1pp = bg%y1pp
+    y2pp = bg%y2pp
+    x1ppp = bg%x1ppp
+    h = bg%h
+    hprime = bg%hprime
+    hpprime = bg%hpprime
+    adotoa = bg%adotoa
+    s6A = sqrt(6._dl)*self%SCG_A
+    c2 = 2._dl*self%SCG_A*self%SCG_lambda - 1._dl
 
     ! compute the background EFT functions:
     eft_cache%EFTOmegaV = 0._dl
@@ -950,38 +806,31 @@
     eft_cache%EFTOmegaPPP = 0._dl
     eft_cache%EFTOmegaPPPP = 0._dl
 
-    eft_cache%EFTc = 3._dl*(adotoa**2._dl)*x1**2._dl + &
-        self%SCG_A*(adotoa**2._dl)*(3._dl*sqrt(6._dl)*x1 - sqrt(6._dl)*(h*x1 + x1p) - 6._dl*self%SCG_lambda*x1**2._dl)
+    eft_cache%EFTc = 3._dl*(adotoa**2)*x1**2 + &
+        self%SCG_A*(adotoa**2)*(3._dl*sqrt(6._dl)*x1 - sqrt(6._dl)*(h*x1 + x1p) - 6._dl*self%SCG_lambda*x1**2)
 
-    eft_cache%EFTcdot = -1._dl*(adotoa**3._dl)* &
-        (2._dl*sqrt(6._dl)*self%SCG_A*x1*h**2._dl + &
-        h*(-6._dl*sqrt(6._dl)*self%SCG_A*x1 + 6._dl*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*x1**2._dl + &
-        3._dl*sqrt(6._dl)*self%SCG_A*x1p) + &
-        x1*(sqrt(6._dl)*self%SCG_A*hprime + 6._dl*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*x1p) + &
-        sqrt(6._dl)*self%SCG_A*(-3._dl*x1p + x1pp))
+    ! EFTcdot = -adotoa^3 C, EFTcdotdot = adotoa (d EFTcdot/dN - 2 EFTcdot):
+    C = 2._dl*s6A*x1*h**2 + h*(-6._dl*s6A*x1 + 6._dl*c2*x1**2 + 3._dl*s6A*x1p) + &
+        x1*(s6A*hprime + 6._dl*c2*x1p) + s6A*(-3._dl*x1p + x1pp)
+    Cp = 2._dl*s6A*(x1p*h**2 + 2._dl*x1*h*hprime) + hprime*(-6._dl*s6A*x1 + 6._dl*c2*x1**2 + 3._dl*s6A*x1p) + &
+        h*(-6._dl*s6A*x1p + 12._dl*c2*x1*x1p + 3._dl*s6A*x1pp) + x1p*(s6A*hprime + 6._dl*c2*x1p) + &
+        x1*(s6A*hpprime + 6._dl*c2*x1pp) + s6A*(-3._dl*x1pp + x1ppp)
+    eft_cache%EFTcdot = -adotoa**3*C
+    eft_cache%EFTcdotdot = -adotoa**4*((1._dl + 3._dl*h)*C + Cp)
 
-    eft_cache%EFTLambda = 3._dl*(adotoa**2._dl)*(x1**2._dl - y1**2._dl - y2**2._dl) - &
-        self%SCG_A*(adotoa**2._dl)*(6._dl*self%SCG_lambda*x1**2._dl + 2._dl*sqrt(6._dl)*(x1*h + x1p))
+    eft_cache%EFTLambda = 3._dl*(adotoa**2)*(x1**2 - y1**2 - y2**2) - &
+        self%SCG_A*(adotoa**2)*(6._dl*self%SCG_lambda*x1**2 + 2._dl*sqrt(6._dl)*(x1*h + x1p))
 
-    eft_cache%EFTLambdadot = -2._dl*(adotoa**3._dl)* &
-        (2._dl*sqrt(6._dl)*self%SCG_A*x1*h**2._dl + &
-        3._dl*h*((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*x1**2._dl + y1**2._dl + y2**2._dl + &
-        sqrt(6._dl)*self%SCG_A*x1p) + &
-        x1*(sqrt(6._dl)*self%SCG_A*hprime + 3._dl*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*x1p) + 3._dl*y1*y1p + &
-        3._dl*y2*y2p + sqrt(6._dl)*self%SCG_A*x1pp)
+    ! EFTLambdadot = -2 adotoa^3 LK, EFTLambdadotdot = adotoa (d EFTLambdadot/dN - 2 EFTLambdadot):
+    LK = 2._dl*s6A*x1*h**2 + 3._dl*h*(c2*x1**2 + y1**2 + y2**2 + s6A*x1p) + &
+        x1*(s6A*hprime + 3._dl*c2*x1p) + 3._dl*y1*y1p + 3._dl*y2*y2p + s6A*x1pp
+    LKp = 2._dl*s6A*(x1p*h**2 + 2._dl*x1*h*hprime) + 3._dl*hprime*(c2*x1**2 + y1**2 + y2**2 + s6A*x1p) + &
+        3._dl*h*(2._dl*c2*x1*x1p + 2._dl*y1*y1p + 2._dl*y2*y2p + s6A*x1pp) + &
+        x1p*(s6A*hprime + 3._dl*c2*x1p) + x1*(s6A*hpprime + 3._dl*c2*x1pp) + &
+        3._dl*(y1p**2 + y1*y1pp) + 3._dl*(y2p**2 + y2*y2pp) + s6A*x1ppp
+    eft_cache%EFTLambdadot = -2._dl*adotoa**3*LK
+    eft_cache%EFTLambdadotdot = -2._dl*adotoa**4*((1._dl + 3._dl*h)*LK + LKp)
 
-    eft_cache%EFTLambdadotdot = -2._dl*adotoa**4._dl* &
-        (6._dl*sqrt(6._dl)*self%SCG_A*x1*h**3._dl + &
-        3._dl*hprime*(y1**2._dl + y2**2._dl + x1**2.*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl)) + &
-        4._dl*sqrt(6._dl)*self%SCG_A*x1p*hprime + 3._dl*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl) + &
-        self%SCG_A*sqrt(6._dl)*(x1pp + x1ppp) + &
-        h**2._dl*(2._dl*sqrt(6._dl)*self%SCG_A*x1 + 9._dl*(y1**2._dl + y2**2._dl) + &
-        9._dl*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl)*x1**2. + 11._dl*sqrt(6._dl)*x1p*self%SCG_A) + &
-        x1p*(sqrt(6._dl)*self%SCG_A*hprime + 3._dl*(x1p + x1pp)*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl) + &
-        sqrt(6._dl)*self%SCG_A*hpprime) + 3._dl*(y1*(y1p + y1pp) + y1p**2._dl + y2*(y2p + y2pp) + y2p**2._dl) + &
-        h*(3._dl*x1**2._dl*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl) + &
-        x1*(15._dl*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl) + 7._dl*sqrt(6._dl)*self%SCG_A*hprime) + &
-        3._dl*sqrt(6._dl)*a*(x1p + 2._dl*x1pp) + 3._dl*(y1**2._dl + y2**2._dl + 5._dl*y1*y1p + 5._dl*y2*y2p)))
     end subroutine EFTCAMBScalingCubicBackgroundEFTFunctions
 
     ! ---------------------------------------------------------------------------------------------
@@ -997,99 +846,38 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: x1, x1p, x1pp, x1ppp, y1, y1p, y1pp, y2, y2p, y2pp, OmegaRad, OmegaRadprime, OmegaRadpprime
-    real(dl) :: f, fprime, fpprime, h, hprime, hpprime, grhom, grhorad, H2, EFTcdot, EFTLAMBDAdot, EFTc, EFTLAMBDA, &
-        adotoa, Hdot
-    real(dl) :: mu, x
-    integer :: ind
+    type(SCG_background_state) :: bg
+    real(dl) :: x1, x1p, x1pp, x1ppp, h, hprime, hpprime, adotoa, G, Gp, Gpp, Q, Qp
 
-    x = log(a)
-    grhom = eft_par_cache%grhob + eft_par_cache%grhoc
-    grhorad = eft_par_cache%grhornomass + eft_par_cache%grhog
+    call SCGInterpolatedState(self, a, eft_par_cache, bg)
+    x1 = bg%x1
+    x1p = bg%x1p
+    x1pp = bg%x1pp
+    x1ppp = bg%x1ppp
+    h = bg%h
+    hprime = bg%hprime
+    hpprime = bg%hpprime
+    adotoa = bg%adotoa
 
-    call self%fun_x1%precompute(x, ind, mu)
-    x1 = self%fun_x1%value(x, index=ind, coeff=mu)
-    y1 = self%fun_y1%value(x, index=ind, coeff=mu)
-    y2 = self%fun_y2%value(x, index=ind, coeff=mu)
-
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/ &
-        ((1._dl - x1**2._dl - y1**2._dl - y2**2._dl - 2._dl*self%SCG_A*x1*(sqrt(6._dl) - self%SCG_lambda*x1))*3._dl)
-
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
-
-    f = (3._dl*(-3._dl*self%SCG_A + sqrt(6._dl)*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*x1 + &
-        3._dl*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1**2._dl + self%SCG_A*OmegaRad - &
-        3._dl*self%SCG_A*y2**2._dl + self%SCG_beta2*y2**2._dl - 3._dl*self%SCG_A*y1**2._dl + &
-        self%SCG_beta1*y1**2._dl))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    h = ((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*OmegaRad - &
-        3._dl*(1._dl + 12._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda + &
-        2._dl*sqrt(6._dl)*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1 + &
-        ((1._dl - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl)*x1**2._dl + &
-        (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda - 2._dl*self%SCG_A*self%SCG_beta2)*y2**2._dl - y1**2._dl + &
-        2._dl*self%SCG_A*self%SCG_lambda*y1**2._dl - &
-        2._dl*self%SCG_A*self%SCG_beta1*y1**2._dl))/ &
-        (2._dl + 12._dl*self%SCG_A**2._dl - 4._dl*self%SCG_A*self%SCG_lambda)
-
-    x1p = (1._dl/sqrt(6._dl))*f - x1*h
-    y1p = -sqrt(3._dl/2._dl)*self%SCG_beta1*x1*y1 - y1*h
-    y2p = -sqrt(3._dl/2._dl)*self%SCG_beta2*x1*y2 - y2*h
-
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
-
-    fprime = (-3._dl*(-self%SCG_A*OmegaRadprime + &
-        (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*(-sqrt(6._dl) + 6._dl*self%SCG_A*x1)*x1p + &
-        6._dl*self%SCG_A*y2*y2p - 2._dl*self%SCG_beta2*y2*y2p + 6._dl*self%SCG_A*y1*y1p - &
-        2._dl*self%SCG_beta1*y1*y1p))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    hprime = ((1._dl/2._dl)*OmegaRadprime*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda) + &
-        3._dl*((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)* &
-        (sqrt(6._dl)*self%SCG_A + x1 - 2._dl*self%SCG_A*self%SCG_lambda*x1)*x1p + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta2)*y2*y2p + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta1)*y1*y1p))/ &
-        (1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    ! second derivatives
-
-    x1pp = (1._dl/sqrt(6._dl))*fprime - hprime*x1 - h*x1p
-    y1pp = -sqrt(1.5_dl)*self%SCG_beta1*(x1p*y1 + x1*y1p) - hprime*y1 - h*y1p
-    y2pp = -sqrt(1.5_dl)*self%SCG_beta2*(x1p*y2 + x1*y2p) - hprime*y2 - h*y2p
-
-    OmegaRadpprime = -2._dl*OmegaRadprime*(2._dl + h) - 2._dl*OmegaRad*hprime
-
-    fpprime = -3._dl/(1._dl + 2._dl*self%SCG_A*(3._dl*self%SCG_A - self%SCG_lambda))* &
-        (-self%SCG_A*OmegaRadpprime + 6._dl*self%SCG_A*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl)*x1p**2._dl + &
-        2._dl*(3._dl*self%SCG_A - self%SCG_beta1)*(y1p**2._dl + y1*y1pp) + &
-        2._dl*(3._dl*self%SCG_A - self%SCG_beta2)*(y2p**2._dl + y2*y2pp))
-
-    hpprime = -1._dl/(1._dl + 2._dl*self%SCG_A*(3._dl*self%SCG_A - self%SCG_lambda))* &
-        (0.5_dl*OmegaRadpprime*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl) + &
-        3._dl*(-(1 - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl*x1p**2._dl + &
-        (2._dl*self%SCG_A*self%SCG_lambda - 1._dl)* &
-        (sqrt(6._dl)*self%SCG_A + x1 - 2._dl*self%SCG_A*self%SCG_lambda*x1)*x1pp + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta1)*(y1p**2._dl + y1*y1pp) + &
-        (1._dl + 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta2)*(y2p**2._dl + y2*y2pp)))
-
-    ! third derivative
-
-    x1ppp = sqrt(1._dl/6._dl)*fpprime - hpprime*x1 - h*x1pp - 2._dl*hprime*x1p
-
-    adotoa = sqrt(H2)*a
-    Hdot = adotoa**2._dl*(1._dl + h)
+    ! Gamma1 = sqrt(3/2) A H^2 G / h0^2 with G = (h - 3) x1 + x1', and Q = 2 h G + G' = a^3 h0^2 Gamma1'/(..):
+    G = (h - 3._dl)*x1 + x1p
+    Gp = hprime*x1 + (h - 3._dl)*x1p + x1pp
+    Gpp = hpprime*x1 + 2._dl*hprime*x1p + (h - 3._dl)*x1pp + x1ppp
+    Q = 2._dl*h*G + Gp
+    Qp = 2._dl*hprime*G + 2._dl*h*Gp + Gpp
 
     ! compute the second order EFT functions:
-    eft_cache%EFTGamma1V = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2._dl)*(-3._dl*x1 + h*x1 + x1p))/ &
-        ((a**2._dl)*(eft_par_cache%h0_Mpc**2._dl))
-    eft_cache%EFTGamma1P = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2._dl)* &
-        (2._dl*x1*h**2._dl + x1*hprime - 3._dl*x1p + h*(-6._dl*x1 + 3._dl*x1p) + x1pp))/ &
-        ((a**3._dl)*(eft_par_cache%h0_Mpc**2._dl))
+    eft_cache%EFTGamma1V = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2)*G)/((a**2)*(eft_par_cache%h0_Mpc**2))
+    eft_cache%EFTGamma1P = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2)*Q)/((a**3)*(eft_par_cache%h0_Mpc**2))
+    eft_cache%EFTGamma1PP = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2)*(2._dl*h*Q + Qp - Q))/ &
+        ((a**4)*(eft_par_cache%h0_Mpc**2))
     eft_cache%EFTGamma2V = (-2._dl*sqrt(6._dl)*self%SCG_A*adotoa*x1)/(a*eft_par_cache%h0_Mpc)
-    eft_cache%EFTGamma2P = (-2._dl*sqrt(6._dl)*self%SCG_A*adotoa*(h*x1 + x1p))/((a**2._dl)*eft_par_cache%h0_Mpc)
-    eft_cache%EFTGamma2PP = -2._dl*sqrt(6._dl)*self%SCG_A*adotoa/(eft_par_cache%h0_Mpc*a**3._dl)* &
-        (-x1p - h*x1 + 2._dl*x1p*h + hprime*x1 + h**2._dl*x1 + x1pp)
-    eft_cache%EFTGamma2PPP = -2._dl*sqrt(6._dl)*self%SCG_A*adotoa/(eft_par_cache%h0_Mpc*a**4._dl)* &
-        (x1*(2._dl*h - 3._dl*hprime - 3._dl*h**2._dl + 3._dl*h*hprime + h**3._dl + hpprime) + &
-        x1p*(2._dl - 6._dl*h + 3._dl*h*2._dl + 3._dl*hprime) + x1pp*(3._dl*h - 3._dl) + x1ppp)
+    eft_cache%EFTGamma2P = (-2._dl*sqrt(6._dl)*self%SCG_A*adotoa*(h*x1 + x1p))/((a**2)*eft_par_cache%h0_Mpc)
+    eft_cache%EFTGamma2PP = -2._dl*sqrt(6._dl)*self%SCG_A*adotoa/(eft_par_cache%h0_Mpc*a**3)* &
+        (-x1p - h*x1 + 2._dl*x1p*h + hprime*x1 + h**2*x1 + x1pp)
+    eft_cache%EFTGamma2PPP = -2._dl*sqrt(6._dl)*self%SCG_A*adotoa/(eft_par_cache%h0_Mpc*a**4)* &
+        (x1*(2._dl*h - 3._dl*hprime - 3._dl*h**2 + 3._dl*h*hprime + h**3 + hpprime) + &
+        x1p*(2._dl - 6._dl*h + 3._dl*h**2 + 3._dl*hprime) + x1pp*(3._dl*h - 3._dl) + x1ppp)
     eft_cache%EFTGamma3V = 0._dl
     eft_cache%EFTGamma3P = 0._dl
     eft_cache%EFTGamma3PP = 0._dl
@@ -1118,13 +906,12 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: temp
+    type(SCG_background_state) :: bg
 
-    eft_cache%grhom_t = &
-        (eft_par_cache%grhornomass + eft_par_cache%grhog)/a**2 + (eft_par_cache%grhob + eft_par_cache%grhoc)/a
-    temp = 1.0_dl/(1.0_dl + eft_cache%EFTOmegaV + a*eft_cache%EFTOmegaP)* &
-        (eft_cache%grhom_t + 2.0_dl*eft_cache%EFTc - eft_cache%EFTLambda)/3.0_dl
-    eft_cache%adotoa = sqrt(temp)
+    ! the expansion rate of the model background (matter, radiation, massive neutrinos and the scalar field):
+    call SCGInterpolatedState(self, a, eft_par_cache, bg)
+    eft_cache%grhom_t = bg%grho_a2
+    eft_cache%adotoa = bg%adotoa
 
     end subroutine EFTCAMBScalingCubicComputeAdotoa
 
@@ -1141,84 +928,166 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout)  :: eft_cache
 
-    real(dl) :: x1, x1p, x1pp, x1ppp, y1, y1p, y1pp, y2, y2p, y2pp, OmegaRad, OmegaRadprime, OmegaRadpprime
-    real(dl) :: f, fprime, ft, h, hprime, hpprime, ht, htt, grhom, grhorad, H2, adotoa, Hdot, Hdotdot
-    real(dl) :: mu, x
-    integer :: ind
+    type(SCG_background_state) :: bg
 
-    x = log(a)
-    grhom = eft_par_cache%grhob + eft_par_cache%grhoc
-    grhorad = eft_par_cache%grhornomass + eft_par_cache%grhog
-
-    call self%fun_x1%precompute(x, ind, mu)
-    x1 = self%fun_x1%value(x, index=ind, coeff=mu)
-    y1 = self%fun_y1%value(x, index=ind, coeff=mu)
-    y2 = self%fun_y2%value(x, index=ind, coeff=mu)
-
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/ &
-        ((1._dl - x1**2._dl - y1**2._dl - y2**2._dl - 2._dl*self%SCG_A*x1*(sqrt(6._dl) - self%SCG_lambda*x1))*3._dl)
-
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
-
-    f = (3._dl*(-3._dl*self%SCG_A + sqrt(6._dl)*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*x1 + &
-        3._dl*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1**2._dl + self%SCG_A*OmegaRad - &
-        3._dl*self%SCG_A*y2**2._dl + self%SCG_beta2*y2**2._dl - 3._dl*self%SCG_A*y1**2._dl + &
-        self%SCG_beta1*y1**2._dl))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    h = ((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*OmegaRad - &
-        3._dl*(1._dl + 12._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda + &
-        2._dl*sqrt(6._dl)*self%SCG_A*(1._dl - 2._dl*self%SCG_A*self%SCG_lambda)*x1 + &
-        ((1._dl - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl)*x1**2._dl + &
-        (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda - 2._dl*self%SCG_A*self%SCG_beta2)*y2**2._dl - y1**2._dl + &
-        2._dl*self%SCG_A*self%SCG_lambda*y1**2._dl - &
-        2._dl*self%SCG_A*self%SCG_beta1*y1**2._dl))/ &
-        (2._dl + 12._dl*self%SCG_A**2._dl - 4._dl*self%SCG_A*self%SCG_lambda)
-
-    x1p = (1._dl/sqrt(6._dl))*f - x1*h
-    y1p = -sqrt(3._dl/2._dl)*self%SCG_beta1*x1*y1 - y1*h
-    y2p = -sqrt(3._dl/2._dl)*self%SCG_beta2*x1*y2 - y2*h
-
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
-
-    fprime = (-3._dl*(-self%SCG_A*OmegaRadprime + &
-        (-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)*(-sqrt(6._dl) + 6._dl*self%SCG_A*x1)*x1p + &
-        6._dl*self%SCG_A*y2*y2p - 2._dl*self%SCG_beta2*y2*y2p + 6._dl*self%SCG_A*y1*y1p - &
-        2._dl*self%SCG_beta1*y1*y1p))/(1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    hprime = ((1._dl/2._dl)*OmegaRadprime*(-1._dl + 2._dl*self%SCG_A*self%SCG_lambda) + &
-        3._dl*((-1._dl + 2._dl*self%SCG_A*self%SCG_lambda)* &
-        (sqrt(6._dl)*self%SCG_A + x1 - 2._dl*self%SCG_A*self%SCG_lambda*x1)*x1p + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta2)*y2*y2p + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta1)*y1*y1p))/ &
-        (1._dl + 6._dl*self%SCG_A**2._dl - 2._dl*self%SCG_A*self%SCG_lambda)
-
-    ! second derivatives
-
-    x1pp = (1._dl/sqrt(6._dl))*fprime - hprime*x1 - h*x1p
-    y1pp = -sqrt(1.5_dl)*self%SCG_beta1*(x1p*y1 + x1*y1p) - hprime*y1 - h*y1p
-    y2pp = -sqrt(1.5_dl)*self%SCG_beta2*(x1p*y2 + x1*y2p) - hprime*y2 - h*y2p
-
-    OmegaRadpprime = -2._dl*OmegaRadprime*(2._dl + h) - 2._dl*OmegaRad*hprime
-
-    hpprime = -1._dl/(1._dl + 2._dl*self%SCG_A*(3._dl*self%SCG_A - self%SCG_lambda))* &
-        (0.5_dl*OmegaRadpprime*(2._dl*self%SCG_A*self%SCG_lambda - 1._dl) + &
-        3._dl*(-(1 - 2._dl*self%SCG_A*self%SCG_lambda)**2._dl*x1p**2._dl + &
-        (2._dl*self%SCG_A*self%SCG_lambda - 1._dl)* &
-        (sqrt(6._dl)*self%SCG_A + x1 - 2._dl*self%SCG_A*self%SCG_lambda*x1)*x1pp + &
-        (1._dl - 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta1)*(y1p**2._dl + y1*y1pp) + &
-        (1._dl + 2._dl*self%SCG_A*self%SCG_lambda + 2._dl*self%SCG_A*self%SCG_beta2)*(y2p**2._dl + y2*y2pp)))
-
-    adotoa = sqrt(H2)*a
-    ht = adotoa*hprime
-    Hdot = adotoa**2._dl*(1._dl + h)
-    htt = adotoa**2*hpprime + Hdot*hprime
-    eft_cache%Hdot = Hdot
-    Hdotdot = 2*adotoa*Hdot*(1._dl + h) + adotoa**2*ht
-    eft_cache%Hdotdot = Hdotdot
-    eft_cache%Hdotdotdot = &
-        adotoa**2*htt + 4._dl*adotoa*Hdot*ht + 2._dl*adotoa*Hdotdot*(1._dl + h) + 2._dl*Hdot**2*(1._dl + h)
+    call SCGInterpolatedState(self, a, eft_par_cache, bg)
+    eft_cache%Hdot = bg%Hdot
+    eft_cache%Hdotdot = bg%Hdotdot
+    eft_cache%Hdotdotdot = bg%Hdotdotdot
 
     end subroutine EFTCAMBScalingCubicComputeHubbleDer
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the dark energy density parameter of the Scaling Cubic model.
+    function SCGOmegaDE(self, x1, y1, y2)
+
+    implicit none
+
+    class(EFTCAMB_Scaling_Cubic) :: self          !< the base class
+    real(dl), intent(in)         :: x1, y1, y2    !< the dynamical variables
+    real(dl) :: SCGOmegaDE
+
+    SCGOmegaDE = x1**2 + y1**2 + y2**2 + 2._dl*self%SCG_A*x1*(sqrt(6._dl) - self%SCG_lambda*x1)
+
+    end function SCGOmegaDE
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the density and pressure of the fluid that is not the scalar field (matter,
+    !! radiation and massive neutrinos), in units of \f$ 8 \pi G \rho a^4 \f$, and the first two derivatives
+    !! of the pressure with respect to N = ln a (of the a^4-weighted pressure).
+    subroutine SCGFluid(params_cache, a, grho, gp, gpp, gppp)
+
+    implicit none
+
+    type(TEFTCAMB_parameter_cache), intent(in) :: params_cache   !< the EFTCAMB parameter cache.
+    real(dl), intent(in)  :: a                  !< the scale factor
+    real(dl), intent(out) :: grho, gp, gpp, gppp !< a^4 rho, a^4 P, d(a^4 P)/dN, d^2(a^4 P)/dN^2
+
+    real(dl) :: rhonu, pnu, dpnu, ddpnu, am
+    integer  :: nu_i
+
+    grho = params_cache%grhornomass + params_cache%grhog + (params_cache%grhob + params_cache%grhoc)*a
+    gp = (params_cache%grhornomass + params_cache%grhog)/3._dl
+    gpp = 0._dl
+    gppp = 0._dl
+    if (params_cache%Num_Nu_Massive /= 0) then
+        do nu_i = 1, params_cache%Nu_mass_eigenstates
+            am = a*params_cache%nu_masses(nu_i)
+            rhonu = 0._dl
+            pnu = 0._dl
+            call ThermalNuBackground%rho_P(am, rhonu, pnu)
+            ! derivatives with respect to ln(a m) = N + const:
+            dpnu = ThermalNuBackground%pidot(am, 1._dl, pnu)
+            ddpnu = ThermalNuBackground%pidotdot(am, 1._dl, 0._dl, pnu, dpnu)
+            grho = grho + params_cache%grhormass(nu_i)*rhonu
+            gp = gp + params_cache%grhormass(nu_i)*pnu
+            gpp = gpp + params_cache%grhormass(nu_i)*dpnu
+            gppp = gppp + params_cache%grhormass(nu_i)*ddpnu
+        end do
+    end if
+
+    end subroutine SCGFluid
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the background state of the model at the scale factor a, from the interpolated
+    !! dynamical variables.
+    subroutine SCGInterpolatedState(self, a, params_cache, bg)
+
+    implicit none
+
+    class(EFTCAMB_Scaling_Cubic)               :: self          !< the base class
+    real(dl), intent(in)                       :: a             !< the input scale factor
+    type(TEFTCAMB_parameter_cache), intent(in) :: params_cache  !< the EFTCAMB parameter cache.
+    type(SCG_background_state), intent(out)    :: bg            !< the output background state
+
+    real(dl) :: x, mu
+    integer  :: ind
+
+    x = log(a)
+    call self%fun_x1%precompute(x, ind, mu)
+    call SCGState(self, a, params_cache, self%fun_x1%value(x, index=ind, coeff=mu), &
+        self%fun_y1%value(x, index=ind, coeff=mu), self%fun_y2%value(x, index=ind, coeff=mu), bg)
+
+    end subroutine SCGInterpolatedState
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the background state of the model, up to the third derivative of the dynamical
+    !! variables with respect to N = ln a (order = 1, 2, 3 stops after the first, second, third derivatives).
+    !! The fluid enters the equations through its density in H^2 and its pressure (OmegaP = P/H^2): radiation and
+    !! massive neutrinos.
+    subroutine SCGState(self, a, params_cache, x1, y1, y2, bg, order)
+
+    implicit none
+
+    class(EFTCAMB_Scaling_Cubic)               :: self          !< the base class
+    real(dl), intent(in)                       :: a             !< the input scale factor
+    type(TEFTCAMB_parameter_cache), intent(in) :: params_cache  !< the EFTCAMB parameter cache.
+    real(dl), intent(in)                       :: x1, y1, y2    !< the dynamical variables
+    type(SCG_background_state), intent(out)    :: bg            !< the output background state
+    integer, intent(in), optional              :: order         !< the maximum order of derivatives computed
+
+    real(dl) :: A_, l_, b1, b2, D, c2, grho, gp, gpp, gppp, a4H2
+    integer  :: ord
+
+    ord = 3
+    if (present(order)) ord = order
+    A_ = self%SCG_A
+    l_ = self%SCG_lambda
+    b1 = self%SCG_beta1
+    b2 = self%SCG_beta2
+    D = 1._dl + 6._dl*A_**2 - 2._dl*A_*l_
+    c2 = 2._dl*A_*l_ - 1._dl
+
+    bg%x1 = x1
+    bg%y1 = y1
+    bg%y2 = y2
+
+    ! background densities:
+    call SCGFluid(params_cache, a, grho, gp, gpp, gppp)
+    bg%H2 = grho/a**4/((1._dl - SCGOmegaDE(self, x1, y1, y2))*3._dl)
+    bg%grho_a2 = grho/a**2
+    a4H2 = a**4*bg%H2
+    bg%OmegaP = gp/a4H2
+    bg%adotoa = sqrt(bg%H2)*a
+
+    ! 0) the functionals entering the ODEs:
+    bg%f = (3._dl*(-3._dl*A_ + sqrt(6._dl)*c2*x1 - 3._dl*A_*c2*x1**2 + A_*bg%OmegaP + &
+        (b2 - 3._dl*A_)*y2**2 + (b1 - 3._dl*A_)*y1**2))/D
+    bg%h = (c2*bg%OmegaP - 3._dl*(1._dl + 12._dl*A_**2 - 2._dl*A_*l_ - 2._dl*sqrt(6._dl)*A_*c2*x1 + &
+        c2**2*x1**2 + (c2 - 2._dl*A_*b2)*y2**2 + (c2 - 2._dl*A_*b1)*y1**2))/(2._dl*D)
+
+    ! 1) first derivatives:
+    bg%x1p = bg%f/sqrt(6._dl) - x1*bg%h
+    bg%y1p = -sqrt(1.5_dl)*b1*x1*y1 - y1*bg%h
+    bg%y2p = -sqrt(1.5_dl)*b2*x1*y2 - y2*bg%h
+    bg%Hdot = bg%adotoa**2*(1._dl + bg%h)
+    if (ord < 2) return
+
+    bg%OmegaPp = (gpp - 4._dl*gp)/a4H2 - 2._dl*bg%h*bg%OmegaP
+    bg%fprime = -3._dl/D*(-A_*bg%OmegaPp + c2*(-sqrt(6._dl) + 6._dl*A_*x1)*bg%x1p + &
+        2._dl*(3._dl*A_ - b2)*y2*bg%y2p + 2._dl*(3._dl*A_ - b1)*y1*bg%y1p)
+    bg%hprime = (0.5_dl*bg%OmegaPp*c2 + 3._dl*(c2*(sqrt(6._dl)*A_ - c2*x1)*bg%x1p + &
+        (2._dl*A_*b2 - c2)*y2*bg%y2p + (2._dl*A_*b1 - c2)*y1*bg%y1p))/D
+
+    ! 2) second derivatives:
+    bg%x1pp = bg%fprime/sqrt(6._dl) - bg%hprime*x1 - bg%h*bg%x1p
+    bg%y1pp = -sqrt(1.5_dl)*b1*(bg%x1p*y1 + x1*bg%y1p) - bg%hprime*y1 - bg%h*bg%y1p
+    bg%y2pp = -sqrt(1.5_dl)*b2*(bg%x1p*y2 + x1*bg%y2p) - bg%hprime*y2 - bg%h*bg%y2p
+    bg%Hdotdot = bg%adotoa**3*(2._dl*(1._dl + bg%h)**2 + bg%hprime)
+    if (ord < 3) return
+
+    bg%OmegaPpp = ((gppp - 8._dl*gpp + 16._dl*gp) - 4._dl*bg%h*(gpp - 4._dl*gp))/a4H2 + &
+        (4._dl*bg%h**2 - 2._dl*bg%hprime)*bg%OmegaP
+    bg%fpprime = -3._dl/D*(-A_*bg%OmegaPpp + 6._dl*A_*c2*bg%x1p**2 + c2*(-sqrt(6._dl) + 6._dl*A_*x1)*bg%x1pp + &
+        2._dl*(3._dl*A_ - b1)*(bg%y1p**2 + y1*bg%y1pp) + 2._dl*(3._dl*A_ - b2)*(bg%y2p**2 + y2*bg%y2pp))
+    bg%hpprime = (0.5_dl*bg%OmegaPpp*c2 + 3._dl*(-c2**2*bg%x1p**2 + c2*(sqrt(6._dl)*A_ - c2*x1)*bg%x1pp + &
+        (2._dl*A_*b1 - c2)*(bg%y1p**2 + y1*bg%y1pp) + (2._dl*A_*b2 - c2)*(bg%y2p**2 + y2*bg%y2pp)))/D
+
+    ! 3) third derivatives:
+    bg%x1ppp = bg%fpprime/sqrt(6._dl) - bg%hpprime*x1 - bg%h*bg%x1pp - 2._dl*bg%hprime*bg%x1p
+    bg%Hdotdotdot = bg%adotoa**4*(bg%hpprime + 7._dl*(1._dl + bg%h)*bg%hprime + 6._dl*(1._dl + bg%h)**3)
+
+    end subroutine SCGState
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes model specific stability requirements.
