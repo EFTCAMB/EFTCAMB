@@ -416,7 +416,7 @@
 
     PadeSeriesParametrized1DFourthDerivative = (ddddup/down) - 4._dl*(dddup*ddown/down**2) + &
         6._dl*ddup*(2._dl*ddown**2/down**3 - dddown/down**2) + &
-        4._dl*(-ddddown/down**2 - 6._dl*ddown**3/down**4 + 6._dl*ddown*dddown/down**3) + &
+        4._dl*dup*(-ddddown/down**2 - 6._dl*ddown**3/down**4 + 6._dl*ddown*dddown/down**3) + &
         up*(-dddddown/down**2 + 6._dl*dddown**2/down**3 + 24._dl*ddown**4/down**5 + 8._dl*ddddown*ddown/down**3 - &
         36._dl*dddown*ddown**2/down**4)
 

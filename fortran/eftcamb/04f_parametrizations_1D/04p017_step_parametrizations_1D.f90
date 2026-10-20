@@ -322,7 +322,7 @@
 
     stepParametrized1DFourthDerivative = (15._dl/2._dl)*(self%v2 - self%v1)*(self%aT - x)* &
         (4._dl*(self%aT - x)**2 - 3._dl*self%Delta**2)* &
-        (1._dl/(self%Delta**7*((self%aT - x)**2 + self%Delta**2)**(4.5_dl)))
+        (self%Delta**2/((self%aT - x)**2 + self%Delta**2)**(4.5_dl))
 
     end function stepParametrized1DFourthDerivative
 

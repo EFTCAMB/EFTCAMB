@@ -249,10 +249,16 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: Axion1DFourthDerivative                            !< the output value
 
-    Axion1DFourthDerivative = 0._dl
+    real(dl) :: u, s, c
 
-    !<2._dl*self%alpha**4*self%n*(Sin(self%alpha*x/2._dl))**4*(1._dl-Cos*(self%alpha*x))**(-4._dl+self%n)&
-    !<&*(self%n**3*Cos(2._dl*self%alpha*x)+2._dl*(2._dl*self%n*(-2._dl+self%n)*(-1._dl+self%n)-1._dl)*Cos(self%alpha*x)+(-2._dl+self%n)*(3._dl*self%n*(-2._dl+self%n)+2._dl))*self%f0
+    ! value = f0 u^n with u = 1 - cos(alpha x):
+    u = 1._dl - cos(self%alpha*x)
+    s = sin(self%alpha*x)
+    c = cos(self%alpha*x)
+    Axion1DFourthDerivative = self%f0*self%alpha**4*(-self%n*u**(self%n - 1._dl)*c &
+        + self%n*(self%n - 1._dl)*u**(self%n - 2._dl)*(3._dl*c**2 - 4._dl*s**2) &
+        + 6._dl*self%n*(self%n - 1._dl)*(self%n - 2._dl)*u**(self%n - 3._dl)*s**2*c &
+        + self%n*(self%n - 1._dl)*(self%n - 2._dl)*(self%n - 3._dl)*u**(self%n - 4._dl)*s**4)
 
     end function Axion1DFourthDerivative
 
