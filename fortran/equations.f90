@@ -3088,7 +3088,9 @@
             ! initialize DE perturbations:
             clxq = ay(EV%w_ix)
             vq = ay(EV%w_ix + 1)
-            pidotdot = ayprime(EV%w_ix + 1)
+            ! pi'' is not known yet (ayprime(w_ix+1) holds a stale value): the factors that depend on it
+            ! (EFTeomM, EFTeomNdot) are recomputed after the pi field equation.
+            pidotdot = 0._dl
             ! initialize DE perturbations cache:
             EV%eft_cache%pi = clxq
             EV%eft_cache%pidot = vq
@@ -3362,6 +3364,15 @@
             ! store in cache:
             EV%eft_cache%pidot = ayprime(EV%w_ix)
             EV%eft_cache%pidotdot = ayprime(EV%w_ix + 1)
+            ! recompute the Einstein equation factors with the current pi'' (EFTeomM, EFTeomNdot) and dz:
+            if (EV%EFTCAMBactive) then
+                call CP%EFTCAMB%model%compute_Einstein_factors(a, CP%eft_par_cache, EV%eft_cache)
+                EV%eft_cache%dz = 1._dl/EV%eft_cache%EFTeomU* &
+                    (-2._dl*adotoa*(1._dl + EV%eft_cache%EFTeomY)*z + etak - &
+                    0.5_dl/k/(1._dl + EV%eft_cache%EFTOmegaV)*(grhog_t*clxg + grhor_t*clxr + 3._dl*dgpnu) - &
+                    1.5_dl/k/(1._dl + EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+                dz = EV%eft_cache%dz
+            end if
             if (.not. EV%EFTCAMBactive .and. DebugEFTCAMB) then
                 ayprime(EV%w_ix) = 0._dl
                 ayprime(EV%w_ix + 1) = 0._dl
