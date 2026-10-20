@@ -323,6 +323,7 @@
 
     recursive subroutine GaugeInterface_EvolveScal(EV, tau, y, tauend, tol1, ind, rk_settings, w)
     use Recombination, only: CB1
+    use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
     type(EvolutionVars) EV, EVout
     type(RungeKuttaDP45Settings), intent(inout) :: rk_settings
     real(dl) w(EV%nvar, 9), y(EV%nvar), yout(EV%nvar), tol1, tau, tauend
@@ -527,6 +528,10 @@
             y = yout
             EV = EVout
             call EFTCAMBInitialConditions(y, EV, tau)
+            if (any(ieee_is_nan(y(1:EV%nvar)))) then
+                call GlobalError('EFTCAMB: NaN in the initial conditions of the EFT perturbations', error_evolution)
+                return
+            end if
             ! EFTCAMB MOD STOP
         end if
 
@@ -2117,6 +2122,70 @@
 
     end subroutine outputv
 
+    ! EFTCAMB MOD START: background part of the EFT timestep cache at a given scale factor.
+    ! > Fills densities, expansion history, background and second order EFT functions of cache at a,
+    !! with the same sequence as derivs (used by the EFT_IC_type 2/3 initial conditions).
+    subroutine EFTCAMB_fill_background_cache(a, cache)
+    real(dl), intent(in) :: a
+    type(TEFTCAMB_timestep_cache), intent(inout) :: cache
+    real(dl) :: grhonu, gpinu, gpinudot, grhormass_t, adotoa, am
+    integer  :: nu_i, pass
+
+    call cache%initialize()
+    cache%a = a
+    cache%grhob_t = State%grhob/a
+    cache%grhoc_t = State%grhoc/a
+    cache%grhor_t = State%grhornomass/a**2
+    cache%grhog_t = State%grhog/a**2
+    cache%grhonu_tot = 0._dl
+    cache%gpinu_tot = 0._dl
+    do nu_i = 1, CP%Nu_mass_eigenstates
+        grhormass_t = State%grhormass(nu_i)/a**2
+        call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), grhonu, gpinu)
+        cache%grhonu_tot = cache%grhonu_tot + grhormass_t*grhonu
+        cache%gpinu_tot = cache%gpinu_tot + grhormass_t*gpinu
+    end do
+    cache%grhom_t = cache%grhob_t + cache%grhoc_t + cache%grhor_t + cache%grhog_t + cache%grhonu_tot
+    cache%grhoa2 = cache%grhom_t*a**2
+    cache%gpresm_t = (cache%grhor_t + cache%grhog_t)/3._dl + cache%gpinu_tot
+    if (.not. CP%EFTCAMB%EFTCAMB_model_is_designer) then
+        call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, cache)
+    end if
+    call CP%EFTCAMB%model%compute_adotoa(a, CP%eft_par_cache, cache)
+    adotoa = cache%adotoa
+    ! first pass: first derivatives (Hdot), second pass: second derivatives (needs Hdot)
+    do pass = 1, 2
+        cache%grhonudot_tot = 0._dl
+        cache%gpinudot_tot = 0._dl
+        cache%gpinudotdot_tot = 0._dl
+        do nu_i = 1, CP%Nu_mass_eigenstates
+            grhormass_t = State%grhormass(nu_i)/a**2
+            am = a*State%nu_masses(nu_i)
+            call ThermalNuBackground%rho_P(am, grhonu, gpinu)
+            gpinudot = ThermalNuBackground%pidot(am, adotoa, gpinu)
+            cache%grhonudot_tot = cache%grhonudot_tot + &
+                grhormass_t*(ThermalNuBackground%drho(am, adotoa) - 4._dl*adotoa*grhonu)
+            cache%gpinudot_tot = cache%gpinudot_tot + grhormass_t*(gpinudot - 4._dl*adotoa*gpinu)
+            if (pass == 2) cache%gpinudotdot_tot = cache%gpinudotdot_tot - &
+                4._dl*adotoa*grhormass_t*(gpinudot - 4._dl*adotoa*gpinu) + &
+                grhormass_t*(ThermalNuBackground%pidotdot(am, adotoa, cache%Hdot, gpinu, gpinudot) - &
+                4._dl*cache%Hdot*gpinu - 4._dl*adotoa*gpinudot)
+        end do
+        cache%gpresdotm_t = -4._dl*adotoa*(cache%grhog_t + cache%grhor_t)/3._dl + cache%gpinudot_tot
+        if (pass == 2) cache%gpresdotdotm_t = -(4._dl/3._dl)*cache%Hdot*(cache%grhog_t + cache%grhor_t) + &
+            (16._dl/3._dl)*(cache%grhog_t + cache%grhor_t)*adotoa**2 + cache%gpinudotdot_tot
+        call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, cache)
+    end do
+    if (CP%EFTCAMB%EFTCAMB_model_is_designer) then
+        call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, cache)
+    end if
+    call CP%EFTCAMB%model%compute_rhoQPQ(a, CP%eft_par_cache, cache)
+    call CP%EFTCAMB%model%compute_secondorder_EFT_functions(a, CP%eft_par_cache, cache)
+
+    end subroutine EFTCAMB_fill_background_cache
+
+    ! EFTCAMB MOD END.
+
     subroutine initial(EV, y, tau)
     ! Scalar initial conditions. See docs/InitialConditionsSeries.ipynb for derivation.
     implicit none
@@ -2129,6 +2198,7 @@
     ! EFTCAMB MOD START: variables for the EFT initial conditions
     real(dl) Omega0, Gamma10, Gamma20, Gamma30
     real(dl) :: a_eval
+    integer  :: eft_ic_case
     ! EFTCAMB MOD END.
     real(dl) a, a2, iqg, rhomass, a_massive, ep, nu_l_accuracy_boost
     integer l, i, nu_i, j, ind
@@ -2245,14 +2315,25 @@
         ! Also respect the background safety floor:
         a_eval = max(a_eval, CP%EFTCAMB%EFTCAMB_back_turn_on)
 
-        call CP%EFTCAMB%model%compute_background_EFT_functions(a_eval, CP%eft_par_cache, EV%eft_cache)
+        ! fill the background and second order EFT functions at a_eval (EV%eft_cache is reused between modes):
+        call EFTCAMB_fill_background_cache(a_eval, EV%eft_cache)
 
         Omega0 = EV%eft_cache%EFTOmegaV
         Gamma10 = EV%eft_cache%EFTGamma1V
         Gamma20 = EV%eft_cache%EFTGamma2V
         Gamma30 = EV%eft_cache%EFTGamma3V
+        call EV%eft_cache%initialize()
 
-        select case (CP%EFTCAMB%EFT_IC_type)
+        eft_ic_case = CP%EFTCAMB%EFT_IC_type
+        ! the case 3 expressions are 0/0 for Omega = Gamma3 = 0: use the case 2 limit there
+        if (eft_ic_case == 3) then
+            if (abs(3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2) < 1.e-12_dl .or. &
+                abs(3._dl*Gamma30 + 8._dl*Omega0 + 6._dl*Gamma30*Omega0 + 6._dl*Omega0**2) < 1.e-12_dl) then
+                eft_ic_case = 2
+            end if
+        end if
+
+        select case (eft_ic_case)
         case (2)
             ! -----------------------------------------------------------
             ! CASE 2: Modified Gravity (Constant Omega)
