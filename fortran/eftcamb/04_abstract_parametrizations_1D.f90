@@ -42,6 +42,15 @@
 
     public parametrized_function_1D
 
+    ! nodes and weights of the 8 points Gauss-Legendre quadrature on [-1,1] (symmetric, positive half):
+    real(dl), parameter :: numint_gx(4) = [0.1834346424956498049_dl, 0.5255324099163289858_dl, &
+        0.7966664774136267396_dl, 0.9602898564975362317_dl]
+    real(dl), parameter :: numint_gw(4) = [0.3626837833783619830_dl, 0.3137066458778872873_dl, &
+        0.2223810344533744706_dl, 0.1012285362903762591_dl]
+    !< range (smallest ln a) and spacing (e-folds) of the table of the numerical w_DE integral:
+    real(dl), parameter :: numint_N_min = -32.5_dl
+    real(dl), parameter :: numint_dN = 0.01_dl
+
     ! ----------------------------------------------------------------------------------------
     !> This is the abstract type for parametrized functions. As a rule, when there is a
     !! free function in EFT it should be declared as a class inheriting from parametrized_function_1D.
@@ -56,6 +65,12 @@
         type(string), allocatable, dimension(:) :: param_names
         !< array of strings with the latex version of the parameter names.
         type(string), allocatable, dimension(:) :: param_names_latex
+        !< table of the numerical w_DE integral, built by tabulate_numerical_integral: numint_S(i) is the integral
+        !! of 1+w from numint_N(i) = ln a to 0 on an equispaced grid in ln a, numint_W(i) = 1+w there; numint_B are
+        !! the ln a of the break points (where the function is not smooth) inside the table range and
+        !! numint_has_break(i) tells whether one lies in [numint_N(i), numint_N(i+1)].
+        real(dl), allocatable, dimension(:)     :: numint_N, numint_S, numint_W, numint_B
+        logical, allocatable, dimension(:)      :: numint_has_break
 
     contains
 
@@ -99,6 +114,12 @@
     !< function that computes the w_DE integral numerically from the function value. Can be used by parametrizations
     !! that do not have a closed form integral.
     procedure :: numerical_integral => ParametrizedFunction1DNumericalIntegral
+    !< subroutine that tabulates the numerical w_DE integral for the current parameters (call it after every change
+    !! of the parameters): numerical_integral then needs one short quadrature from the nearest node.
+    procedure :: tabulate_numerical_integral => ParametrizedFunction1DTabulateNumericalIntegral
+    !< function that returns the break points (values of the scale factor where the function is not smooth, e.g.
+    !! spline nodes) used by the tabulated numerical integral. None by default.
+    procedure :: numerical_integral_breaks => ParametrizedFunction1DNumericalIntegralBreaks
     ! function stability
     !< function that checks whether the parametrized function is regular or stable
     procedure :: compute_function_stability => ParametrizedFunction1DStability
@@ -494,14 +515,9 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: ParametrizedFunction1DNumericalIntegral              !< the output value
 
-    ! nodes and weights of the 8 points Gauss-Legendre quadrature on [-1,1] (symmetric, positive half):
-    real(dl), parameter :: gx(4) = [0.1834346424956498049_dl, 0.5255324099163289858_dl, &
-        0.7966664774136267396_dl, 0.9602898564975362317_dl]
-    real(dl), parameter :: gw(4) = [0.3626837833783619830_dl, 0.3137066458778872873_dl, &
-        0.2223810344533744706_dl, 0.1012285362903762591_dl]
     real(dl), parameter :: max_step = 0.25_dl
     real(dl), allocatable :: bounds(:)
-    real(dl) :: n_lo, n_hi, n_b, c, h, s
+    real(dl) :: n_lo, n_hi, n_b, c, h, s, n_x
     integer  :: nb, i, j, k, nsub
 
     ParametrizedFunction1DNumericalIntegral = 0._dl
@@ -509,6 +525,29 @@
     if (x == 1._dl) then
         ParametrizedFunction1DNumericalIntegral = 1._dl
         return
+    end if
+
+    ! tabulated integral (function of a only, the table has its own break points): cubic Hermite interpolation of
+    ! the integral, whose derivative 1+w is tabulated too (error ~ dN^4/384 |w'''|); in a table interval with a
+    ! break point an 8 points quadrature from the nearest node, split at the break points.
+    if (allocated(self%numint_S) .and. .not. present(eft_cache)) then
+        n_x = log(x)
+        if (n_x >= self%numint_N(1) .and. n_x < 0._dl) then
+            i = min(max(int((n_x - self%numint_N(1))/numint_dN) + 1, 1), size(self%numint_N) - 1)
+            if (self%numint_has_break(i)) then
+                if (n_x - self%numint_N(i) > 0.5_dl*numint_dN) i = i + 1
+                s = self%numint_S(i) + ParametrizedFunction1DTableQuadrature(self, n_x, self%numint_N(i))
+            else
+                ! S(N) = int_N^0 (1+w), dS/dN = -(1+w):
+                h = (n_x - self%numint_N(i))/numint_dN
+                s = (1._dl + 2._dl*h)*(1._dl - h)**2*self%numint_S(i) &
+                    - h*(1._dl - h)**2*numint_dN*self%numint_W(i) &
+                    + h**2*(3._dl - 2._dl*h)*self%numint_S(i + 1) &
+                    + h**2*(1._dl - h)*numint_dN*self%numint_W(i + 1)
+            end if
+            ParametrizedFunction1DNumericalIntegral = x**2*exp(3._dl*s)
+            return
+        end if
     end if
 
     ! integration interval in N = ln a, split at the break points:
@@ -540,8 +579,8 @@
         do k = 1, nsub
             c = bounds(i) + (real(k, dl) - 0.5_dl)*h
             do j = 1, 4
-                s = s + gw(j)*0.5_dl*h*(2._dl + self%value(exp(c + 0.5_dl*h*gx(j)), eft_cache) + &
-                    self%value(exp(c - 0.5_dl*h*gx(j)), eft_cache))
+                s = s + numint_gw(j)*0.5_dl*h*(2._dl + self%value(exp(c + 0.5_dl*h*numint_gx(j)), eft_cache) + &
+                    self%value(exp(c - 0.5_dl*h*numint_gx(j)), eft_cache))
             end do
         end do
     end do
@@ -551,6 +590,131 @@
     ParametrizedFunction1DNumericalIntegral = x**2*exp(3._dl*s)
 
     end function ParametrizedFunction1DNumericalIntegral
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the integral of 1+w(N) from n_lo to n_hi (N = ln a; signed, n_hi < n_lo allowed) with
+    !! one 8 points Gauss-Legendre quadrature. Accurate for intervals of a fraction of an e-fold.
+    function ParametrizedFunction1DGaussLegendre(self, n_lo, n_hi)
+
+    implicit none
+
+    class(parametrized_function_1D) :: self      !< the base class
+    real(dl), intent(in)            :: n_lo      !< lower end of the interval
+    real(dl), intent(in)            :: n_hi      !< upper end of the interval
+    real(dl) :: ParametrizedFunction1DGaussLegendre !< the output value
+
+    real(dl) :: c, h
+    integer  :: j
+
+    c = 0.5_dl*(n_lo + n_hi)
+    h = n_hi - n_lo
+    ParametrizedFunction1DGaussLegendre = 0._dl
+    if (h == 0._dl) return
+    do j = 1, 4
+        ParametrizedFunction1DGaussLegendre = ParametrizedFunction1DGaussLegendre + &
+            numint_gw(j)*0.5_dl*h*(2._dl + self%value(exp(c + 0.5_dl*h*numint_gx(j))) + &
+            self%value(exp(c - 0.5_dl*h*numint_gx(j))))
+    end do
+
+    end function ParametrizedFunction1DGaussLegendre
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the integral of 1+w(N) from n_1 to n_2 (signed) with 8 points Gauss-Legendre
+    !! quadratures, split at the break points of the table that lie strictly between them.
+    function ParametrizedFunction1DTableQuadrature(self, n_1, n_2)
+
+    implicit none
+
+    class(parametrized_function_1D) :: self      !< the base class
+    real(dl), intent(in)            :: n_1       !< start of the interval
+    real(dl), intent(in)            :: n_2       !< end of the interval
+    real(dl) :: ParametrizedFunction1DTableQuadrature !< the output value
+
+    real(dl) :: n_lo, n_hi, n_last, s
+    integer  :: i
+
+    n_lo = min(n_1, n_2)
+    n_hi = max(n_1, n_2)
+    s = 0._dl
+    n_last = n_lo
+    if (allocated(self%numint_B)) then
+        do i = 1, size(self%numint_B)
+            if (self%numint_B(i) > n_last .and. self%numint_B(i) < n_hi) then
+                s = s + ParametrizedFunction1DGaussLegendre(self, n_last, self%numint_B(i))
+                n_last = self%numint_B(i)
+            end if
+        end do
+    end if
+    s = s + ParametrizedFunction1DGaussLegendre(self, n_last, n_hi)
+    if (n_2 < n_1) s = -s
+    ParametrizedFunction1DTableQuadrature = s
+
+    end function ParametrizedFunction1DTableQuadrature
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the break points of the function for the numerical integral: none by default.
+    function ParametrizedFunction1DNumericalIntegralBreaks(self) result(breaks)
+
+    implicit none
+
+    class(parametrized_function_1D) :: self           !< the base class
+    real(dl), allocatable, dimension(:) :: breaks     !< the values of the scale factor where w is not smooth
+
+    allocate(breaks(0))
+
+    end function ParametrizedFunction1DNumericalIntegralBreaks
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that tabulates the numerical w_DE integral (see numerical_integral) for the current values of the
+    !! parameters, on an equispaced grid in ln a from numint_N_min to 0, split at the break points given by
+    !! numerical_integral_breaks. It has to be called again after every change of the parameters. Only for functions
+    !! of the scale factor alone (the cache is not passed to value).
+    subroutine ParametrizedFunction1DTabulateNumericalIntegral(self)
+
+    implicit none
+
+    class(parametrized_function_1D) :: self  !< the base class
+
+    real(dl), allocatable :: breaks(:)
+    integer :: num, i, nb
+
+    if (allocated(self%numint_N)) deallocate(self%numint_N)
+    if (allocated(self%numint_S)) deallocate(self%numint_S)
+    if (allocated(self%numint_W)) deallocate(self%numint_W)
+    if (allocated(self%numint_B)) deallocate(self%numint_B)
+    if (allocated(self%numint_has_break)) deallocate(self%numint_has_break)
+    ! break points (increasing ln a) inside the table range:
+    breaks = self%numerical_integral_breaks()
+    allocate(self%numint_B(size(breaks)))
+    nb = 0
+    do i = 1, size(breaks)
+        if (breaks(i) <= 0._dl) cycle
+        if (log(breaks(i)) <= numint_N_min .or. log(breaks(i)) >= 0._dl) cycle
+        if (nb > 0) then
+            if (log(breaks(i)) <= self%numint_B(nb)) cycle
+        end if
+        nb = nb + 1
+        self%numint_B(nb) = log(breaks(i))
+    end do
+    self%numint_B = self%numint_B(1:nb)
+    ! the table:
+    num = nint(-numint_N_min/numint_dN) + 1
+    allocate(self%numint_N(num), self%numint_S(num), self%numint_W(num), self%numint_has_break(num))
+    do i = 1, num
+        self%numint_N(i) = real(i - num, dl)*numint_dN
+        self%numint_W(i) = 1._dl + self%value(exp(self%numint_N(i)))
+    end do
+    self%numint_has_break = .false.
+    do i = 1, num - 1
+        self%numint_has_break(i) = any(self%numint_B >= self%numint_N(i) .and. self%numint_B <= self%numint_N(i + 1))
+    end do
+    self%numint_S(num) = 0._dl
+    do i = num - 1, 1, -1
+        self%numint_S(i) = self%numint_S(i + 1) + &
+            ParametrizedFunction1DTableQuadrature(self, self%numint_N(i), self%numint_N(i + 1))
+    end do
+
+    end subroutine ParametrizedFunction1DTabulateNumericalIntegral
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes function parametrization specific stability requirements. Currently only implemented for Pade

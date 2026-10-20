@@ -220,6 +220,8 @@
         temp(i) = array(i + 1)
     end do
     call self%DesfRwDE%init_parameters(temp)
+    ! w_DE integral of parametrizations without a closed form, for the new parameters:
+    call self%DesfRwDE%tabulate_numerical_integral()
 
     end subroutine EFTCAMBDesignerFRInitModelParameters
 
@@ -237,6 +239,8 @@
     self%B0 = Ini%Read_Double('EFTB0', 0._dl)
     ! read w_DE parameters:
     call self%DesfRwDE%init_from_file(Ini, eft_error)
+    ! w_DE integral of parametrizations without a closed form, for the new parameters:
+    call self%DesfRwDE%tabulate_numerical_integral()
 
     end subroutine EFTCAMBDesignerFRInitModelParametersFromFile
 

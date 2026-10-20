@@ -95,6 +95,8 @@
     procedure :: fourth_derivative => SplineQ1DFourthDerivative
     !< function that returns the strange integral that we need for w_DE.
     procedure :: integral => SplineQ1DIntegral
+    !< function that returns the break points (the nodes) of the numerical integral.
+    procedure :: numerical_integral_breaks => SplineQ1DNumericalIntegralBreaks
 
     end type spline5_parametrization_1D
 
@@ -660,6 +662,23 @@
     end if
 
     end function SplineQ1DIntegral
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the break points of the numerical integral: the spline nodes.
+    function SplineQ1DNumericalIntegralBreaks(self) result(breaks)
+
+    implicit none
+
+    class(spline5_parametrization_1D)   :: self       !< the base class
+    real(dl), allocatable, dimension(:) :: breaks     !< the values of the scale factor where w is not smooth
+
+    if (self%logx_flag) then
+        breaks = exp(self%x_coord)
+    else
+        breaks = self%x_coord
+    end if
+
+    end function SplineQ1DNumericalIntegralBreaks
 
     end module EFTCAMB_spline5_parametrizations_1D
 

@@ -221,6 +221,8 @@
         temp(i) = array(i + 1)
     end do
     call self%ShiftSymwDE%init_parameters(temp)
+    ! w_DE integral of parametrizations without a closed form, for the new parameters:
+    call self%ShiftSymwDE%tabulate_numerical_integral()
 
     end subroutine EFTCAMBShiftSymmetricInitModelParameters
 
@@ -241,6 +243,8 @@
     self%SS_alphaK0 = Ini%Read_Double('Shift_Symmetric_alphaK0', 0._dl)
     ! read w_DE parameters:
     call self%ShiftSymwDE%init_from_file(Ini, eft_error)
+    ! w_DE integral of parametrizations without a closed form, for the new parameters:
+    call self%ShiftSymwDE%tabulate_numerical_integral()
 
     end subroutine EFTCAMBShiftSymmetricInitModelParametersFromFile
 
