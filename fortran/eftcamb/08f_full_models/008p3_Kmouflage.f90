@@ -67,7 +67,7 @@
 
         ! some designer parameters:
         !< Number of points sampled by the designer code.
-        integer  :: background_num_points = 1000
+        integer  :: background_num_points = 10000
         real(dl) :: x_initial = log(10._dl**(-9._dl))         !< log(a start)
         real(dl) :: x_final = 0.0_dl                        !< log(a final)
 
@@ -136,7 +136,7 @@
     self%Kmimic = Ini%Read_Logical('Kmimic', .false.)
 
     ! read precision parameters
-    self%background_num_points = Ini%Read_Int('model_background_num_points', 1000)
+    self%background_num_points = Ini%Read_Int('model_background_num_points', 10000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-9))
     self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
 

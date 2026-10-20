@@ -82,7 +82,7 @@
 
         ! some parameters:
         !< Number of points sampled by the background solver code.
-        integer  :: interpolation_num_points = 1100
+        integer  :: interpolation_num_points = 11000
         real(dl) :: x_initial = log(10._dl**(-8._dl))      !< log(a start)
         real(dl) :: x_final = 0.1_dl                     !< log(a final)
 
@@ -167,7 +167,7 @@
     self%drag_initial_conditions = Ini%Read_Logical('drag_initial_conditions', .false.)
 
     ! read precision parameters
-    self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 1100)
+    self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 11000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
     self%x_final = log(Ini%Read_Double('model_background_a_final', 1.1_dl))
 

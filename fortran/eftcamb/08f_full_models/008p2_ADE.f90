@@ -63,7 +63,7 @@
 
         ! some designer parameters:
         !< Number of points sampled by the designer code.
-        integer  :: background_num_points = 1500
+        integer  :: background_num_points = 15000
         real(dl) :: x_initial = log(10._dl**(-10._dl))        !< log(a start)
         real(dl) :: x_final = 0.0_dl                        !< log(a final)
 
@@ -130,7 +130,7 @@
     ! read model selection flags:
 
     ! read precision parameters
-    self%background_num_points = Ini%Read_Int('model_background_num_points', 1500)
+    self%background_num_points = Ini%Read_Int('model_background_num_points', 15000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-10))
     self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
 
