@@ -567,6 +567,13 @@
                 return
             end if
             if (.not. allocated(this%CP%eft_par_cache)) allocate(this%CP%eft_par_cache)
+            ! the EFT background and perturbation equations are flat:
+            if (.not. this%flat) then
+                call GlobalError('EFTCAMB does not support spatial curvature: set omk = 0 or EFTflag = 0', &
+                    error_unsupported_params)
+                if (present(error)) error = global_error_flag
+                return
+            end if
         end if
         if (this%CP%EFTCAMB%EFTflag /= 0) then
             ! 0) make some noise if nonlinear is on
