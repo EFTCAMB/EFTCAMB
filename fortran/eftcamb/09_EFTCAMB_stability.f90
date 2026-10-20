@@ -569,11 +569,18 @@
     call input_model%compute_tensor_factors(a, params_cache, eft_cache)
     ! Compute kinetic, gradient and mass terms:
     call input_model%compute_stability_factors(a, params_cache, eft_cache)
+    ! Higher derivatives of the EFT functions used by the mass eigenvalues, the positivity bounds and the
+    ! Minkowski limit: compute them first (models that do not provide them analytically would otherwise use
+    ! zeros), then recompute the Hubble derivatives so that Hdotdotdot includes EFTLambdadotdot and EFTOmegaPPPP.
+    if (input_EFTCAMB%EFT_positivity_bounds .or. input_EFTCAMB%EFT_minkowski_limit .or. &
+        (input_EFTCAMB%EFT_mass_stability .and. a > input_EFTCAMB%EFTCAMB_pert_turn_on)) then
+        call input_model%compute_additional_derivs(a, params_cache, eft_cache)
+        call input_model%compute_H_derivs(a, params_cache, eft_cache)
+    end if
     ! Compute positivity bounds:
     call input_model%compute_positivity_bounds(a, params_cache, eft_cache)
-
+    ! Compute the mass eigenvalues:
     if (a > input_EFTCAMB%EFTCAMB_pert_turn_on .and. input_EFTCAMB%EFT_mass_stability) then
-        call input_model%compute_additional_derivs(a, params_cache, eft_cache)
         call input_model%compute_mass_factors(a, params_cache, eft_cache)
     end if
 
