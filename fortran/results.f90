@@ -2189,14 +2189,22 @@
     this%dlntau_inv = 1/this%dlntau
     allocate(spline_data(nthermo), sdotmu(nthermo), dcs2(nthermo))
 
-    if (allocated(this%tb) .and. this%nthermo /= size(this%tb)) then
-        deallocate(this%ScaleFactor, this%cs2, this%ddotmu)
-        deallocate(this%adot, this%dadot)
-        deallocate(this%tb, this%xe, this%emmu, this%dotmu)
-        deallocate(this%demmu, this%dddotmu, this%ddddotmu)
-        deallocate(this%thermo_horner)
-        if (dowinlens .and. allocated(this%winlens)) deallocate(this%winlens, this%dwinlens)
+    ! EFTCAMB MOD START: nested if, .and. does not short-circuit (size() of an unallocated array)
+    if (allocated(this%tb)) then
+        if (this%nthermo /= size(this%tb)) then
+            deallocate(this%ScaleFactor, this%cs2, this%ddotmu)
+            deallocate(this%adot, this%dadot)
+            deallocate(this%tb, this%xe, this%emmu, this%dotmu)
+            deallocate(this%demmu, this%dddotmu, this%ddddotmu)
+            deallocate(this%thermo_horner)
+            if (dowinlens .and. allocated(this%winlens)) deallocate(this%winlens, this%dwinlens)
+        end if
     end if
+    ! original code:
+    ! if (allocated(this%tb) .and. this%nthermo /= size(this%tb)) then
+    !     ...
+    ! end if
+    ! EFTCAMB MOD END.
     if (.not. allocated(this%tb)) then
         allocate(this%ScaleFactor(nthermo), this%cs2(nthermo), this%ddotmu(nthermo))
         allocate(this%adot(nthermo), this%dadot(nthermo))
