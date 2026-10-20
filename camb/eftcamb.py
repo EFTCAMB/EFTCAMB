@@ -286,7 +286,11 @@ class EFTCAMB(F2003Class):
             "Tollerance on the dimensionless EFT functions to be considered GR. Default is 10^-8.",
         ),
         ("EFTCAMB_stability_time", c_double, "Minimum scale factor at which the code checks for stability of a theory"),
-        ("EFTCAMB_stability_threshold", c_double, "Threshold for the stability module to consider the model stable."),
+        (
+            "EFTCAMB_stability_threshold",
+            c_double,
+            "Relative numerical floor of the stability conditions (default 1e-8, 0 = strict).",
+        ),
         ("EFTCAMB_model_is_designer", c_bool, "Logical flag that establishes whether the model is designer or not."),
         (
             "EFTCAMB_effective_w0wa",
@@ -350,13 +354,19 @@ class EFTCAMB(F2003Class):
             )
         # finish initialization (this calls the allocation of models):
         temp = c_int(0)
+        config.global_error_flag = 0
         EFTCAMB_initialize(byref(camb_parameters), byref(temp))
-        if temp.value > 0:
+        if temp.value > 0 or config.global_error_flag:
+            message = config.global_error_message() if config.global_error_flag else ""
+            config.global_error_flag = 0
             # leave a consistent GR object (EFTflag=0, no model) rather than EFTflag != 0 without a model
             EFTCAMB_initialize_read_params(
                 create_string_buffer(b" "), c_int(1), create_string_buffer(b" "), c_int(1), c_int(0)
             )
             EFTCAMB_initialize(byref(camb_parameters), byref(c_int(0)))
+            config.global_error_flag = 0
+            if message:
+                raise CAMBValueError(f"EFTCAMB error during initialization: {message}")
             raise CAMBValueError("EFTCAMB error during initialization (see the printed output for the reason)")
 
         # the EFTCAMB object of camb_parameters is re-initialized in place, so handles to it stay valid.
