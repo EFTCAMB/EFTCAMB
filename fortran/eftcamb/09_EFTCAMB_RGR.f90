@@ -79,7 +79,8 @@
         write(*, '(a)') "***************************************************************"
         write(*, '(a,E13.4)') ' EFTCAMB Return to GR time:     ', RGR_time
         write(*, '(a,E13.4)') ' EFTCAMB Return to GR threshold:', RGR_threshold
-        if (RGR_time == initial_time) then
+        ! (the RGR scan samples 10**log10(a): equal up to roundoff)
+        if (abs(RGR_time - initial_time) <= 1.e-10_dl*initial_time) then
             write(*, '(a)') ' Warning, RGR time and turn on time coincide.'
             write(*, '(a)') ' The model might be far from GR at initial time.'
         end if
