@@ -60,6 +60,21 @@ def _string_value(buffer):
 _FORTRAN_D_REAL = re.compile(r"[+-]?(\d+\.?\d*|\.\d+)[dD][+-]?\d+")
 
 
+# ini keys of the EFTCAMB flags read at initialization, where they differ from the python field names
+_FLAG_INI_KEYS = {"EFTCAMB_feedback_level": "feedback_level", "EFTCAMB_pert_turn_on": "EFTCAMB_turn_on_time"}
+
+
+def _format_ini_value(value):
+    """
+    Ini string of a python bool, int, float or string value.
+    """
+    if isinstance(value, (bool, np.bool_)):
+        return "T" if value else "F"
+    if isinstance(value, float):
+        return repr(value)
+    return str(value)
+
+
 def _convert_ini_value(value):
     """
     Convert a string read from an ini file to bool ('T'/'F'), int or float when possible, otherwise keep the string.
@@ -315,6 +330,24 @@ class EFTCAMB(F2003Class):
         if raw:
             return params
         return {key: _convert_ini_value(value) for key, value in params.items()}
+
+    def current_parameters(self):
+        """
+        Parameters (as ini strings) that re-create this EFTCAMB object with :meth:`initialize_parameters`: the
+        parameters read at initialization, with the flags changed from python since then set to their current values.
+
+        :return: dictionary of parameter names and string values
+        """
+        if not self.EFTflag:
+            return {"EFTflag": "0"}
+        params = self.read_parameters(raw=True)
+        for field, _ in self.get_all_fields():
+            key = _FLAG_INI_KEYS.get(field, field)
+            if key in params:
+                value = getattr(self, field)
+                if _convert_ini_value(params[key]) != value:
+                    params[key] = _format_ini_value(value)
+        return params
 
     def feedback(self, print_params=True):
         """

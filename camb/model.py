@@ -447,6 +447,32 @@ class CAMBparams(F2003Class):
         self.InitPower.set_params()
         super().__init__(**kwargs)
 
+    # EFTCAMB MOD START: save and restore the EFTCAMB model (pickle, deepcopy, repr/eval)
+    # The python EFTCAMB class maps only the flags of the Fortran TEFTCAMB, not its allocated model: the state also
+    # stores the EFTCAMB parameters, and the model is re-initialized from them when the state is restored.
+    def __getstate__(self) -> dict:
+        state = super().__getstate__()
+        eft = self.EFTCAMB
+        if eft is not None and eft.EFTflag != 0:
+            state["EFTCAMB_parameters"] = eft.current_parameters()
+            # filled again by every calculation
+            state.pop("EFTCAMB_parameter_cache", None)
+        return state
+
+    def __setstate__(self, state):
+        state = dict(state)
+        eft_parameters = state.pop("EFTCAMB_parameters", None)
+        super().__setstate__(state)
+        if eft_parameters:
+            # flags as saved, including those not set from the parameters
+            eft_flags = self.EFTCAMB.__getstate__()
+            self.EFTCAMB.initialize_parameters(self, eft_parameters, print_header=False)
+            eft = self.EFTCAMB
+            for key, value in eft_flags.items():
+                setattr(eft, key, value)
+
+    # EFTCAMB MOD END.
+
     def validate(self):
         """
         Do some quick tests for sanity
