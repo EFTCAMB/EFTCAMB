@@ -634,6 +634,27 @@
                 return
             end if
 
+            ! 2) models that solve for their expansion rate today (e.g. Horndeski) fix H0: adopt the H0 of the
+            ! EFT background and redo the H0-dependent setup (the physical densities do not depend on H0)
+            if (abs(this%CP%eft_par_cache%h0_Mpc*c/1000._dl/this%CP%H0 - 1._dl) > 1.e-9_dl) then
+                if (this%CP%EFTCAMB%EFTCAMB_feedback_level > 0) write(*, '(a,f12.6,a,f12.6)') &
+                    ' EFTCAMB: using H0 =', this%CP%eft_par_cache%h0_Mpc*c/1000._dl, &
+                    ' of the EFT background instead of the input H0 =', this%CP%H0
+                this%CP%H0 = this%CP%eft_par_cache%h0_Mpc*c/1000._dl
+                h2 = (this%CP%H0/100)**2
+                this%grhocrit = 3*this%CP%H0**2/c**2*1000**2
+                this%Omega_de = 1 - (this%CP%omch2 + this%CP%ombh2 + this%CP%omnuh2)/h2 - this%CP%omk &
+                    - (this%grhornomass + this%grhog)/this%grhocrit
+                this%grhov = this%grhocrit*this%Omega_de
+                this%CP%eft_par_cache%omegac = this%CP%omch2/h2
+                this%CP%eft_par_cache%omegab = this%CP%ombh2/h2
+                this%CP%eft_par_cache%omegav = this%Omega_de
+                this%CP%eft_par_cache%omegan = this%CP%omnuh2/h2
+                this%CP%eft_par_cache%omegag = this%grhog/this%grhocrit
+                this%CP%eft_par_cache%omegar = this%grhornomass/this%grhocrit
+                this%CP%eft_par_cache%grhov = this%grhov
+            end if
+
             if (.not. this%CP%EFTCAMB%EFTCAMB_skip_RGR) then
 
                 ! 3) compute the return to GR of the theory:
