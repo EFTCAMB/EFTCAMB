@@ -337,12 +337,17 @@
     real(dl)        :: w0        !< the effective w0 value (output)
     real(dl)        :: wa        !< the effective wa value (output)
 
+    w0 = -1._dl
+    wa = 0._dl
+    if (self%EFTflag == 0 .or. .not. allocated(self%model)) return
     if (self%EFTCAMB_effective_w0wa) then
+        ! (w0, wa) provided by the model:
         w0 = self%model%w0
         wa = self%model%wa
-    else
-        w0 = -1._dl
-        wa = 0._dl
+    else if (self%model%background_w0wa_computed) then
+        ! CPL fit of the effective dark energy equation of state of the background:
+        w0 = self%model%w0_background
+        wa = self%model%wa_background
     end if
 
     end subroutine EFTCAMB_effective_w0wa_values

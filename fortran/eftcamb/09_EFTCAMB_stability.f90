@@ -39,6 +39,7 @@
     private
 
     public EFTCAMB_Stability_Check, EFTTestStability, EFTStability_cleanup, EFTStabilityComputation
+    public EFTCAMB_compute_effective_w0wa
 
     ! storage for some utility values that needs to be stored for the stability check.
     real(dl), save :: PastA1 = 0._dl
@@ -598,6 +599,56 @@
     end if
 
     end subroutine EFTStabilityComputation
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the effective CPL equation of state (w0, wa) of the model background, as used by
+    !! Halofit/HMcode. The effective dark energy is everything in the expansion history that is not matter,
+    !! radiation or neutrinos: rho_DE = 3 H^2 - rho_m, p_DE = -(2 dH/dtau + H^2) - p_m (a^2-weighted, conformal H),
+    !! which equals rho_Q, P_Q of compute_rhoQPQ when Omega = 0 and gives the wDE parametrization exactly for
+    !! designer models. w(a) = p_DE/rho_DE is fitted by least squares with w0 + wa (1-a) on 51 points uniform in
+    !! a in [0.5, 1] (z <= 1, where the non-linear corrections matter). Call after the background initialization.
+    subroutine EFTCAMB_compute_effective_w0wa(input_EFTCAMB, params_cache)
+
+    implicit none
+
+    type(TEFTCAMB), intent(inout) :: input_EFTCAMB                  !< the EFTCAMB object
+    type(TEFTCAMB_parameter_cache), intent(inout) :: params_cache   !< the EFTCAMB parameter cache
+
+    integer, parameter :: num_points = 51
+    real(dl), parameter :: a_min = 0.5_dl
+    type(TEFTCAMB) :: temp_EFTCAMB
+    type(TEFTCAMB_timestep_cache) :: eft_cache
+    real(dl) :: a, x, w, rho_de, p_de, s0, s1, s2, sw, sxw, det
+    integer  :: ind
+
+    if (input_EFTCAMB%EFTflag == 0 .or. .not. allocated(input_EFTCAMB%model)) return
+    input_EFTCAMB%model%background_w0wa_computed = .false.
+    ! only the background is needed: no optional stability derivatives.
+    temp_EFTCAMB%EFTflag = input_EFTCAMB%EFTflag
+    temp_EFTCAMB%EFTCAMB_pert_turn_on = input_EFTCAMB%EFTCAMB_pert_turn_on
+    temp_EFTCAMB%EFT_mass_stability = .false.
+    temp_EFTCAMB%EFT_positivity_bounds = .false.
+    temp_EFTCAMB%EFT_minkowski_limit = .false.
+    s0 = 0._dl; s1 = 0._dl; s2 = 0._dl; sw = 0._dl; sxw = 0._dl
+    do ind = 1, num_points
+        a = a_min + real(ind - 1, dl)*(1._dl - a_min)/real(num_points - 1, dl)
+        call eft_cache%initialize()
+        call EFTStabilityComputation(a, temp_EFTCAMB, input_EFTCAMB%model, params_cache, eft_cache)
+        rho_de = 3._dl*eft_cache%adotoa**2 - eft_cache%grhom_t
+        p_de = -(2._dl*eft_cache%Hdot + eft_cache%adotoa**2) - eft_cache%gpresm_t
+        if (.not. (rho_de > 0._dl)) cycle
+        w = p_de/rho_de
+        if (w /= w) cycle
+        x = 1._dl - a
+        s0 = s0 + 1._dl; s1 = s1 + x; s2 = s2 + x*x; sw = sw + w; sxw = sxw + x*w
+    end do
+    det = s0*s2 - s1*s1
+    if (s0 < 2._dl .or. det <= 0._dl) return
+    input_EFTCAMB%model%w0_background = (s2*sw - s1*sxw)/det
+    input_EFTCAMB%model%wa_background = (s0*sxw - s1*sw)/det
+    input_EFTCAMB%model%background_w0wa_computed = .true.
+
+    end subroutine EFTCAMB_compute_effective_w0wa
 
     ! ----------------------------------------------------------------------------------------
 

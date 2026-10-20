@@ -55,6 +55,12 @@
         logical                       :: effective_w0wa = .false.
         real(dl)                      :: w0 = -1._dl
         real(dl)                      :: wa = 0._dl
+        !< effective CPL (w0, wa) of the model background, computed by EFTCAMB_compute_effective_w0wa
+        !! (09_EFTCAMB_stability.f90) after the background initialization; used when the model does not
+        !! provide its own (w0, wa).
+        logical                       :: background_w0wa_computed = .false.
+        real(dl)                      :: w0_background = -1._dl
+        real(dl)                      :: wa_background = 0._dl
 
     contains
 
