@@ -5,6 +5,7 @@ This file contains the basic tools to interface EFTCAMB to camb.
 
 """
 
+import re
 import warnings
 from ctypes import POINTER, addressof, byref, c_bool, c_double, c_int, c_size_t, create_string_buffer
 
@@ -53,6 +54,28 @@ def _string_value(buffer):
     Python string held by a buffer filled by Fortran.
     """
     return buffer.raw.decode("utf-8", errors="replace").replace("\x00", " ").strip()
+
+
+# Fortran real literal with a d/D exponent (e.g. 1.d-4), which Python float() does not accept
+_FORTRAN_D_REAL = re.compile(r"[+-]?(\d+\.?\d*|\.\d+)[dD][+-]?\d+")
+
+
+def _convert_ini_value(value):
+    """
+    Convert a string read from an ini file to bool ('T'/'F'), int or float when possible, otherwise keep the string.
+    """
+    if value == "T":
+        return True
+    if value == "F":
+        return False
+    for fn in (int, float):
+        try:
+            return fn(value)
+        except ValueError:
+            pass
+    if _FORTRAN_D_REAL.fullmatch(value):
+        return float(value.replace("d", "e").replace("D", "e"))
+    return value
 
 
 EFTCAMB_initialize = camblib.__eftcamb_python_MOD_initialize_eftcamb_from_py
@@ -223,11 +246,13 @@ class EFTCAMB(F2003Class):
             _keys.append(_key)
             # append value:
             _val = EFTCAMB_params[_key]
-            if type(_val) == bool:
+            if isinstance(_val, (bool, np.bool_)):
                 if _val:
                     _values.append("T")
                 else:
                     _values.append("F")
+            elif isinstance(_val, bytes):
+                _values.append(_val.decode("utf-8"))
             else:
                 _values.append(str(_val))
         # format the strings:
@@ -261,10 +286,15 @@ class EFTCAMB(F2003Class):
         if print_header:
             eftcamb.feedback(print_params=True)
 
-    def read_parameters(self):
+    def read_parameters(self, raw=False):
         """
         Function that returns all the parameters that have been read to
         initialize this EFTCAMB object.
+
+        :param raw: if True, return the values as the strings that were read (as in an ini file), otherwise convert
+            them to bool ('T'/'F'), int or float (including Fortran 'd' exponents, e.g. '1.d-4') when possible.
+        :return: dictionary of parameter names and values, which can be passed back to
+            :meth:`initialize_parameters` (or written to an ini file when raw=True)
         """
         # get the total number of parameters
         _key, _value = _string_buffer(), _string_buffer()
@@ -274,35 +304,17 @@ class EFTCAMB(F2003Class):
         )
         num_params = num_params.value
         # get the parameters:
-        _keys, _values = [], []
+        params = {}
         for ind in range(num_params):
             index = c_int(ind + 1)
             _key, _value = _string_buffer(), _string_buffer()
             EFTCAMB_get_read_parameters(
                 byref(self), _key, _value, byref(index), byref(c_int(1)), _STRING_LENGTH_ARG, _STRING_LENGTH_ARG
             )
-            _keys.append(_string_value(_key))
-            _values.append(_value.raw)
-
-        # parse the values:
-        def boolify(s):
-            if s == b"T":
-                return True
-            if s == b"F":
-                return False
-            raise ValueError("")
-
-        def autoconvert(s):
-            for fn in (boolify, int, float):
-                try:
-                    return fn(s)
-                except ValueError:
-                    pass
-            return s
-
-        for ind in range(num_params):
-            _values[ind] = autoconvert(_values[ind].strip())
-        return {_k: _v for _k, _v in zip(_keys, _values)}
+            params[_string_value(_key)] = _string_value(_value)
+        if raw:
+            return params
+        return {key: _convert_ini_value(value) for key, value in params.items()}
 
     def feedback(self, print_params=True):
         """
