@@ -574,6 +574,13 @@
                 if (present(error)) error = global_error_flag
                 return
             end if
+            ! the evolved metric h path is not validated (inconsistent with the 00 constraint):
+            if (this%CP%EFTCAMB%EFTCAMB_evolve_metric_h) then
+                call GlobalError('EFTCAMB_evolve_metric_h = T is not supported (results not validated)', &
+                    error_unsupported_params)
+                if (present(error)) error = global_error_flag
+                return
+            end if
         end if
         if (this%CP%EFTCAMB%EFTflag /= 0) then
             ! 0) make some noise if nonlinear is on
