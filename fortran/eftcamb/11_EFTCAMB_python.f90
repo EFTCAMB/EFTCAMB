@@ -466,6 +466,10 @@
     if (.not. EFTCAMB_python_results_ready(this, 'get_evolution', require_eft=.false.)) return
     ! get initial time and call Thermo initialization if needed:
     taustart = min(minval(eta), GetTauStart(maxval(q)))
+    ! the thermal history must start before the EFT perturbations turn on:
+    if (this%CP%EFTCAMB%EFTflag /= 0) then
+        taustart = min(taustart, this%DeltaTime(0._dl, this%CP%EFTCAMB%EFTCAMB_pert_turn_on))
+    end if
     if (.not. this%ThermoData%HasThermoData .or. taustart < this%ThermoData%tauminn) call this%ThermoData%Init(this, &
         taustart)
     ! GetNumEqns sets up the scalar hierarchy only when scalars are wanted (not after a transfer-only run):

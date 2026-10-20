@@ -870,6 +870,9 @@
     type(CAMBdata) :: ActiveState
     real(dl) taumin, maxq, initAccuracyBoost
     integer itf
+    ! EFTCAMB MOD START: turn-on time of the EFT perturbations
+    real(dl) tau_eft_on
+    ! EFTCAMB MOD END.
 
     call SetActiveState(ActiveState)
 
@@ -910,6 +913,13 @@
     end if
 
     taumin = GetTauStart(maxq)
+    ! EFTCAMB MOD START: the thermal history must start before the EFT perturbations turn on
+    ! (tauminn = 0.95 taumin); taumin only changes for turn-on times earlier than that.
+    if (CP%EFTCAMB%EFTflag /= 0) then
+        tau_eft_on = State%DeltaTime(0._dl, CP%EFTCAMB%EFTCAMB_pert_turn_on)
+        if (tau_eft_on < 0.95_dl*taumin) taumin = tau_eft_on
+    end if
+    ! EFTCAMB MOD END.
 
     !     Initialize baryon temperature and ionization fractions vs. time.
     !     This subroutine also fixes the timesteps where the sources are
