@@ -99,12 +99,12 @@
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine to initialize EFTCAMB from python
-    subroutine initialize_EFTCAMB_from_py(State, eft_error)
+    subroutine initialize_EFTCAMB_from_py(P, eft_error)
 
     implicit none
 
-    type(CAMBdata) :: State
-    integer        :: eft_error
+    type(CAMBparams) :: P          !< the parameters (python passes a CAMBparams)
+    integer          :: eft_error
     logical        :: reset_in_place
     type(TEFTCAMB) :: default_EFTCAMB
     type(TEFTCAMB_parameter_cache) :: default_eft_par_cache
@@ -112,43 +112,45 @@
     ! allocate, or reset to the default values in place. Keeping the objects at the same address
     ! keeps valid the python handles to them (e.g. eftcamb = pars.EFTCAMB) across initializations.
     reset_in_place = .false.
-    if (allocated(State%CP%EFTCAMB)) then
-        select type (eft => State%CP%EFTCAMB)
+    if (allocated(P%EFTCAMB)) then
+        select type (eft => P%EFTCAMB)
         type is (TEFTCAMB)
             eft = default_EFTCAMB
             reset_in_place = .true.
         end select
     end if
     if (.not. reset_in_place) then
-        if (allocated(State%CP%EFTCAMB)) deallocate(State%CP%EFTCAMB)
-        allocate(State%CP%EFTCAMB)
+        if (allocated(P%EFTCAMB)) deallocate(P%EFTCAMB)
+        allocate(P%EFTCAMB)
     end if
     reset_in_place = .false.
-    if (allocated(State%CP%eft_par_cache)) then
-        select type (cache => State%CP%eft_par_cache)
+    if (allocated(P%eft_par_cache)) then
+        select type (cache => P%eft_par_cache)
         type is (TEFTCAMB_parameter_cache)
             cache = default_eft_par_cache
             reset_in_place = .true.
         end select
     end if
     if (.not. reset_in_place) then
-        if (allocated(State%CP%eft_par_cache)) deallocate(State%CP%eft_par_cache)
-        allocate(State%CP%eft_par_cache)
+        if (allocated(P%eft_par_cache)) deallocate(P%eft_par_cache)
+        allocate(P%eft_par_cache)
     end if
     ! read the options in:
-    call State%CP%EFTCAMB%EFTCAMB_init_from_file(Ini)
+    call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
     ! call the eftcamb allocation:
-    if (State%CP%EFTCAMB%EFTflag /= 0) then
+    if (P%EFTCAMB%EFTflag /= 0) then
         ! initialize the model from file:
-        call State%CP%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
+        call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
         ! on failure go back to a consistent GR state (no model), the caller raises the error:
         if (eft_error > 0) then
-            State%CP%EFTCAMB%EFTflag = 0
-            if (allocated(State%CP%EFTCAMB%model)) deallocate(State%CP%EFTCAMB%model)
+            P%EFTCAMB%EFTflag = 0
+            if (allocated(P%EFTCAMB%model)) deallocate(P%EFTCAMB%model)
+            call GlobalError('EFTCAMB: model initialization failed (invalid or unsupported model parameters, '// &
+                'see the EFTCAMB output)', error_unsupported_params)
         end if
     end if
     ! store the parameters that have been read in the EFTCAMB object:
-    call State%CP%EFTCAMB%EFTCAMB_store_read_parameters(Ini)
+    call P%EFTCAMB%EFTCAMB_store_read_parameters(Ini)
 
     end subroutine initialize_EFTCAMB_from_py
 
@@ -290,21 +292,26 @@
 
     ! ---------------------------------------------------------------------------------------------
     ! C-interoperable string getters/setters. The routines above take character(len=200) dummies and
-    ! rely on the hidden length argument that ctypes does not pass; these take the buffer length
-    ! explicitly. Output buffers are filled with the (truncated) string and padded with blanks.
-    ! The first argument is the address of the TEFTCAMB object (ctypes byref).
+    ! rely on the hidden length argument; these take every buffer length explicitly as a trailing
+    ! size_t passed by value. Output buffers are filled with the (truncated) string, blank padded.
+    ! The first argument is the address of the TEFTCAMB object (ctypes byref). C signatures:
+    !   eftcamb_get_read_parameters_c(eft*, char* key, char* value, int* index, int* mode, size_t nkey, size_t nvalue)
+    !   eftcamb_get_param_names_c(eft*, int* i, char* name, size_t n)
+    !   eftcamb_get_param_labels_c(eft*, int* i, char* name, size_t n)
+    !   eftcamb_get_model_name_c(eft*, char* name, size_t n)
+    !   eftcamb_set_model_name_c(eft*, char* name, size_t n)
 
     !> Helper: copy a Fortran string into a C character buffer of length n, blank padded.
     subroutine EFTCAMB_python_to_c_buffer(string, buffer, n)
 
-    use iso_c_binding, only: c_char, c_int
+    use iso_c_binding, only: c_char, c_size_t
 
     implicit none
 
     character(len=*), intent(in)          :: string
-    integer(c_int), intent(in)            :: n
+    integer(c_size_t), intent(in)         :: n
     character(kind=c_char), intent(inout) :: buffer(n)
-    integer :: i
+    integer(c_size_t) :: i
 
     do i = 1, n
         if (i <= len(string)) then
@@ -317,7 +324,7 @@
     end subroutine EFTCAMB_python_to_c_buffer
 
     !> Get the key and value of a parameter read at initialization (mode=1), or their number (mode=0, in index).
-    subroutine EFTCAMB_get_read_parameters_c(eftcamb_ptr, key, nkey, value, nvalue, index, mode) bind(c, &
+    subroutine EFTCAMB_get_read_parameters_c(eftcamb_ptr, key, value, index, mode, nkey, nvalue) bind(c, &
         name='eftcamb_get_read_parameters_c')
 
     use iso_c_binding
@@ -325,9 +332,10 @@
     implicit none
 
     type(c_ptr), value                    :: eftcamb_ptr
-    integer(c_int), value                 :: nkey, nvalue, mode
+    integer(c_size_t), value              :: nkey, nvalue
     character(kind=c_char), intent(inout) :: key(nkey), value(nvalue)
     integer(c_int), intent(inout)         :: index
+    integer(c_int), intent(in)            :: mode
     type(TEFTCAMB), pointer :: EFTCAMB
     character(len=200) :: f_key, f_value
     integer :: f_index, f_mode
@@ -346,80 +354,82 @@
     end subroutine EFTCAMB_get_read_parameters_c
 
     !> Get the name of the i-th model parameter.
-    subroutine EFTCAMB_get_param_name_c(eftcamb_ptr, i, name, nname) bind(c, name='eftcamb_get_param_name_c')
+    subroutine EFTCAMB_get_param_names_c(eftcamb_ptr, i, name, n) bind(c, name='eftcamb_get_param_names_c')
 
     use iso_c_binding
 
     implicit none
 
     type(c_ptr), value                    :: eftcamb_ptr
-    integer(c_int), value                 :: i, nname
-    character(kind=c_char), intent(inout) :: name(nname)
+    integer(c_int), intent(in)            :: i
+    integer(c_size_t), value              :: n
+    character(kind=c_char), intent(inout) :: name(n)
     type(TEFTCAMB), pointer :: EFTCAMB
     character(len=200) :: f_name
 
     call c_f_pointer(eftcamb_ptr, EFTCAMB)
     call EFTCAMB_get_param_names(EFTCAMB, int(i), f_name)
-    call EFTCAMB_python_to_c_buffer(f_name, name, nname)
+    call EFTCAMB_python_to_c_buffer(f_name, name, n)
 
-    end subroutine EFTCAMB_get_param_name_c
+    end subroutine EFTCAMB_get_param_names_c
 
     !> Get the latex label of the i-th model parameter.
-    subroutine EFTCAMB_get_param_label_c(eftcamb_ptr, i, name, nname) bind(c, name='eftcamb_get_param_label_c')
+    subroutine EFTCAMB_get_param_labels_c(eftcamb_ptr, i, name, n) bind(c, name='eftcamb_get_param_labels_c')
 
     use iso_c_binding
 
     implicit none
 
     type(c_ptr), value                    :: eftcamb_ptr
-    integer(c_int), value                 :: i, nname
-    character(kind=c_char), intent(inout) :: name(nname)
+    integer(c_int), intent(in)            :: i
+    integer(c_size_t), value              :: n
+    character(kind=c_char), intent(inout) :: name(n)
     type(TEFTCAMB), pointer :: EFTCAMB
     character(len=200) :: f_name
 
     call c_f_pointer(eftcamb_ptr, EFTCAMB)
     call EFTCAMB_get_param_labels(EFTCAMB, int(i), f_name)
-    call EFTCAMB_python_to_c_buffer(f_name, name, nname)
+    call EFTCAMB_python_to_c_buffer(f_name, name, n)
 
-    end subroutine EFTCAMB_get_param_label_c
+    end subroutine EFTCAMB_get_param_labels_c
 
     !> Get the model name (empty without a model).
-    subroutine EFTCAMB_get_model_name_c(eftcamb_ptr, name, nname) bind(c, name='eftcamb_get_model_name_c')
+    subroutine EFTCAMB_get_model_name_c(eftcamb_ptr, name, n) bind(c, name='eftcamb_get_model_name_c')
 
     use iso_c_binding
 
     implicit none
 
     type(c_ptr), value                    :: eftcamb_ptr
-    integer(c_int), value                 :: nname
-    character(kind=c_char), intent(inout) :: name(nname)
+    integer(c_size_t), value              :: n
+    character(kind=c_char), intent(inout) :: name(n)
     type(TEFTCAMB), pointer :: EFTCAMB
 
     call c_f_pointer(eftcamb_ptr, EFTCAMB)
     if (allocated(EFTCAMB%model)) then
-        call EFTCAMB_python_to_c_buffer(EFTCAMB%model%name, name, nname)
+        call EFTCAMB_python_to_c_buffer(EFTCAMB%model%name, name, n)
     else
-        call EFTCAMB_python_to_c_buffer('', name, nname)
+        call EFTCAMB_python_to_c_buffer('', name, n)
     end if
 
     end subroutine EFTCAMB_get_model_name_c
 
-    !> Set the model name from the first nname characters of name (no-op without a model).
-    subroutine EFTCAMB_set_model_name_c(eftcamb_ptr, name, nname) bind(c, name='eftcamb_set_model_name_c')
+    !> Set the model name from the first n characters of name (no-op without a model).
+    subroutine EFTCAMB_set_model_name_c(eftcamb_ptr, name, n) bind(c, name='eftcamb_set_model_name_c')
 
     use iso_c_binding
 
     implicit none
 
     type(c_ptr), value                 :: eftcamb_ptr
-    integer(c_int), value              :: nname
-    character(kind=c_char), intent(in) :: name(nname)
+    integer(c_size_t), value           :: n
+    character(kind=c_char), intent(in) :: name(n)
     type(TEFTCAMB), pointer :: EFTCAMB
-    character(len=max(nname, 0)) :: f_name
+    character(len=max(int(n), 0)) :: f_name
     integer :: i
 
     call c_f_pointer(eftcamb_ptr, EFTCAMB)
-    do i = 1, nname
+    do i = 1, int(n)
         f_name(i:i) = name(i)
     end do
     if (allocated(EFTCAMB%model)) EFTCAMB%model%name = trim(adjustl(f_name))
