@@ -1136,6 +1136,8 @@
         num_params_model = 6
     case(7, 8)
         num_params_model = 0
+    case default
+        num_params_model = 0
     end select
     if (allocated(self%model_params)) deallocate(self%model_params)
     if (num_params_model > 0) then
@@ -1195,6 +1197,8 @@
     case(6)
         num_params_model = 6
     case(7, 8)
+        num_params_model = 0
+    case default
         num_params_model = 0
     end select
     if (allocated(self%model_params)) deallocate(self%model_params)
@@ -1332,6 +1336,8 @@
         num_params_model = 6
     case(7, 8)
         num_params_model = 0
+    case default
+        num_params_model = 0
     end select
     write(*, *)
     if (num_params_model > 0) then
@@ -1463,6 +1469,8 @@
         num_params_model = 6
     case(7, 8)
         num_params_model = 0
+    case default
+        num_params_model = 0
     end select
     if (num_params_model > 0 .and. i <= num_params_temp + num_params_model) then
         name = trim('Horndeski_param') // integer_to_string(i - num_params_temp)
@@ -1592,6 +1600,8 @@
         num_params_model = 6
     case(7, 8)
         num_params_model = 0
+    case default
+        num_params_model = 0
     end select
     if (num_params_model > 0 .and. i <= num_params_temp + num_params_model) then
         latexname = trim('Horndeski_param') // integer_to_string(i - num_params_temp)
@@ -1720,6 +1730,8 @@
     case(6)
         num_params_model = 6
     case(7, 8)
+        num_params_model = 0
+    case default
         num_params_model = 0
     end select
     if (num_params_model > 0 .and. i <= num_params_temp + num_params_model) then
@@ -2378,7 +2390,7 @@
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
     integer, intent(in)                        :: feedback_level   !< whether the calculation ended correctly or not
 
-    integer :: num_eq = 5   !<  Number of equations
+    integer :: num_eq   !<  Number of equations
 
     ! y = tau, phi, phi', (H)
     real(dl), allocatable :: y(:), ydot(:)
@@ -2417,10 +2429,15 @@
     integer :: ind
 
     ! error message happened during integration
-    character(len=1024) :: integration_error_message = ''
+    character(len=1024) :: integration_error_message
+    logical :: only_solve_temp
 
+    ! initialise the locals here: initialisation in a declaration would imply the save attribute.
+    integration_error_message = ''
+    num_eq = 5
     ! digest the input:
-    if (.not. present(only_solve)) only_solve = .false.
+    only_solve_temp = .false.
+    if (present(only_solve)) only_solve_temp = only_solve
 
     if (self%evolve_hubble .or. self%designerV) then
         num_eq = 6
@@ -2909,7 +2926,7 @@
     ! if ( a>self%a_designer_output_min ) write(*,*) 1._dl/a-1._dl, phi, phi_prime/adotoa, phi_prime_prime, V, pres_de/rho_de
 
     ! stop here if no further output are required
-    if (only_solve) return
+    if (only_solve_temp) return
 
     ! 4) compute additional background quantities
     aH_prime = a2*H*H + a*H_prime
