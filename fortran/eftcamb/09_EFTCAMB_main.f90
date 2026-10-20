@@ -30,6 +30,7 @@
     use IniObjects
     use MpiUtils
     use classes
+    use config, only: GlobalError, global_error_flag, error_unsupported_params
     use EFT_def
     use EFTCAMB_abstract_model
     use EFTCAMB_abstract_model_full
@@ -235,6 +236,11 @@
 
     ! ) initial condition types
     self%EFT_IC_type = Ini%Read_Int('EFT_IC_type', 1)
+    if (self%EFT_IC_type < 1 .or. self%EFT_IC_type > 3) then
+        call GlobalError('EFTCAMB error: invalid EFT_IC_type, must be 1 (GR), 2 (MG-Omega) or 3 (MG-Omega+Gamma)', &
+            error_unsupported_params)
+        return
+    end if
 
     ! EFTCAMB working flags:
     self%EFTCAMB_feedback_level = Ini%Read_Int    ('feedback_level', 1)
@@ -247,15 +253,15 @@
     ! flags currently only supported by the Horndeski module
     self%EFTCAMB_use_background = Ini%Read_Logical('EFTCAMB_use_background', .false.)
     if (self%EFTCAMB_use_background .and. (self%EFTflag /= 5)) then
-        write(*, *) 'EFTCAMB Error: EFTCAMB_use_background=True currently only supported by the Horndeski module ' // &
-            '(EFTflag=5)'
-        call MpiStop("EFTCAMB error")
+        call GlobalError('EFTCAMB error: EFTCAMB_use_background=True currently only supported by the Horndeski ' // &
+            'module (EFTflag=5)', error_unsupported_params)
+        return
     end if
     self%EFTCAMB_evolve_delta_phi = Ini%Read_Logical('EFTCAMB_evolve_delta_phi', .false.)
     if (self%EFTCAMB_evolve_delta_phi .and. (self%EFTflag /= 5)) then
-        write(*, *) "EFTCAMB Error: EFTCAMB_evolve_delta_phi=True currently only supported by the Horndeski " // &
-            "module (EFTflag = 5)."
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: EFTCAMB_evolve_delta_phi=True currently only supported by the Horndeski ' // &
+            'module (EFTflag=5)', error_unsupported_params)
+        return
     end if
     self%EFTCAMB_evolve_metric_h = Ini%Read_Logical('EFTCAMB_evolve_metric_h', .false.)
     self%EFTCAMB_skip_stability = Ini%Read_Logical('EFTCAMB_skip_stability', .false.)
@@ -313,16 +319,21 @@
         return
     end if
     ! allocate model:
+    ! (a step can also fail with a global error: the model is then not usable either)
     call self%EFTCAMB_allocate_model(eft_error)
+    if (global_error_flag /= 0) eft_error = max(eft_error, 1)
     if (eft_error > 0) return
     ! read the parameters defining the model from file:
     call self%EFTCAMB_read_model_selection(Ini, eft_error)
+    if (global_error_flag /= 0) eft_error = max(eft_error, 1)
     if (eft_error > 0) return
     ! allocate model functions and parameters:
     call self%EFTCAMB_allocate_model_functions(Ini, eft_error)
+    if (global_error_flag /= 0) eft_error = max(eft_error, 1)
     if (eft_error > 0) return
     ! read model parameters from file:
     call self%EFTCAMB_read_model_parameters(Ini, eft_error)
+    if (global_error_flag /= 0) eft_error = max(eft_error, 1)
     if (eft_error > 0) return
     ! compute model number of parameters:
     call self%model%compute_param_number()
@@ -422,7 +433,7 @@
     ! check the allocation of the model:
     if (.not. allocated(self%model)) then
         write(*, *) 'EFTCAMB WARNING: trying to call EFTCAMB model feedback without allocating the model'
-        call MpiStop('EFTCAMB error')
+        return
     end if
 
     ! check feedback level:
@@ -509,6 +520,8 @@
                 write(*, '(a)')    'Please select an appropriate model:'
                 write(*, '(a)')    'PureEFTmodel=1  standard Pure EFT'
             end if
+            call GlobalError('EFTCAMB error: no model corresponding to the EFTCAMB model selection flags', &
+                error_unsupported_params)
             eft_error = 1
             return
         end select
@@ -538,6 +551,8 @@
                 write(*, '(a)')    'AltParEFTmodel=3  Lambda-Omega parametrization with alpha functions'
                 write(*, '(a)')    'AltParEFTmodel=4  Shift Symmetric Gravity with alpha_B'
             end if
+            call GlobalError('EFTCAMB error: no model corresponding to the EFTCAMB model selection flags', &
+                error_unsupported_params)
             eft_error = 1
             return
         end select
@@ -563,6 +578,8 @@
                 write(*, '(a)')    'DesignerEFTmodel=2  designer minimally coupled quintessence'
                 write(*, '(a)')    'DesignerEFTmodel=3  designer full 3+1 theory'
             end if
+            call GlobalError('EFTCAMB error: no model corresponding to the EFTCAMB model selection flags', &
+                error_unsupported_params)
             eft_error = 1
             return
         end select
@@ -604,6 +621,8 @@
                 write(*, '(a)')    'FullMappingEFTmodel=6  Scaling Cubic Galileon'
                 write(*, '(a)')    'FullMappingEFTmodel=7  Extended Galileon'
             end if
+            call GlobalError('EFTCAMB error: no model corresponding to the EFTCAMB model selection flags', &
+                error_unsupported_params)
             eft_error = 1
             return
         end select
@@ -623,6 +642,8 @@
             write(*, '(a)') 'EFTFlag=4  full mapping EFT'
             write(*, '(a)') 'EFTFlag=5  Horndeski'
         end if
+        call GlobalError('EFTCAMB error: no model corresponding to the EFTCAMB model selection flags', &
+            error_unsupported_params)
         eft_error = 1
         return
 
