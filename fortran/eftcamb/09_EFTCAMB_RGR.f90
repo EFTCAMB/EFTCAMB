@@ -25,6 +25,7 @@
     module EFTCAMB_ReturnToGR
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use EFT_def
     use EFTCAMB_cache
     use EFTCAMB_abstract_model
@@ -142,6 +143,13 @@
 
     ! initialize:
     RGR_time = initial_time
+
+    ! validate the turn-on time (it can be set directly from python): for a non-positive or NaN time the
+    ! logarithmic scan is NaN and no EFT perturbations would ever be switched on; a time > 1 does the same.
+    if (.not. (initial_time > 0._dl .and. initial_time <= 1._dl)) then
+        call GlobalError('EFTCAMB: EFTCAMB_turn_on_time must be in (0,1]', error_unsupported_params)
+        return
+    end if
 
     ! initial and final scale factors:
     a_initial = initial_time

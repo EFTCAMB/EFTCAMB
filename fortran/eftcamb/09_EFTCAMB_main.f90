@@ -301,6 +301,13 @@
     integer         :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     eft_error = 0
+    ! validate the perturbation turn-on time: a non-positive, NaN or > 1 value would silently run
+    ! GR perturbations on the EFT background.
+    if (.not. (self%EFTCAMB_pert_turn_on > 0._dl .and. self%EFTCAMB_pert_turn_on <= 1._dl)) then
+        write(*, '(a,E13.4)') 'EFTCAMB error: EFTCAMB_turn_on_time must be in (0,1]. Value: ', self%EFTCAMB_pert_turn_on
+        eft_error = 1
+        return
+    end if
     ! allocate model:
     call self%EFTCAMB_allocate_model(eft_error)
     if (eft_error > 0) return
