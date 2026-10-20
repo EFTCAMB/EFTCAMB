@@ -478,8 +478,8 @@
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that solves the tracker Friedmann equation of the model (arXiv:1912.07586 eq. 16)
     !! \f$ E^2 = \Omega_{\rm tot}(a) + \Omega_{\phi,0} E^{-S} \f$, with \f$ E = H/H_0 \f$, and returns adotoa and
-    !! the first three derivatives of u = ln E with respect to N = ln a. \f$ \Omega_{\rm tot} \f$ contains matter, radiation and
-    !! massive neutrinos, computed here.
+    !! the first three derivatives of u = ln E with respect to N = ln a. \f$ \Omega_{\rm tot} \f$ contains matter,
+    !! radiation and massive neutrinos, computed here.
     subroutine ExtGalTracker(self, a, eft_par_cache, adotoa, up, upp, uppp)
 
     implicit none
