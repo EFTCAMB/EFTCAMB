@@ -244,7 +244,7 @@
 
     ! Initial values of y2 used in the bisection algorithm
 
-    self%SCG_y20 = 4.74*1.d-9
+    self%SCG_y20 = 4.74e-9_dl
     y2_i = self%SCG_y20
     y2_il = 0._dl
     y2_ir = self%SCG_y20 + (1._dl/2._dl)*self%SCG_y20

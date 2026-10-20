@@ -571,7 +571,7 @@
     EFTCAMBExtendedGalileonAdditionalModelStability = .true.
 
     ! mass condition
-    if ((self%S + 0.02)*self%ExtendedGalileon_q < .5) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
+    if ((self%S + 0.02_dl)*self%ExtendedGalileon_q < 0.5_dl) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
 
     ! Strong Coupling
     if ((self%ExtendedGalileon_q*self%S - 1.)/(2.*self%ExtendedGalileon_q*(1. + self%S/2.)) > &

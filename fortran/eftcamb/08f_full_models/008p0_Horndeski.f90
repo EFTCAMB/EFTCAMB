@@ -2781,7 +2781,7 @@
                 a**4*H**2*self%wDE%second_derivative(a)
         else
             ! quickly damps w_DE to -0.99 in the past
-            wdot_DE = self%hubble_friction*adotoa*(0.99 + w_DE)
+            wdot_DE = self%hubble_friction*adotoa*(0.99_dl + w_DE)
             wdotdot_DE = self%hubble_friction*((adotoa**2 + a*H_prime)*(1._dl + w_DE) + adotoa*wdot_DE)
         end if
         rhodot_de = -3._dl*adotoa*(rho_de + pres_de)
@@ -3344,7 +3344,7 @@
         self%phidot_ini = a*G2p/5._dl/H
     case(3)
         ! tracking solution H dphi/dt =  (-1 + sqrt(1 - 12/5*(xi*V_phi)))/(6 xi)
-        if (abs(self%model_params(1)*G2p) > 0.01) then
+        if (abs(self%model_params(1)*G2p) > 0.01_dl) then
             self%phidot_ini = a*(-1._dl + sqrt(1._dl + 2.4_dl*self%model_params(1)*G2p))/(6._dl*self%model_params(1)*H)
         else
             self%phidot_ini = a*G2p/5._dl/H
