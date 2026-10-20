@@ -1629,8 +1629,10 @@
             H = H/a
             Ht = Ht/a/a - H**2
 
-            ! custom ghost stability for this beyond GLPV model
-            if (self%Designer3p1GhostStability) then
+            ! custom ghost stability for this beyond GLPV model. Azz is proportional to b3 = rho2/sigma1: for rho2 = 0
+            ! (GLPV/Horndeski limit, e.g. the GR point) it vanishes identically and there is no extra kinetic term to
+            ! test (the scalar is tested by the general ghost condition), so the degenerate case is not a ghost.
+            if (self%Designer3p1GhostStability .and. b3 /= 0._dl) then
                 Azz = 6._dl*(1._dl + aL)*b3*k2/(6._dl*H**2*(1._dl + aL) + aL*b3*k2)
                 if (Azz <= 0._dl) then
                     EFTCAMBDesigner3p1AdditionalModelStability = .false.
