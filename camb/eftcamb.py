@@ -147,6 +147,18 @@ def is_eftcamb_parameter(key):
     return key in _EFTCAMB_KEYS or key.startswith(_EFTCAMB_KEY_PREFIXES)
 
 
+def _check_eft_results(camb_results, name):
+    """
+    Raise CAMBValueError if the results do not hold an EFTCAMB model (the EFT outputs need one).
+    """
+    eft = camb_results.Params.EFTCAMB
+    if eft is None or not eft.EFTflag:
+        raise CAMBValueError(
+            f"{name}: the results have no EFTCAMB model (EFTflag = 0 in results.Params; "
+            "results with neither Cls nor transfer functions requested are not set up)"
+        )
+
+
 EFTCAMB_initialize = camblib.__eftcamb_python_MOD_initialize_eftcamb_from_py
 # bind(c) routine: its name is fixed by the binding label for every compiler
 EFTCAMB_initialize_read_params = camblib.initialize_EFTCAMB_from_py_read_params_
@@ -340,6 +352,11 @@ class EFTCAMB(F2003Class):
         temp = c_int(0)
         EFTCAMB_initialize(byref(camb_parameters), byref(temp))
         if temp.value > 0:
+            # leave a consistent GR object (EFTflag=0, no model) rather than EFTflag != 0 without a model
+            EFTCAMB_initialize_read_params(
+                create_string_buffer(b" "), c_int(1), create_string_buffer(b" "), c_int(1), c_int(0)
+            )
+            EFTCAMB_initialize(byref(camb_parameters), byref(c_int(0)))
             raise CAMBValueError("EFTCAMB error during initialization (see the printed output for the reason)")
 
         # the EFTCAMB object of camb_parameters is re-initialized in place, so handles to it stay valid.
@@ -417,6 +434,8 @@ class EFTCAMB(F2003Class):
         """
         Returns the number of additional parameters of the EFTCAMB model.
         """
+        if not self.EFTflag:
+            return 0
         temp = c_int(0)
         EFTCAMB_get_num_params(byref(self), byref(temp))
         return temp.value
@@ -512,6 +531,7 @@ class EFTCAMB(F2003Class):
         :return: list of field names, and structured array of timestep cache values with shape (len(q), len(eta)),
             in the order of the input wavenumbers and times
         """
+        _check_eft_results(camb_results, "get_evolution")
         # digest the input scale array:
         if np.isscalar(q):
             k = np.array([q], dtype=np.float64)
@@ -549,6 +569,7 @@ class EFTCAMB(F2003Class):
         :param camb_results: a :class:`~.results.CAMBdata`
         :param a: array of requested scale factors to output
         """
+        _check_eft_results(camb_results, "get_eft_functions")
         # convert scale factor to redshift:
         if np.isscalar(a):
             z = 1.0 / np.array([a], dtype=np.float64) - 1.0
