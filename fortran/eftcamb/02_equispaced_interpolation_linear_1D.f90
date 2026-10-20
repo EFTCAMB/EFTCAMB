@@ -27,6 +27,7 @@
     module equispaced_linear_interpolation_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use EFTCAMB_mixed_algorithms
     use MpiUtils
     use EFT_splines
@@ -159,8 +160,9 @@
     integer :: i
 
     if (x_initial > x_final) then
-        write(*, *) "x_initial must be smaller than x_final"
-        call MpiStop('EFTCAMB error')
+        ! (the initialization is completed, so the object can be used safely until the error is handled)
+        call GlobalError('EFTCAMB error: x_initial must be smaller than x_final in an interpolation table', &
+            error_unsupported_params)
     end if
 
     ! initialize the null value:
