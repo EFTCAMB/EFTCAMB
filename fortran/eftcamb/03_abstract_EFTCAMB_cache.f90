@@ -79,7 +79,7 @@
         real(dl) :: omegag         !< the value of \f$ \Omega_{ \gamma }^0 \f$.
         real(dl) :: omegar         !< the value of \f$ \Omega_{ \nu }^0 \f$ of massless neutrinos.
         ! 2) Hubble constant:
-        real(dl) :: h0             !< reduced Hubble constant \f$ H_0/100 \f$.
+        real(dl) :: h0             !< the Hubble constant \f$ H_0 \f$ in km/s/Mpc.
         real(dl) :: h0_Mpc         !< the Hubble constant in MegaParsec \f$ 10^3 \cdot H_0/c \f$.
         ! 3) densities:
         real(dl) :: grhog          !< the value of \f$ 8 \pi G_{N} \rho_{\gamma}(t_0) \f$.

@@ -2026,6 +2026,12 @@
     call self%Vscf%initialize (self%interpolation_num_points, self%x_initial, self%x_final)
     call self%dVscf%initialize (self%interpolation_num_points, self%x_initial, self%x_final)
     call self%ddVscf%initialize (self%interpolation_num_points, self%x_initial, self%x_final)
+    ! the potential tables are filled only for the designer potential: without it V = 0 (V_scf output)
+    if (.not. self%designerV) then
+        self%Vscf%y = 0._dl
+        self%dVscf%y = 0._dl
+        self%ddVscf%y = 0._dl
+    end if
 
     ! find model specific ICs:
     call self%find_initial_conditions(params_cache, feedback_level, success)
@@ -2046,7 +2052,7 @@
     params_cache%maxfrac_hdsk = self%maxfrac_hdsk
     params_cache%z_maxfrac_hdsk = self%z_maxfrac_hdsk
     params_cache%h0_Mpc = self%H%y(self%H%num_points)
-    params_cache%h0 = params_cache%h0_Mpc/3.33564d-6
+    params_cache%h0 = params_cache%h0_Mpc*c/1000._dl
     if (DebugEFTCAMB .or. feedback_level > 2) then
         call params_cache%print()
     end if
