@@ -2140,6 +2140,11 @@
     nullify(EV%OutputTransfer) ! Should not be needed, but avoids issues in ifort 14
     nullify(EV%OutputSources)
     nullify(EV%CustomSources)
+    ! EFTCAMB MOD START: reset the EFTCAMB part of the (OpenMP-private) evolution variables for every k mode
+    EV%EFTCAMB_printing = .false.
+    EV%EFTCAMB_QS = .false.
+    call EV%eft_cache%initialize()
+    ! EFTCAMB MOD END.
 
     EV%is_cosmological_constant = State%CP%DarkEnergy%is_cosmological_constant
 
