@@ -2891,7 +2891,7 @@
         EV%eft_cache%tau = tau
         EV%eft_cache%k = k
         EV%eft_cache%grhom_t = grho
-        EV%eft_cache%grhoa2 = grho/a2**2
+        EV%eft_cache%grhoa2 = grho*a2 ! 8 pi G rho a^4 (grho is 8 pi G rho a^2)
         EV%eft_cache%gpresm_t = gpres_noDE
         EV%eft_cache%grhob_t = grhob_t
         EV%eft_cache%grhoc_t = grhoc_t

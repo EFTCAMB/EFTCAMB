@@ -638,7 +638,7 @@
                     end do
                 end if
                 cache%grhom_t = cache%grhob_t + cache%grhoc_t + grhorad + grhonu
-                cache%grhoa2 = cache%grhom_t/a**4
+                cache%grhoa2 = cache%grhom_t*a**2
                 cache%gpresm_t = gpnu + grhorad/3._dl
                 ! expansion history:
                 if (.not. EFTCAMB%EFTCAMB_model_is_designer) then
