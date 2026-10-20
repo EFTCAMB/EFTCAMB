@@ -31,6 +31,16 @@
 
     implicit none
 
+    ! parameters of the initial conditions:
+    !< IC types 2/3 (radiation era, super-horizon series) are used only for k tau below this value ...
+    real(dl), parameter :: EFT_IC_series_max_ktau = 0.1_dl
+    !< ... and if the (baryon + CDM) density is below this fraction of the total density.
+    real(dl), parameter :: EFT_IC_series_max_matter_fraction = 0.01_dl
+    !< IC type 3 falls back to type 2 when one of its (dimensionless) denominators is below this value.
+    real(dl), parameter :: EFT_IC_type3_tolerance = 1.e-10_dl
+    !< warnings already printed:
+    logical, save :: EFT_IC_warned(4) = .false.
+
     contains
 
     ! ---------------------------------------------------------------------------------------------
@@ -50,7 +60,7 @@
     real(dl) :: Omega0, Gamma10, Gamma20, Gamma30
     real(dl) :: wnu_arr(max_nu)
 
-    integer  :: nu_i
+    integer  :: nu_i, ic_type
 
     k = EV%k_buf
     k2 = EV%k2_buf
@@ -289,7 +299,26 @@
         ! this is h_prime = 2kz
         if (CP%EFTCAMB%EFTCAMB_evolve_metric_h) y(EV%w_ix + 2) = 2._dl*k*z
     else
-        select case (CP%EFTCAMB%EFT_IC_type)
+        ic_type = CP%EFTCAMB%EFT_IC_type
+        ! IC types 2 and 3 are the leading terms of a radiation era, super-horizon series for pi: use them only
+        ! where that series is valid, otherwise use the type 1 (quasi-static attractor) initial conditions.
+        if (ic_type == 2 .or. ic_type == 3) then
+            if (k*tau > EFT_IC_series_max_ktau .or. &
+                (grhob_t + grhoc_t) > EFT_IC_series_max_matter_fraction*grho) then
+                ic_type = 1
+                call EFTCAMB_IC_warning(1, 'EFTCAMB WARNING: EFT_IC_type 2/3 radiation era series not valid at the' &
+                    // ' EFT turn-on (k tau or matter fraction too large): type 1 initial conditions used.')
+            end if
+        end if
+        ! IC type 3 is singular (0/0) for Omega = Gamma3 = 0: its limit there is the constant Omega series (type 2).
+        if (ic_type == 3) then
+            if (min(abs(3._dl*Gamma30*(1._dl + Omega0) + Omega0*(5._dl + 3._dl*Omega0)), &
+                abs(1._dl + Gamma30 + Omega0), &
+                abs(3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2), &
+                abs(3._dl*Gamma30 + 8._dl*Omega0 + 6._dl*Gamma30*Omega0 + 6._dl*Omega0**2)) <= &
+                EFT_IC_type3_tolerance) ic_type = 2
+        end if
+        select case (ic_type)
             ! --- CASE 1: Standard EFTCAMB / GR ---
         case (1)
             if (EV%eft_cache%EFTpiC + k2*EV%eft_cache%EFTpiD1 + k2**2*EV%eft_cache%EFTpiD2 /= 0._dl) then
@@ -340,12 +369,38 @@
             y(EV%w_ix) = 0._dl
             y(EV%w_ix + 1) = 0._dl
         end select
+        ! a NaN initial condition would silently give NaN spectra:
+        if (y(EV%w_ix) /= y(EV%w_ix) .or. y(EV%w_ix + 1) /= y(EV%w_ix + 1)) then
+            call GlobalError('EFTCAMB: NaN in the pi initial conditions', error_evolution)
+            y(EV%w_ix) = 0._dl
+            y(EV%w_ix + 1) = 0._dl
+        end if
     end if
 
     ! reset the cache:
     call EV%eft_cache%initialize()
 
     end subroutine EFTCAMBInitialConditions
+
+    ! ----------------------------------------------------------------------------------------
+    !> Subroutine that prints, once per session and only if feedback_level > 0, a warning of the initial
+    !! conditions calculator (called from the OpenMP k loop).
+    subroutine EFTCAMB_IC_warning(id, message)
+
+    implicit none
+
+    integer, intent(in)      :: id       !< the index of the warning
+    character(*), intent(in) :: message  !< the warning
+
+    if (EFT_IC_warned(id)) return
+    !$OMP CRITICAL(EFTCAMB_IC_warning_lock)
+    if (.not. EFT_IC_warned(id)) then
+        EFT_IC_warned(id) = .true.
+        if (CP%EFTCAMB%EFTCAMB_feedback_level > 0) write(*, '(a)') message
+    end if
+    !$OMP END CRITICAL(EFTCAMB_IC_warning_lock)
+
+    end subroutine EFTCAMB_IC_warning
 
     ! ----------------------------------------------------------------------------------------
     !> Function that computes the pi field coefficient C at a given time and scale.
