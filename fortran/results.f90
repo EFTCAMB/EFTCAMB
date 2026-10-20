@@ -577,6 +577,9 @@
             ! - massive neutrinos:
             this%CP%eft_par_cache%Num_Nu_Massive = this%CP%Num_Nu_massive
             this%CP%eft_par_cache%Nu_mass_eigenstates = this%CP%Nu_mass_eigenstates
+            ! P may come from a previous CAMBdata (e.g. results.Params) and carry allocated arrays:
+            if (allocated(this%CP%eft_par_cache%grhormass)) deallocate(this%CP%eft_par_cache%grhormass)
+            if (allocated(this%CP%eft_par_cache%nu_masses)) deallocate(this%CP%eft_par_cache%nu_masses)
             allocate(this%CP%eft_par_cache%grhormass(max_nu), this%CP%eft_par_cache%nu_masses(max_nu))
             this%CP%eft_par_cache%grhormass = this%grhormass
             this%CP%eft_par_cache%nu_masses = this%nu_masses
