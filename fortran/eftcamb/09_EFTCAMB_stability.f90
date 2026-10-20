@@ -124,6 +124,7 @@
     if (success) then
         call EFTStability_cleanup()
         do ind = 1, indMax
+            y = LogSamplingScale + real(ind - 1)*(0._dl - LogSamplingScale)/real(indMax - 1)
             Atest = aend + (astart - aend)*10._dl**y
             success = EFTTestStability(Atest, k_max, input_EFTCAMB, params_cache, eft_cache)
             if (.not. success) then
