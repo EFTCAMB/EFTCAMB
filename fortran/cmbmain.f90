@@ -1194,6 +1194,8 @@
                             State%TimeSteps%points(j + 1) > State%transfer_times(itf)) goto 101
                     else
                         ! EFTCAMB MOD START: enforce also relative precision
+                        ! Intended: the mismatch is an error (not only a warning), raised when print_fortran_warnings
+                        ! is on. Documented in CAMB_README.rst (EFTCAMB section).
                         if (abs(tau - State%transfer_times(itf - 1)) > 5.e-5_dl .and. &
                             abs(tau - State%transfer_times(itf - 1))/tau > 5.e-5_dl .and. print_fortran_warnings) then
                             write(*, *) 'WARNING: mismatch in integrated times (CAMB: CalcScalarSources)'

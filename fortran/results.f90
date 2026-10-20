@@ -403,6 +403,7 @@
     ! EFTCAMB MOD START: tighter integration tolerances when EFTCAMB is active.
     ! The RungeKuttaDP45 perturbation integrator needs IntTolBoost >= 2 to keep the default
     ! accuracy of stiff EFT models (e.g. Horava, RPH). The input parameters P are not changed.
+    ! Intended: an exact-GR EFT run matches EFTflag = 0 at IntTolBoost = 2 (documented in CAMB_README.rst).
     if (allocated(this%CP%EFTCAMB)) then
         if (this%CP%EFTCAMB%EFTflag /= 0) this%CP%Accuracy%IntTolBoost = max(this%CP%Accuracy%IntTolBoost, 2._dl)
     end if
