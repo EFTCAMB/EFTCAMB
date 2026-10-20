@@ -319,7 +319,8 @@
     num_points = 4*2*max(self%order_cos, self%order_sin) + 1 ! try to be well above the Shannon rate
 
     ! 2) search for the roots of the first derivative and look for the global minimum:
-    global_minimum = 1.d16 ! just initialize to a big number
+    ! initialize with the value at the start of the period (also the answer for a constant function):
+    global_minimum = self%value(min_sample)
     do i = 1, num_points - 1
         initial_value = min_sample + real(i - 1)/real(num_points - 1)*(max_sample - min_sample)
         final_value = min_sample + real(i)/real(num_points - 1)*(max_sample - min_sample)
