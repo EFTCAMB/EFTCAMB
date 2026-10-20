@@ -2369,7 +2369,15 @@
     a0 = this%tauminn*State%adotrad*(1 + om*this%tauminn/4)
     ninverse = nint(background_boost*log(1/a0)/log(1/2d-10)*4000)
 
-    if (.not. CP%DarkEnergy%is_cosmological_constant) ninverse = ninverse*2
+    ! EFTCAMB MOD START: EFT backgrounds (DarkEnergy is an unused placeholder) also get the denser sampling
+    if (.not. CP%DarkEnergy%is_cosmological_constant) then
+        ninverse = ninverse*2
+    else if (allocated(CP%EFTCAMB)) then
+        if (CP%EFTCAMB%EFTflag /= 0) ninverse = ninverse*2
+    end if
+    ! original code:
+    ! if (.not. CP%DarkEnergy%is_cosmological_constant) ninverse = ninverse*2
+    ! EFTCAMB MOD END.
 
     nlin = ninverse/2
     allocate(scale_factors(ninverse + nlin))
