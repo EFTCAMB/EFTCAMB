@@ -236,11 +236,20 @@ def set_params(cp=None, verbose=False, **params):
     else:
         existing_eft_params = {}
 
+    if existing_eft_params and params.get("EFTflag", None) == 0:
+        # EFTCAMB switched off: before set_classes, which refuses other dark energy models while EFTCAMB is on
+        cp.EFTCAMB.initialize_parameters(cp, {"EFTflag": 0}, print_header=False)
+
     # dedicated setter for the initialization of EFTCAMB
     def EFT_do_set(setter):
         if cp_given:
-            # re-initialize only when EFTCAMB keys are given, starting from the existing EFTCAMB parameters
-            if "EFTflag" not in params and not any(key in existing_eft_params for key in params):
+            # re-initialize only when EFTCAMB keys are given, or when set_classes(dark_energy_model="EFTCAMB") reset
+            # the EFTCAMB object, starting from the existing EFTCAMB parameters
+            if (
+                "EFTflag" not in params
+                and not any(key in existing_eft_params for key in params)
+                and not (existing_eft_params and cp.EFTCAMB.EFTflag == 0)
+            ):
                 return
             eft_params = {**existing_eft_params, **params}
         else:

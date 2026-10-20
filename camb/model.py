@@ -907,13 +907,14 @@ class CAMBparams(F2003Class):
         """
 
         # EFTCAMB MOD START: EFTCAMB is selected with dark_energy_model
-        # EFTCAMB is initialized using the flags for the darkenergy model
-        # should prevent double counting the DE. When dark_energy_model \= EFTCAMB
-        # EFTCAMB is initialized with EFTflag = 0 (default params)
+        # dark_energy_model = EFTCAMB initializes EFTCAMB with EFTflag = 0 (default params), to be set up with
+        # EFTCAMB.initialize_parameters. Another dark energy model cannot be selected while an EFTCAMB model
+        # (EFTflag != 0, which replaces the dark energy model) is active.
         if dark_energy_model == "EFTCAMB":
             self.EFTCAMB = self.make_class_named("EFTCAMB", EFTCAMB)
             self.DarkEnergy = self.make_class_named("fluid", DarkEnergyModel)
         elif dark_energy_model:
+            self._check_no_active_eft_model(f"dark_energy_model={dark_energy_model!r}")
             self.DarkEnergy = self.make_class_named(dark_energy_model, DarkEnergyModel)
         # Original code:
         # if dark_energy_model:
@@ -928,6 +929,19 @@ class CAMBparams(F2003Class):
             self.Recomb = self.make_class_named(recombination_model, RecombinationModel)
         if reionization_model:
             self.Reion = self.make_class_named(reionization_model, ReionizationModel)
+
+    # EFTCAMB MOD START
+    def _check_no_active_eft_model(self, what):
+        """
+        Raise CAMBValueError if an EFTCAMB model is active: it replaces the dark energy model, which would be ignored.
+        """
+        if self.EFTCAMB is not None and self.EFTCAMB.EFTflag != 0:
+            raise CAMBValueError(
+                f"{what} cannot be used with an active EFTCAMB model (EFTflag={self.EFTCAMB.EFTflag}), which replaces "
+                "the dark energy model: switch EFTCAMB off first, e.g. set_params(cp=pars, EFTflag=0, ...)"
+            )
+
+    # EFTCAMB MOD END
 
     def set_dark_energy(
         self,
@@ -952,6 +966,9 @@ class CAMBparams(F2003Class):
         :param dark_energy_model: model to use ('fluid' or 'ppf'), default is 'fluid'
         :return: self
         """
+        # EFTCAMB MOD START
+        self._check_no_active_eft_model("set_dark_energy")
+        # EFTCAMB MOD END
 
         de = self.make_class_named(dark_energy_model, DarkEnergyEqnOfState)
         de.set_params(
@@ -969,6 +986,9 @@ class CAMBparams(F2003Class):
         :param dark_energy_model:  model to use ('fluid' or 'ppf'), default is 'fluid'
         :return: self
         """
+        # EFTCAMB MOD START
+        self._check_no_active_eft_model("set_dark_energy_w_a")
+        # EFTCAMB MOD END
         if dark_energy_model == "fluid" and np.any(np.asarray(w) < -1):
             raise CAMBError("fluid dark energy model does not support w crossing -1")
         self.DarkEnergy = self.make_class_named(dark_energy_model, DarkEnergyEqnOfState)
