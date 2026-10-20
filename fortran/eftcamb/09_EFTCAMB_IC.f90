@@ -38,7 +38,7 @@
     real(dl), parameter :: EFT_IC_series_max_matter_fraction = 0.01_dl
     !< IC type 3 falls back to type 2 when one of its (dimensionless) denominators is below this value.
     real(dl), parameter :: EFT_IC_type3_tolerance = 1.e-10_dl
-    !< IC type 1: the attractor is regularised where |C + k^2 D1 + k^4 D2| is below about this fraction of
+    !< IC type 1: the attractor is regularised where |C + k^2 D1 + k^4 D2| is below this fraction of
     !! |C| + k^2 |D1| + k^4 |D2|.
     real(dl), parameter :: EFT_IC_den_tolerance = 0.1_dl
     !< IC type 1: pi' = 0 if |d ln(C + k^2 D1 + k^4 D2)/d ln a| exceeds this value ...
@@ -342,9 +342,9 @@
                 if (pi_den_scale /= 0._dl) call EFTCAMB_IC_warning(2, 'EFTCAMB WARNING: no stable quasi-static' &
                     // ' attractor for pi at the EFT turn-on for some k: pi = pi'' = 0 initial conditions used.')
             else
-                ! regularised attractor: the weight w -> 0 where the denominator vanishes relative to its terms
-                ! (the attractor solution has a pole there), w -> 1 where it does not.
-                pi_w = pi_den**2/(pi_den**2 + (EFT_IC_den_tolerance*pi_den_scale)**2)
+                ! regularised attractor: the weight w = min(1, (den/(tol*scale))^2) removes the pole of the attractor
+                ! solution continuously where the denominator vanishes relative to its terms; w = 1 elsewhere.
+                pi_w = min(1._dl, (pi_den/(EFT_IC_den_tolerance*pi_den_scale))**2)
                 if (pi_w < 0.5_dl) call EFTCAMB_IC_warning(3, 'EFTCAMB WARNING: C + k^2 D1 + k^4 D2 nearly' &
                     // ' vanishes at the EFT turn-on for some k: pi initial conditions regularised.')
                 y(EV%w_ix) = -pi_w*CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/pi_den
