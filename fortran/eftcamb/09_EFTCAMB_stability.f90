@@ -79,6 +79,12 @@
         write(*, '(a)')
     end if
 
+    ! the mass stability check is experimental and is ignored:
+    if (input_EFTCAMB%EFT_mass_stability .and. input_EFTCAMB%EFTCAMB_feedback_level > 0) then
+        write(*, '(a)') ' EFTCAMB WARNING: EFT_mass_stability is experimental and is ignored:'
+        write(*, '(a)') '   the mass eigenvalues are computed but models are not rejected on them.'
+    end if
+
     ! debug open cache files:
     if (DebugEFTCAMB) then
         call eft_cache%open_cache_files(input_EFTCAMB%outroot // 'stability_' )
@@ -370,22 +376,16 @@
 
     end if
 
-    ! 7) enforce mass viability:
-    if (input_EFTCAMB%EFT_mass_stability) then
-        ! 1 - Check first mass eigenvalue
-        if (eft_cache%EFT_mu1 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2 .and. &
-            a > input_EFTCAMB%EFTCAMB_pert_turn_on) then
-            EFTTestStability = .false.
-            if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
-                '(a,E11.4)') '   Physical instability: Mass instability. mu_1/H^2 = ', &
+    ! 7) mass viability: EXPERIMENTAL, never rejects a model.
+    !    The mass eigenvalues mu_1, mu_2 reject canonical quintessence (|mu|/H^2 ~ 1e9) and are dominated by
+    !    roundoff near GR (audit findings F-042, F-063): until they are re-derived the check only reports.
+    if (input_EFTCAMB%EFT_mass_stability .and. a > input_EFTCAMB%EFTCAMB_pert_turn_on) then
+        if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
+            if (eft_cache%EFT_mu1 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2) &
+                write(*, '(a,E11.4)') '   Experimental mass check (ignored): mu_1/H^2 = ', &
                 eft_cache%EFT_mu1*(a/eft_cache%adotoa)**2
-        end if
-        ! 2 - Check second mass eigenvalue
-        if (eft_cache%EFT_mu2 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2 .and. &
-            a > input_EFTCAMB%EFTCAMB_pert_turn_on) then
-            EFTTestStability = .false.
-            if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
-                '(a,E11.4)') '   Physical instability: Mass instability. mu_2/H^2 = ', &
+            if (eft_cache%EFT_mu2 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2) &
+                write(*, '(a,E11.4)') '   Experimental mass check (ignored): mu_2/H^2 = ', &
                 eft_cache%EFT_mu2*(a/eft_cache%adotoa)**2
         end if
     end if
