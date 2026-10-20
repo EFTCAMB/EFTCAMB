@@ -319,6 +319,7 @@
     logical, optional                          :: only_B0
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
     integer, intent(in)                        :: feedback_level   !< whether be noisy
+    logical :: only_B0_temp
 
     integer, parameter :: num_eq = 2   !<  Number of equations
 
@@ -334,7 +335,8 @@
     integer, allocatable :: iwork(:)
 
     ! digedt the input:
-    if (.not. present(only_B0)) only_B0 = .false.
+    only_B0_temp = .false.
+    if (present(only_B0)) only_B0_temp = only_B0
 
     ! 1) Cosmological parameters:
     Omegam_EFT = params_cache%omegab + params_cache%omegac
@@ -406,7 +408,7 @@
     ! store the first value of the EFT functions:
     t1 = self%EFTOmega%x(1)
     ! compute output EFT functions if needed:
-    if (.not. only_B0) then
+    if (.not. only_B0_temp) then
         call output(num_eq, 1, t1, y, B0)
     end if
 
@@ -431,14 +433,14 @@
             end if
         end if
         ! compute output EFT functions if needed:
-        if (.not. only_B0) then
+        if (.not. only_B0_temp) then
             call output(num_eq, i + 1, t2, y, B0)
         end if
 
     end do
 
     ! compute B0:
-    if (only_B0) then
+    if (only_B0_temp) then
         call output(num_eq, self%EFTOmega%num_points, t2, y, B0)
     end if
 

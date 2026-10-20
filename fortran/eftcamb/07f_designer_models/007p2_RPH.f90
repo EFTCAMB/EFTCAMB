@@ -607,7 +607,7 @@
     if (self%RPHusealphaM) then
         NMo = NT + self%RPH_alphaM_ODE%parameter_number
     else
-        NMo = NT + self%RPH_Tensor_ODE%parameter_number
+        NMo = NT + self%RPH_PlanckMass_ODE%parameter_number
     end if
     NKo = NMo + self%RPH_Kineticity_ODE%parameter_number
     NBo = NKo + self%RPH_Braiding_ODE%parameter_number
@@ -728,7 +728,7 @@
     if (self%RPHusealphaM) then
         NMo = NT + self%RPH_alphaM_ODE%parameter_number
     else
-        NMo = NT + self%RPH_Tensor_ODE%parameter_number
+        NMo = NT + self%RPH_PlanckMass_ODE%parameter_number
     end if
     NKo = NMo + self%RPH_Kineticity_ODE%parameter_number
     NBo = NKo + self%RPH_Braiding_ODE%parameter_number
@@ -849,7 +849,7 @@
     if (self%RPHusealphaM) then
         NMo = NT + self%RPH_alphaM_ODE%parameter_number
     else
-        NMo = NT + self%RPH_Tensor_ODE%parameter_number
+        NMo = NT + self%RPH_PlanckMass_ODE%parameter_number
     end if
     NKo = NMo + self%RPH_Kineticity_ODE%parameter_number
     NBo = NKo + self%RPH_Braiding_ODE%parameter_number

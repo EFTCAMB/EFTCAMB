@@ -674,6 +674,7 @@
     !< logical flag that tells the code wether to compute only the solution or also the EFT functions.
     logical, optional                          :: only_solve
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
+    logical :: only_solve_temp
 
     integer, parameter :: num_eq = 2   !<  Number of equations
 
@@ -694,7 +695,8 @@
     integer  :: nu_i
 
     ! digest the input:
-    if (.not. present(only_solve)) only_solve = .false.
+    only_solve_temp = .false.
+    if (present(only_solve)) only_solve_temp = only_solve
 
     ! set omega_m, notice that we do not include radiation for compatibility with CAMB
     ! omega_m = params_cache%omegac + params_cache%omegab + params_cache%omegan + params_cache%omegag + params_cache%omegar
@@ -756,7 +758,7 @@
     JacobianMode = 1
 
     ! compute output EFT functions if needed:
-    if (.not. only_solve) then
+    if (.not. only_solve_temp) then
         call output(num_eq, 1, t1, y)
     end if
 
@@ -802,7 +804,7 @@
         end if
 
         ! compute output EFT functions if needed:
-        if (.not. only_solve) then
+        if (.not. only_solve_temp) then
             call output(num_eq, i + 1, t2, y)
             ! check the results:
             if (IsNan(self%EFTLambda%yp(i + 1)) .or. IsNan(self%EFTc%yp(i + 1))) then
