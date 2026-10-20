@@ -556,6 +556,18 @@
         end if
 
         ! EFTCAMB MOD START:initialize the EFTCAMB parameter choice
+        ! parameters without an EFTCAMB object run plain CAMB:
+        if (.not. allocated(this%CP%EFTCAMB)) allocate(this%CP%EFTCAMB)
+        if (this%CP%EFTCAMB%EFTflag /= 0) then
+            ! e.g. a failed or lost model initialization (pickled parameters):
+            if (.not. allocated(this%CP%EFTCAMB%model)) then
+                call GlobalError('EFTCAMB: EFTflag /= 0 but the EFTCAMB model is not initialized', &
+                    error_unsupported_params)
+                if (present(error)) error = global_error_flag
+                return
+            end if
+            if (.not. allocated(this%CP%eft_par_cache)) allocate(this%CP%eft_par_cache)
+        end if
         if (this%CP%EFTCAMB%EFTflag /= 0) then
             ! 0) make some noise if nonlinear is on
             if (this%CP%NonLinear /= NonLinear_none) then

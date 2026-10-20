@@ -141,6 +141,11 @@
     if (State%CP%EFTCAMB%EFTflag /= 0) then
         ! initialize the model from file:
         call State%CP%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
+        ! on failure go back to a consistent GR state (no model), the caller raises the error:
+        if (eft_error > 0) then
+            State%CP%EFTCAMB%EFTflag = 0
+            if (allocated(State%CP%EFTCAMB%model)) deallocate(State%CP%EFTCAMB%model)
+        end if
     end if
     ! store the parameters that have been read in the EFTCAMB object:
     call State%CP%EFTCAMB%EFTCAMB_store_read_parameters(Ini)
@@ -166,6 +171,10 @@
         if (allocated(EFTCAMB%read_param_keys)) index = size(EFTCAMB%read_param_keys)
         ! if mode == 1 return the key, value combination
     else if (mode == 1) then
+        key = ''
+        value = ''
+        if (.not. allocated(EFTCAMB%read_param_keys)) return
+        if (index < 1 .or. index > size(EFTCAMB%read_param_keys)) return
         key = EFTCAMB%read_param_keys(index)
         value = EFTCAMB%read_param_values(index)
     end if
@@ -197,7 +206,8 @@
     type(TEFTCAMB) :: EFTCAMB
     integer        :: num_params
 
-    num_params = EFTCAMB%model%parameter_number
+    num_params = 0
+    if (allocated(EFTCAMB%model)) num_params = EFTCAMB%model%parameter_number
 
     end subroutine EFTCAMB_get_num_params
 
@@ -211,7 +221,8 @@
     integer            :: i
     character(len=200) :: name
 
-    call EFTCAMB%model%parameter_names(i, name)
+    name = ''
+    if (allocated(EFTCAMB%model)) call EFTCAMB%model%parameter_names(i, name)
 
     end subroutine EFTCAMB_get_param_names
 
@@ -225,7 +236,8 @@
     integer            :: i
     character(len=200) :: name
 
-    call EFTCAMB%model%parameter_names_latex(i, name)
+    name = ''
+    if (allocated(EFTCAMB%model)) call EFTCAMB%model%parameter_names_latex(i, name)
 
     end subroutine EFTCAMB_get_param_labels
 
@@ -239,7 +251,8 @@
     integer        :: i
     real(dl)       :: value
 
-    call EFTCAMB%model%parameter_values(i, value)
+    value = 0._dl
+    if (allocated(EFTCAMB%model)) call EFTCAMB%model%parameter_values(i, value)
 
     end subroutine EFTCAMB_get_param_values
 
@@ -285,7 +298,9 @@
     real(dl)       :: w0        !< the effective w0 value (output)
     real(dl)       :: wa        !< the effective wa value (output)
 
-    call EFTCAMB%Effective_w_wa(w0, wa)
+    w0 = -1._dl
+    wa = 0._dl
+    if (EFTCAMB%EFTflag /= 0 .and. allocated(EFTCAMB%model)) call EFTCAMB%Effective_w_wa(w0, wa)
 
     end subroutine EFTCAMB_get_effective_w0wa_values
 
@@ -303,19 +318,29 @@
 
     real(dl) :: taustart
     integer  :: q_ix
+    logical  :: want_scalars
     type(EvolutionVars) :: Ev
     ! activate status:
     call SetActiveState(this)
     ! initialize:
     global_error_flag = 0
+    ! check that these results carry an initialized EFTCAMB model and background:
+    if (.not. EFTCAMB_python_results_ready(this, 'get_evolution', require_eft=.false.)) return
     ! get initial time and call Thermo initialization if needed:
     taustart = min(minval(eta), GetTauStart(maxval(q)))
     if (.not. this%ThermoData%HasThermoData .or. taustart < this%ThermoData%tauminn) call this%ThermoData%Init(this, &
         taustart)
+    ! GetNumEqns sets up the scalar hierarchy only when scalars are wanted (not after a transfer-only run):
+    want_scalars = this%CP%WantScalars
+    this%CP%WantScalars = .true.
     ! do the parallel loop over the requested k modes.
     !$OMP PARALLEL DO DEFAULT(SHARED), SCHEDULE(DYNAMIC), PRIVATE(EV, q_ix)
     do q_ix = 1, nq
         if (global_error_flag == 0) then
+            ! reset the OpenMP-private evolution variables so that every k mode starts from the same state:
+            call Ev%eft_cache%initialize()
+            Ev%EFTCAMB_printing = .false.
+            Ev%EFTCAMB_QS = .false.
             ! initialize evolution variables:
             Ev%q_ix = q_ix
             Ev%q = q(q_ix)
@@ -328,8 +353,50 @@
         end if
     end do
     !$OMP END PARALLEL DO
+    this%CP%WantScalars = want_scalars
 
     end subroutine EFTCAMB_GetEvolution
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that checks that a CAMBdata carries an initialized EFTCAMB model and parameter cache.
+    !! Otherwise it sets a global error and returns false.
+    logical function EFTCAMB_python_results_ready(State, caller, require_eft)
+
+    implicit none
+
+    type(CAMBdata)               :: State
+    character(len=*), intent(in) :: caller       !< name of the calling routine, for the error message
+    logical, intent(in)          :: require_eft  !< if true EFTflag = 0 is an error
+
+    EFTCAMB_python_results_ready = .false.
+    ! nested ifs: .and. does not short-circuit.
+    if (.not. allocated(State%CP%EFTCAMB)) then
+        call GlobalError(caller//': EFTCAMB is not initialized for these results', error_unsupported_params)
+        return
+    end if
+    if (State%CP%EFTCAMB%EFTflag == 0) then
+        if (require_eft) then
+            call GlobalError(caller//': EFTflag = 0, there is no EFTCAMB model', error_unsupported_params)
+            return
+        end if
+    else
+        if (.not. allocated(State%CP%EFTCAMB%model)) then
+            call GlobalError(caller//': the EFTCAMB model is not initialized', error_unsupported_params)
+            return
+        end if
+        if (.not. allocated(State%CP%eft_par_cache)) then
+            call GlobalError(caller//': the EFTCAMB parameter cache is not initialized', error_unsupported_params)
+            return
+        end if
+        if (.not. allocated(State%CP%eft_par_cache%grhormass)) then
+            call GlobalError(caller//': nothing was computed for these results, call get_background or '// &
+                'get_results with some output first', error_unsupported_params)
+            return
+        end if
+    end if
+    EFTCAMB_python_results_ready = .true.
+
+    end function EFTCAMB_python_results_ready
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine to get the EFT time evolution k mode by kmode:
@@ -391,6 +458,10 @@
     integer i, nu_i
     real(dl) :: grhonu, gpnu, grhonu_i, gpnu_i, grhormass_t, gpnudot_i, am
     real(dl) :: a, adotoa, grhorad
+
+    global_error_flag = 0
+    ! check that these results carry an initialized EFTCAMB model and background:
+    if (.not. EFTCAMB_python_results_ready(State, 'get_eft_functions', require_eft=.true.)) return
 
     associate(EFTCAMB => State%CP%EFTCAMB, par_cache => State%CP%eft_par_cache)
         do i = 1, na
