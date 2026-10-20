@@ -308,6 +308,11 @@
     real(dl) :: H0_range(2), initial_H0, H0_iteration_threshold
     real(dl) :: xzero, fzero
     integer :: error, iflag
+    ! EFTCAMB MOD START: valid bracket for EFT models
+    real(dl) :: H0_target
+    integer :: i_end, it
+    logical :: valid
+    ! EFTCAMB MOD END.
 
     CAMB_SetH0ForTheta = .false.
     ErrMsg = ''
@@ -336,6 +341,35 @@
     end if
 
     if (.not. solver%cosmomc_approx) solver%zstar = solver%Data%get_zstar()
+
+    ! EFTCAMB MOD START: EFT models can be invalid (unstable, background solver failure) far from the solution:
+    ! search above the matter-only limit, and move bracket ends where the model fails towards the estimate
+    ! (as camb.model.CAMBparams.set_H0_for_theta)
+    if (allocated(P%EFTCAMB)) then
+        if (P%EFTCAMB%EFTflag /= 0) then
+            H0_range(1) = max(H0_range(1), 1.1_dl*100._dl*sqrt(P%ombh2 + P%omch2 + P%omnuh2))
+            if (initial_H0 > H0_range(1) .and. initial_H0 < H0_range(2)) then
+                H0_target = initial_H0
+            else
+                H0_target = 0.5_dl*(H0_range(1) + H0_range(2))
+            end if
+            do i_end = 1, 2
+                valid = .false.
+                do it = 1, 40
+                    if (CAMB_ThetaH0Difference(solver, H0_range(i_end)) /= huge(1._dl)) then
+                        valid = .true.
+                        exit
+                    end if
+                    H0_range(i_end) = 0.5_dl*(H0_range(i_end) + H0_target)
+                end do
+                if (.not. valid) then
+                    ErrMsg = 'No valid H0 for this EFTCAMB model found inside of theta_H0_range'
+                    return
+                end if
+            end do
+        end if
+    end if
+    ! EFTCAMB MOD END.
 
     call brentq(solver, CAMB_ThetaH0Difference, H0_range(1), H0_range(2), 5e-5_dl, xzero, fzero, iflag)
     if (iflag /= 0) then
