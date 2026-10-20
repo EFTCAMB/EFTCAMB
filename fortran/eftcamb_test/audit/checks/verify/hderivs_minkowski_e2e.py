@@ -19,7 +19,7 @@ import harness  # noqa: E402
 
 ROOT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
             "scratchpad/audit")
-PAR = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
+PAR = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
 TREES = {"A0": ROOT / "trees/A0", "P_ldd": ROOT / "work/verify/hderivs/P_ldd"}
 MODELS = ["5_quint_exponential", "5_quint_inverse_power", "5_quint_quadratic", "5_quint_axion", "5_quint_cubic",
           "5_Kmouflage_1"]

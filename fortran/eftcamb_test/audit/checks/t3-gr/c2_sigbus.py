@@ -7,7 +7,7 @@ import sys
 
 os.environ["OMP_NUM_THREADS"] = "1"
 faulthandler.enable()
-sys.path.insert(0, "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
+sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness  # noqa: E402
 
 tree, ini, variant = sys.argv[1], sys.argv[2], sys.argv[3]  # tree: name or path

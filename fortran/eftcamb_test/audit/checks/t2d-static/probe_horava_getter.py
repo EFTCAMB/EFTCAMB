@@ -7,7 +7,7 @@ INI = sys.argv[2]
 MODE = sys.argv[3] if len(sys.argv) > 3 else "background"
 os.environ["OMP_NUM_THREADS"] = "1"
 sys.path.insert(0, TREE)
-sys.path.insert(1, "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
+sys.path.insert(1, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness  # noqa: E402
 
 with harness.slot(1):

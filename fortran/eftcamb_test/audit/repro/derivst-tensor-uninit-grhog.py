@@ -20,7 +20,7 @@ import sys
 AUDIT = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
          "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/t1-crash")
 TREES = {"checked build (code under audit)": f"{AUDIT}/chk/AD", "checked build + fix": f"{AUDIT}/chk2/AD"}
-INI = "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/2_PEFT_Omega_const_1.ini"
+INI = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/2_PEFT_Omega_const_1.ini"
 LIBGFORTRAN = "/Users/marco/Software/miniforge3/lib/libgfortran.5.dylib"
 
 CHILD = r"""

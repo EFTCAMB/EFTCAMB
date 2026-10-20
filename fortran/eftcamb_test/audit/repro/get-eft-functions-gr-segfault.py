@@ -21,7 +21,7 @@ import sys
 TREE = sys.argv[1] if len(sys.argv) > 1 else (
     "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
     "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0")
-INI = "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/2_PEFT_Omega_const_1.ini"
+INI = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/2_PEFT_Omega_const_1.ini"
 
 CHILD_GR = r"""
 import sys

@@ -16,12 +16,12 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
+sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness  # noqa: E402
 
 AUD = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 OUT = Path(AUD + "/work/verify/ic3nan/runs")
-PAR = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
+PAR = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
 
 jobs = [
     ("A0", "2_PEFT_gamma1_const_2", 3, [1e-3, 0.05]),

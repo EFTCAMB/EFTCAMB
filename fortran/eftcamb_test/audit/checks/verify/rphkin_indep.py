@@ -34,7 +34,7 @@ ROOT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTC
             "/scratchpad/audit")
 OUT = ROOT / "work/verify/rphkin"
 OUT.mkdir(parents=True, exist_ok=True)
-PAR = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
+PAR = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
 CHECKS = Path(__file__).resolve().parents[1]
 TREES = {"A0": ROOT / "trees/A0", "fixkin": ROOT / "work/t6-stability/fixkin", "B1": ROOT / "trees/B1"}
 

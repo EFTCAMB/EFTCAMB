@@ -9,7 +9,7 @@ import re
 import numpy as np
 import sympy as sp
 
-SRC = "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran"
+SRC = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran"
 
 
 def statements(block):

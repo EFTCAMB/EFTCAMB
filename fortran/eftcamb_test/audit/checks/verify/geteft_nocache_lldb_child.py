@@ -12,7 +12,7 @@ sys.path.insert(0, sys.argv[1])
 import camb  # noqa: E402
 import numpy as np  # noqa: E402
 
-P = "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/"
+P = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/"
 case = sys.argv[2]
 if case == "noout":
     p = camb.read_ini(P + "2_PEFT_Omega_const_1.ini", no_validate=True)

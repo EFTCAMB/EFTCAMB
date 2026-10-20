@@ -20,7 +20,7 @@ import harness  # noqa: E402
 AUDIT = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 TREES = {"A0": f"{AUDIT}/trees/A0", "nanini": f"{AUDIT}/work/t6-stability/nanini",
          "nanfix": f"{AUDIT}/work/t6-stability/nanfix"}
-PAR = "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters"
+PAR = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters"
 MODELS = sys.argv[1:] or ["5_ADE_1", "5_scg", "5_Horava_eta_1", "5_quint_axion", "5_Kmimic_1", "4_Des_F_R_wCDM_1",
                           "4_Des_mc5e_wCDM_1", "3_RPH_MK_const_1", "2_PEFT_Omega_exp_1"]
 

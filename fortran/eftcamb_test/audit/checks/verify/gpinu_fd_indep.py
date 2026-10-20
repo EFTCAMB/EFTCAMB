@@ -22,8 +22,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import harness  # noqa: E402
 
-PAR = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
-AUD = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/inis")
+PAR = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
+AUD = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/inis")
 MODELS = [
     PAR / "2_PEFT_gamma3_const_1.ini",
     PAR / "2_PEFT_wDE_wCDM_1.ini",

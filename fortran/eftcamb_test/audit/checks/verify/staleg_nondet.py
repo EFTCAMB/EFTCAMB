@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
-sys.path.insert(0, "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
+sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness  # noqa: E402
 
 model, ic, n, thr = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])

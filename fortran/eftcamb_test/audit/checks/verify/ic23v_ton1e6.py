@@ -5,7 +5,7 @@ import sys
 
 import numpy as np
 
-sys.path.insert(0, "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
+sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness  # noqa: E402
 
 D = harness.AUDIT_ROOT / "work" / "verify" / "ic23" / (sys.argv[1] if len(sys.argv) > 1 else "early")

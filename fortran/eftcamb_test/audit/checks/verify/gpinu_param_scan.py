@@ -19,8 +19,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import harness  # noqa: E402
 
-PAR = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
-AUD = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/inis")
+PAR = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
+AUD = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/inis")
 
 FLAGS = {
     "ini": {},

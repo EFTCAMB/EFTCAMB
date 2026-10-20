@@ -11,7 +11,7 @@ import harness  # noqa: E402
 
 AUDIT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
 OUT = AUDIT / "work/verify/interp_xfinal/npts"
-INI = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/3_RPH_KT_power_1.ini")
+INI = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/3_RPH_KT_power_1.ini")
 tree = sys.argv[1] if len(sys.argv) > 1 else "A0"
 npts = [int(v) for v in sys.argv[2:]] or [16384, 32768, 65536, 131072]
 tag = "instr" if "instr" in tree else Path(tree).name

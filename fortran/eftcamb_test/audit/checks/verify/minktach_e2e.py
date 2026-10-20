@@ -18,7 +18,7 @@ import harness  # noqa: E402
 
 ROOT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
             "scratchpad/audit")
-PAR = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
+PAR = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
 OUT = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "work/verify/minktach/e2e.json")
 TREES = {"A0": ROOT / "trees/A0", "P_val": ROOT / "work/verify/minktach/P_val"}
 _extra = [x for x in sys.argv[2:] if "=" in x and not x.startswith("--")]

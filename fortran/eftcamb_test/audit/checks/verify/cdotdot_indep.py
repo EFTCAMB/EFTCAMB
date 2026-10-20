@@ -21,7 +21,7 @@ import harness  # noqa: E402
 
 AUDIT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
              "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
-PAR = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
+PAR = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
 TREE = sys.argv[1] if len(sys.argv) > 1 else "A0"
 MODELS = sys.argv[2:] or ["5_quint_exponential", "4_Des_F_R_LCDM_1", "5_Kmouflage_1", "2_PEFT_gamma1_const_1",
                           "1_EFT_GR"]

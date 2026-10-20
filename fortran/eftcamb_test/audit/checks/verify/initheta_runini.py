@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
-REPO = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB")
+REPO = Path("/Users/marco/IW/eftcamb_update/EFTCAMB")
 sys.path.insert(0, str(REPO / "fortran/eftcamb_test/audit/checks"))
 import harness  # noqa: E402
 

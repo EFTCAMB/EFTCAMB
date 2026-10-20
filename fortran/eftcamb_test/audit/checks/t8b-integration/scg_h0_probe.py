@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
+sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 import harness

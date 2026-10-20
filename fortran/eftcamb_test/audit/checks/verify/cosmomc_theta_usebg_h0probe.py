@@ -18,7 +18,7 @@ with harness.slot(1):
     for ub in ("F", "T"):
         ini = os.path.join(OUT, f"probe_{model}_ub{ub}.ini")
         with open(ini, "w") as f:
-            f.write(f"DEFAULT(/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/{model}.ini)\n"
+            f.write(f"DEFAULT(/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/{model}.ini)\n"
                     f"EFTCAMB_use_background = {ub}\nfeedback_level = 0\n" + "".join(e + "\n" for e in extra))
         for H0 in (65.0, 68.0, 70.86711257, 74.0, 78.0):
             cp = camb.read_ini(ini, no_validate=True)

@@ -20,7 +20,7 @@ os.environ.setdefault("OMP_NUM_THREADS", "2")
 sys.path.insert(0, args.tree)
 import camb  # noqa: E402
 
-BASE = "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/base_params.ini"
+BASE = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/base_params.ini"
 tmp = tempfile.mkdtemp(prefix="pbs_", dir=str(Path(args.out).parent))
 res = {}
 for flag in ("EFT_positivity_bounds", "EFT_minkowski_limit"):

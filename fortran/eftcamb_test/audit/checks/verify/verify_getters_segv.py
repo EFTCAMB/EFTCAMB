@@ -22,10 +22,10 @@ import signal
 import subprocess
 import sys
 
-sys.path.insert(0, "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
+sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness  # noqa: E402
 
-REPO = "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB"
+REPO = "/Users/marco/IW/eftcamb_update/EFTCAMB"
 INI = REPO + "/fortran/eftcamb_test/parameters/2_PEFT_Omega_const_1.ini"
 
 CHILD = r"""

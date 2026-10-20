@@ -27,7 +27,7 @@ import harness  # noqa: E402
 
 ROOT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
             "scratchpad/audit")
-PAR = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
+PAR = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
 TREE = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "trees/A0")
 OUT = sys.argv[2] if len(sys.argv) > 2 else str(ROOT / "work/verify/minktach/indep_A0.json")
 MODELS = ["5_quint_exponential", "5_quint_inverse_power", "5_quint_quadratic", "5_Kmouflage_1", "5_hdsk_TG_1",

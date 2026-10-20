@@ -1,7 +1,7 @@
 import sys, numpy as np
 sys.path.insert(0, ".")
 import t6lib
-ini = "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/inis/t6_RPH_KB_const.ini"
+ini = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/inis/t6_RPH_KB_const.ini"
 g = np.logspace(-10, 0, 41)
 for K in (0.1, -0.05, -0.07):
     r = t6lib.probe("A0", ini, overrides={"EFTCAMB_skip_stability": "T", "feedback_level": "0", "RPHkineticity0": K},

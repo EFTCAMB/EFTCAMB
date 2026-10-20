@@ -17,7 +17,7 @@ import tempfile
 from pathlib import Path
 
 os.environ["OMP_NUM_THREADS"] = "1"
-REPO = Path("/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB")
+REPO = Path("/Users/marco/IW/eftcamb_update/EFTCAMB")
 sys.path.insert(0, str(REPO / "fortran/eftcamb_test/audit/checks"))
 import harness  # noqa: E402
 

@@ -20,7 +20,7 @@ from scipy.optimize import brentq
 
 TREE = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
         "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0")
-BASE = "/Users/marco/Desktop/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/base_params.ini"
+BASE = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/base_params.ini"
 S, Q = 2.0, 0.35  # GCCG1 of arXiv:1912.07586 Table I
 
 INI = f"""EFTflag = 4
