@@ -315,6 +315,16 @@
         end if
     end if
 
+    ! the parameter names are the ini keys: they must not exceed the maximum length of the name buffers.
+    do ind = 1, num_params
+        if (len_trim(param_names(ind)) > EFT_names_max_length) then
+            write(*, *) 'In parametrized_function_1D:', self%name
+            write(*, *) 'Parameter name longer than EFT_names_max_length =', EFT_names_max_length
+            write(*, *) 'Parameter name:', trim(param_names(ind))
+            call MpiStop('EFTCAMB error')
+        end if
+    end do
+
     ! allocate self%param_names and self%param_names_latex:
     if (allocated(self%param_names)) deallocate(self%param_names)
     allocate(self%param_names(num_params))
@@ -343,7 +353,8 @@
     type(TIniFile)                  :: Ini       !< Input ini file
     integer                         :: eft_error !< error code: 0 all fine, 1 initialization failed
 
-    character(len=EFT_names_max_length)        :: param_name
+    !< one more character than the maximum name length, to detect names that would be truncated:
+    character(len=EFT_names_max_length + 1)    :: param_name
     real(dl), dimension(self%parameter_number) :: parameters
 
     integer :: i
@@ -354,6 +365,13 @@
     ! read the parameters and store them in a vector:
     do i = 1, self%parameter_number
         call self%parameter_names(i, param_name)
+        if (len_trim(param_name) > EFT_names_max_length) then
+            write(*, '(a,a)') 'EFTCAMB error: parameter name too long, it cannot be read from the ini file: ', &
+                trim(param_name)
+            write(*, '(a,I4,a)') 'Names are limited to EFT_names_max_length = ', EFT_names_max_length, ' characters.'
+            eft_error = 1
+            return
+        end if
         parameters(i) = Ini%Read_Double(trim(param_name), 0._dl)
     end do
     ! initialize the function parameters from the vector:

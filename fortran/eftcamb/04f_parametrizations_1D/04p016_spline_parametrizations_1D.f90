@@ -150,7 +150,8 @@
     type(TIniFile)                   :: Ini       !< Input ini file
     integer                          :: eft_error !< error code: 0 all fine, 1 initialization failed
 
-    character(len=EFT_names_max_length)        :: param_name
+    !< one more character than the maximum name length, to detect names that would be truncated:
+    character(len=EFT_names_max_length + 1)    :: param_name
     real(dl), dimension(self%parameter_number) :: parameters
 
     integer :: i
@@ -161,6 +162,13 @@
     ! read the parameters and store them in a vector:
     do i = 1, self%parameter_number
         call self%parameter_names(i, param_name)
+        if (len_trim(param_name) > EFT_names_max_length) then
+            write(*, '(a,a)') 'EFTCAMB error: parameter name too long, it cannot be read from the ini file: ', &
+                trim(param_name)
+            write(*, '(a,I4,a)') 'Names are limited to EFT_names_max_length = ', EFT_names_max_length, ' characters.'
+            eft_error = 1
+            return
+        end if
         if (i <= self%num_pixels) then
             parameters(i) = Ini%Read_Double(trim(param_name), 1._dl*real(i - 1)/real(self%num_pixels - 1))
         else
