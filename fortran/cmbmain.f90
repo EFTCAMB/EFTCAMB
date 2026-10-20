@@ -795,6 +795,14 @@
         taustart = min(taustart, 1.d-3/maxval(State%nu_masses(1:CP%Nu_mass_eigenstates))/State%adotrad)
     end if
 
+    ! EFTCAMB MOD START: impose the initial conditions of the EFT perturbations at the same time for every k: the
+    ! scalar modes start no later than the EFT turn-on (otherwise high k modes, which start after an early turn-on,
+    ! get the pi initial conditions at their own start time). The thermal history starts before it (InitVars).
+    if (CP%EFTCAMB%EFTflag /= 0 .and. CP%WantScalars) then
+        taustart = min(taustart, State%DeltaTime(0._dl, CP%EFTCAMB%EFTCAMB_pert_turn_on))
+    end if
+    ! EFTCAMB MOD END.
+
     GetTauStart = taustart
 
     end function GetTauStart
