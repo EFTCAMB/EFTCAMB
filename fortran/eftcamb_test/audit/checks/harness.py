@@ -117,13 +117,19 @@ def build_tree(src: str | Path, dest: str | Path, fflags: str | None = None, mak
         cmd, cwd = ["make", "python", "PYCAMB_OUTPUT_DIR=../camb/", *(make_args or [])], dest / "fortran"
         if fflags is not None:
             cmd.append(f"FFLAGS={fflags}")
+    lib = dest / "camb" / "camblib.so"
+    mtime_before = lib.stat().st_mtime if lib.exists() else 0.0
     log = AUDIT_ROOT / "logs" / f"build_{key}.log"
     log.parent.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     with _build_lock(), slot(4), open(log, "w") as f:
         rc = subprocess.run(cmd, cwd=cwd, env=env, stdout=f, stderr=subprocess.STDOUT, preexec_fn=_nice).returncode
-    ok = rc == 0 and (dest / "camb" / "camblib.so").exists()
-    return {"ok": ok, "returncode": rc, "tree": str(dest), "log": str(log), "elapsed": round(time.time() - t0, 1)}
+    # setup.py make can exit 0 on a failed compile: also check the log (fresh_library tells whether it was rewritten)
+    text = log.read_text(errors="replace")
+    fresh = lib.exists() and lib.stat().st_mtime > mtime_before
+    tail = "\n".join(text.splitlines()[-50:])
+    ok = rc == 0 and lib.exists() and "Compilation failed" not in text and "Error " not in tail
+    return {"ok": ok, "fresh_library": fresh, "returncode": rc, "tree": str(dest), "log": str(log), "elapsed": round(time.time() - t0, 1)}
 
 
 def model_inis(pattern: str = "*.ini") -> list[Path]:
