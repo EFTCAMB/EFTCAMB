@@ -904,7 +904,9 @@
     end subroutine EFTCAMBModelComputeMassFactors
 
     ! ---------------------------------------------------------------------------------------------
-
+    !> Subroutine that computes the quasi-static expression of mu (closed form valid up to Horndeski).
+    !! The numerator and the denominator vanish together when pi does not couple to the metric
+    !! (Omega' = c = Gamma2 = Gamma5 = 0): in that case the GR value mu = 1 is returned instead of 0/0.
     subroutine EFTCAMBModelComputeQSMu(self, a, k, eft_par_cache, eft_cache)
 
     implicit none
@@ -917,46 +919,22 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    eft_cache%QS_mu = (2*(2*(1 + eft_cache%EFTOmegaV)*eft_cache%EFTc* &
-        (k**2 + 3*eft_cache%adotoa**2 - 3*eft_cache%Hdot) + &
-        a*(-36*eft_cache%adotoa**4*(1 + eft_cache%EFTOmegaV)*eft_cache%EFTOmegaP - &
-        3*eft_cache%adotoa**3*eft_par_cache%h0_Mpc*(1 + eft_cache%EFTOmegaV)* &
-        (eft_cache%EFTGamma2V + a*eft_cache%EFTGamma2P) + &
-        2*k**2*eft_cache%adotoa**2* &
-        (2*eft_cache%EFTGamma5V*eft_cache%EFTOmegaP + a*eft_cache%EFTOmegaP**2 + &
-        2*(1 + eft_cache%EFTOmegaV + a*eft_cache%EFTOmegaP)*eft_cache%EFTGamma5P) + &
-        (1 + eft_cache%EFTOmegaV)*(4*k**2*eft_cache%EFTGamma5V*eft_cache%Hdot + &
-        3*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V*eft_cache%Hdotdot) - &
-        eft_cache%adotoa*(1 + eft_cache%EFTOmegaV)* &
-        (eft_par_cache%h0_Mpc*(eft_cache%EFTGamma2V*(k**2 + 3*eft_cache%Hdot) + &
-        a*(k**2 - 3*eft_cache%Hdot)*eft_cache%EFTGamma2P) - &
-        12*eft_cache%EFTOmegaP*eft_cache%Hdotdot))))/ &
-        (2*a*k**2*eft_cache%adotoa*(1 + eft_cache%EFTOmegaV + 2*eft_cache%EFTGamma5V)*eft_cache%EFTOmegaP* &
-        (a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + &
-        eft_cache%adotoa*(-4*eft_cache%EFTGamma5V + a*eft_cache%EFTOmegaP)) - &
-        k**2*(1 + eft_cache%EFTOmegaV)* &
-        (a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + &
-        eft_cache%adotoa*(-4*eft_cache%EFTGamma5V + a*eft_cache%EFTOmegaP))**2 + &
-        2*k**2*eft_cache%adotoa*(1 + eft_cache%EFTOmegaV + 2*eft_cache%EFTGamma5V)* &
-        (a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + &
-        eft_cache%adotoa*(-4*eft_cache%EFTGamma5V + a*eft_cache%EFTOmegaP))* &
-        (2*eft_cache%EFTGamma5V + a*(eft_cache%EFTOmegaP + 2*eft_cache%EFTGamma5P)) + &
-        2*k**2*(1 + eft_cache%EFTOmegaV + 2*eft_cache%EFTGamma5V)**2* &
-        (2*eft_cache%EFTc - a*(-4*eft_cache%EFTGamma5V*eft_cache%Hdot + &
-        eft_cache%adotoa*eft_par_cache%h0_Mpc*(eft_cache%EFTGamma2V + a*eft_cache%EFTGamma2P) - &
-        4*eft_cache%adotoa**2*eft_cache%EFTGamma5P)) + &
-        6*(1 + eft_cache%EFTOmegaV + 2*eft_cache%EFTGamma5V)**2* &
-        (2*eft_cache%EFTc*(eft_cache%adotoa**2 - eft_cache%Hdot) - &
-        a*eft_cache%adotoa*eft_par_cache%h0_Mpc*(eft_cache%adotoa**2 - eft_cache%Hdot)* &
-        (3*eft_cache%EFTGamma2V + a*eft_cache%EFTGamma2P) + &
-        4*a*eft_cache%adotoa*eft_cache%EFTOmegaP*(-3*eft_cache%adotoa**3 + eft_cache%Hdotdot) + &
-        a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V* &
-        (2*eft_cache%adotoa**3 - 4*eft_cache%adotoa*eft_cache%Hdot + eft_cache%Hdotdot)))
+    real(dl) :: num, den, den_scale
+
+    call EFTCAMBQSMuTerms(a, k, eft_par_cache, eft_cache, num, den, den_scale)
+    if (EFTCAMBQSDegenerate(den, den_scale)) then
+        eft_cache%QS_mu = 1._dl
+    else
+        eft_cache%QS_mu = num/den
+    end if
 
     end subroutine EFTCAMBModelComputeQSMu
 
     ! ---------------------------------------------------------------------------------------------
-
+    !> Subroutine that computes the quasi-static expression of Sigma (lensing response).
+    !! Sigma = mu (1 + gamma)/2 with mu the closed form quasi-static mu and gamma = Phi/Psi the
+    !! quasi-static gravitational slip, computed from the same quasi-static coefficients used by
+    !! EFTCAMBModelComputeQSMuSigma. A degenerate slip (0/0, no coupling of pi to the metric) is set to 1.
     subroutine EFTCAMBModelComputeQSSigma(self, a, k, eft_par_cache, eft_cache)
 
     implicit none
@@ -969,47 +947,32 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    eft_cache%QS_sigma = (2*(2*(1 + eft_cache%EFTOmegaV)*eft_cache%EFTc* &
-        (k**2 + 3*eft_cache%adotoa**2 - 3*eft_cache%Hdot) + &
-        a*(-36*eft_cache%adotoa**4*(1 + eft_cache%EFTOmegaV)*eft_cache%EFTOmegaP - &
-        3*eft_cache%adotoa**3*eft_par_cache%h0_Mpc*(1 + eft_cache%EFTOmegaV)* &
-        (eft_cache%EFTGamma2V + a*eft_cache%EFTGamma2P) + &
-        2*k**2*eft_cache%adotoa**2* &
-        (2*eft_cache%EFTGamma5V*eft_cache%EFTOmegaP + a*eft_cache%EFTOmegaP**2 + &
-        2*(1 + eft_cache%EFTOmegaV + a*eft_cache%EFTOmegaP)*eft_cache%EFTGamma5P) + &
-        (1 + eft_cache%EFTOmegaV)*(4*k**2*eft_cache%EFTGamma5V*eft_cache%Hdot + &
-        3*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V*eft_cache%Hdotdot) - &
-        eft_cache%adotoa*(1 + eft_cache%EFTOmegaV)* &
-        (eft_par_cache%h0_Mpc*(eft_cache%EFTGamma2V*(k**2 + 3*eft_cache%Hdot) + &
-        a*(k**2 - 3*eft_cache%Hdot)*eft_cache%EFTGamma2P) - &
-        12*eft_cache%EFTOmegaP*eft_cache%Hdotdot))))/ &
-        (2*a*k**2*eft_cache%adotoa*(1 + eft_cache%EFTOmegaV + 2*eft_cache%EFTGamma5V)*eft_cache%EFTOmegaP* &
-        (a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + &
-        eft_cache%adotoa*(-4*eft_cache%EFTGamma5V + a*eft_cache%EFTOmegaP)) - &
-        k**2*(1 + eft_cache%EFTOmegaV)* &
-        (a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + &
-        eft_cache%adotoa*(-4*eft_cache%EFTGamma5V + a*eft_cache%EFTOmegaP))**2 + &
-        2*k**2*eft_cache%adotoa*(1 + eft_cache%EFTOmegaV + 2*eft_cache%EFTGamma5V)* &
-        (a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + &
-        eft_cache%adotoa*(-4*eft_cache%EFTGamma5V + a*eft_cache%EFTOmegaP))* &
-        (2*eft_cache%EFTGamma5V + a*(eft_cache%EFTOmegaP + 2*eft_cache%EFTGamma5P)) + &
-        2*k**2*(1 + eft_cache%EFTOmegaV + 2*eft_cache%EFTGamma5V)**2* &
-        (2*eft_cache%EFTc - a*(-4*eft_cache%EFTGamma5V*eft_cache%Hdot + &
-        eft_cache%adotoa*eft_par_cache%h0_Mpc*(eft_cache%EFTGamma2V + a*eft_cache%EFTGamma2P) - &
-        4*eft_cache%adotoa**2*eft_cache%EFTGamma5P)) + &
-        6*(1 + eft_cache%EFTOmegaV + 2*eft_cache%EFTGamma5V)**2* &
-        (2*eft_cache%EFTc*(eft_cache%adotoa**2 - eft_cache%Hdot) - &
-        a*eft_cache%adotoa*eft_par_cache%h0_Mpc*(eft_cache%adotoa**2 - eft_cache%Hdot)* &
-        (3*eft_cache%EFTGamma2V + a*eft_cache%EFTGamma2P) + &
-        4*a*eft_cache%adotoa*eft_cache%EFTOmegaP*(-3*eft_cache%adotoa**3 + eft_cache%Hdotdot) + &
-        a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V* &
-        (2*eft_cache%adotoa**3 - 4*eft_cache%adotoa*eft_cache%Hdot + eft_cache%Hdotdot)))
+    real(dl) :: num, den, den_scale, mu, gamma
+    real(dl) :: mu_num, mu_den, mu_den_scale, slip_num, slip_den, slip_den_scale
+
+    ! quasi-static mu (closed form):
+    call EFTCAMBQSMuTerms(a, k, eft_par_cache, eft_cache, num, den, den_scale)
+    if (EFTCAMBQSDegenerate(den, den_scale)) then
+        mu = 1._dl
+    else
+        mu = num/den
+    end if
+    ! quasi-static slip:
+    call EFTCAMBQSGeneralTerms(a, k, eft_par_cache, eft_cache, mu_num, mu_den, mu_den_scale, &
+        slip_num, slip_den, slip_den_scale)
+    if (EFTCAMBQSDegenerate(slip_den, slip_den_scale)) then
+        gamma = 1._dl
+    else
+        gamma = slip_num/slip_den
+    end if
+
+    eft_cache%QS_sigma = 0.5_dl*mu*(1._dl + gamma)
 
     end subroutine EFTCAMBModelComputeQSSigma
 
-
     ! ---------------------------------------------------------------------------------------------
-
+    !> Subroutine that computes the general quasi-static expressions of mu and Sigma.
+    !! Degenerate (0/0) ratios are replaced by their GR value (mu = 1, gamma = 1).
     subroutine EFTCAMBModelComputeQSMuSigma(self, a, k, eft_par_cache, eft_cache) ! minsup
 
     implicit none
@@ -1022,44 +985,156 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: A1, A2, A3, B1, B2, B3, C1, C2, C3, M2, R0dot       !< temp variables
+    real(dl) :: mu_num, mu_den, mu_den_scale, slip_num, slip_den, slip_den_scale
     real(dl) :: gamma
 
-    R0dot = (6/a**3)*(eft_cache%Hdotdot - 2*eft_cache%adotoa*(eft_cache%adotoa**2))
+    call EFTCAMBQSGeneralTerms(a, k, eft_par_cache, eft_cache, mu_num, mu_den, mu_den_scale, &
+        slip_num, slip_den, slip_den_scale)
 
-    A1 = 2*(1 + eft_cache%EFTOmegaV) + 4*eft_cache%EFTGamma5V
-    A2 = -eft_cache%EFTOmegaP*eft_cache%adotoa - eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + &
-        2*eft_cache%adotoa*eft_cache%EFTGamma4V/a + 4*eft_cache%adotoa*eft_cache%EFTGamma5V/a
-    A3 = -8*eft_cache%EFTGamma6V
+    if (EFTCAMBQSDegenerate(mu_den, mu_den_scale)) then
+        eft_cache%QS_mu_gen = 1._dl
+    else
+        eft_cache%QS_mu_gen = mu_num/mu_den
+    end if
 
-    B1 = -1 - 2*eft_cache%EFTGamma5V/(1 + eft_cache%EFTOmegaV)
-    B2 = 1
-    B3 = (-eft_cache%EFTOmegaP*eft_cache%adotoa + eft_cache%adotoa*(eft_cache%EFTGamma4V/a + eft_cache%EFTGamma4P)) &
-        /(1 + eft_cache%EFTOmegaV)
+    if (EFTCAMBQSDegenerate(slip_den, slip_den_scale)) then
+        gamma = 1._dl
+    else
+        gamma = slip_num/slip_den
+    end if
 
-    C1 = eft_cache%EFTOmegaP*eft_cache%adotoa + 2*eft_cache%adotoa*(eft_cache%EFTGamma5V/a + eft_cache%EFTGamma5P)
-    C2 = -eft_cache%EFTOmegaP*eft_cache%adotoa/2 - eft_cache%EFTGamma2V*eft_par_cache%h0_Mpc/2 - &
-        (1/(2*a))*eft_cache%adotoa*(3*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V - 4*eft_cache%EFTGamma5V)
-    C3 = eft_cache%EFTc/a**2 - eft_par_cache%h0_Mpc*eft_cache%adotoa*(eft_cache%EFTGamma2V/a + eft_cache%EFTGamma2P)/2 &
-        + eft_cache%EFTGamma3V*(k**2/2 - 3*(eft_cache%Hdot - eft_cache%adotoa**2))/(a**2) &
-        + eft_cache%EFTGamma4V*(k**2/2 - (eft_cache%Hdot - eft_cache%adotoa**2))/(a**2) &
-        + 2*(eft_cache%Hdot*eft_cache%EFTGamma5V/a**2 + eft_cache%adotoa**2*eft_cache%EFTGamma5P/a)
-
-    M2 = eft_cache%EFTOmegaP*eft_cache%adotoa*R0dot/4 - 3*eft_cache%EFTc*(eft_cache%Hdot - eft_cache%adotoa**2)/a**4 + &
-        1.5*(eft_par_cache%h0_Mpc/a**2)* &
-        ((eft_cache%Hdot - eft_cache%adotoa**2)*eft_cache%adotoa*eft_cache%EFTGamma2P + &
-        (eft_cache%Hdotdot - eft_cache%adotoa*eft_cache%Hdot - eft_cache%adotoa**3)*eft_cache%EFTGamma2V/a) + &
-        1.5*((eft_cache%Hdot - eft_cache%adotoa**2)**2/a**4)*(eft_cache%EFTGamma4V + 3*eft_cache%EFTGamma3V)
-
-    eft_cache%QS_mu_gen = 2*(B2*C3 - C1*B3 + (a**2/k**2)*B2*M2) &
-        /(A1*(B3*C2 - B1*C3 - B1*M2*(a**2/k**2)) + A2*(B1*C1 - B2*C2) + A3*(B2*C3 - B3*C1 + B2*M2*(a**2/k**2)))
-
-    gamma = (B3*C2 - B1*C3 - (a**2/k**2)*B1*M2)/(B2*C3 - C1*B3 + (a**2/k**2)*B2*M2)
-
-    eft_cache%QS_sigma_gen = 0.5*eft_cache%QS_mu_gen*(1 + gamma)
+    eft_cache%QS_sigma_gen = 0.5_dl*eft_cache%QS_mu_gen*(1._dl + gamma)
 
     end subroutine EFTCAMBModelComputeQSMuSigma
 
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that decides whether a quasi-static ratio is degenerate: its denominator vanishes
+    !! within roundoff of the sum of the magnitudes of its terms (0/0 when all terms vanish).
+    logical function EFTCAMBQSDegenerate(den, den_scale)
+
+    implicit none
+
+    real(dl), intent(in) :: den        !< the denominator of the ratio
+    real(dl), intent(in) :: den_scale  !< the sum of the magnitudes of the terms of the denominator
+
+    real(dl), parameter :: QS_relative_tolerance = 1.e-13_dl
+
+    EFTCAMBQSDegenerate = .not. (abs(den) > QS_relative_tolerance*den_scale)
+
+    end function EFTCAMBQSDegenerate
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes numerator and denominator of the closed form quasi-static mu,
+    !! together with the sum of the magnitudes of the terms of the denominator.
+    subroutine EFTCAMBQSMuTerms(a, k, eft_par_cache, eft_cache, num, den, den_scale)
+
+    implicit none
+
+    real(dl), intent(in)                          :: a             !< the input scale factor.
+    real(dl), intent(in)                          :: k             !< the input scale.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+    real(dl), intent(out) :: num        !< numerator of mu
+    real(dl), intent(out) :: den        !< denominator of mu
+    real(dl), intent(out) :: den_scale  !< sum of the magnitudes of the terms of the denominator
+
+    real(dl) :: k2, H, Hd, Hdd, h0, opO, OP, c, G2, G2P, G5, G5P, X, Y, d1, d2, d3, d4, d5
+
+    k2 = k**2
+    H = eft_cache%adotoa
+    Hd = eft_cache%Hdot
+    Hdd = eft_cache%Hdotdot
+    h0 = eft_par_cache%h0_Mpc
+    opO = 1._dl + eft_cache%EFTOmegaV
+    OP = eft_cache%EFTOmegaP
+    c = eft_cache%EFTc
+    G2 = eft_cache%EFTGamma2V
+    G2P = eft_cache%EFTGamma2P
+    G5 = eft_cache%EFTGamma5V
+    G5P = eft_cache%EFTGamma5P
+
+    num = 2._dl*(2._dl*opO*c*(k2 + 3._dl*H**2 - 3._dl*Hd) + &
+        a*(-36._dl*H**4*opO*OP - 3._dl*H**3*h0*opO*(G2 + a*G2P) + &
+        2._dl*k2*H**2*(2._dl*G5*OP + a*OP**2 + 2._dl*(opO + a*OP)*G5P) + &
+        opO*(4._dl*k2*G5*Hd + 3._dl*h0*G2*Hdd) - &
+        H*opO*(h0*(G2*(k2 + 3._dl*Hd) + a*(k2 - 3._dl*Hd)*G2P) - 12._dl*OP*Hdd)))
+
+    X = opO + 2._dl*G5
+    Y = a*h0*G2 + H*(-4._dl*G5 + a*OP)
+    d1 = 2._dl*a*k2*H*X*OP*Y
+    d2 = -k2*opO*Y**2
+    d3 = 2._dl*k2*H*X*Y*(2._dl*G5 + a*(OP + 2._dl*G5P))
+    d4 = 2._dl*k2*X**2*(2._dl*c - a*(-4._dl*G5*Hd + H*h0*(G2 + a*G2P) - 4._dl*H**2*G5P))
+    d5 = 6._dl*X**2*(2._dl*c*(H**2 - Hd) - a*H*h0*(H**2 - Hd)*(3._dl*G2 + a*G2P) + &
+        4._dl*a*H*OP*(-3._dl*H**3 + Hdd) + a*h0*G2*(2._dl*H**3 - 4._dl*H*Hd + Hdd))
+
+    den = d1 + d2 + d3 + d4 + d5
+    den_scale = abs(d1) + abs(d2) + abs(d3) + abs(d4) + abs(d5)
+
+    end subroutine EFTCAMBQSMuTerms
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes numerators and denominators of the general quasi-static mu and
+    !! gravitational slip gamma, together with the sums of the magnitudes of the denominator terms.
+    subroutine EFTCAMBQSGeneralTerms(a, k, eft_par_cache, eft_cache, mu_num, mu_den, mu_den_scale, &
+        slip_num, slip_den, slip_den_scale)
+
+    implicit none
+
+    real(dl), intent(in)                          :: a             !< the input scale factor.
+    real(dl), intent(in)                          :: k             !< the input scale.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+    real(dl), intent(out) :: mu_num, mu_den, mu_den_scale        !< general quasi-static mu
+    real(dl), intent(out) :: slip_num, slip_den, slip_den_scale  !< quasi-static slip gamma
+
+    real(dl) :: A1, A2, A3, B1, B2, B3, C1, C2, C3, M2, R0dot, r
+
+    R0dot = (6._dl/a**3)*(eft_cache%Hdotdot - 2._dl*eft_cache%adotoa*(eft_cache%adotoa**2))
+
+    A1 = 2._dl*(1._dl + eft_cache%EFTOmegaV) + 4._dl*eft_cache%EFTGamma5V
+    A2 = -eft_cache%EFTOmegaP*eft_cache%adotoa - eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + &
+        2._dl*eft_cache%adotoa*eft_cache%EFTGamma4V/a + 4._dl*eft_cache%adotoa*eft_cache%EFTGamma5V/a
+    A3 = -8._dl*eft_cache%EFTGamma6V
+
+    B1 = -1._dl - 2._dl*eft_cache%EFTGamma5V/(1._dl + eft_cache%EFTOmegaV)
+    B2 = 1._dl
+    B3 = (-eft_cache%EFTOmegaP*eft_cache%adotoa + eft_cache%adotoa*(eft_cache%EFTGamma4V/a + eft_cache%EFTGamma4P)) &
+        /(1._dl + eft_cache%EFTOmegaV)
+
+    C1 = eft_cache%EFTOmegaP*eft_cache%adotoa + 2._dl*eft_cache%adotoa*(eft_cache%EFTGamma5V/a + eft_cache%EFTGamma5P)
+    C2 = -eft_cache%EFTOmegaP*eft_cache%adotoa/2._dl - eft_cache%EFTGamma2V*eft_par_cache%h0_Mpc/2._dl - &
+        (1._dl/(2._dl*a))*eft_cache%adotoa*(3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V - &
+        4._dl*eft_cache%EFTGamma5V)
+    C3 = eft_cache%EFTc/a**2 - eft_par_cache%h0_Mpc*eft_cache%adotoa*(eft_cache%EFTGamma2V/a + &
+        eft_cache%EFTGamma2P)/2._dl &
+        + eft_cache%EFTGamma3V*(k**2/2._dl - 3._dl*(eft_cache%Hdot - eft_cache%adotoa**2))/(a**2) &
+        + eft_cache%EFTGamma4V*(k**2/2._dl - (eft_cache%Hdot - eft_cache%adotoa**2))/(a**2) &
+        + 2._dl*(eft_cache%Hdot*eft_cache%EFTGamma5V/a**2 + eft_cache%adotoa**2*eft_cache%EFTGamma5P/a)
+
+    M2 = eft_cache%EFTOmegaP*eft_cache%adotoa*R0dot/4._dl - &
+        3._dl*eft_cache%EFTc*(eft_cache%Hdot - eft_cache%adotoa**2)/a**4 + &
+        1.5_dl*(eft_par_cache%h0_Mpc/a**2)* &
+        ((eft_cache%Hdot - eft_cache%adotoa**2)*eft_cache%adotoa*eft_cache%EFTGamma2P + &
+        (eft_cache%Hdotdot - eft_cache%adotoa*eft_cache%Hdot - eft_cache%adotoa**3)*eft_cache%EFTGamma2V/a) + &
+        1.5_dl*((eft_cache%Hdot - eft_cache%adotoa**2)**2/a**4)*(eft_cache%EFTGamma4V + 3._dl*eft_cache%EFTGamma3V)
+
+    r = a**2/k**2
+
+    mu_num = 2._dl*(B2*C3 - C1*B3 + r*B2*M2)
+    mu_den = A1*(B3*C2 - B1*C3 - B1*M2*r) + A2*(B1*C1 - B2*C2) + A3*(B2*C3 - B3*C1 + B2*M2*r)
+    mu_den_scale = abs(A1)*(abs(B3*C2) + abs(B1*C3) + abs(B1*M2*r)) + abs(A2)*(abs(B1*C1) + abs(B2*C2)) + &
+        abs(A3)*(abs(B2*C3) + abs(B3*C1) + abs(B2*M2*r))
+
+    slip_num = B3*C2 - B1*C3 - r*B1*M2
+    slip_den = B2*C3 - C1*B3 + r*B2*M2
+    slip_den_scale = abs(B2*C3) + abs(C1*B3) + abs(r*B2*M2)
+
+    end subroutine EFTCAMBQSGeneralTerms
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes model specific stability requirements.
