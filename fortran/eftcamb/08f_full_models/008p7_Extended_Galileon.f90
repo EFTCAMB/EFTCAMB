@@ -34,6 +34,7 @@
     use EFTCAMB_cache
     use EFT_def
     use EFTCAMB_abstract_model_full
+    use MassiveNu
 
     implicit none
 
@@ -310,7 +311,9 @@
 
     call self%feedback()
 
-    success = .true.
+    ! the EFT functions contain B/q:
+    success = (self%ExtendedGalileon_q /= 0._dl)
+    if (.not. success .and. feedback_level > 0) write(*, *) 'EFTCAMB Extended Galileon: q = 0 is not allowed.'
 
     end subroutine EFTCAMBExtendedGalileonInitBackground
 
@@ -332,14 +335,11 @@
     Omega_phi0 = eft_par_cache%omegav
     a2 = a*a
 
-    if (a == 0._dl) then
-        return
-    else if (eft_cache%adotoa == 0._dl) then
-        call self%compute_adotoa(a, eft_par_cache, eft_cache)
-        call self%compute_H_derivs(a, eft_par_cache, eft_cache)
-    end if
-
-    if (eft_cache%adotoa <= 0._dl .or. a <= 0._dl) return
+    if (a <= 0._dl) return
+    ! expansion history of the model's own background (tracker solution), independent of the cache content:
+    call self%compute_adotoa(a, eft_par_cache, eft_cache)
+    call self%compute_H_derivs(a, eft_par_cache, eft_cache)
+    if (eft_cache%adotoa <= 0._dl) return
     ! compute the background EFT functions:
     eft_cache%EFTOmegaV = 0._dl
     eft_cache%EFTOmegaP = 0._dl
@@ -348,7 +348,7 @@
     eft_cache%EFTc = -(a**(2 + self%ExtendedGalileon_B/self%ExtendedGalileon_q)*self%ExtendedGalileon_B &
         *eft_cache%adotoa**(-2 - self%ExtendedGalileon_B/self%ExtendedGalileon_q) &
         *eft_par_cache%h0_Mpc**(2 + self%ExtendedGalileon_B/self%ExtendedGalileon_q) &
-        *Omega_phi0*(eft_cache%adotoa**2 - eft_cache%Hdot))/(2.*self%ExtendedGalileon_q)
+        *Omega_phi0*(eft_cache%adotoa**2 - eft_cache%Hdot))/(2._dl*self%ExtendedGalileon_q)
 
     eft_cache%EFTLambda = -((a**(2 + self%ExtendedGalileon_B/self%ExtendedGalileon_q)*eft_cache%adotoa** &
         (-2 - self%ExtendedGalileon_B/self%ExtendedGalileon_q)*eft_par_cache%h0_Mpc** &
@@ -361,7 +361,7 @@
         (2 + self%ExtendedGalileon_B/self%ExtendedGalileon_q)*Omega_phi0* &
         (self%ExtendedGalileon_B*eft_cache%adotoa**4 - 2*self%ExtendedGalileon_B*eft_cache%adotoa**2*eft_cache%Hdot + &
         (2*self%ExtendedGalileon_q + self%ExtendedGalileon_B)*eft_cache%Hdot**2 - &
-        self%ExtendedGalileon_q*eft_cache%adotoa*eft_cache%Hdotdot))/(2.*self%ExtendedGalileon_q**2)
+        self%ExtendedGalileon_q*eft_cache%adotoa*eft_cache%Hdotdot))/(2._dl*self%ExtendedGalileon_q**2)
 
     eft_cache%EFTLambdadot = -((a**(2 + self%ExtendedGalileon_B/self%ExtendedGalileon_q)*self%ExtendedGalileon_B* &
         eft_cache%adotoa**(-3 - self%ExtendedGalileon_B/self%ExtendedGalileon_q)*eft_par_cache%h0_Mpc** &
@@ -391,14 +391,17 @@
     Omega_phi0 = eft_par_cache%omegav
     a2 = a*a
 
-    if (a*eft_cache%adotoa == 0._dl) return
-    if (eft_cache%adotoa <= 0._dl .or. a <= 0._dl) return
+    if (a <= 0._dl) return
+    ! expansion history of the model's own background (tracker solution), independent of the cache content:
+    call self%compute_adotoa(a, eft_par_cache, eft_cache)
+    call self%compute_H_derivs(a, eft_par_cache, eft_cache)
+    if (eft_cache%adotoa <= 0._dl) return
 
     ! compute the second order EFT functions:
     eft_cache%EFTGamma1V = (a**(self%ExtendedGalileon_B/self%ExtendedGalileon_q)*self%ExtendedGalileon_B* &
         eft_cache%adotoa**(-2 - self%ExtendedGalileon_B/self%ExtendedGalileon_q)*eft_par_cache%h0_Mpc** &
         (self%ExtendedGalileon_B/self%ExtendedGalileon_q)*Omega_phi0* &
-        ((1 + 12*self%ExtendedGalileon_q**2)*eft_cache%adotoa**2 - eft_cache%Hdot))/(4.*self%ExtendedGalileon_q)
+        ((1 + 12*self%ExtendedGalileon_q**2)*eft_cache%adotoa**2 - eft_cache%Hdot))/(4._dl*self%ExtendedGalileon_q)
 
     eft_cache%EFTGamma1P = (a**(-1 + self%ExtendedGalileon_B/self%ExtendedGalileon_q)*self%ExtendedGalileon_B* &
         eft_cache%adotoa**(-4 - self%ExtendedGalileon_B/self%ExtendedGalileon_q)*eft_par_cache%h0_Mpc** &
@@ -406,7 +409,7 @@
         ((self%ExtendedGalileon_B + 12*self%ExtendedGalileon_q**2*self%ExtendedGalileon_B)*eft_cache%adotoa**4 - &
         2*(1 + 6*self%ExtendedGalileon_q**2)*self%ExtendedGalileon_B*eft_cache%adotoa**2*eft_cache%Hdot + &
         (2*self%ExtendedGalileon_q + self%ExtendedGalileon_B)*eft_cache%Hdot**2 - &
-        self%ExtendedGalileon_q*eft_cache%adotoa*eft_cache%Hdotdot))/(4.*self%ExtendedGalileon_q**2)
+        self%ExtendedGalileon_q*eft_cache%adotoa*eft_cache%Hdotdot))/(4._dl*self%ExtendedGalileon_q**2)
 
     eft_cache%EFTGamma2V = -2*self%ExtendedGalileon_B*(a*eft_par_cache%h0_Mpc/eft_cache%adotoa)** &
         ((self%ExtendedGalileon_B + self%ExtendedGalileon_q)/self%ExtendedGalileon_q)*Omega_phi0
@@ -443,62 +446,14 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: temp, a2, Omega_tot
-    integer  :: nu_i, counter
-    real(dl) :: limit1, limit2, flimit1, flimit2, dmean, soluction, fsoluction, bolean ! soluction = H/H0
-    real(dl) :: Omega_phi0
-    real(dl) :: ATemp1, ATemp2, BTemp1, BTemp2, HorizAsyntB
+    real(dl) :: up, upp, uppp
 
-    Omega_phi0 = eft_par_cache%omegav
-    a2 = a*a
-
-    Omega_tot = (eft_par_cache%omegac + eft_par_cache%omegab)*a**(-3.) + &
-        (eft_par_cache%omegag + eft_par_cache%omegar)*a**(-4.) + &
-        eft_cache%grhonu_tot/(3._dl*eft_par_cache%h0_Mpc**2.*a2)
-
-    ! SP:Debug
-    if (a < 0.2_dl) then
-        ! temp = 0.5_dl*a2*(eft_par_cache%h0_Mpc)**2.*( Omega_tot + sqrt( Omega_tot**2. + 4._dl*eft_par_cache%omegav ) )
-        ! eft_cache%adotoa = sqrt( temp )
-        ! if (eft_cache%grhom_t == 0._dl) call self%compute_background_EFT_functions(a, eft_par_cache, eft_cache )
-        temp = 1.0_dl/(1.0_dl + eft_cache%EFTOmegaV + a*eft_cache%EFTOmegaP)* &
-            (eft_cache%grhom_t + 2.0_dl*eft_cache%EFTc - eft_cache%EFTLambda)/3.0_dl
-        eft_cache%adotoa = sqrt(temp)
-        return
-    end if
-
-    limit1 = 0
-    if (limit1 < 0) limit1 = 0
-    limit2 = 10**(9)
-    flimit1 = Omega_phi0 + Omega_tot*(limit1/a)**(self%S) - (limit1/a)**(2 + self%S)
-    flimit2 = Omega_phi0 + Omega_tot*(limit2/a)**(self%S) - (limit2/a)**(2 + self%S)
-    dmean = (limit2 - limit1)/2
-    soluction = limit2 - dmean
-    fsoluction = 1
-    counter = 0
-    do while (sqrt(fsoluction**2) > 10**(-1) .and. counter < 50**1)
-        fsoluction = Omega_phi0 + Omega_tot*(soluction/a)**(self%S) - (soluction/a)**(2 + self%S)
-        bolean = fsoluction*flimit1
-        if (bolean > 0.) then
-            limit1 = soluction
-            flimit1 = fsoluction
-        end if
-        if (bolean <= 0.) then
-            limit2 = soluction
-            flimit2 = fsoluction
-        end if
-        dmean = (limit2 - limit1)/2
-        soluction = limit1 + dmean
-        counter = counter + 1
-    end do
-
-    temp = soluction*eft_par_cache%h0_Mpc
-    eft_cache%adotoa = temp
+    call ExtGalTracker(self, a, eft_par_cache, eft_cache%adotoa, up, upp, uppp)
 
     end subroutine EFTCAMBExtendedGalileonComputeAdotoa
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the two derivatives wrt conformal time of H.
+    !> Subroutine that computes the three derivatives wrt conformal time of H.
     subroutine EFTCAMBExtendedGalileonComputeHubbleDer(self, a, eft_par_cache, eft_cache)
 
     implicit none
@@ -510,47 +465,104 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: temp, a2, Omega_tot, Omega_tot_prime, Omega_tot_primeprime, Omega_phi0
-    integer  :: nu_i
+    real(dl) :: adotoa, up, upp, uppp
 
-    a2 = a*a
-
-    if (a == 0._dl) return
-    if (eft_cache%adotoa == 0._dl) then
-        call self%compute_adotoa(a, eft_par_cache, eft_cache)
-        ! print*, "here = ", eft_cache%adotoa, a
-        if (eft_cache%adotoa == 0._dl) return
-    end if
-
-    Omega_tot = (eft_par_cache%omegac + eft_par_cache%omegab)*a**(-3) + &
-        (eft_par_cache%omegag + eft_par_cache%omegar)*a**(-4) + eft_cache%grhonu_tot/(3._dl*eft_par_cache%h0_Mpc**2*a2)
-
-    Omega_tot_prime = -3._dl*(eft_par_cache%omegac + eft_par_cache%omegab)*a**(-4) - &
-        4._dl*(eft_par_cache%omegag + eft_par_cache%omegar)*a**(-5) - &
-        (eft_cache%grhonu_tot + eft_cache%gpinu_tot)/(eft_par_cache%h0_Mpc**2*a2*a)
-
-    Omega_tot_primeprime = 12._dl*(eft_par_cache%omegac + eft_par_cache%omegab)*a**(-5) + &
-        20._dl*(eft_par_cache%omegag + eft_par_cache%omegar)*a**(-6) + &
-        (4._dl*(eft_cache%grhonu_tot + eft_cache%gpinu_tot) - eft_cache%gpinudot_tot/eft_cache%adotoa)/ &
-        (eft_par_cache%h0_Mpc**2*a2**2)
-
-    Omega_phi0 = eft_par_cache%omegav
-
-    eft_cache%Hdot = -(eft_cache%adotoa**2* &
-        (a**2*eft_par_cache%h0_Mpc**2*(a*Omega_tot_prime - self%S*Omega_tot) + (self%S + 2)*eft_cache%adotoa**2))/ &
-        (a**2*eft_par_cache%h0_Mpc**2*self%S*Omega_tot - (self%S + 2)*eft_cache%adotoa**2)
-    eft_cache%Hdotdot = eft_cache%adotoa**3/ &
-        ((self%S + 2)*eft_cache%adotoa**2*a**2*eft_par_cache%h0_Mpc**2*self%S*Omega_tot)**3* &
-        (a**2*eft_par_cache%h0_Mpc**2*(self%S + 2)**2*eft_cache%adotoa**4* &
-        (a*(5*Omega_tot_prime + a*Omega_tot_primeprime) - 6*self%S*Omega_tot) + &
-        a**6*eft_par_cache%h0_Mpc**6*self%S*Omega_tot* &
-        (-a**2*(self%S + 2)*Omega_tot_prime**2 - 2*self%S**2*Omega_tot**2 + &
-        a*self%S*Omega_tot*(5*Omega_tot_prime + a*Omega_tot_primeprime)) + &
-        a**4*eft_par_cache%h0_Mpc**4*self%S*(self%S + 2)*eft_cache%adotoa**2* &
-        (a**2*Omega_tot_prime**2 + 6*self%S*Omega_tot**2 - &
-        2*a*Omega_tot*(5*Omega_tot_prime + a*Omega_tot_primeprime)) + 2*(self%S + 2)**3*eft_cache%adotoa**6)
+    ! with u = ln E: d adotoa/dN = adotoa (1 + u') and d/dtau = adotoa d/dN
+    call ExtGalTracker(self, a, eft_par_cache, adotoa, up, upp, uppp)
+    eft_cache%Hdot = adotoa**2*(1._dl + up)
+    eft_cache%Hdotdot = adotoa**3*(2._dl*(1._dl + up)**2 + upp)
+    eft_cache%Hdotdotdot = adotoa**4*(uppp + 7._dl*(1._dl + up)*upp + 6._dl*(1._dl + up)**3)
 
     end subroutine EFTCAMBExtendedGalileonComputeHubbleDer
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that solves the tracker Friedmann equation of the model (arXiv:1912.07586 eq. 16)
+    !! \f$ E^2 = \Omega_{\rm tot}(a) + \Omega_{\phi,0} E^{-S} \f$, with \f$ E = H/H_0 \f$, and returns adotoa and the first
+    !! three derivatives of u = ln E with respect to N = ln a. \f$ \Omega_{\rm tot} \f$ contains matter, radiation and
+    !! massive neutrinos, computed here.
+    subroutine ExtGalTracker(self, a, eft_par_cache, adotoa, up, upp, uppp)
+
+    implicit none
+
+    class(EFTCAMB_Extended_Galileon) :: self          !< the base class
+    real(dl), intent(in)             :: a             !< the input scale factor
+    type(TEFTCAMB_parameter_cache), intent(in) :: eft_par_cache !< the EFTCAMB parameter cache
+    real(dl), intent(out)            :: adotoa        !< conformal Hubble rate
+    real(dl), intent(out)            :: up, upp, uppp !< derivatives of ln(H/H0) wrt ln a
+
+    real(dl) :: S, Om_phi, Om, Om_p, Om_pp, Om_ppp, rho, rho_p, rho_pp, rho_ppp, p, p_p, p_pp
+    real(dl) :: rhonu, pnu, dpnu, ddpnu, am, Om_m, Om_r, u, u_lo, u_hi, g, dg, du, W2, V, den
+    integer  :: nu_i, iter
+
+    adotoa = 0._dl
+    up = 0._dl
+    upp = 0._dl
+    uppp = 0._dl
+    if (a <= 0._dl) return
+    S = self%S
+    Om_phi = eft_par_cache%omegav
+
+    ! 1) Omega_tot(N) = rho/(3 H0^2) and its derivatives wrt N. Massive neutrinos: rho' = -3 (rho + p).
+    rho = 0._dl
+    p = 0._dl
+    p_p = 0._dl
+    p_pp = 0._dl
+    if (eft_par_cache%Num_Nu_Massive /= 0) then
+        do nu_i = 1, eft_par_cache%Nu_mass_eigenstates
+            am = a*eft_par_cache%nu_masses(nu_i)
+            rhonu = 0._dl
+            pnu = 0._dl
+            call ThermalNuBackground%rho_P(am, rhonu, pnu)
+            dpnu = ThermalNuBackground%pidot(am, 1._dl, pnu)
+            ddpnu = ThermalNuBackground%pidotdot(am, 1._dl, 0._dl, pnu, dpnu)
+            rho = rho + eft_par_cache%grhormass(nu_i)*rhonu/a**4
+            p = p + eft_par_cache%grhormass(nu_i)*pnu/a**4
+            p_p = p_p + eft_par_cache%grhormass(nu_i)*(dpnu - 4._dl*pnu)/a**4
+            p_pp = p_pp + eft_par_cache%grhormass(nu_i)*(ddpnu - 8._dl*dpnu + 16._dl*pnu)/a**4
+        end do
+    end if
+    rho_p = -3._dl*(rho + p)
+    rho_pp = -3._dl*(rho_p + p_p)
+    rho_ppp = -3._dl*(rho_pp + p_pp)
+    Om_m = (eft_par_cache%omegac + eft_par_cache%omegab)/a**3
+    Om_r = (eft_par_cache%omegag + eft_par_cache%omegar)/a**4
+    Om = Om_m + Om_r + rho/(3._dl*eft_par_cache%h0_Mpc**2)
+    Om_p = -3._dl*Om_m - 4._dl*Om_r + rho_p/(3._dl*eft_par_cache%h0_Mpc**2)
+    Om_pp = 9._dl*Om_m + 16._dl*Om_r + rho_pp/(3._dl*eft_par_cache%h0_Mpc**2)
+    Om_ppp = -27._dl*Om_m - 64._dl*Om_r + rho_ppp/(3._dl*eft_par_cache%h0_Mpc**2)
+
+    ! 2) solve g(u) = exp(2u) - Om - Om_phi exp(-S u) = 0 for u = ln E (safeguarded Newton):
+    u_lo = 0.5_dl*log(Om)
+    u_hi = 0.5_dl*log(Om + Om_phi*exp(-S*u_lo))
+    do iter = 1, 200
+        if (exp(2._dl*u_hi) - Om - Om_phi*exp(-S*u_hi) >= 0._dl) exit
+        u_hi = u_hi + 1._dl
+    end do
+    u = u_hi
+    do iter = 1, 200
+        g = exp(2._dl*u) - Om - Om_phi*exp(-S*u)
+        if (g > 0._dl) then
+            u_hi = u
+        else
+            u_lo = u
+        end if
+        dg = 2._dl*exp(2._dl*u) + S*Om_phi*exp(-S*u)
+        du = -g/dg
+        if (u + du <= u_lo .or. u + du >= u_hi .or. dg <= 0._dl) du = 0.5_dl*(u_lo + u_hi) - u
+        u = u + du
+        if (abs(du) < 1.e-15_dl*max(1._dl, abs(u)) .or. u_hi - u_lo < 1.e-15_dl*max(1._dl, abs(u))) exit
+    end do
+    adotoa = a*eft_par_cache%h0_Mpc*exp(u)
+
+    ! 3) derivatives of u from W - V = Om with W = E^2, V = Om_phi E^(-S):
+    W2 = exp(2._dl*u)
+    V = Om_phi*exp(-S*u)
+    den = 2._dl*W2 + S*V
+    up = Om_p/den
+    upp = (Om_pp - 4._dl*up**2*W2 + S**2*up**2*V)/den
+    uppp = (Om_ppp - 12._dl*up*upp*W2 - 8._dl*up**3*W2 + 3._dl*S**2*up*upp*V - S**3*up**3*V)/den
+
+    end subroutine ExtGalTracker
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes model specific stability requirements.
