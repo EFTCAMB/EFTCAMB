@@ -35,6 +35,20 @@ def _get_setter_spec(setter) -> dict[str, Parameter]:
         return spec
 
 
+# EFTCAMB MOD START: names (model_name()) of the EFTCAMB models that compute the higher order derivatives of the EFT
+# functions used by the positivity bounds and Minkowski limit checks
+_EFT_HIGHER_DERIVATIVES_MODELS = (
+    "Standard Pure EFT",
+    "RPH",
+    "OL gamma",
+    "Shift Symmetric alpha B",
+    "Designer full3p1",
+    "K-mouflage",
+    "Scaling Cubic Galileon",
+)
+# EFTCAMB MOD END
+
+
 def set_feedback_level(level=1):
     """
     Set the feedback level for internal CAMB calls
@@ -215,7 +229,7 @@ def set_params(cp=None, verbose=False, **params):
     # dedicated setter for the initialization of EFTCAMB
     def EFT_do_set(setter):
         if verbose:
-            logging.warning("Calling %s(**%s)" % (setter.__name__, params))
+            logger.warning(f"Calling {setter.__name__}(**{params})")
         # get feedback flag:
         _feedback_level = params.get("feedback_level", 0)
         # call setter:
@@ -268,24 +282,19 @@ def set_params(cp=None, verbose=False, **params):
                 raise CAMBUnknownArgumentError(f"Unrecognized parameter: {k}")
 
     # EFTCAMB MOD START
-    # Note : positivity bounds are implemented only for some specific cases this check avoid that they are used improperly
-    if cp.EFTCAMB.EFTflag != 0:
-        EFTpars = cp.EFTCAMB.read_parameters()
-        if EFTpars["EFT_positivity_bounds"]:
-            if cp.EFTCAMB.model_name() not in [
-                "OL gamma",
-                "Standard Pure EFT",
-                "K-mouflage",
-                "Scaling Cubic Galileon",
-                "RPHalphaDE",
-            ]:
-                raise CAMBValueError(
-                    "Higher order derivatives of the EFTfunctions not implemented. Positivity Bounds cannot be calculated properly for %s"
-                    % cp.EFTCAMB.model_name()
-                )
-            if cp.EFTCAMB.model_name() in ["Standard Pure EFT"]:
-                if any([EFTpars["PureEFTmodelGamma4"], EFTpars["PureEFTmodelGamma5"], EFTpars["PureEFTmodelGamma6"]]):
-                    print("Warning: positivity bounds are implemented up to Gamma3.")
+    # Note : positivity bounds and the Minkowski limit need the higher order derivatives of the EFT functions, which
+    # only some models compute: this check avoids that they are used improperly
+    if cp.EFTCAMB.EFTflag != 0 and (cp.EFTCAMB.EFT_positivity_bounds or cp.EFTCAMB.EFT_minkowski_limit):
+        _model_name = cp.EFTCAMB.model_name()
+        if _model_name not in _EFT_HIGHER_DERIVATIVES_MODELS:
+            raise CAMBValueError(
+                "Higher order derivatives of the EFT functions not implemented. Positivity bounds and the Minkowski "
+                f"limit cannot be calculated properly for {_model_name}"
+            )
+        if _model_name == "Standard Pure EFT":
+            EFTpars = cp.EFTCAMB.read_parameters()
+            if any(EFTpars.get(f"PureEFTmodelGamma{i}", 0) for i in (4, 5, 6)):
+                print("Warning: positivity bounds are implemented up to Gamma3.")
 
     # EFTCAMB MOD END
 
