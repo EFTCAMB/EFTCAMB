@@ -63,9 +63,6 @@
         real(dl) :: x_final        !< ond point of interpolation
         real(dl), dimension(:, :), allocatable :: bcoef         !< internal coefficients for the spline interpolation
 
-        !< array containing the values of the function w DE integral \f$ yint_i= \exp\left(-3\int_1^{x_i} \frac{1+f(x)}{x} \, dx \right) \f$.
-        real(dl), allocatable, dimension(:) :: yint
-
     contains
 
     ! utility functions:
@@ -136,7 +133,7 @@
     if (self%logx_flag) then
         do ind = 1, self%num_pixels
             if (self%x_coord(ind) <= 0) call MpiStop(trim(self%name) // &
-                ' error: spline x coordinate must be non-negative when ' // trim(self%name) // '_Logx_Flag is True.')
+                ' error: spline x coordinate must be positive when ' // trim(self%name) // '_Logx_Flag is True.')
             self%x_coord(ind) = log(self%x_coord(ind))
         end do
     end if
@@ -144,7 +141,7 @@
     if (self%logy_flag) then
         do ind = 1, self%num_pixels
             if (self%pixels(ind) <= 0) call MpiStop(trim(self%name) // &
-                ' error: spline y values must be non-negative when ' // trim(self%name) // '_Logy_Flag is True.')
+                ' error: spline y values must be positive when ' // trim(self%name) // '_Logy_Flag is True.')
             self%pixels(ind) = log(self%pixels(ind))
         end do
     end if
@@ -157,7 +154,6 @@
     end do
     ! create the spline coefficients:
     if (allocated(self%bcoef)) deallocate(self%bcoef)
-    if (allocated(self%yint)) deallocate(self%yint)
     allocate(self%bcoef(self%spl_order + 2, self%num_pixels - 1))
     ! compute spline polynomial coefficients
     select case (self%spl_order)
@@ -258,10 +254,13 @@
     integer, intent(in)               :: i           !< The index of the parameter
     real(dl), intent(out)             :: value       !< the output value of the i-th parameter
 
+    ! return the user-facing values, i.e. undo the internal log transformation:
     if (i <= self%num_pixels) then
         value = self%x_coord(i)
+        if (self%logx_flag) value = exp(value)
     else if (i > self%num_pixels .and. i <= self%parameter_number) then
         value = self%pixels(i - self%num_pixels)
+        if (self%logy_flag) value = exp(value)
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
@@ -292,8 +291,8 @@
     end if
 
     write(*, '(a,a)')      ' alternative spline parametrization: ', self%name
-    write(*, '(a,a)')      ' whether interpolate in terms of log(x): ', self%logx_flag
-    write(*, '(a,a)')      ' whether interpolate in terms of log(y): ', self%logy_flag
+    write(*, '(a,L2)')     ' whether interpolate in terms of log(x): ', self%logx_flag
+    write(*, '(a,L2)')     ' whether interpolate in terms of log(y): ', self%logy_flag
     write(*, '(a,a,a,I3)') ' number of pixels (', trim(self%name) // '_Spline_Pixels', '): ', self%num_pixels
     write(*, '(a,a,a,I3)') ' spline order (', trim(self%name) // '_Spline_Order', '): ', self%spl_order
     write(*, '(a,F12.6)')  ' null value: ', self%null_value
@@ -426,8 +425,8 @@
     if (self%logx_flag) then
         x_ = log(a)
     end if
-    ! Do not extrapolate:
-    SplineQ1DFirstDerivative = self%null_value
+    ! Do not extrapolate: outside the nodes the function is the constant null_value.
+    SplineQ1DFirstDerivative = 0._dl
     if (x_ < self%x_initial .or. x_ > self%x_final) return
     ! if inside return the spline value:
     ip = iixmin(x_, self%x_coord, 0)
@@ -477,8 +476,8 @@
     if (self%logx_flag) then
         x_ = log(a)
     end if
-    ! Do not extrapolate:
-    SplineQ1DSecondDerivative = self%null_value
+    ! Do not extrapolate: outside the nodes the function is the constant null_value.
+    SplineQ1DSecondDerivative = 0._dl
     if (x_ < self%x_initial .or. x_ > self%x_final) return
     ! if inside return the spline value:
     ip = iixmin(x_, self%x_coord, 0)
@@ -532,16 +531,19 @@
     if (self%logx_flag) then
         x_ = log(a)
     end if
-    ! Do not extrapolate:
-    SplineQ1DThirdDerivative = self%null_value
+    ! Do not extrapolate: outside the nodes the function is the constant null_value.
+    SplineQ1DThirdDerivative = 0._dl
     if (x_ < self%x_initial .or. x_ > self%x_final) return
     ! if inside return the spline value:
     ip = iixmin(x_, self%x_coord, 0)
     select case (self%spl_order)
     case (3)
-        write(*, '(a,a,a,I3)') 'Third derivative invalid for ', trim(self%name) // '_Spline_Order = ', self%spl_order
-        write(*, *) 'Calculations cannot proceed.'
-        call MpiStop('EFTCAMB error')
+        if (self%logx_flag .or. self%logy_flag) then
+            y = poly3(x_, self%bcoef(:, ip))
+            yx = dpoly3(x_, self%bcoef(:, ip))
+            yxx = d2poly3(x_, self%bcoef(:, ip))
+        end if
+        yxxx = 6._dl*self%bcoef(5, ip)
     case (5)
         if (self%logx_flag .or. self%logy_flag) then
             y = poly5(x_, self%bcoef(:, ip))
@@ -588,16 +590,20 @@
     if (self%logx_flag) then
         x_ = log(a)
     end if
-    ! Do not extrapolate:
-    SplineQ1DFourthDerivative = self%null_value
+    ! Do not extrapolate: outside the nodes the function is the constant null_value.
+    SplineQ1DFourthDerivative = 0._dl
     if (x_ < self%x_initial .or. x_ > self%x_final) return
     ! if inside return the spline value:
     ip = iixmin(x_, self%x_coord, 0)
     select case (self%spl_order)
     case (3)
-        write(*, '(a,a,a,I3)') 'Fourth derivative invalid for ', trim(self%name) // '_Spline_Order = ', self%spl_order
-        write(*, *) 'Calculations cannot proceed.'
-        call MpiStop('EFTCAMB error')
+        if (self%logx_flag .or. self%logy_flag) then
+            y = poly3(x_, self%bcoef(:, ip))
+            yx = dpoly3(x_, self%bcoef(:, ip))
+            yxx = d2poly3(x_, self%bcoef(:, ip))
+            yxxx = 6._dl*self%bcoef(5, ip)
+        end if
+        yxxxx = 0._dl
     case (5)
         if (self%logx_flag .or. self%logy_flag) then
             y = poly5(x_, self%bcoef(:, ip))
@@ -638,77 +644,14 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: SplineQ1DIntegral                                  !< the output value
 
-    real(dl) :: tmp, a, x_, x0, dx
-    integer  :: ip, j
-
-    SplineQ1DIntegral = 0._dl
-
-    ! initialize integration vector when first called
-    if (.not. allocated(self%yint)) then
-        call SplineQ1DInitIntegration(self)
-    end if
-
-    a = x
-    x_ = a
+    ! no closed form: numerical integral of the spline, split at the nodes.
     if (self%logx_flag) then
-        x_ = log(a)
-    end if
-    ! Do not extrapolate:
-    if (x_ < self%x_initial) then
-        SplineQ1DIntegral = self%yint(1)
-    else if (x_ > self%x_final) then
-        SplineQ1DIntegral = 1._dl
+        SplineQ1DIntegral = self%numerical_integral(x, exp(self%x_coord), eft_cache)
     else
-        ! simply use linear interpolation
-        ip = iixmin(x_, self%x_coord, 0)
-        x0 = self%x_coord(ip)
-        dx = x_ - x0
-        tmp = 0._dl
-        do j = 1, size(self%bcoef(:, ip))
-            tmp = tmp + self%bcoef(j, ip)*dx**j/real(j)
-        end do
-        SplineQ1DIntegral = self%yint(ip)*(x_/x0)**3*exp(tmp)
+        SplineQ1DIntegral = self%numerical_integral(x, self%x_coord, eft_cache)
     end if
 
     end function SplineQ1DIntegral
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Private subroutine to initialize the integration vecotr. \f$ yint_i= \exp\left(-3\int_1^{x_i} \frac{1+f(x)}{x} \, dx \right) \f$. Only meaningful when we are parameterizing w_DE(a). by Gen
-    subroutine SplineQ1DInitIntegration(self)
-
-    implicit none
-
-    class(spline5_parametrization_1D) :: self      !< the base class
-
-    integer                           :: i, j
-    real(dl)                          :: x1, x2, dx, tmp
-
-    if (self%logy_flag) then
-        write(*, *) 'Spline integral is not implemented for ', trim(self%name) // '_Logy_Flag = True.'
-        write(*, *) 'Calculations cannot proceed.'
-        call MpiStop('EFTCAMB error')
-    end if
-    if (.not. self%logx_flag) then
-        write(*, *) 'Spline integral is not implemented for ', trim(self%name) // '_Logx_Flag = False.'
-        write(*, *) 'Calculations cannot proceed.'
-        call MpiStop('EFTCAMB error')
-    end if
-
-    allocate(self%yint(self%num_pixels))
-
-    tmp = 0._dl
-    self%yint(self%num_pixels) = 1._dl
-    do i = self%num_pixels - 1, 1, -1
-        x1 = self%x_coord(i)
-        x2 = self%x_coord(i + 1)
-        dx = x2 - x1
-        do j = 1, size(self%bcoef(:, i))
-            tmp = tmp + self%bcoef(j, i)*dx**j/real(j)
-        end do
-        self%yint(i) = self%yint(i + 1)*(x1/x2)**3*exp(-tmp)
-    end do
-
-    end subroutine SplineQ1DInitIntegration
 
     end module EFTCAMB_spline5_parametrizations_1D
 
