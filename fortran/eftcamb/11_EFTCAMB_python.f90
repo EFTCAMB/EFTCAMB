@@ -687,9 +687,9 @@
                 ! third derivative of H:
                 call EFTCAMB%model%compute_H_derivs(a, par_cache, cache)
                 ! remaining background quantities:
-                if (EFTCAMB%EFTCAMB_model_is_designer) then
-                    call EFTCAMB%model%compute_background_EFT_functions(a, par_cache, cache)
-                end if
+                ! (again for full models, now with the current adotoa, Hdot, Hdotdot: their background EFT
+                ! functions may use them)
+                call EFTCAMB%model%compute_background_EFT_functions(a, par_cache, cache)
                 call EFTCAMB%model%compute_rhoQPQ(a, par_cache, cache)
                 call EFTCAMB%model%compute_secondorder_EFT_functions(a, par_cache, cache)
             end associate

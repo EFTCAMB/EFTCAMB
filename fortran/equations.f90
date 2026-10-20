@@ -2185,9 +2185,9 @@
             (16._dl/3._dl)*(cache%grhog_t + cache%grhor_t)*adotoa**2 + cache%gpinudotdot_tot
         call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, cache)
     end do
-    if (CP%EFTCAMB%EFTCAMB_model_is_designer) then
-        call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, cache)
-    end if
+    ! (again for full models, now with the current adotoa, Hdot, Hdotdot: their background EFT
+    ! functions may use them)
+    call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, cache)
     call CP%EFTCAMB%model%compute_rhoQPQ(a, CP%eft_par_cache, cache)
     call CP%EFTCAMB%model%compute_secondorder_EFT_functions(a, CP%eft_par_cache, cache)
 
@@ -2996,9 +2996,9 @@
         ! store:
         adotdota = EV%eft_cache%Hdot + EV%eft_cache%adotoa**2
         ! finish computing the background:
-        if (CP%EFTCAMB%EFTCAMB_model_is_designer) then
-            call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
-        end if
+        ! (again for full models, now with the current adotoa, Hdot, Hdotdot: their background EFT
+        ! functions may use them)
+        call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
         ! compute all other background stuff:
         call CP%EFTCAMB%model%compute_rhoQPQ(a, CP%eft_par_cache, EV%eft_cache)
         ! compute second order EFT functions:
@@ -4381,9 +4381,9 @@
             call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
 
             ! finish computing the background:
-            if (CP%EFTCAMB%EFTCAMB_model_is_designer) then
-                call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
-            end if
+            ! (again for full models, now with the current adotoa, Hdot, Hdotdot: their background EFT
+            ! functions may use them)
+            call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
             ! compute all other background stuff:
             call CP%EFTCAMB%model%compute_rhoQPQ(a, CP%eft_par_cache, EV%eft_cache)
             ! compute second order EFT functions:
