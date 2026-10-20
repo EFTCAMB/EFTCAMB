@@ -692,8 +692,8 @@
         3._dl*eft_cache%adotoa**2*eft_cache%EFTOmegaP**2*a**2 + &
         a**2*eft_par_cache%h0_Mpc*(eft_par_cache%h0_Mpc* &
         (3._dl*eft_cache%EFTGamma2V**2 + &
-        8._dl*eft_cache%EFTGamma1V*(1._dl + eft_cache%EFTOmegaV - eft_cache%EFTGamma4V) + &
-        6._dl*eft_cache%adotoa*eft_cache%EFTGamma2V*eft_cache%EFTOmegaP)))
+        8._dl*eft_cache%EFTGamma1V*(1._dl + eft_cache%EFTOmegaV - eft_cache%EFTGamma4V)) + &
+        6._dl*eft_cache%adotoa*eft_cache%EFTGamma2V*eft_cache%EFTOmegaP))
     !
     eft_cache%EFT_gradient = 9._dl* &
         (8._dl*a*eft_cache%adotoa**2*eft_cache%EFTGamma5P - 16._dl*eft_cache%adotoa**2*eft_cache%EFTGamma5V**2 + &
