@@ -93,6 +93,60 @@ def _convert_ini_value(value):
     return value
 
 
+# Names of EFTCAMB parameters, used to accept (and ignore) them in camb.set_params when EFTCAMB is off (EFTflag=0).
+# The keys of the model parameters are partly built at run time (parametrization names), so they are recognised by
+# their prefixes; this is not an exhaustive list.
+_EFTCAMB_KEY_PREFIXES = (
+    "EFT",
+    "PureEFT",
+    "RPH",
+    "OL",
+    "Designer3p1",
+    "Horava",
+    "Horndeski",
+    "Beyond_Horndeski",
+    "ExtendedGalileon",
+    "Scaling_Cubic",
+    "Shift_Symmetric",
+    "Kmimic",
+)
+_EFTCAMB_KEYS = frozenset(
+    (
+        "AltParEFTmodel",
+        "DesignerEFTmodel",
+        "FullMappingEFTmodel",
+        "feedback_level",
+        "output_root",
+        "alphaU",
+        "gammaA",
+        "gammaU",
+        "drag_initial_conditions",
+        "eps2_0",
+        "f_ac",
+        "Log_ac",
+        "field_max",
+        "field_min",
+        "m",
+        "p",
+        "wf",
+        "phidot_ini",
+        "potential_model",
+        "model_background_a_ini",
+        "model_background_a_final",
+        "model_background_num_points",
+        "want_debug",
+        "want_LCDM",
+    )
+)
+
+
+def is_eftcamb_parameter(key):
+    """
+    Whether key looks like the name of an EFTCAMB parameter (flag or model parameter).
+    """
+    return key in _EFTCAMB_KEYS or key.startswith(_EFTCAMB_KEY_PREFIXES)
+
+
 EFTCAMB_initialize = camblib.__eftcamb_python_MOD_initialize_eftcamb_from_py
 # bind(c) routine: its name is fixed by the binding label for every compiler
 EFTCAMB_initialize_read_params = camblib.initialize_EFTCAMB_from_py_read_params_

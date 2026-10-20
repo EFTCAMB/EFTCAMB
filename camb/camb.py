@@ -9,6 +9,7 @@ from . import constants, model, recombination
 from ._config import config
 from .baseconfig import CAMBError as CAMBError
 from .baseconfig import CAMBUnknownArgumentError, CAMBValueError, camblib, filepath_to_fortran, np
+from .eftcamb import is_eftcamb_parameter
 from .model import CAMBparams
 from .results import CAMBdata
 from .results import ClTransferData as ClTransferData
@@ -210,6 +211,9 @@ def set_params(cp=None, verbose=False, **params):
     if "ALens" in params:
         raise ValueError("Use Alens not ALens")
 
+    # EFTCAMB MOD START: whether the input parameters are updated
+    cp_given = cp is not None
+    # EFTCAMB MOD END
     if cp is None:
         cp = model.CAMBparams()
     else:
@@ -226,16 +230,32 @@ def set_params(cp=None, verbose=False, **params):
             setter(**kwargs)
 
     # EFTCAMB MOD START
+    # EFTCAMB model of the input parameters, kept (and updated with the EFTCAMB keys given here) when cp is reused
+    if cp_given and cp.EFTCAMB is not None and cp.EFTCAMB.EFTflag != 0:
+        existing_eft_params = cp.EFTCAMB.current_parameters()
+    else:
+        existing_eft_params = {}
+
     # dedicated setter for the initialization of EFTCAMB
     def EFT_do_set(setter):
+        if cp_given:
+            # re-initialize only when EFTCAMB keys are given, starting from the existing EFTCAMB parameters
+            if "EFTflag" not in params and not any(key in existing_eft_params for key in params):
+                return
+            eft_params = {**existing_eft_params, **params}
+        else:
+            eft_params = params
         if verbose:
-            logger.warning(f"Calling {setter.__name__}(**{params})")
+            logger.warning(f"Calling {setter.__name__}(cp, **{eft_params})")
         # get feedback flag:
         _feedback_level = params.get("feedback_level", 0)
         # call setter:
-        setter(cp, params, print_header=_feedback_level > 0)
+        setter(cp, eft_params, print_header=_feedback_level > 0)
         # update parameters that are actually used:
-        used_params.update(cp.EFTCAMB.read_parameters())
+        used_params.update(cp.EFTCAMB.read_parameters(raw=True))
+        if cp.EFTCAMB.EFTflag == 0 and "EFTflag" in params:
+            # EFTCAMB switched off explicitly: accept and ignore the EFTCAMB parameters, as the ini reader does
+            used_params.update(key for key in params if is_eftcamb_parameter(key))
 
     # EFTCAMB MOD END
 
