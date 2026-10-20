@@ -27,6 +27,7 @@
     module EFTCAMB_designer_full3p1_wDE
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use EFTCAMB_cache
@@ -421,7 +422,8 @@
         write(*, *) 'Length of num_params_temp and self%parameter_number do not coincide.'
         write(*, *) 'num_params_temp:', num_params_temp - 1
         write(*, *) 'self%parameter_number:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: inconsistent number of model parameters', error_unsupported_params)
+        return
     end if
 
     end subroutine EFTCAMBDesigner3p1InitModelParameters
@@ -575,7 +577,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesigner3p1ParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
 
         ! parameter from wDE function
     else if (i <= Nw) then
@@ -683,7 +688,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesigner3p1ParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
 
         ! parameter from wDE function
     else if (i <= Nw) then
@@ -793,7 +801,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesigner3p1ParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
 
         ! parameter from wDE function
     else if (i <= Nw) then

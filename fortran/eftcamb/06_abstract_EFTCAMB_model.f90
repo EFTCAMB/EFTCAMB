@@ -29,6 +29,7 @@
     module EFTCAMB_abstract_model
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use EFT_def
@@ -1342,9 +1343,10 @@
 
     real(dl)             :: EFTCAMBModelComputeDeltaTau !< the output tau
 
-    write(*, *) "EFTCAMB_use_background = True"
-    write(*, *) "EFTCAMBModelComputeDeltaTau currently only supported by the Horndeski module (EFTflag=5)"
-    call MpiStop("EFTCAMB error")
+    ! (EFTCAMB_use_background is rejected for the other models when the parameters are set)
+    EFTCAMBModelComputeDeltaTau = 0._dl
+    call GlobalError('EFTCAMB error: EFTCAMB_use_background = True, EFTCAMBModelComputeDeltaTau only ' // &
+        'supported by the Horndeski module (EFTflag=5)', error_unsupported_params)
 
     end function EFTCAMBModelComputeDeltaTau
 
@@ -1358,9 +1360,10 @@
 
     real(dl)             :: EFTCAMBModelComputeDeltaCosmicT !< the output t
 
-    write(*, *) "EFTCAMB_use_background = True"
-    write(*, *) "EFTCAMBModelComputeDeltaCosmicT currently only supported by the Horndeski module (EFTflag=5)"
-    call MpiStop("EFTCAMB error")
+    ! (EFTCAMB_use_background is rejected for the other models when the parameters are set)
+    EFTCAMBModelComputeDeltaCosmicT = 0._dl
+    call GlobalError('EFTCAMB error: EFTCAMB_use_background = True, EFTCAMBModelComputeDeltaCosmicT only ' // &
+        'supported by the Horndeski module (EFTflag=5)', error_unsupported_params)
 
     end function EFTCAMBModelComputeDeltaCosmicT
 
@@ -1373,9 +1376,10 @@
 
     real(dl)             :: EFTCAMBModelComputeSoundHorizon !< the output r_s
 
-    write(*, *) "EFTCAMB_use_background = True"
-    write(*, *) "EFTCAMBModelComputeSoundHorizon currently only supported by the Horndeski module (EFTflag=5)"
-    call MpiStop("EFTCAMB error")
+    ! (EFTCAMB_use_background is rejected for the other models when the parameters are set)
+    EFTCAMBModelComputeSoundHorizon = 0._dl
+    call GlobalError('EFTCAMB error: EFTCAMB_use_background = True, EFTCAMBModelComputeSoundHorizon only ' // &
+        'supported by the Horndeski module (EFTflag=5)', error_unsupported_params)
 
     end function EFTCAMBModelComputeSoundHorizon
 

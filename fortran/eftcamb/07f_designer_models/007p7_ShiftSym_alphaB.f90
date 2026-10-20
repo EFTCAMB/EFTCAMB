@@ -25,6 +25,7 @@
     module EFTCAMB_designer_ShiftSym_alphaB
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use EFTCAMB_cache
     use MpiUtils
@@ -302,7 +303,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBShiftSymmetricParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
         ! the first parameter is alpha_B0:
     else if (i == 1) then
         name = trim('alpha_B0')
@@ -337,7 +341,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBShiftSymmetricParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
         ! the first parameter is alpha_B0:
     else if (i == 1) then
         latexname = trim('alpha_B0')
@@ -372,7 +379,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBShiftSymmetricParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
         ! the first parameter is alpha_B0:
     else if (i == 1) then
         value = self%SS_alphaB0

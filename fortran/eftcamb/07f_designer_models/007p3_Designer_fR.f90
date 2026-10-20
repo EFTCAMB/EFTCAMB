@@ -25,6 +25,7 @@
     module EFTCAMB_designer_fR
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use FileUtils
@@ -941,7 +942,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesignerFRParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
         ! the first parameter is B0:
     else if (i == 1) then
         name = trim('B0')
@@ -968,7 +972,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesignerFRParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
         ! the first parameter is B0:
     else if (i == 1) then
         latexname = trim('B_0')
@@ -995,7 +1002,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesignerFRParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
         ! the first parameter is B0:
     else if (i == 1) then
         value = self%B0
