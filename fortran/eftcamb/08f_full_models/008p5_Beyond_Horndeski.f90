@@ -108,9 +108,8 @@
     procedure :: compute_background_EFT_functions => EFTCAMBBeyondHorndeskiBackgroundEFTFunctions
     !< subroutine that computes the value of the second order EFT functions at a given time.
     procedure :: compute_secondorder_EFT_functions => EFTCAMBBeyondHorndeskiSecondOrderEFTFunctions
-    ! procedure :: compute_dtauda                    => EFTCAMBBeyondHorndeskiComputeDtauda    !< function that computes dtauda = 1/sqrt(a^2H^2).
-    ! procedure :: compute_adotoa                    => EFTCAMBBeyondHorndeskiComputeAdotoa            !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
-    ! procedure :: compute_H_derivs                  => EFTCAMBBeyondHorndeskiComputeHubbleDer         !< subroutine that computes the two derivatives wrt conformal time of H.
+    ! adotoa and its derivatives: the generic full mapping procedures, consistent with the background EFT functions,
+    ! that are computed from the model's own background solution.
 
     ! stability procedures:
     !< function that computes model specific stability requirements.
@@ -993,8 +992,10 @@
 
     x4ppp = 4._dl*(x4pp*epsilon + 2._dl*x4p*epsilon_p + x4*epsilon_pp)
 
-    call self%compute_adotoa(a, eft_par_cache, eft_cache)
-    call self%compute_H_derivs(a, eft_par_cache, eft_cache)
+    ! expansion history of the model's own background solution (independent of the cache content):
+    eft_cache%adotoa = sqrt(H2)*a
+    eft_cache%Hdot = eft_cache%adotoa**2*(1._dl + h)
+    eft_cache%Hdotdot = eft_cache%adotoa**3*(2._dl*(1._dl + h)**2 + hprime)
 
     ! compute the background EFT functions:
     eft_cache%EFTOmegaV = -x4/5._dl
@@ -1074,7 +1075,7 @@
 
     real(dl) :: x1, x2, x3, x4, x1p, x2p, x3p, x4p, x1pp, x2pp, x4pp, x3pp, x3ppp, x4ppp, OmegaRad, OmegaRadprime
     real(dl) :: grhom, grhorad, H2, epsilon, epsilon_p, epsilon_pp, OmegaRadprimeprime
-    real(dl) :: mu, x, h, hprime, hpprime, qs, qsprime, qspprime
+    real(dl) :: mu, x, h, hprime, hpprime, qs, qsprime, qspprime, Hdotdotdot
     integer  :: ind
 
     x = log(a)
@@ -1168,9 +1169,11 @@
         8._dl*x4**2._dl)**3._dl
 
     x4ppp = 4._dl*(x4pp*epsilon + 2._dl*x4p*epsilon_p + x4*epsilon_pp)
-    x3ppp = -x3*(hpprime - 3._dl*epsilon_pp) - 2._dl*x3p*(hprime - 3._dl*epsilon_p) - (h - 3._dl*epsilon)*x3pp
-    call self%compute_adotoa(a, eft_par_cache, eft_cache)
-    call self%compute_H_derivs(a, eft_par_cache, eft_cache)
+
+    ! expansion history of the model's own background solution (independent of the cache content):
+    eft_cache%adotoa = sqrt(H2)*a
+    eft_cache%Hdot = eft_cache%adotoa**2*(1._dl + h)
+    eft_cache%Hdotdot = eft_cache%adotoa**3*(2._dl*(1._dl + h)**2 + hprime)
 
     ! compute the second order EFT functions:
     eft_cache%EFTGamma1V = (2*eft_cache%adotoa**2*x2)/(a**2*eft_par_cache%h0_Mpc**2) + &
@@ -1206,6 +1209,7 @@
             3._dl*x3*x3p)))
 
         x3ppp = -x3*(hpprime - 3._dl*epsilon_pp) - 2._dl*x3p*(hprime - 3._dl*epsilon_p) - (h - 3._dl*epsilon)*x3pp
+        Hdotdotdot = eft_cache%adotoa**4*(hpprime + 7._dl*(1._dl + h)*hprime + 6._dl*(1._dl + h)**3)
 
         eft_cache%EFTGamma2PP = (x3*eft_cache%Hdot**2._dl - x3*eft_cache%adotoa*eft_cache%Hdotdot + &
             eft_cache%adotoa**4._dl*(3._dl*x3p - x3pp - 2._dl*x3) + &
@@ -1215,7 +1219,7 @@
         eft_cache%EFTGamma2PPP = (3._dl*eft_cache%adotoa**2._dl*eft_cache%Hdot**2._dl*(x3p - 2._dl*x3) + &
             4._dl*eft_cache%adotoa*eft_cache%Hdot*eft_cache%Hdotdot*x3 + &
             3._dl*eft_cache%adotoa**3._dl*eft_cache%Hdotdot*(2._dl*x3 - x3p) - &
-            eft_cache%adotoa**2._dl*eft_cache%Hdotdotdot*x3 + &
+            eft_cache%adotoa**2._dl*Hdotdotdot*x3 + &
             eft_cache%adotoa**4._dl*eft_cache%Hdot*(-11._dl*x3 + 12._dl*x3p - 3._dl*x3pp) + &
             eft_cache%adotoa**6._dl*(6._dl*x3 - 11._dl*x3p + 6._dl*x3pp - x3ppp) - &
             eft_cache%Hdot**3._dl*x3)/(a**4._dl*eft_par_cache%h0_Mpc*eft_cache%adotoa**5._dl)
@@ -1233,164 +1237,6 @@
     eft_cache%EFTGamma6P = 0._dl
 
     end subroutine EFTCAMBBeyondHorndeskiSecondOrderEFTFunctions
-
-    ! ---------------------------------------------------------------------------------------------
-    function EFTCAMBBeyondHorndeskiComputeDtauda(self, a, eft_par_cache, eft_cache)
-
-    implicit none
-
-    class(EFTCAMB_Beyond_Horndeski) :: self          !< the base class
-    real(dl), intent(in)            :: a             !< the input scale factor.
-    !< the EFTCAMB parameter cache that contains all the physical parameters.
-    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
-    !< the EFTCAMB timestep cache that contains all the physical values.
-    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
-
-    real(dl) :: EFTCAMBBeyondHorndeskiComputeDtauda, temp, temp1, temp2                   !< the output dtauda
-
-    real(dl) :: a2, x
-
-    a2 = a*a
-
-    x = log(a)
-    call self%compute_adotoa(a, eft_par_cache, eft_cache)
-
-    if (a*eft_cache%adotoa == 0._dl .or. x < self%x_initial) then
-        EFTCAMBBeyondHorndeskiComputeDtauda = 1._dl/sqrt(eft_cache%grhoa2/3._dl)
-    else
-        EFTCAMBBeyondHorndeskiComputeDtauda = 1._dl/(a*eft_cache%adotoa)
-    end if
-    write(*, *) x, self%x_initial
-    end function EFTCAMBBeyondHorndeskiComputeDtauda
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes adotoa = H.
-    subroutine EFTCAMBBeyondHorndeskiComputeAdotoa(self, a, eft_par_cache, eft_cache)
-
-    implicit none
-
-    class(EFTCAMB_Beyond_Horndeski) :: self          !< the base class
-    real(dl), intent(in)            :: a             !< the input scale factor
-    !< the EFTCAMB parameter cache that contains all the physical parameters.
-    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
-    !< the EFTCAMB timestep cache that contains all the physical values.
-    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
-
-    real(dl) :: x, mu, mu_0, H2, grhom, grhorad, x1, x2, x3, x4
-    integer  :: ind, ind_0
-
-    grhom = eft_par_cache%grhob + eft_par_cache%grhoc
-    grhorad = eft_par_cache%grhornomass + eft_par_cache%grhog
-
-    x = log(a)
-
-    call self%fun_x1%precompute(x, ind, mu)
-    x1 = self%fun_x1%value(x, index=ind, coeff=mu)
-    x2 = self%fun_x2%value(x, index=ind, coeff=mu)
-    x3 = self%fun_x3%value(x, index=ind, coeff=mu)
-    x4 = self%fun_x4%value(x, index=ind, coeff=mu)
-
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/((1._dl - x1 - x2 - x3 - x4)*3._dl)
-
-    eft_cache%adotoa = sqrt(H2)*a
-
-    write(*, *) 1._dl - x1 - x2 - x3, exp(x), sqrt(H2)*a
-
-    end subroutine EFTCAMBBeyondHorndeskiComputeAdotoa
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the two derivatives wrt conformal time of H.
-    subroutine EFTCAMBBeyondHorndeskiComputeHubbleDer(self, a, eft_par_cache, eft_cache)
-
-    implicit none
-
-    class(EFTCAMB_Beyond_Horndeski) :: self          !< the base class
-    real(dl), intent(in)            :: a             !< the input scale factor
-    !< the EFTCAMB parameter cache that contains all the physical parameters.
-    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
-    !< the EFTCAMB timestep cache that contains all the physical values.
-    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
-
-    real(dl) :: x, mu, temp, grhog_t, h, x1, x2, x3, x4, OmegaRad, OmegaRadprime, OmegaRadprimeprime, hprime, x1p, &
-        x2p, x3p, x4p, H2, grhom, grhorad
-    real(dl) :: hpprime, x1pp, x2pp, x3pp, x4pp, qs, qsprime, qspprime
-    integer  :: ind
-
-    grhom = eft_par_cache%grhob + eft_par_cache%grhoc
-    grhorad = eft_par_cache%grhornomass + eft_par_cache%grhog
-
-    x = log(a)
-    call self%fun_x1%precompute(x, ind, mu)
-    x1 = self%fun_x1%value(x, index=ind, coeff=mu)
-    x2 = self%fun_x2%value(x, index=ind, coeff=mu)
-    x3 = self%fun_x3%value(x, index=ind, coeff=mu)
-    x4 = self%fun_x4%value(x, index=ind, coeff=mu)
-    x1p = self%fun_x1%first_derivative(x, index=ind, coeff=mu)
-    x2p = self%fun_x2%first_derivative(x, index=ind, coeff=mu)
-    x3p = self%fun_x3%first_derivative(x, index=ind, coeff=mu)
-    x4p = self%fun_x4%second_derivative(x, index=ind, coeff=mu)
-    x1p = self%fun_x1%second_derivative(x, index=ind, coeff=mu)
-    x2p = self%fun_x2%second_derivative(x, index=ind, coeff=mu)
-    x3p = self%fun_x3%second_derivative(x, index=ind, coeff=mu)
-    x4p = self%fun_x4%second_derivative(x, index=ind, coeff=mu)
-
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/((1._dl - x1 - x2 - x3 - x4)*3._dl)
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
-
-    call self%compute_adotoa(a, eft_par_cache, eft_cache)
-
-    h = -((15._dl*x3**2._dl + 12._dl*x4**2._dl + 10._dl*(x1 + 2._dl*x2)*(3._dl + 3._dl*x1 + x2 + OmegaRad) &
-        + 10._dl*x3*(3._dl + 6._dl*x1 + 3._dl*x2 + OmegaRad) + x4*(36._dl + 78._dl*x1 + 32._dl*x2 + 30._dl*x3 &
-        + 12._dl*OmegaRad))/(5._dl*x3**2._dl + 20._dl*(x1 + 2._dl*x2 + x3) + 4._dl*(6._dl - x1 - 2._dl*x2 &
-        + 3._dl*x3)*x4 + 8._dl*x4**2._dl))
-
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
-
-    hprime = ((15._dl*x3**2._dl + 12._dl*x4**2._dl + 10._dl*(x1 + 2._dl*x2)*(3._dl + 3._dl*x1 + x2 + OmegaRad) + &
-        10._dl*x3*(3._dl + 6._dl*x1 + 3._dl*x2 + OmegaRad) + &
-        x4*(36._dl + 78._dl*x1 + 32._dl*x2 + 30._dl*x3 + 12._dl*OmegaRad))* &
-        (10._dl*x3*x3p + 20._dl*(x1p + 2._dl*x2p + x3p) + 4._dl*x4*(-x1p - 2._dl*x2p + 3._dl*x3p) + &
-        4._dl*(6._dl - x1 - 2._dl*x2 + 3._dl*x3)*x4p + &
-        16._dl*x4*x4p))/(5._dl*x3**2._dl + 20._dl*(x1 + 2._dl*x2 + x3) + 4._dl*(6._dl - x1 - 2._dl*x2 + 3._dl*x3)*x4 + &
-        8._dl*x4**2._dl)**2._dl - (10._dl*(3._dl + 3._dl*x1 + x2 + OmegaRad)*(x1p + 2._dl*x2p) + 30._dl*x3*x3p + &
-        10._dl*(3._dl + 6._dl*x1 + 3._dl*x2 + OmegaRad)*x3p + 24._dl*x4*x4p + &
-        (36._dl + 78._dl*x1 + 32._dl*x2 + 30._dl*x3 + 12._dl*OmegaRad)*x4p + &
-        10._dl*(x1 + 2._dl*x2)*(3._dl*x1p + x2p + OmegaRadprime) + 10._dl*x3*(6._dl*x1p + 3._dl*x2p + OmegaRadprime) + &
-        x4*(78._dl*x1p + 32._dl*x2p + 30._dl*x3p + 12._dl*OmegaRadprime))/ &
-        (5._dl*x3**2. + 20._dl*(x1 + 2._dl*x2 + x3) + 4._dl*(6._dl - x1 - 2._dl*x2 + 3._dl*x3)*x4 + 8._dl*x4**2._dl)
-
-    OmegaRadprimeprime = -2._dl*OmegaRadprime*(2._dl + h) - 2._dl*OmegaRad*hprime
-    grhog_t = eft_par_cache%grhog/a**2._dl
-    eft_cache%Hdot = eft_cache%adotoa**2._dl*(1._dl + h)
-    eft_cache%Hdotdot = 2._dl*eft_cache%adotoa*eft_cache%Hdot*(1._dl + h) + eft_cache%adotoa**3._dl*hprime
-
-    if (x4 == 0._dl) then
-        qs = 5._dl*x3**2._dl + 20._dl*(x1 + 2._dl*x2 + x3)
-
-        qsprime = 10._dl*(2._dl*x1p + 4._dl*x2p + (x3 + 2._dl)*x3p)
-
-        qspprime = 10._dl*(2._dl*x1pp + 4._dl*x2pp + x3pp*x3 + 2._dl*x3pp + x3p**2._dl)
-
-        hpprime = 1._dl/qs**3._dl*(5._dl* &
-            (qs*qspprime*(2._dl*x3*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + &
-            2._dl*(x1 + 2._dl*x2)*(3._dl*x1 + x2 + OmegaRad + 3._dl) + 3._dl*x3**2.) + &
-            4._dl*qs*qsprime*(x3*(6._dl*x1p + 3._dl*x2p + OmegaRadprime) + &
-            (x1 + 2._dl*x2)*(3._dl*x1p + x2p + OmegaRadprime) + (3._dl*x1 + x2 + OmegaRad + 3._dl)*(x1p + 2._dl*x2p) + &
-            x3p*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + 3._dl*x3*x3p) - &
-            2._dl*qsprime**2._dl*(2._dl*x3*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + &
-            2._dl*(x1 + 2._dl*x2)*(3._dl*x1 + x2 + OmegaRad + 3._dl) + 3._dl*x3**2._dl) - &
-            2._dl*qs**2._dl*(x3*(6._dl*x1pp + 3._dl*x2pp + OmegaRadprimeprime) + &
-            (x1 + 2._dl*x2)*(3._dl*x1pp + x2pp + OmegaRadprimeprime) + &
-            (3._dl*x1 + x2 + OmegaRad + 3._dl)*(x1pp + 2._dl*x2pp) + 2._dl*x3p*(6*x1p + 3._dl*x2p + OmegaRadprime) + &
-            2._dl*(x1p + 2._dl*x2p)*(3._dl*x1p + x2p + OmegaRad) + x3pp*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + &
-            3._dl*x3*x3p)))
-
-        eft_cache%Hdotdotdot = 2._dl*eft_cache%Hdot**2._dl*(1 + h) + &
-            2._dl*eft_cache%adotoa*eft_cache%Hdotdot*(1 + h) + 5._dl*eft_cache%adotoa**2._dl*eft_cache%Hdot*hprime + &
-            eft_cache%adotoa**4._dl*hpprime
-    end if
-
-    end subroutine EFTCAMBBeyondHorndeskiComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes model specific stability requirements.
