@@ -5,40 +5,83 @@ This file contains the basic tools to interface EFTCAMB to camb.
 
 """
 
-import copy
 import warnings
-from ctypes import POINTER, addressof, byref, c_bool, c_double, c_int, create_string_buffer
+from ctypes import POINTER, addressof, byref, c_bool, c_double, c_int, c_size_t, create_string_buffer
 
 import numpy as np
 
-from .baseconfig import AllocatableArrayDouble, F2003Class, camblib, fortran_class, gfortran
+from ._config import config
+from .baseconfig import AllocatableArrayDouble, CAMBValueError, F2003Class, camblib, fortran_class
 
 ###############################################################################
 # Interface functions:
 ###############################################################################
 
+
+def _import_string_function(bind_c_name, module_name):
+    """
+    Import a Fortran routine with character arguments.
+
+    The module procedures take character(len=200) dummies, for which every supported compiler (gfortran, ifort,
+    flang) appends a hidden length argument (size_t, by value) after the explicit arguments, in argument order.
+    A bind(c) version exported under bind_c_name, with the same explicit lengths in the same positions, is used
+    instead when the library provides one.
+    """
+    try:
+        return camblib[bind_c_name]
+    except AttributeError:
+        return getattr(camblib, module_name)
+
+
+# length of the character dummies of the Fortran getters and setters
+_STRING_LENGTH = 200
+# explicit value of the hidden length argument of those character dummies
+_STRING_LENGTH_ARG = c_size_t(_STRING_LENGTH)
+
+
+def _string_buffer(value=""):
+    """
+    Writable, blank padded buffer for a character(len=200) argument.
+    Longer values are truncated to 200 bytes on a character boundary.
+    """
+    data = value.encode("utf-8")[:_STRING_LENGTH].decode("utf-8", errors="ignore").encode("utf-8")
+    return create_string_buffer(data.ljust(_STRING_LENGTH), _STRING_LENGTH)
+
+
+def _string_value(buffer):
+    """
+    Python string held by a buffer filled by Fortran.
+    """
+    return buffer.raw.decode("utf-8", errors="replace").replace("\x00", " ").strip()
+
+
 EFTCAMB_initialize = camblib.__eftcamb_python_MOD_initialize_eftcamb_from_py
-if gfortran:
-    EFTCAMB_initialize_read_params = camblib.initialize_EFTCAMB_from_py_read_params_
-else:
-    EFTCAMB_initialize_read_params = camblib.initialize_EFTCAMB_from_py_read_params
+# bind(c) routine: its name is fixed by the binding label for every compiler
+EFTCAMB_initialize_read_params = camblib.initialize_EFTCAMB_from_py_read_params_
 
 EFTCAMB_feedback = camblib.__eftcamb_python_MOD_eftcamb_feedback
-EFTCAMB_get_read_parameters = camblib.__eftcamb_python_MOD_get_read_parameters
+EFTCAMB_get_read_parameters = _import_string_function(
+    "eftcamb_get_read_parameters_c", "__eftcamb_python_MOD_get_read_parameters"
+)
 
 # EFTCAMB getters:
 EFTCAMB_get_num_params = camblib.__eftcamb_python_MOD_eftcamb_get_num_params
-EFTCAMB_get_param_names = camblib.__eftcamb_python_MOD_eftcamb_get_param_names
-EFTCAMB_get_param_labels = camblib.__eftcamb_python_MOD_eftcamb_get_param_labels
+EFTCAMB_get_param_names = _import_string_function(
+    "eftcamb_get_param_names_c", "__eftcamb_python_MOD_eftcamb_get_param_names"
+)
+EFTCAMB_get_param_labels = _import_string_function(
+    "eftcamb_get_param_labels_c", "__eftcamb_python_MOD_eftcamb_get_param_labels"
+)
 EFTCAMB_get_param_values = camblib.__eftcamb_python_MOD_eftcamb_get_param_values
-EFTCAMB_get_model_name = camblib.__eftcamb_python_MOD_eftcamb_get_model_name
+EFTCAMB_get_model_name = _import_string_function(
+    "eftcamb_get_model_name_c", "__eftcamb_python_MOD_eftcamb_get_model_name"
+)
 EFTCAMB_get_effective_w0wa_values = camblib.__eftcamb_python_MOD_eftcamb_get_effective_w0wa_values
 
 # EFTCAMB setters:
-EFTCAMB_set_model_name = camblib.__eftcamb_python_MOD_eftcamb_set_model_name
-
-# stability check:
-EFTCAMB_check_stability = camblib.__eftcamb_stability_MOD_eftcamb_stability_check
+EFTCAMB_set_model_name = _import_string_function(
+    "eftcamb_set_model_name_c", "__eftcamb_python_MOD_eftcamb_set_model_name"
+)
 
 # EFTCAMB printing variables:
 EFTCAMB_quantities_evolution = camblib.__eftcamb_python_MOD_eftcamb_getevolution
@@ -203,7 +246,7 @@ class EFTCAMB(F2003Class):
         temp = c_int(0)
         EFTCAMB_initialize(byref(camb_parameters), byref(temp))
         if temp.value > 0:
-            raise ValueError("EFTCAMB error during initialization")
+            raise CAMBValueError("EFTCAMB error during initialization (see the printed output for the reason)")
 
         # the EFTCAMB object of camb_parameters is re-initialized in place, so handles to it stay valid.
         # A handle to the EFTCAMB object of other parameters does not see this initialization:
@@ -224,23 +267,22 @@ class EFTCAMB(F2003Class):
         initialize this EFTCAMB object.
         """
         # get the total number of parameters
-        _dummy1 = str(" " * 200).encode("utf-8")
-        _dummy2 = str(" " * 200).encode("utf-8")
+        _key, _value = _string_buffer(), _string_buffer()
         num_params = c_int(0)
-        EFTCAMB_get_read_parameters(byref(self), _dummy1, _dummy2, byref(num_params), byref(c_int(0)))
+        EFTCAMB_get_read_parameters(
+            byref(self), _key, _value, byref(num_params), byref(c_int(0)), _STRING_LENGTH_ARG, _STRING_LENGTH_ARG
+        )
         num_params = num_params.value
         # get the parameters:
         _keys, _values = [], []
         for ind in range(num_params):
             index = c_int(ind + 1)
-            _dummy1 = str(" " * 200).encode("utf-8")
-            _dummy2 = str(" " * 200).encode("utf-8")
-            EFTCAMB_get_read_parameters(byref(self), _dummy1, _dummy2, byref(index), byref(c_int(1)))
-            _keys.append(copy.deepcopy(_dummy1))
-            _values.append(copy.deepcopy(_dummy2))
-        # polish the keys removing the whitespaces:
-        for ind in range(num_params):
-            _keys[ind] = _keys[ind].decode("utf-8").strip()
+            _key, _value = _string_buffer(), _string_buffer()
+            EFTCAMB_get_read_parameters(
+                byref(self), _key, _value, byref(index), byref(c_int(1)), _STRING_LENGTH_ARG, _STRING_LENGTH_ARG
+            )
+            _keys.append(_string_value(_key))
+            _values.append(_value.raw)
 
         # parse the values:
         def boolify(s):
@@ -269,7 +311,8 @@ class EFTCAMB(F2003Class):
         :param print_params: (optional) logical parameter that decides whether
             to print the values of model parameters or not.
         """
-        EFTCAMB_feedback(byref(self), byref(c_bool(print_params)))
+        # logical (default kind) argument: passed as a C int, like CAMB's logical fields
+        EFTCAMB_feedback(byref(self), byref(c_int(1 if print_params else 0)))
 
     def num_params(self):
         """
@@ -286,9 +329,9 @@ class EFTCAMB(F2003Class):
         n_params = self.num_params()
         param_names = []
         for i in range(n_params):
-            name = "{:<200}".format("").encode("utf-8")
-            EFTCAMB_get_param_names(byref(self), byref(c_int(i + 1)), name)
-            param_names.append(name.rstrip().decode("utf-8"))
+            name = _string_buffer()
+            EFTCAMB_get_param_names(byref(self), byref(c_int(i + 1)), name, _STRING_LENGTH_ARG)
+            param_names.append(_string_value(name))
         return param_names
 
     def param_labels(self):
@@ -300,9 +343,9 @@ class EFTCAMB(F2003Class):
         # get code labels:
         param_labels = []
         for i in range(n_params):
-            name = "{:<200}".format("").encode("utf-8")
-            EFTCAMB_get_param_labels(byref(self), byref(c_int(i + 1)), name)
-            param_labels.append(name.rstrip().decode("utf-8"))
+            name = _string_buffer()
+            EFTCAMB_get_param_labels(byref(self), byref(c_int(i + 1)), name, _STRING_LENGTH_ARG)
+            param_labels.append(_string_value(name))
         return param_labels
 
     def param_values(self):
@@ -321,18 +364,17 @@ class EFTCAMB(F2003Class):
         """
         Return the model name for the EFTCAMB model.
         """
-        model = "{:<200}".format("").encode("utf-8")
-        EFTCAMB_get_model_name(byref(self), model)
-        return model.rstrip().decode("utf-8")
+        model = _string_buffer()
+        EFTCAMB_get_model_name(byref(self), model, _STRING_LENGTH_ARG)
+        return _string_value(model)
 
     def set_model_name(self, name):
         """
         Set the model name for the EFTCAMB model.
 
-        :param name: string with the new name of the model.
+        :param name: string with the new name of the model (at most 200 bytes in UTF-8 are used).
         """
-        _name = f"{name:<200}".encode()
-        EFTCAMB_set_model_name(byref(self), _name)
+        EFTCAMB_set_model_name(byref(self), _string_buffer(name), _STRING_LENGTH_ARG)
 
     def get_effective_w0wa(self):
         """
@@ -381,6 +423,7 @@ class EFTCAMB(F2003Class):
             times.ctypes.data_as(POINTER(c_double)),
             byref(results),
         )
+        config.check_global_error("get_evolution")
         # now unpackage the results:
         fields = results[0][0].variables()
         results = np.ctypeslib.as_array(results)
@@ -406,6 +449,7 @@ class EFTCAMB(F2003Class):
         # prepare the output array with the time step cache type:
         results = (EFTCAMB_timestep_cache * times.shape[0])()
         # call the fortran function:
+        config.global_error_flag = 0
         EFTCAMB_eftfunctions(
             byref(camb_results),
             byref(c_int(times.shape[0])),
@@ -413,6 +457,7 @@ class EFTCAMB(F2003Class):
             etas.ctypes.data_as(POINTER(c_double)),
             byref(results),
         )
+        config.check_global_error("get_eft_functions")
         fields = results[0].variables()
         results = np.ctypeslib.as_array(results)
         return fields, results
