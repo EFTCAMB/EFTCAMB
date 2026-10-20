@@ -350,7 +350,7 @@
     ! Constants in SI units
 
     ! EFTCAMB MOD START: add things for EFTCAMB initialization
-    real(dl) :: RGR_time
+    real(dl) :: RGR_time, turn_on_requested
     logical  :: success
     real(dl) :: k_max
     ! EFTCAMB MOD END.
@@ -659,15 +659,26 @@
             ! effective CPL (w0, wa) of the EFT background, used by Halofit/HMcode (stored in this%CP%EFTCAMB):
             call EFTCAMB_compute_effective_w0wa(this%CP%EFTCAMB, this%CP%eft_par_cache)
 
+            ! 3) validate the requested perturbation turn-on (also when the return to GR is skipped; it can be set
+            ! directly from python) and compute the return to GR of the theory:
+            turn_on_requested = this%CP%EFTCAMB%EFTCAMB_pert_turn_on
+            if (.not. (turn_on_requested > 0._dl .and. turn_on_requested <= 1._dl) .and. &
+                turn_on_requested /= EFT_RGR_never_on) then
+                call GlobalError('EFTCAMB: EFTCAMB_turn_on_time must be in (0,1]', error_unsupported_params)
+                if (present(error)) error = global_error_flag
+                return
+            end if
             if (.not. this%CP%EFTCAMB%EFTCAMB_skip_RGR) then
-
-                ! 3) compute the return to GR of the theory:
                 call EFTCAMBReturnToGR(this%CP%EFTCAMB%model, this%CP%eft_par_cache, &
-                    this%CP%EFTCAMB%EFTCAMB_pert_turn_on, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold)
+                    turn_on_requested, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold)
+                if (global_error_flag /= 0) then
+                    if (present(error)) error = global_error_flag
+                    return
+                end if
                 this%CP%EFTCAMB%EFTCAMB_pert_turn_on = RGR_time
+                ! (the feedback compares the RGR time with the requested turn-on)
                 call EFTCAMBReturnToGR_feedback(this%CP%EFTCAMB%EFTCAMB_feedback_level, this%CP%EFTCAMB%model, &
-                    this%CP%eft_par_cache, this%CP%EFTCAMB%EFTCAMB_pert_turn_on, RGR_time, &
-                    this%CP%EFTCAMB%EFTCAMB_GR_threshold)
+                    this%CP%eft_par_cache, turn_on_requested, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold)
             end if
 
             if (.not. this%CP%EFTCAMB%EFTCAMB_skip_stability) then
@@ -677,8 +688,12 @@
                 call EFTCAMB_Stability_Check(success, this%CP%EFTCAMB, this%CP%eft_par_cache, &
                     this%CP%EFTCAMB%EFTCAMB_stability_time, 1._dl, k_max)
                 if (.not. success) then
-                    global_error_flag = 1
-                    global_error_message = 'EFTCAMB: theory unstable'
+                    ! keep the message of an error raised during the check:
+                    if (global_error_flag == 0) then
+                        call GlobalError('EFTCAMB: theory unstable', 1)
+                    else if (len_trim(global_error_message) == 0) then
+                        global_error_message = 'EFTCAMB: theory unstable'
+                    end if
                     if (present(error)) error = global_error_flag
                     ! 5) final feedback:
                     if (this%CP%EFTCAMB%EFTCAMB_feedback_level > 1) then
