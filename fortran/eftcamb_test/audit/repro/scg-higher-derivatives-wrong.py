@@ -36,7 +36,7 @@ except Exception:  # noqa: BLE001
     from contextlib import nullcontext as slot
 
 TREE = sys.argv[1] if len(sys.argv) > 1 else (
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
     "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0")
 PARAMS = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "parameters"))
 

@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import harness  # noqa: E402
 
-W = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+W = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
          "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/t8a-equations")
 model = sys.argv[1] if len(sys.argv) > 1 else "2_PEFT_Omega_const_1"
 ini = harness.PARAMS_DIR / f"{model}.ini"

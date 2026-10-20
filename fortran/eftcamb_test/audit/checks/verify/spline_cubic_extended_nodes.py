@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import harness
 import numpy as np
 
-OUT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+OUT = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
            "scratchpad/audit/work/verify/spline-cubic-endpoints-derivatives")
 OUT.mkdir(parents=True, exist_ok=True)
 ini = harness.PARAMS_DIR / "2_PEFT_Omega_lin_1.ini"

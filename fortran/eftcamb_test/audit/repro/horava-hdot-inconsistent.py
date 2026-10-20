@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-AUDIT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
+AUDIT = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
 TREE = Path(sys.argv[1]) if len(sys.argv) > 1 else AUDIT / "trees" / "A0"
 PARAMS = Path(__file__).resolve().parents[2] / "parameters"
 sys.path.insert(0, str(TREE))

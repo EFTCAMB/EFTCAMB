@@ -23,7 +23,7 @@ import numpy as np
 
 os.environ["OMP_NUM_THREADS"] = "2"
 TREE = sys.argv[1] if len(sys.argv) > 1 else (
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
     "scratchpad/audit/trees/A0")
 PARAMS = Path(__file__).resolve().parents[2] / "parameters"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "checks"))

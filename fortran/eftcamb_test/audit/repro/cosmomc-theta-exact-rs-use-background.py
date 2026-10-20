@@ -27,7 +27,7 @@ def _run(*args, **kwargs):
         return subprocess.run(*args, preexec_fn=lambda: os.nice(10), **kwargs)
 
 
-TREE = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+TREE = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
         "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0")
 PARAMS = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "parameters"))
 

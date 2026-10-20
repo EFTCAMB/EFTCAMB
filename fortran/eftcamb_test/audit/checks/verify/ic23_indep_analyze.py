@@ -1,7 +1,7 @@
 import sys, os
 sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness, numpy as np
-OUT = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/ic23"
+OUT = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/ic23"
 def f(tree, m, ton, ic): return f"{OUT}/{tree}_{m}_on{ton}_ic{ic}.npz"
 def cmp(a, b, label, ton):
     if not (os.path.exists(a) and os.path.exists(b)): print(label, "missing", os.path.exists(a), os.path.exists(b)); return

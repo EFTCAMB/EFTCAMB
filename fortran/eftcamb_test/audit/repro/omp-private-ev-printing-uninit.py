@@ -43,7 +43,7 @@ except Exception:  # noqa: BLE001
     def _slot(n):
         return nullcontext()
 
-AUDIT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+AUDIT = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
              "scratchpad/audit")
 W = AUDIT / "work" / "t1-crash"
 PAR = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")

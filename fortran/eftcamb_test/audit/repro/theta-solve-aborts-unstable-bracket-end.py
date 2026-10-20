@@ -25,7 +25,7 @@ try:  # hold a machine-wide CPU slot of the audit harness when available
 except Exception:  # noqa: BLE001
     from contextlib import nullcontext as _slot
 
-TREE = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+TREE = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
         "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0")
 PARAMS = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "parameters"))
 MODELS = ["2_PEFT_Omega_power_2.ini", "3_RPH_KT_OmegaDE_1.ini", "5_quint_inverse_power.ini", "5_scg.ini"]

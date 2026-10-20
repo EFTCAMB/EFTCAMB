@@ -21,7 +21,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[4]
 TREE = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
     "scratchpad/audit/trees/A0"
 )
 INI = REPO / "fortran/eftcamb_test/parameters/4_Des_F_R_LCDM_1.ini"

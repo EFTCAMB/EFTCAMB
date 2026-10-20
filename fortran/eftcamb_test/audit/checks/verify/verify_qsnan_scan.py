@@ -25,7 +25,7 @@ import harness  # noqa: E402
 import qsnan_formula as qf  # noqa: E402
 
 REF = Path(
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
     "scratchpad/audit/runs/A0"
 )
 PAR = Path(__file__).resolve().parents[3] / "parameters"
@@ -122,7 +122,7 @@ def main():
         print(f"{m:30s} 0/0 points (of {row['QS_mu']['n']}): {flags or 'none'}" + (f"  x/0: {x0}" if x0 else ""))
     print(f"models with predicted 0/0: {len(nanmods)}: {nanmods}")
     out = Path(
-        "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+        "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
         "scratchpad/audit/work/verify/qsnan/part1.json"
     )
     out.parent.mkdir(parents=True, exist_ok=True)

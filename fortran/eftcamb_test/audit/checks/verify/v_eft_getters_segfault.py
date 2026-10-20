@@ -3,7 +3,7 @@ import os, signal, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import harness
 
-S = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
+S = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 TREES = {"A0": f"{S}/trees/A0", "AD": f"{S}/trees/AD", "B1": f"{S}/trees/B1", "A0fix": f"{S}/work/t9-wrapper/A0fix"}
 CHILD = r"""
 import sys

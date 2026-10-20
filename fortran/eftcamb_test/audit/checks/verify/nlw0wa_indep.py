@@ -20,7 +20,7 @@ from pathlib import Path
 
 os.environ["OMP_NUM_THREADS"] = "1"
 REPO = Path("/Users/marco/IW/eftcamb_update/EFTCAMB")
-SCR = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+SCR = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
            "scratchpad/audit")
 TREE = Path(sys.argv[1]) if len(sys.argv) > 1 else SCR / "work/verify/nlw0wa/instr"
 PART = sys.argv[2] if len(sys.argv) > 2 else "all"

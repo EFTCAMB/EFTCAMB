@@ -20,7 +20,7 @@ import mpmath as mp
 import numpy as np
 from scipy.interpolate import CubicSpline
 
-RUNS = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs/A0"
+RUNS = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs/A0"
 AMIN = 1e-2
 spec = importlib.util.spec_from_file_location("mf", __file__.replace("massverd_models.py", "massverd_formula_lib.py"))
 mf = importlib.util.module_from_spec(spec)

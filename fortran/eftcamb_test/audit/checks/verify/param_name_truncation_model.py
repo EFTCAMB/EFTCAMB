@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import harness
 
-OUT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+OUT = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
            "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/param-name-truncation")
 OUT.mkdir(parents=True, exist_ok=True)
 ini = Path(__file__).resolve().parents[2] / "inis" / "verify_007p8_trunc.ini"

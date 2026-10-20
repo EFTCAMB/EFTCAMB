@@ -4,7 +4,7 @@ import json, sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import harness
 A = harness.ROOT if hasattr(harness, "ROOT") else None
-S = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
+S = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 tree = S + "/trees/A0"
 out = pathlib.Path(S + "/work/verify/ic23"); out.mkdir(parents=True, exist_ok=True)
 P = harness.REPO / "fortran/eftcamb_test/parameters"

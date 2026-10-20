@@ -5,7 +5,7 @@ import numpy as np
 sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness
 
-OUT = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/uninit"
+OUT = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/uninit"
 cheap = {"get_transfer": "F", "get_tensor_cls": "F", "do_lensing": "F", "l_max_scalar": "100"}
 for model in ("5_hdsk_TG_1", "5_hdsk_TG_3"):
     ini = harness.PARAMS_DIR / f"{model}.ini"

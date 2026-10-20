@@ -5,7 +5,7 @@ import glob
 import os
 import numpy as np
 
-R = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs/A0"
+R = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs/A0"
 models = sorted(os.path.basename(p)[:-4] for p in glob.glob(R + "/[3-5]_*.npz"))
 for m in models:
     d = np.load(f"{R}/{m}.npz", allow_pickle=True)

@@ -20,7 +20,7 @@ import harness  # noqa: E402
 
 REPO = HERE.parents[4]
 INI = REPO / "fortran/eftcamb_test/audit/inis/008p7-ext-galileon.ini"
-SP = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+SP = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
           "scratchpad/audit")
 TREES = {"A0": SP / "trees/A0", "FIX3": SP / "work/t2d-static/FIX3"}
 CASES = {"nu0.01": {}, "nu0.00064": {"omnuh2": "0.00064"}}

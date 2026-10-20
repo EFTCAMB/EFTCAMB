@@ -25,7 +25,7 @@ import harness  # noqa: E402
 
 PAR = Path("/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters")
 S = Path(
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45"
     "/scratchpad/audit"
 )
 TREES = {"A0": S / "trees" / "A0", "relfix": S / "work" / "verify" / "cli_setparams" / "relfix",

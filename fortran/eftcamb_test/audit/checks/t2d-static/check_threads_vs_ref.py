@@ -17,7 +17,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import harness  # noqa: E402
 
-REF = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+REF = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
            "scratchpad/audit/runs/A0")
 MODELS = ["5_hdsk_TG_2", "5_quint_axion", "5_Kmouflage_1", "5_ADE_1", "5_Horava_eta_1", "5_scg", "2_PEFT_wDE_wCDM_1",
           "4_Des_F_R_LCDM_1", "3_RPH_MB_const_1", "2_PEFT_gamma6_lin_1"]

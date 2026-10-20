@@ -2,7 +2,7 @@
 so set_cosmology is not called). Does the EFT model survive? Also direct initialize_parameters(cp, {}) call."""
 import json, os, subprocess, sys
 REPO = "/Users/marco/IW/eftcamb_update/EFTCAMB"
-TREES = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/"
+TREES = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/"
 WORKER = r"""
 import sys, json, os, faulthandler; faulthandler.enable()
 sys.path.insert(0, sys.argv[1])

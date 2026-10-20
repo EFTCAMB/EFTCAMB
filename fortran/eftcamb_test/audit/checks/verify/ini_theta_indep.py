@@ -27,9 +27,9 @@ import harness  # noqa: E402
 
 TREE = harness.tree_path("A0") if hasattr(harness, "tree_path") else None
 TREE = str(TREE) if TREE else (
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
     "scratchpad/audit/trees/A0")
-OUT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+OUT = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
            "scratchpad/audit/work/verify/ini_theta")
 OUT.mkdir(parents=True, exist_ok=True)
 PARAMS = HERE.parents[2] / "parameters"

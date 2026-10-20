@@ -14,7 +14,7 @@ import numpy as np
 sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness  # noqa: E402
 
-RUNS = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs/A0"
+RUNS = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs/A0"
 rows = []
 for ini in harness.model_inis():
     name = os.path.basename(str(ini))[:-4]
@@ -49,5 +49,5 @@ for r in rows:
 print(f"\n{len(zero)} / {len([r for r in rows if len(r) > 2])} shipped models have Omega = Gamma3 = 0 exactly at a_eval:")
 print(", ".join(r[0] for r in zero))
 json.dump({"zero_den_models": [r[0] for r in zero], "rows": [list(r) for r in rows]},
-          open("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+          open("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
                "scratchpad/audit/work/verify/ic3nan/survey.json", "w"), indent=1)

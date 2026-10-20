@@ -15,7 +15,7 @@ import sympy as sp
 
 sys.path.insert(
     0,
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
     "scratchpad/audit/trees/B0",
 )
 import camb.symbolic as cs  # noqa: E402

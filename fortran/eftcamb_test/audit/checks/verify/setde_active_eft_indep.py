@@ -22,7 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, ".."))
 import harness  # noqa: E402
 
-TREES = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+TREES = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
          "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/")
 INI = os.path.abspath(os.path.join(HERE, "..", "..", "..", "parameters", "2_PEFT_wDE_wCDM_1.ini"))
 
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     trees = sys.argv[1:] or ["A0", "B1"]
     res = [run(t) for t in trees]
     print(json.dumps(res, indent=1))
-    outdir = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+    outdir = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
               "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/setde_active_eft")
     os.makedirs(outdir, exist_ok=True)
     with open(os.path.join(outdir, "result.json"), "w") as f:

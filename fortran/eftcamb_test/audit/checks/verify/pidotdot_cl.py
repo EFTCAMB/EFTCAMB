@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import harness  # noqa: E402
 import numpy as np  # noqa: E402
 
-AUDIT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
+AUDIT = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
 FX = AUDIT / "work/t8a-equations/FX"
 OUT = AUDIT / "work/verify/pidotdot/cl_FX"
 PARAMS = Path(__file__).resolve().parents[3] / "parameters"

@@ -1,6 +1,6 @@
 """Build and run interp_xfinal_unit.f90 against a frozen tree's objects (AD = -fcheck=all; A0 = release)."""
 import glob, os, subprocess, sys
-AUD = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
+AUD = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 tree = sys.argv[1] if len(sys.argv) > 1 else "AD"
 L = f"{AUD}/build/{tree}/camb/Releaselib"
 F = f"{AUD}/build/{tree}/forutils/Releaselib"

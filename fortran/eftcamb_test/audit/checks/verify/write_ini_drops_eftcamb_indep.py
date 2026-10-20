@@ -5,10 +5,10 @@ os.environ["OMP_NUM_THREADS"] = "1"
 REPO = "/Users/marco/IW/eftcamb_update/EFTCAMB"
 sys.path.insert(0, REPO + "/fortran/eftcamb_test/audit/checks")
 import harness
-sys.path.insert(0, "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0")
+sys.path.insert(0, "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0")
 import camb
 from camb import _ini
-out = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/write-ini"
+out = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/write-ini"
 base = set(harness.parse_ini(REPO + "/fortran/eftcamb_test/parameters/base_params.ini"))
 inis = sorted(glob.glob(REPO + "/fortran/eftcamb_test/parameters/[0-9]*.ini"))
 tot_keys = tot_written = 0; nfail = 0

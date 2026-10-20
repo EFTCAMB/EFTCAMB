@@ -4,7 +4,7 @@ import numpy as np
 sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness
 
-AUD = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
+AUD = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 out = AUD + "/work/verify/steplog/desfr_steplog_A0.npz"
 ini = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/4_Des_F_R_wCDM_1.ini"
 st = harness.run_model(AUD + "/trees/A0", ini, out, overrides={"EFTwDE": 8, "EFTw_v1": -1.0, "EFTw_v2": -0.8,

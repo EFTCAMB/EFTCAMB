@@ -9,7 +9,7 @@ import math
 import subprocess
 from pathlib import Path
 
-AUDIT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+AUDIT = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
              "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
 BUILDS = {"A0": AUDIT / "build" / "A0", "FIX": AUDIT / "work" / "verify" / "spline5_poly5" / "fix_poly5_build"}
 WORK = AUDIT / "work" / "verify" / "spline5_poly5" / "param_driver"

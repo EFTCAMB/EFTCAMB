@@ -24,9 +24,9 @@ import harness  # noqa: E402
 
 REPO = os.path.abspath(os.path.join(HERE, "../../../../.."))
 INI = os.path.join(REPO, "fortran/eftcamb_test/parameters/2_PEFT_Omega_const_1.ini")
-TREE = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+TREE = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
         "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0")
-OUT = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+OUT = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
        "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/t9_setparams_cp")
 
 CHILD = r"""

@@ -16,7 +16,7 @@ sys.path.insert(0, str(HERE.parent))
 import harness  # noqa: E402
 
 ROOT = Path(
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
     "scratchpad/audit"
 )
 DEFAULT_MODELS = ["5_quint_exponential", "4_Des_F_R_LCDM_1", "5_Kmouflage_3", "5_ADE_1", "5_scg", "5_Horava_eta_1",

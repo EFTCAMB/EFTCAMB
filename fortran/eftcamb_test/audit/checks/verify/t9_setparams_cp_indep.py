@@ -25,9 +25,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, ".."))
 import harness  # noqa: E402
 
-TREES = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+TREES = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
          "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/")
-OUT = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+OUT = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
        "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/t9_setparams_cp")
 
 CHILD = r"""

@@ -3,7 +3,7 @@
 (3) decoding read_parameters output with a d->e conversion restores a faithful round trip."""
 import os, subprocess, sys
 REPO = "/Users/marco/IW/eftcamb_update/EFTCAMB"
-TREE = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0"
+TREE = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0"
 for s in (b"1.d-4", b"1e-4", b"5"):
     for fn in (int, float):
         try: print(f"{fn.__name__}({s!r}) = {fn(s)!r}")

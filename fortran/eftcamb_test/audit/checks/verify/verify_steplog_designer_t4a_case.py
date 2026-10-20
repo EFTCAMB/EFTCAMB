@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import harness  # noqa: E402
 
-W = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+W = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
          "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify")
 ov = {"EFTwDE": "8", "EFTw_v1": "-1.0", "EFTw_v2": "-0.8", "EFTw_at": "0.3", "EFTw_delta": "0.5"}
 ini = harness.PARAMS_DIR / "4_Des_F_R_wCDM_1.ini"

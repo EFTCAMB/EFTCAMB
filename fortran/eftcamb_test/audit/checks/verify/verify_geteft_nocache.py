@@ -3,7 +3,7 @@ import os, subprocess, sys
 sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness
 
-TREE = sys.argv[1] if len(sys.argv) > 1 else ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+TREE = sys.argv[1] if len(sys.argv) > 1 else ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
                                               "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/A0")
 INI = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/2_PEFT_Omega_const_1.ini"
 PRE = r"""

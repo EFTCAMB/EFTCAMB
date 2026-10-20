@@ -3,7 +3,7 @@ EFT_kinetic = 36 (1+Omega)^2 A1 exactly (expanding (H Omega' + h0 gamma2)^2 give
 Uses the A0 reference npz (default settings) of each model."""
 import sys
 import numpy as np
-R = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs/A0/"
+R = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs/A0/"
 for m in sys.argv[1:]:
     d = np.load(R + m + ".npz", allow_pickle=True)
     a = d["eft_a_grid"]

@@ -28,7 +28,7 @@ except Exception:  # noqa: BLE001
         return nullcontext()
 
 
-TREE = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+TREE = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
         "scratchpad/audit/trees/A0")
 PARAMS = Path(__file__).resolve().parents[3] / "parameters"
 COMMON = ("get_tensor_cls = F\nget_transfer = F\nnum_redshiftwindows = 0\nfeedback_level = 0\n"

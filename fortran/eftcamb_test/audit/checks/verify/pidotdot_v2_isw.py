@@ -5,7 +5,7 @@ import json, os, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import harness
 
-TREE = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+TREE = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
         "scratchpad/audit/trees/A0")
 INIS = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/inis/"
 PARS = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/"
@@ -38,7 +38,7 @@ for ini in [INIS + "verify_v2/verify_pidd_omega_g5m.ini", INIS + "verify_v2/veri
     env = dict(os.environ, OMP_NUM_THREADS="1"); env.pop("PYTHONPATH", None)
     with harness.slot(1):
         p = subprocess.run([sys.executable, "-c", W, TREE, ini], env=env, capture_output=True, text=True,
-                           cwd="/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/pidotdot_v2")
+                           cwd="/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/pidotdot_v2")
     if p.returncode:
         print(os.path.basename(ini), "FAIL", p.stderr[-800:]); continue
     r = json.loads(p.stdout.strip().splitlines()[-1])

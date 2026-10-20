@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import harness  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/geteft_noc/lldb"
+OUT = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/geteft_noc/lldb"
 tree, case = sys.argv[1], sys.argv[2]
 tag = sys.argv[3] if len(sys.argv) > 3 else os.path.basename(tree)
 cmd = ["nice", "-n", "10", "lldb", "--batch", "-o", "run", "-k", "bt 6", "-k", "frame select 0", "-k", "frame variable",

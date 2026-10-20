@@ -22,7 +22,7 @@ import numpy as np
 from scipy.integrate import quad
 from scipy.interpolate import CubicSpline
 
-AUDIT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+AUDIT = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
              "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
 BUILD = AUDIT / "build" / "A0"
 WORK = AUDIT / "work" / "verify" / "spline_integral" / "formula"

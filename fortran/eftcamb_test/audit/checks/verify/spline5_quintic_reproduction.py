@@ -13,7 +13,7 @@ import subprocess
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.."))
 SRC = os.path.join(REPO, "fortran/eftcamb/02_bundled_algorithms/02p12_splines5.f90")
 WORK = (
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
     "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/spline5"
 )
 

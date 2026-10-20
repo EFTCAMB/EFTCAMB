@@ -7,7 +7,7 @@ export const meta = {
   ],
 }
 
-const AUDIT_ROOT = '/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit'
+const AUDIT_ROOT = '/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit'
 
 const CTX = `You are one agent in a multi-agent deep audit of EFTCAMB (effective-field-theory dark energy / modified gravity patch of the CAMB Boltzmann code; Fortran 2003 + Python ctypes wrapper). Your final answer is the structured result only.
 

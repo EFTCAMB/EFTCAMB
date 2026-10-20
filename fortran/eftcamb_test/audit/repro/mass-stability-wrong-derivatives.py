@@ -29,7 +29,7 @@ import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[4]
-SCR = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+SCR = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
            "scratchpad/audit")
 TREES = [Path(t) for t in sys.argv[1:]] or [SCR / "trees/A0"]
 MODELS = ["3_RPH_MK_power_1", "2_PEFT_Omega_const_1"]

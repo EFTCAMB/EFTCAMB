@@ -24,7 +24,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 AUDIT = HERE.parent
 BASE = AUDIT.parent / "parameters" / "base_params.ini"
-ROOT = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+ROOT = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
         "scratchpad/audit/trees/")
 TREES = sys.argv[1:] or [ROOT + t for t in ("B0", "A0", "B1")]
 

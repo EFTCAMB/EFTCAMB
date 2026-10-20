@@ -12,7 +12,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[4]
 PARAMS = REPO / "fortran" / "eftcamb_test" / "parameters"
 AUDIT = Path(
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
     "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 )
 TREES = {n: AUDIT / "trees" / n for n in ("A0", "AD", "ADD", "B0", "B1")}

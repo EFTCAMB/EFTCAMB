@@ -19,7 +19,7 @@ import numpy as np
 import sympy as sp
 from scipy.interpolate import CubicSpline
 
-RUNS = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+RUNS = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
             "scratchpad/audit/runs/A0")
 
 a, H, Hd, Hdd, O, O1, O2, O3, O4, P, Pd, Pdd, L, Ld, Ldd = sp.symbols(
@@ -138,6 +138,6 @@ for m in models:
           f" {r['exact_with_stored_zeros']:9.2e} {r['exact_with_fd']:9.2e} {r['ctrl_Hdotdot_vs_fd']:9.1e}"
           f"  {r['max|Ldd_fd|/H^4']:9.2e} {r['max|a^4 O4_fd|']:9.2e}   (recompute Hdot/Hdotdot vs stored:"
           f" {r['recompute_Hdot_vs_stored']:.0e}/{r['recompute_Hdotdot_vs_stored']:.0e})")
-out = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+out = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
            "scratchpad/audit/work/verify/hderivs/hddd_sympy.json")
 out.write_text(json.dumps(rows, indent=1))

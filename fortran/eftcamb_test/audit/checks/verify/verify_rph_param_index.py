@@ -26,7 +26,7 @@ import harness  # noqa: E402
 REPO = Path(__file__).resolve().parents[5]
 PAR = REPO / "fortran/eftcamb_test/parameters"
 OUT = Path(
-    "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+    "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
     "scratchpad/audit/work/verify/rphidx"
 )
 

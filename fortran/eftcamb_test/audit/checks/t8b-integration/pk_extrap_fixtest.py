@@ -11,7 +11,7 @@ import os
 import subprocess
 import sys
 
-AUDIT = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+AUDIT = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
          "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/")
 
 WORKER = r"""
@@ -39,7 +39,7 @@ res = {}
 for tree in ("A0", "B0", "FIX"):
     env = dict(os.environ, OMP_NUM_THREADS="2")
     env.pop("PYTHONPATH", None)
-    p = subprocess.run([sys.executable, "-c", WORKER, (AUDIT + tree if tree != 'FIX' else '/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/t8b-integration/A0_fixpy')], capture_output=True, text=True, env=env)
+    p = subprocess.run([sys.executable, "-c", WORKER, (AUDIT + tree if tree != 'FIX' else '/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/t8b-integration/A0_fixpy')], capture_output=True, text=True, env=env)
     line = [ln for ln in p.stdout.splitlines() if ln.startswith("@@")]
     if not line:
         print(tree, "failed", p.stderr[-2000:])

@@ -5,7 +5,7 @@ import sys, numpy as np
 REPO = "/Users/marco/IW/eftcamb_update/EFTCAMB"
 sys.path.insert(0, REPO + "/fortran/eftcamb_test/audit/checks")
 import harness
-SP = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
+SP = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 out = SP + "/work/verify/qs_sigma/fR1.npz"
 import os
 if not os.path.exists(out): st = harness.run_model(SP + "/trees/A0", REPO + "/fortran/eftcamb_test/parameters/4_Des_F_R_LCDM_1.ini", out,

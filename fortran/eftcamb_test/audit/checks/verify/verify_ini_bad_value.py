@@ -1,7 +1,7 @@
 """Independent check: drive the ctypes entry points directly (bypassing initialize_parameters' str() conversion)
 with raw strings, on A0 and B1; also check controls (np.int64, good values) and whether interpreter survives."""
 import os, subprocess, sys
-BASE = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/"
+BASE = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/"
 CHILD = r"""
 import sys
 sys.path.insert(0, sys.argv[1])

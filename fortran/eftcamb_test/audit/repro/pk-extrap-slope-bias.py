@@ -23,7 +23,7 @@ def _run(*args, **kwargs):
         return subprocess.run(*args, preexec_fn=lambda: os.nice(10), **kwargs)
 
 
-AUDIT = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+AUDIT = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
          "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/")
 
 WORKER = r"""

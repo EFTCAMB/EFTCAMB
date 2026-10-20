@@ -26,9 +26,9 @@ import harness  # noqa: E402
 
 REPO = os.path.abspath(os.path.join(HERE, "../../../../.."))
 PARS = os.path.join(REPO, "fortran/eftcamb_test/parameters")
-TREES = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+TREES = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
          "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees/")
-OUT = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+OUT = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
        "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/t3_setparams_cp")
 MODELS = ["4_Des_F_R_LCDM_1", "5_quint_exponential", "2_PEFT_gamma1_const_1"]
 

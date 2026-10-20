@@ -4,7 +4,7 @@ import sys
 import numpy as np
 sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks/verify")
 from hdddot_sympy import fortran, proposed  # noqa: E402
-R = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs"
+R = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs"
 for tree in ("A0", "B1"):
     for m in ("5_Kmouflage_1", "5_Kmimic_1", "5_ADE_1", "5_quint_exponential"):
         try:

@@ -14,7 +14,7 @@ import os
 import subprocess
 import sys
 
-TREES = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees"
+TREES = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/trees"
 
 # direct Fortran entry: key/value given verbatim as strings (no python conversion)
 CHILD_DIRECT = r"""
@@ -115,7 +115,7 @@ if __name__ == "__main__":
             rc, marks, errs = run([sys.executable, "-c", CHILD_B0, f"{TREES}/B0", kw], env)
             print(f"[B0 set_params] {kw:42s} rc={rc} marks={marks} errs={errs}")
             results[f"B0:{kw}"] = dict(rc=rc, marks=marks, errs=errs)
-    out = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+    out = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
            "scratchpad/audit/work/verify/initparams_badvalue_indep.json")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w") as f:

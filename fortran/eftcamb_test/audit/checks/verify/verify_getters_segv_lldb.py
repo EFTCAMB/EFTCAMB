@@ -14,7 +14,7 @@ import harness  # noqa: E402
 import verify_getters_segv as v  # noqa: E402
 
 tree, case = sys.argv[1], sys.argv[2]
-work = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/" \
+work = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/" \
        "scratchpad/audit/work/verify/getters_segv"
 child = os.path.join(work, "lldb_child.py")
 with open(child, "w") as f:

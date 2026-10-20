@@ -12,7 +12,7 @@ import harness  # noqa: E402
 
 TREE = str(harness.TREES["A0"])
 INI = str(harness.PARAMS_DIR / "5_hdsk_TG_3.ini")
-OUT = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+OUT = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
        "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/hdsk_h0")
 WORKER = r"""
 import sys, json

@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import harness  # noqa: E402
 
-ROOT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45"
+ROOT = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45"
             "/scratchpad/audit")
 TREE = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "trees/A0"
 OUT = ROOT / f"work/verify/ekin/shipped_models_{TREE.name}.json"

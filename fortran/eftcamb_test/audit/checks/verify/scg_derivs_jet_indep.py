@@ -35,7 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import harness  # noqa: E402
 
 mp.mp.dps = 40
-SCR = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
+SCR = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 TREE_A0 = sys.argv[1] if len(sys.argv) > 1 else f"{SCR}/trees/A0"
 TREE_FIX = sys.argv[2] if len(sys.argv) > 2 else f"{SCR}/work/t4b-derivs/P_scg3"
 OUT = sys.argv[3] if len(sys.argv) > 3 else f"{SCR}/work/verify/scg_derivs/jet_indep.json"

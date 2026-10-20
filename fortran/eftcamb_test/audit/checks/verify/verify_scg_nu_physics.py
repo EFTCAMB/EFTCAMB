@@ -25,7 +25,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 import harness  # noqa: E402
 
-AUD = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/"
+AUD = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/"
            "2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
 A0 = AUD / "trees" / "A0"
 PSCG = AUD / "work" / "t4b-derivs" / "P_scg"  # t4b partial fix (keep caller grhom_t), read-only reuse

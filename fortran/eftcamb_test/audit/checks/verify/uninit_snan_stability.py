@@ -2,7 +2,7 @@
 import re, sys
 sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/audit/checks")
 import harness
-W = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/uninit"
+W = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/uninit"
 tree = sys.argv[1] if len(sys.argv) > 1 else f"{W}/snan"
 tag = sys.argv[2] if len(sys.argv) > 2 else "snan"
 models = ["4_Des_F_R_LCDM_1", "5_quint_exponential", "5_Kmouflage_3", "5_ADE_1", "5_Horava_eta_1", "5_Kmimic_1",

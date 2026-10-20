@@ -5,7 +5,7 @@ sys.path.insert(0, "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/
 import harness
 import numpy as np
 P = harness.REPO / "fortran/eftcamb_test/parameters"
-OUT = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/ic23"
+OUT = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/verify/ic23"
 jobs = []
 for tree in ("A0", "B1"):
     for ton in ("1e-2", "1e-8"):

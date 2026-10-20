@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 
-AUDIT = Path("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
+AUDIT = Path("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit")
 TREE = Path(sys.argv[1]) if len(sys.argv) > 1 else AUDIT / "trees" / "A0"
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else AUDIT / "work" / "verify" / f"horava_hdot_indep_{TREE.name}.json"
 REPO = Path(__file__).resolve().parents[5]

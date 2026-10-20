@@ -18,7 +18,7 @@ import numpy as np
 from scipy.interpolate import CubicSpline
 
 REPO = Path(__file__).resolve().parents[5]
-ROOT = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
+ROOT = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 ap = argparse.ArgumentParser()
 ap.add_argument("--tree", default=f"{ROOT}/trees/A0")
 ap.add_argument("--models", default="5_Kmouflage_1,5_Kmouflage_2,5_quint_exponential,5_ADE_1,4_Des_F_R_LCDM_1")

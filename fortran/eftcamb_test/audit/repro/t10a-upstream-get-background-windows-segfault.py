@@ -11,7 +11,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = ("/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
+ROOT = ("/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/"
         "scratchpad/audit/trees/")
 TREES = sys.argv[1:] or [ROOT + t for t in ("A0", "B0", "B1")]
 INI = Path(__file__).resolve().parents[2] / "parameters" / "1_EFT_GR.ini"

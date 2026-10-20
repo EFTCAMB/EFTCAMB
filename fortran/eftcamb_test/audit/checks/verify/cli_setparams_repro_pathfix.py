@@ -26,7 +26,7 @@ import subprocess
 import tempfile
 import time
 
-W = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/t1-crash"
+W = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/work/t1-crash"
 INI = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters/1_EFT_GR.ini"
 EXES = {
     "(a) -O0 checked exe, code under audit": f"{W}/chk/AD/fortran/camb",

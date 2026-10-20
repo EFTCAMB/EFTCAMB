@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import harness  # noqa: E402
 from scg_derivs_priors import WORKER, bounds  # noqa: E402
 
-SCR = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
+SCR = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 TREES = {"A0": f"{SCR}/trees/A0", "FIX": f"{SCR}/work/t4b-derivs/P_scg3"}
 OUTD = Path(f"{SCR}/work/verify/scg_derivs/prior_scan")
 INI = Path(__file__).resolve().parents[3] / "parameters" / "5_scg.ini"

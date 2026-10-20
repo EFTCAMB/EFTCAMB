@@ -23,7 +23,7 @@ import mpmath as mp
 import numpy as np
 from scipy.interpolate import CubicSpline
 
-RUNS = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs/A0"
+RUNS = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit/runs/A0"
 NPZ = sys.argv[1] if len(sys.argv) > 1 else f"{RUNS}/5_quint_exponential.npz"
 AMIN = float(sys.argv[2]) if len(sys.argv) > 2 else 1e-2
 spec = importlib.util.spec_from_file_location("mf", __file__.replace("massverd_numeric.py", "massverd_formula_lib.py"))

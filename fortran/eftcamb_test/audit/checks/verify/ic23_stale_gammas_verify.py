@@ -7,7 +7,7 @@ import re
 fl = lambda v: float(re.sub(r'(\d)([-+]\d{3})$', r'\1E\2', v))
 import numpy as np
 
-S = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
+S = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 OUT = Path(S) / "work/verify/ic23"
 PARAMS = harness.REPO / "fortran/eftcamb_test/parameters"
 mode = sys.argv[1]

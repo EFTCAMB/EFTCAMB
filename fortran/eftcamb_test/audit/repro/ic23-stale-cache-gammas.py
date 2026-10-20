@@ -21,7 +21,7 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = "/private/tmp/claude-501/-Users-marco-Desktop-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
+ROOT = "/private/tmp/claude-501/-Users-marco-IW-eftcamb-update-EFTCAMB/2b9dddd0-ab26-46fb-8810-571fb7648a45/scratchpad/audit"
 TREE = ROOT + "/work/t5-robust/A0_icdbg"
 PARAMS = "/Users/marco/IW/eftcamb_update/EFTCAMB/fortran/eftcamb_test/parameters"
 CHILD = "import sys; sys.path.insert(0, sys.argv[1]); import camb; cp = camb.read_ini(sys.argv[2], no_validate=True)\n" \
