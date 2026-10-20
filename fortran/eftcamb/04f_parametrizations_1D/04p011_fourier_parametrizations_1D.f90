@@ -506,11 +506,8 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: Fourier1DIntegral                                   !< the output value
 
-    Fourier1DIntegral = 0._dl
-    !< No analytic solution >!
-    write(*, *) 'Fourier1DIntegral is not implemented.'
-    write(*, *) 'Calculations cannot proceed.'
-    call MpiStop('EFTCAMB error')
+    ! no closed form: numerical integral (see parametrized_function_1D%numerical_integral).
+    Fourier1DIntegral = self%numerical_integral(x, eft_cache=eft_cache)
 
     end function Fourier1DIntegral
 

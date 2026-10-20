@@ -259,12 +259,8 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: DoubleExponentialParametrized1DIntegral                   !< the output value
 
-    DoubleExponentialParametrized1DIntegral = 0._dl
-
-    !< No analytic solution >!
-    write(*, *) 'DoubleExponentialParametrized1DIntegral is not implemented.'
-    write(*, *) 'Calculations cannot proceed.'
-    call MpiStop('EFTCAMB error')
+    ! no closed form: numerical integral (see parametrized_function_1D%numerical_integral).
+    DoubleExponentialParametrized1DIntegral = self%numerical_integral(x, eft_cache=eft_cache)
 
     end function DoubleExponentialParametrized1DIntegral
 

@@ -96,6 +96,9 @@
     procedure(ParametrizedFunction1DFourthDerivative), deferred :: fourth_derivative
     !< function that returns the strange integral that we need for w_DE. The EFTCAMB cache is passed as an optional argument in case the parametrization uses some background quantity.
     procedure(ParametrizedFunction1DIntegral), deferred :: integral
+    !< function that computes the w_DE integral numerically from the function value. Can be used by parametrizations
+    !! that do not have a closed form integral.
+    procedure :: numerical_integral => ParametrizedFunction1DNumericalIntegral
     ! function stability
     !< function that checks whether the parametrized function is regular or stable
     procedure :: compute_function_stability => ParametrizedFunction1DStability
@@ -455,6 +458,81 @@
     end if
 
     end subroutine ParametrizedFunction1DParameterNamesLatex
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that computes numerically the w_DE integral, with the same convention of the integral procedure:
+    !! \f$ I(a) = a^2 \exp\left( 3\int_{\ln a}^{0} (1+w(N)) dN \right) = a^2 \rho_{DE}(a)/\rho_{DE}(1) \f$
+    !! where the function is interpreted as w(a). The integral is computed with a composite 8-points Gauss-Legendre
+    !! quadrature in N = ln a, with sub-intervals of width at most 0.25 e-folds, split at the optional break points
+    !! (values of the scale factor where the function is not smooth, i.e. spline nodes).
+    function ParametrizedFunction1DNumericalIntegral(self, x, breaks, eft_cache)
+
+    implicit none
+
+    class(parametrized_function_1D)                     :: self      !< the base class
+    real(dl), intent(in)                                :: x         !< the input scale factor
+    !< optional values of the scale factor where the function is not smooth.
+    real(dl), dimension(:), intent(in), optional        :: breaks
+    type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+    real(dl) :: ParametrizedFunction1DNumericalIntegral              !< the output value
+
+    ! nodes and weights of the 8 points Gauss-Legendre quadrature on [-1,1] (symmetric, positive half):
+    real(dl), parameter :: gx(4) = [0.1834346424956498049_dl, 0.5255324099163289858_dl, &
+        0.7966664774136267396_dl, 0.9602898564975362317_dl]
+    real(dl), parameter :: gw(4) = [0.3626837833783619830_dl, 0.3137066458778872873_dl, &
+        0.2223810344533744706_dl, 0.1012285362903762591_dl]
+    real(dl), parameter :: max_step = 0.25_dl
+    real(dl), allocatable :: bounds(:)
+    real(dl) :: n_lo, n_hi, n_b, c, h, s
+    integer  :: nb, i, j, k, nsub
+
+    ParametrizedFunction1DNumericalIntegral = 0._dl
+    if (x <= 0._dl) return
+    if (x == 1._dl) then
+        ParametrizedFunction1DNumericalIntegral = 1._dl
+        return
+    end if
+
+    ! integration interval in N = ln a, split at the break points:
+    n_lo = min(log(x), 0._dl)
+    n_hi = max(log(x), 0._dl)
+    nb = 2
+    if (present(breaks)) nb = nb + size(breaks)
+    allocate(bounds(nb))
+    nb = 1
+    bounds(1) = n_lo
+    if (present(breaks)) then
+        do i = 1, size(breaks)
+            if (breaks(i) <= 0._dl) cycle
+            n_b = log(breaks(i))
+            if (n_b > n_lo .and. n_b < n_hi .and. n_b > bounds(nb)) then
+                nb = nb + 1
+                bounds(nb) = n_b
+            end if
+        end do
+    end if
+    nb = nb + 1
+    bounds(nb) = n_hi
+
+    ! integrate 1+w over each piece:
+    s = 0._dl
+    do i = 1, nb - 1
+        nsub = max(1, ceiling((bounds(i + 1) - bounds(i))/max_step))
+        h = (bounds(i + 1) - bounds(i))/real(nsub, dl)
+        do k = 1, nsub
+            c = bounds(i) + (real(k, dl) - 0.5_dl)*h
+            do j = 1, 4
+                s = s + gw(j)*0.5_dl*h*(2._dl + self%value(exp(c + 0.5_dl*h*gx(j)), eft_cache) + &
+                    self%value(exp(c - 0.5_dl*h*gx(j)), eft_cache))
+            end do
+        end do
+    end do
+    ! s is the integral from min(ln a, 0) to max(ln a, 0):
+    if (x > 1._dl) s = -s
+
+    ParametrizedFunction1DNumericalIntegral = x**2*exp(3._dl*s)
+
+    end function ParametrizedFunction1DNumericalIntegral
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes function parametrization specific stability requirements. Currently only implemented for Pade

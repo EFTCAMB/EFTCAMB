@@ -259,14 +259,39 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: ExponentialParametrized1DIntegral                   !< the output value
 
-    ExponentialParametrized1DIntegral = 0._dl
-
-    !< No analytic solution >!
-    write(*, *) 'ExponentialParametrized1DIntegral is not implemented.'
-    write(*, *) 'Calculations cannot proceed.'
-    call MpiStop('EFTCAMB error')
+    ! no closed form: numerical integral (see parametrized_function_1D%numerical_integral).
+    ExponentialParametrized1DIntegral = self%numerical_integral(x, eft_cache=eft_cache)
 
     end function ExponentialParametrized1DIntegral
+
+    ! ---------------------------------------------------------------------------------------------
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the k-th derivative of the exponent y = coefficient*x**exponent.
+    !! Terms with a vanishing coefficient (integer exponent) are exactly zero.
+    function ExponentialYDerivative(self, x, k)
+
+    implicit none
+
+    class(exponential_parametrization_1D) :: self   !< the base class
+    real(dl), intent(in)                  :: x      !< the input scale factor
+    integer, intent(in)                   :: k      !< the order of the derivative
+    real(dl) :: ExponentialYDerivative              !< the output value
+
+    real(dl) :: coeff
+    integer  :: i
+
+    coeff = self%coefficient
+    do i = 0, k - 1
+        coeff = coeff*(self%exponent - real(i, dl))
+    end do
+    if (coeff == 0._dl) then
+        ExponentialYDerivative = 0._dl
+    else
+        ExponentialYDerivative = coeff*x**(self%exponent - real(k, dl))
+    end if
+
+    end function ExponentialYDerivative
 
     ! ---------------------------------------------------------------------------------------------
 
