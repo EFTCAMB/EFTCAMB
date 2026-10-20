@@ -456,10 +456,12 @@ class EFTCAMB(F2003Class):
         """
         n_params = self.num_params()
         param_names = []
+        config.global_error_flag = 0
         for i in range(n_params):
             name = _string_buffer()
             EFTCAMB_get_param_names(byref(self), byref(c_int(i + 1)), name, _STRING_LENGTH_ARG)
             param_names.append(_string_value(name))
+        config.check_global_error("param_names")
         return param_names
 
     def param_labels(self):
@@ -470,10 +472,12 @@ class EFTCAMB(F2003Class):
         n_params = self.num_params()
         # get code labels:
         param_labels = []
+        config.global_error_flag = 0
         for i in range(n_params):
             name = _string_buffer()
             EFTCAMB_get_param_labels(byref(self), byref(c_int(i + 1)), name, _STRING_LENGTH_ARG)
             param_labels.append(_string_value(name))
+        config.check_global_error("param_labels")
         return param_labels
 
     def param_values(self):
@@ -482,10 +486,12 @@ class EFTCAMB(F2003Class):
         """
         n_params = self.num_params()
         param_values = []
+        config.global_error_flag = 0
         for i in range(n_params):
             temp = c_double(0)
             EFTCAMB_get_param_values(byref(self), byref(c_int(i + 1)), byref(temp))
             param_values.append(temp.value)
+        config.check_global_error("param_values")
         return param_values
 
     def model_name(self):
