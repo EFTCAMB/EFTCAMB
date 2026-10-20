@@ -26,6 +26,7 @@
     module EFTCAMB_spline5_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use EFT_splines, only: spline3pars, poly3, dpoly3, d2poly3
@@ -129,21 +130,35 @@
     real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
 
     integer :: ind
+    logical :: valid
     ! real(dl) :: x
 
+    valid = .true.
     self%x_coord = array(1:self%num_pixels)
     if (self%logx_flag) then
         do ind = 1, self%num_pixels
-            if (self%x_coord(ind) <= 0) call MpiStop(trim(self%name) // &
-                ' error: spline x coordinate must be positive when ' // trim(self%name) // '_Logx_Flag is True.')
+            if (self%x_coord(ind) <= 0) then
+                ! (the initialization is completed, with zero spline coefficients, so the function can be used
+                ! safely until the error is handled)
+                if (valid) call GlobalError(trim(self%name) // &
+                    ' error: spline x coordinate must be positive when ' // trim(self%name) // '_Logx_Flag is True.', &
+                        error_unsupported_params)
+                valid = .false.
+            end if
             self%x_coord(ind) = log(self%x_coord(ind))
         end do
     end if
     self%pixels = array(self%num_pixels + 1:)
     if (self%logy_flag) then
         do ind = 1, self%num_pixels
-            if (self%pixels(ind) <= 0) call MpiStop(trim(self%name) // &
-                ' error: spline y values must be positive when ' // trim(self%name) // '_Logy_Flag is True.')
+            if (self%pixels(ind) <= 0) then
+                ! (the initialization is completed, with zero spline coefficients, so the function can be used
+                ! safely until the error is handled)
+                if (valid) call GlobalError(trim(self%name) // &
+                    ' error: spline y values must be positive when ' // trim(self%name) // '_Logy_Flag is True.', &
+                        error_unsupported_params)
+                valid = .false.
+            end if
             self%pixels(ind) = log(self%pixels(ind))
         end do
     end if
@@ -151,13 +166,23 @@
     self%x_final = self%x_coord(self%num_pixels)
     ! check the coordinates:
     do ind = 1, self%num_pixels - 1
-        if (self%x_coord(ind) >= self%x_coord(ind + 1)) call MpiStop(trim(self%name) // &
-            ' error: spline x coordinate must be increasing. Pass correct values for ' // trim(self%name) // 'xN')
+        if (self%x_coord(ind) >= self%x_coord(ind + 1)) then
+            ! (the initialization is completed, with zero spline coefficients, so the function can be used safely
+            ! until the error is handled)
+            if (valid) call GlobalError(trim(self%name) // &
+                ' error: spline x coordinate must be increasing. Pass correct values for ' // trim(self%name) // 'xN', &
+                    error_unsupported_params)
+            valid = .false.
+        end if
     end do
     ! create the spline coefficients:
     if (allocated(self%bcoef)) deallocate(self%bcoef)
     allocate(self%bcoef(self%spl_order + 2, self%num_pixels - 1))
     ! compute spline polynomial coefficients
+    if (.not. valid) then
+        self%bcoef = 0._dl
+        return
+    end if
     select case (self%spl_order)
     case (3)
         call spline3pars(self%x_coord, self%pixels, [2, 2], [0._dl, 0._dl], self%bcoef)
@@ -274,7 +299,10 @@
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in SplineQ1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     end subroutine SplineQ1DParameterValues
@@ -331,7 +359,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in SplineQ1DParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -361,7 +392,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in SplineQ1DParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then

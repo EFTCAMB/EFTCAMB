@@ -28,6 +28,7 @@
     module EFTCAMB_cosine_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use MpiUtils
     use constants, only: const_pi, const_twopi, const_fourpi
     use EFT_def
@@ -138,7 +139,10 @@
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Cosine1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     end subroutine Cosine1DParameterValues

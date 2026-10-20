@@ -29,6 +29,8 @@
 
     ! general modules:
     use EFT_def
+    use config, only: GlobalError, error_unsupported_params
+    use EFTCAMB_mixed_algorithms, only: integer_to_string
     use EFTCAMB_abstract_parametrizations_1D
 
     ! specific implementations:
@@ -113,6 +115,9 @@
             write(*, '(a,a)')  'For function =', function_name
             write(*, '(a)')    'Please select an appropriate model.'
         end if
+        call GlobalError('EFTCAMB error: no parametrization corresponding to flag ' // &
+            trim(integer_to_string(model_flag)) // ' for the function ' // trim(function_name), &
+            error_unsupported_params)
         eft_error = 1
         return
     end select

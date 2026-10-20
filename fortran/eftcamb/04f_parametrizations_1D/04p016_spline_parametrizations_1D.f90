@@ -26,6 +26,7 @@
     module EFTCAMB_spline_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use EFT_splines
@@ -124,13 +125,21 @@
     real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
 
     integer :: ind
+    logical :: valid
 
     self%x_coord = array(1:self%num_pixels)
     self%pixels = array(self%num_pixels + 1:)
     ! check the coordinates:
+    valid = .true.
     do ind = 1, self%num_pixels - 1
-        if (self%x_coord(ind) >= self%x_coord(ind + 1)) call MpiStop(trim(self%name) // &
-            ' error: spline x coordinate must be increasing. Pass correct vaalues for ' // trim(self%name) // 'xN')
+        if (self%x_coord(ind) >= self%x_coord(ind + 1)) then
+            ! (the initialization is completed, with zero spline coefficients, so the function can be used safely
+            ! until the error is handled)
+            if (valid) call GlobalError(trim(self%name) // &
+                ' error: spline x coordinate must be increasing. Pass correct values for ' // trim(self%name) // 'xN', &
+                    error_unsupported_params)
+            valid = .false.
+        end if
     end do
     ! initialize the interpolation:
     call self%interpolation%initialize(self%x_coord, self%null_value)
@@ -138,7 +147,11 @@
     ! create the spline coefficients (natural cubic spline). The derivatives are the derivatives of this spline:
     if (allocated(self%cy)) deallocate(self%cy)
     allocate(self%cy   (5, self%num_pixels - 1))
-    call spline3pars(self%x_coord, self%interpolation%y, [2, 2], [0._dl, 0._dl], self%cy)
+    if (valid) then
+        call spline3pars(self%x_coord, self%interpolation%y, [2, 2], [0._dl, 0._dl], self%cy)
+    else
+        self%cy = 0._dl
+    end if
 
     end subroutine Spline1DInitParams
 
@@ -195,8 +208,9 @@
 
     ! read number of points:
     self%num_pixels = Ini%Read_Int(trim(self%name) // '_Spline_Pixels', 6)
-    if (self%num_pixels < 3) then
-        write(*, *) 'Spline requires ', trim(self%name) // '_Spline_Pixels', ' to be at least 6'
+    ! (the natural cubic spline with consistent end conditions needs at least 4 nodes)
+    if (self%num_pixels < 4) then
+        write(*, *) 'Spline requires ', trim(self%name) // '_Spline_Pixels', ' to be at least 4'
         eft_error = 1
         return
     end if
@@ -228,7 +242,10 @@
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Spline1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     end subroutine Spline1DParameterValues
@@ -282,7 +299,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Spline1DParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -312,7 +332,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Spline1DParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then

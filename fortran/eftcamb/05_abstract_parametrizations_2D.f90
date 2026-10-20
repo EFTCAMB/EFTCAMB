@@ -30,6 +30,7 @@
     module EFTCAMB_abstract_parametrizations_2D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use EFT_def
@@ -298,7 +299,9 @@
         write(*, *) 'Length of param_names and number of parameters do not coincide.'
         write(*, *) 'Parameter number:', num_params
         write(*, *) 'Size of the param_names array:', size(param_names)
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: inconsistent parameter names of a parametrized function', &
+            error_unsupported_params)
+        return
     end if
     if (present(param_names_latex)) then
         ! check length:
@@ -307,7 +310,9 @@
             write(*, *) 'Length of param_names_latex and number of parameters do not coincide.'
             write(*, *) 'Parameter number:', self%parameter_number
             write(*, *) 'Size of the param_names array:', size(param_names_latex)
-            call MpiStop('EFTCAMB error')
+            call GlobalError('EFTCAMB error: inconsistent parameter names of a parametrized function', &
+                error_unsupported_params)
+            return
         end if
     end if
 
@@ -317,7 +322,9 @@
             write(*, *) 'In parametrized_function_2D:', self%name
             write(*, *) 'Parameter name longer than EFT_names_max_length =', EFT_names_max_length
             write(*, *) 'Parameter name:', trim(param_names(ind))
-            call MpiStop('EFTCAMB error')
+            call GlobalError('EFTCAMB error: inconsistent parameter names of a parametrized function', &
+                error_unsupported_params)
+            return
         end if
     end do
 
@@ -421,7 +428,10 @@
         write(*, *) 'In parametrized_function_2D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in ParametrizedFunction2DParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -447,7 +457,10 @@
         write(*, *) 'In parametrized_function_2D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in ParametrizedFunction2DParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then

@@ -28,6 +28,7 @@
     module EFTCAMB_taylor_series_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use EFT_def
     use MpiUtils
@@ -156,7 +157,10 @@
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in TaylorSeriesParametrized1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     end subroutine TaylorSeriesParametrized1DParameterValues
@@ -210,7 +214,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in TaylorSeriesParametrized1DParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -240,7 +247,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in TaylorSeriesParametrized1DParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then

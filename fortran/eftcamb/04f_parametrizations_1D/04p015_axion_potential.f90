@@ -28,6 +28,7 @@
     module EFTCAMB_axion_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use MpiUtils
     use constants, only: const_pi, const_twopi, const_fourpi
     use EFT_def
@@ -134,7 +135,10 @@
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Axion1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     end subroutine Axion1DParameterValues
@@ -274,10 +278,8 @@
     real(dl) :: Axion1DIntegral                                   !< the output value
 
     Axion1DIntegral = 0._dl
-    !< No analytic solution >!
-    write(*, *) 'Axion1DIntegral is not implemented.'
-    write(*, *) 'Calculations cannot proceed.'
-    call MpiStop('EFTCAMB error')
+    !< No analytic solution >! (the axion potential is not used as a w_DE parametrization)
+    call GlobalError('EFTCAMB error: Axion1DIntegral is not implemented', error_unsupported_params)
 
     end function Axion1DIntegral
 

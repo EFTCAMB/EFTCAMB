@@ -26,6 +26,7 @@
     module EFTCAMB_steplog_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use MpiUtils
     use EFT_def
     use EFTCAMB_cache
@@ -135,7 +136,10 @@
     case default
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in steplogParametrized1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end select
 
     end subroutine steplogParametrized1DParameterValues
@@ -187,7 +191,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in steplogParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -221,7 +228,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in steplogParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then
