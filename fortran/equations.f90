@@ -2581,6 +2581,12 @@
     real(dl) yt(eV%nvart)
     real(dl) tens0, ep, tensfac
 
+    ! EFTCAMB MOD START: reset the EFTCAMB part of the (OpenMP-private) evolution variables for every k mode
+    eV%EFTCAMB_printing = .false.
+    eV%EFTCAMB_QS = .false.
+    call eV%eft_cache%initialize()
+    ! EFTCAMB MOD END.
+
     if (State%flat) then
         eV%aux_buf = 1._dl
         eV%k2_buf = eV%q2
