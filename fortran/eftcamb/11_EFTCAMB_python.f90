@@ -694,6 +694,11 @@
                 call EFTCAMB%model%compute_background_EFT_functions(a, par_cache, cache)
                 call EFTCAMB%model%compute_rhoQPQ(a, par_cache, cache)
                 call EFTCAMB%model%compute_secondorder_EFT_functions(a, par_cache, cache)
+                ! higher derivatives (EFTLambdadotdot, EFTcdotdot, EFTOmegaPPPP, Gamma PP/PPP, ...) that the model
+                ! does not compute analytically, then the Hubble derivatives again: Hdotdotdot needs them (as in
+                ! the stability calculation):
+                call EFTCAMB%model%compute_additional_derivs(a, par_cache, cache)
+                call EFTCAMB%model%compute_H_derivs(a, par_cache, cache)
             end associate
         end do
     end associate
