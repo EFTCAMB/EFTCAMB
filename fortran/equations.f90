@@ -277,12 +277,28 @@
     type(RungeKuttaDP45Settings), intent(inout) :: rk_settings
     real(dl) w(EV%nvar, 9), y(EV%nvar), tol1, tau, tauend
     integer ind
+    ! EFTCAMB MOD START: pi field oscillation frequency
+    real(dl) pi_A, pi_omega
+    ! EFTCAMB MOD END.
 
     if (EV%q < 2e-3_dl .and. tau <= State%taurend .and. CP%WantCls) then
         rk_settings%max_step_size = 2._dl
     else
         rk_settings%max_step_size = 20._dl/CP%Accuracy%IntTolBoost
     end if
+    ! EFTCAMB MOD START: keep the RK45 step inside its stability region for the oscillating pi field,
+    ! omega_pi from the pi equation coefficients cached by the last derivs call
+    if (CP%EFTCAMB%EFTflag /= 0 .and. EV%EFTCAMBactive .and. .not. CP%EFTCAMB%EFTCAMB_evolve_delta_phi) then
+        pi_A = EV%eft_cache%EFTpiA1 + EV%k2_buf*EV%eft_cache%EFTpiA2
+        if (pi_A /= 0._dl) then
+            pi_omega = sqrt(abs((EV%eft_cache%EFTpiC + EV%k2_buf*EV%eft_cache%EFTpiD1 + &
+                EV%k2_buf**2*EV%eft_cache%EFTpiD2)/pi_A)) + abs((EV%eft_cache%EFTpiB1 + &
+                EV%k2_buf*EV%eft_cache%EFTpiB2)/pi_A)
+            if (pi_omega > 0._dl) rk_settings%max_step_size = &
+                min(rk_settings%max_step_size, 1.5_dl/pi_omega/CP%Accuracy%IntTolBoost)
+        end if
+    end if
+    ! EFTCAMB MOD END.
     rk_settings%reuse_first_derivative = .true.
 
     call RungeKuttaDP45(EV, EV%ScalEqsToPropagate, derivs, tau, y, tauend, tol1, ind, rk_settings, EV%nvar, w)
@@ -400,7 +416,11 @@
     ! EFTCAMB MOD END
 
     if (next_switch < tauend) then
-        if (next_switch > tau + smallTime) then
+        ! EFTCAMB MOD START: integrate exactly to the EFT turn-on (the switch is a jump of the potentials)
+        if (next_switch > tau + smallTime .or. (next_switch == EV%EFTturnOnTime .and. next_switch > tau)) then
+            ! original code:
+            ! if (next_switch > tau + smallTime) then
+            ! EFTCAMB MOD END.
             call GaugeInterface_ScalEv(EV, y, tau, next_switch, tol1, ind, rk_settings, w)
             if (global_error_flag /= 0) return
         end if

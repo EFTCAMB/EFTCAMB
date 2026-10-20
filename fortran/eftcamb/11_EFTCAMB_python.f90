@@ -578,7 +578,9 @@
     ! do the time loop:
     tau = taustart
     ind = 1
-    tol1 = base_tol/exp(CP%Accuracy%AccuracyBoost*CP%Accuracy%IntTolBoost - 1)
+    ! tighter than the source integration: the small, fast oscillating pi sector is otherwise dominated by
+    ! integration error (IntTolBoost = 8 is converged; much smaller tolerances make RK45 fail)
+    tol1 = base_tol/exp(max(CP%Accuracy%AccuracyBoost*CP%Accuracy%IntTolBoost, 8._dl) - 1)
     do j = 1, neta
         tauend = eta(j)
         if (tauend < taustart) cycle

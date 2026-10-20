@@ -3009,6 +3009,9 @@
     ! Sources
     integer ix, i, nwindow, L_limb
     real(dl) keff, win_end, TimeSampleBoost, delta
+    ! EFTCAMB MOD START: EFT perturbation turn-on time
+    real(dl) tau_on
+    ! EFTCAMB MOD END.
 
     TimeSampleBoost = State%CP%Accuracy%AccuracyBoost*State%CP%Accuracy%TimeStepBoost
     call TimeSteps%Init()
@@ -3130,6 +3133,20 @@
             call TimeSteps%Add_delta(this%tau_start_redshiftwindows, State%tau0, dtau0)
         end if
     end if
+
+    ! EFTCAMB MOD START: sample the sources tightly around the EFT perturbation turn-on, where the potentials
+    ! jump: points straddling the turn-on and a fine grid on both sides
+    if (allocated(State%CP%EFTCAMB)) then
+        if (State%CP%EFTCAMB%EFTflag /= 0 .and. State%CP%WantScalars) then
+            tau_on = State%DeltaTime(0._dl, State%CP%EFTCAMB%EFTCAMB_pert_turn_on)
+            if (tau_on > State%taurst .and. tau_on < State%tau0) then
+                call TimeSteps%Add_delta(max(State%taurst, tau_on - 100._dl), tau_on*(1 - 1.e-7_dl), dtau0/10)
+                call TimeSteps%Add(tau_on*(1 - 1.e-7_dl), tau_on*(1 + 1.e-7_dl), 1)
+                call TimeSteps%Add_delta(tau_on*(1 + 1.e-7_dl), min(State%tau0, tau_on + 300._dl), dtau0/10)
+            end if
+        end if
+    end if
+    ! EFTCAMB MOD END.
 
     if (global_error_flag /= 0) then
         return
