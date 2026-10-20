@@ -586,7 +586,7 @@
     ! compute Einstein equations factors:
     call CP%EFTCAMB%model%compute_pi_factors(a, CP%eft_par_cache, eft_cache)
 
-    EFTpiDfunction = eft_cache%EFTpiD1 + k*k*eft_cache%EFTpiD1
+    EFTpiDfunction = eft_cache%EFTpiD1 + k*k*eft_cache%EFTpiD2
 
     end function EFTpiDfunction
 
