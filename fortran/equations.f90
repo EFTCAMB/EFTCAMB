@@ -1653,6 +1653,9 @@
     integer j
     real(dl) Tmat, Trad, Delta_source, Delta_source2
     real(dl) xe, chi, polter_line
+    ! EFTCAMB MOD START: gpres + grho/3 including dark energy
+    real(dl) rsd_gpres_grho
+    ! EFTCAMB MOD END.
 
     j = EV%OutputStep
     if (CP%SourceTerms%line_reionization) sources(2) = 0
@@ -1700,7 +1703,13 @@
                     ! EFTCAMB MOD START: ! MR: should be OK.
                     if (CP%EFTCAMB%EFTflag == 0 .or. .not. EV%EFTCAMBactive) then
                         ! Main redshift distortion from kV_N/H j'' integrated by parts twice (V_N = sigma in synch gauge)
-                        counts_redshift_source = ((4.d0*adotoa**2 + gpres + grho/3.d0)/k*w%wing2(j) + &
+                        ! For EFT models grho, gpres have no dark energy: use gpres + grho/3 = -2 Hdot of the EFT background
+                        if (CP%EFTCAMB%EFTflag == 0) then
+                            rsd_gpres_grho = gpres + grho/3.d0
+                        else
+                            rsd_gpres_grho = -2._dl*EV%eft_cache%Hdot
+                        end if
+                        counts_redshift_source = ((4.d0*adotoa**2 + rsd_gpres_grho)/k*w%wing2(j) + &
                             (-4.d0*w%dwing2(j)*adotoa + w%ddwing2(j))/k)*sigma + (-etak/adotoa*k/3.d0 - dgrho/ &
                             adotoa/6.d0 + (etak/adotoa*k/3.d0 + dgrho/adotoa/6.d0 + (dgq/2.d0 - 2.d0*etak*adotoa)/k) &
                             /EV%Kf(1))*w%wing2(j) + 2.d0*w%dwing2(j)*etak/k/EV%Kf(1)
