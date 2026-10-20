@@ -362,9 +362,18 @@
     end if
 
     ! EFTCAMB MOD START: no need to check for DarkEnergy allocation if using EFTCAMB
-    if (.not. allocated(P%DarkEnergy) .and. this%CP%EFTCAMB%EFTflag == 0) then
-        call GlobalError('DarkEnergy not set', error_darkenergy)
+    ! test the new parameters P (this%CP is the previous set); nested ifs since .and. does not short-circuit
+    if (.not. allocated(P%DarkEnergy)) then
+        if (.not. allocated(P%EFTCAMB)) then
+            call GlobalError('DarkEnergy not set', error_darkenergy)
+        else if (P%EFTCAMB%EFTflag == 0) then
+            call GlobalError('DarkEnergy not set', error_darkenergy)
+        end if
     end if
+    ! original code:
+    ! if (.not. allocated(P%DarkEnergy)) then
+    !     call GlobalError('DarkEnergy not set', error_darkenergy)
+    ! end if
     ! EFTCAMB MOD END.
 
     if (.not. DefaultFalse(background_only)) call CheckSupportedParams(P)
