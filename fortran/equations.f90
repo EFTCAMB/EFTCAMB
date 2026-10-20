@@ -2131,70 +2131,6 @@
 
     end subroutine outputv
 
-    ! EFTCAMB MOD START: background part of the EFT timestep cache at a given scale factor.
-    ! > Fills densities, expansion history, background and second order EFT functions of cache at a,
-    !! with the same sequence as derivs (used by the EFT_IC_type 2/3 initial conditions).
-    subroutine EFTCAMB_fill_background_cache(a, cache)
-    real(dl), intent(in) :: a
-    type(TEFTCAMB_timestep_cache), intent(inout) :: cache
-    real(dl) :: grhonu, gpinu, gpinudot, grhormass_t, adotoa, am
-    integer  :: nu_i, pass
-
-    call cache%initialize()
-    cache%a = a
-    cache%grhob_t = State%grhob/a
-    cache%grhoc_t = State%grhoc/a
-    cache%grhor_t = State%grhornomass/a**2
-    cache%grhog_t = State%grhog/a**2
-    cache%grhonu_tot = 0._dl
-    cache%gpinu_tot = 0._dl
-    do nu_i = 1, CP%Nu_mass_eigenstates
-        grhormass_t = State%grhormass(nu_i)/a**2
-        call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), grhonu, gpinu)
-        cache%grhonu_tot = cache%grhonu_tot + grhormass_t*grhonu
-        cache%gpinu_tot = cache%gpinu_tot + grhormass_t*gpinu
-    end do
-    cache%grhom_t = cache%grhob_t + cache%grhoc_t + cache%grhor_t + cache%grhog_t + cache%grhonu_tot
-    cache%grhoa2 = cache%grhom_t*a**2
-    cache%gpresm_t = (cache%grhor_t + cache%grhog_t)/3._dl + cache%gpinu_tot
-    if (.not. CP%EFTCAMB%EFTCAMB_model_is_designer) then
-        call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, cache)
-    end if
-    call CP%EFTCAMB%model%compute_adotoa(a, CP%eft_par_cache, cache)
-    adotoa = cache%adotoa
-    ! first pass: first derivatives (Hdot), second pass: second derivatives (needs Hdot)
-    do pass = 1, 2
-        cache%grhonudot_tot = 0._dl
-        cache%gpinudot_tot = 0._dl
-        cache%gpinudotdot_tot = 0._dl
-        do nu_i = 1, CP%Nu_mass_eigenstates
-            grhormass_t = State%grhormass(nu_i)/a**2
-            am = a*State%nu_masses(nu_i)
-            call ThermalNuBackground%rho_P(am, grhonu, gpinu)
-            gpinudot = ThermalNuBackground%pidot(am, adotoa, gpinu)
-            cache%grhonudot_tot = cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(am, adotoa) - 4._dl*adotoa*grhonu)
-            cache%gpinudot_tot = cache%gpinudot_tot + grhormass_t*(gpinudot - 4._dl*adotoa*gpinu)
-            if (pass == 2) cache%gpinudotdot_tot = cache%gpinudotdot_tot - &
-                4._dl*adotoa*grhormass_t*(gpinudot - 4._dl*adotoa*gpinu) + &
-                grhormass_t*(ThermalNuBackground%pidotdot(am, adotoa, cache%Hdot, gpinu, gpinudot) - &
-                4._dl*cache%Hdot*gpinu - 4._dl*adotoa*gpinudot)
-        end do
-        cache%gpresdotm_t = -4._dl*adotoa*(cache%grhog_t + cache%grhor_t)/3._dl + cache%gpinudot_tot
-        if (pass == 2) cache%gpresdotdotm_t = -(4._dl/3._dl)*cache%Hdot*(cache%grhog_t + cache%grhor_t) + &
-            (16._dl/3._dl)*(cache%grhog_t + cache%grhor_t)*adotoa**2 + cache%gpinudotdot_tot
-        call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, cache)
-    end do
-    ! (again for full models, now with the current adotoa, Hdot, Hdotdot: their background EFT
-    ! functions may use them)
-    call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, cache)
-    call CP%EFTCAMB%model%compute_rhoQPQ(a, CP%eft_par_cache, cache)
-    call CP%EFTCAMB%model%compute_secondorder_EFT_functions(a, CP%eft_par_cache, cache)
-
-    end subroutine EFTCAMB_fill_background_cache
-
-    ! EFTCAMB MOD END.
-
     subroutine initial(EV, y, tau)
     ! Scalar initial conditions. See docs/InitialConditionsSeries.ipynb for derivation.
     implicit none
@@ -2325,7 +2261,7 @@
         a_eval = max(a_eval, CP%EFTCAMB%EFTCAMB_back_turn_on)
 
         ! fill the background and second order EFT functions at a_eval (EV%eft_cache is reused between modes):
-        call EFTCAMB_fill_background_cache(a_eval, EV%eft_cache)
+        call EFTCAMB_fill_background_cache(State, a_eval, EV%eft_cache)
 
         Omega0 = EV%eft_cache%EFTOmegaV
         Gamma10 = EV%eft_cache%EFTGamma1V

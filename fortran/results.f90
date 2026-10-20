@@ -1198,7 +1198,15 @@
 
     do i = 1, n
         a = a_arr(i)
-        call this%CP%DarkEnergy%BackgroundDensityAndPressure(this%grhov, a, grhov_t)
+        ! EFTCAMB MOD START: dark energy density of the EFT background, consistent with H by construction
+        if (this%CP%EFTCAMB%EFTflag /= 0) then
+            grhov_t = (3._dl/dtauda(this, a)**2 - this%grho_no_de(a))/a**2
+        else
+            call this%CP%DarkEnergy%BackgroundDensityAndPressure(this%grhov, a, grhov_t)
+        end if
+        ! original code:
+        ! call this%CP%DarkEnergy%BackgroundDensityAndPressure(this%grhov, a, grhov_t)
+        ! EFTCAMB MOD END.
         grhonu = 0
 
         if (this%CP%Num_Nu_massive /= 0) then
@@ -1396,6 +1404,27 @@
     real(dl), intent(in) :: a(n)
     real(dl), intent(out) :: grhov_t(n), w(n)
     integer i
+    ! EFTCAMB MOD START: EFT background
+    type(TEFTCAMB_timestep_cache) :: cache
+    real(dl) :: grhode_a4, grhode0_a4, gpres_de
+
+    if (this%CP%EFTCAMB%EFTflag /= 0) then
+        ! rho_DE/rho_DE(today) from H (8 pi G rho_DE a^4 = 3/dtauda^2 - everything else) and
+        ! w = p_DE/rho_DE from the model's Hdot: gpres_tot = -2 Hdot - adotoa^2
+        grhode0_a4 = 3._dl/dtauda(this, 1._dl)**2 - this%grho_no_de(1._dl)
+        do i = 1, n
+            grhode_a4 = 3._dl/dtauda(this, a(i))**2 - this%grho_no_de(a(i))
+            grhov_t(i) = grhode_a4/grhode0_a4/a(i)**4
+            w(i) = -1._dl
+            if (a(i) >= this%CP%EFTCAMB%EFTCAMB_back_turn_on .and. grhode_a4 /= 0._dl) then
+                call EFTCAMB_fill_background_cache(this, a(i), cache)
+                gpres_de = -2._dl*cache%Hdot - cache%adotoa**2 - cache%gpresm_t
+                w(i) = gpres_de*a(i)**2/grhode_a4
+            end if
+        end do
+        return
+    end if
+    ! EFTCAMB MOD END.
 
     do i = 1, n
         call this%CP%DarkEnergy%BackgroundDensityAndPressure(1._dl, a(i), grhov_t(i), w(i))
@@ -1403,6 +1432,71 @@
     grhov_t = grhov_t/a**2
 
     end subroutine CAMBdata_DarkEnergyStressEnergy
+
+    ! EFTCAMB MOD START: background part of the EFT timestep cache at a given scale factor.
+    ! > Fills densities, expansion history, background and second order EFT functions of cache at a,
+    !! with the same sequence as derivs (EFT_IC_type 2/3 initial conditions, EFT dark energy density and w).
+    subroutine EFTCAMB_fill_background_cache(this, a, cache)
+    class(CAMBdata) :: this
+    real(dl), intent(in) :: a
+    type(TEFTCAMB_timestep_cache), intent(inout) :: cache
+    real(dl) :: grhonu, gpinu, gpinudot, grhormass_t, adotoa, am
+    integer  :: nu_i, pass
+
+    call cache%initialize()
+    cache%a = a
+    cache%grhob_t = this%grhob/a
+    cache%grhoc_t = this%grhoc/a
+    cache%grhor_t = this%grhornomass/a**2
+    cache%grhog_t = this%grhog/a**2
+    cache%grhonu_tot = 0._dl
+    cache%gpinu_tot = 0._dl
+    do nu_i = 1, this%CP%Nu_mass_eigenstates
+        grhormass_t = this%grhormass(nu_i)/a**2
+        call ThermalNuBackground%rho_P(a*this%nu_masses(nu_i), grhonu, gpinu)
+        cache%grhonu_tot = cache%grhonu_tot + grhormass_t*grhonu
+        cache%gpinu_tot = cache%gpinu_tot + grhormass_t*gpinu
+    end do
+    cache%grhom_t = cache%grhob_t + cache%grhoc_t + cache%grhor_t + cache%grhog_t + cache%grhonu_tot
+    cache%grhoa2 = cache%grhom_t*a**2
+    cache%gpresm_t = (cache%grhor_t + cache%grhog_t)/3._dl + cache%gpinu_tot
+    if (.not. this%CP%EFTCAMB%EFTCAMB_model_is_designer) then
+        call this%CP%EFTCAMB%model%compute_background_EFT_functions(a, this%CP%eft_par_cache, cache)
+    end if
+    call this%CP%EFTCAMB%model%compute_adotoa(a, this%CP%eft_par_cache, cache)
+    adotoa = cache%adotoa
+    ! first pass: first derivatives (Hdot), second pass: second derivatives (needs Hdot)
+    do pass = 1, 2
+        cache%grhonudot_tot = 0._dl
+        cache%gpinudot_tot = 0._dl
+        cache%gpinudotdot_tot = 0._dl
+        do nu_i = 1, this%CP%Nu_mass_eigenstates
+            grhormass_t = this%grhormass(nu_i)/a**2
+            am = a*this%nu_masses(nu_i)
+            call ThermalNuBackground%rho_P(am, grhonu, gpinu)
+            gpinudot = ThermalNuBackground%pidot(am, adotoa, gpinu)
+            cache%grhonudot_tot = cache%grhonudot_tot + &
+                grhormass_t*(ThermalNuBackground%drho(am, adotoa) - 4._dl*adotoa*grhonu)
+            cache%gpinudot_tot = cache%gpinudot_tot + grhormass_t*(gpinudot - 4._dl*adotoa*gpinu)
+            if (pass == 2) cache%gpinudotdot_tot = cache%gpinudotdot_tot - &
+                4._dl*adotoa*grhormass_t*(gpinudot - 4._dl*adotoa*gpinu) + &
+                grhormass_t*(ThermalNuBackground%pidotdot(am, adotoa, cache%Hdot, gpinu, gpinudot) - &
+                4._dl*cache%Hdot*gpinu - 4._dl*adotoa*gpinudot)
+        end do
+        cache%gpresdotm_t = -4._dl*adotoa*(cache%grhog_t + cache%grhor_t)/3._dl + cache%gpinudot_tot
+        if (pass == 2) cache%gpresdotdotm_t = -(4._dl/3._dl)*cache%Hdot*(cache%grhog_t + cache%grhor_t) + &
+            (16._dl/3._dl)*(cache%grhog_t + cache%grhor_t)*adotoa**2 + cache%gpinudotdot_tot
+        call this%CP%EFTCAMB%model%compute_H_derivs(a, this%CP%eft_par_cache, cache)
+    end do
+    ! (again for full models, now with the current adotoa, Hdot, Hdotdot: their background EFT
+    ! functions may use them)
+    call this%CP%EFTCAMB%model%compute_background_EFT_functions(a, this%CP%eft_par_cache, cache)
+    call this%CP%EFTCAMB%model%compute_rhoQPQ(a, this%CP%eft_par_cache, cache)
+    call this%CP%EFTCAMB%model%compute_secondorder_EFT_functions(a, this%CP%eft_par_cache, cache)
+
+    end subroutine EFTCAMB_fill_background_cache
+
+    ! EFTCAMB MOD END.
 
     pure function rofChi(this, Chi) ! sinh(chi) for open, sin(chi) for closed.
     class(CAMBdata), intent(in) :: this
