@@ -231,7 +231,7 @@
         return
     end if
     ! compute the interpolation index:
-    ind = int((x - self%x_initial)/self%grid_width) + 1
+    ind = min(int((x - self%x_initial)/self%grid_width) + 1, self%num_points - 1)
     ! store the x values:
     x1 = self%x(ind)
     x2 = self%x(ind + 1)
@@ -278,7 +278,7 @@
     if (present(index)) then
         ind = index
     else
-        ind = int((x - self%x_initial)/self%grid_width) + 1
+        ind = min(int((x - self%x_initial)/self%grid_width) + 1, self%num_points - 1)
     end if
 
     ! get the interpolation coefficient:
@@ -341,7 +341,7 @@
     if (present(index)) then
         ind = index
     else
-        ind = int((x - self%x_initial)/self%grid_width) + 1
+        ind = min(int((x - self%x_initial)/self%grid_width) + 1, self%num_points - 1)
     end if
 
     ! get the interpolation coefficient:
@@ -404,7 +404,7 @@
     if (present(index)) then
         ind = index
     else
-        ind = int((x - self%x_initial)/self%grid_width) + 1
+        ind = min(int((x - self%x_initial)/self%grid_width) + 1, self%num_points - 1)
     end if
 
     ! get the interpolation coefficient:
@@ -467,7 +467,7 @@
     if (present(index)) then
         ind = index
     else
-        ind = int((x - self%x_initial)/self%grid_width) + 1
+        ind = min(int((x - self%x_initial)/self%grid_width) + 1, self%num_points - 1)
     end if
 
     ! get the interpolation coefficient:
@@ -530,7 +530,7 @@
     if (present(index)) then
         ind = index
     else
-        ind = int((x - self%x_initial)/self%grid_width) + 1
+        ind = min(int((x - self%x_initial)/self%grid_width) + 1, self%num_points - 1)
     end if
 
     ! get the interpolation coefficient:
@@ -593,7 +593,7 @@
     if (present(index)) then
         ind = index
     else
-        ind = int((x - self%x_initial)/self%grid_width) + 1
+        ind = min(int((x - self%x_initial)/self%grid_width) + 1, self%num_points - 1)
     end if
 
     ! get the interpolation coefficient:
