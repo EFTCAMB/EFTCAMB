@@ -2164,6 +2164,7 @@
     real(dl) Omega0, Gamma10, Gamma20, Gamma30
     real(dl) :: a_eval
     integer  :: eft_ic_case
+    logical  :: eft_species_ic
     ! EFTCAMB MOD END.
     real(dl) a, a2, iqg, rhomass, a_massive, ep, nu_l_accuracy_boost
     integer l, i, nu_i, j, ind
@@ -2262,7 +2263,16 @@
 
     chi = 1 ! Get transfer function for chi
     ! EFTCAMB MOD START
-    if (CP%EFTCAMB%EFTflag == 0 .or. CP%EFTCAMB%EFT_IC_type == 1) then
+    ! The EFT_IC_type 2/3 species initial conditions are the radiation era, super-horizon series with the EFT
+    ! perturbations already on: use them only if the EFT turns on at or before the start of this mode and the mode
+    ! starts super-horizon (k tau <= 0.1) deep in the radiation era (baryons + CDM <= 1% of the density), as the pi
+    ! initial conditions do (09_EFTCAMB_IC.f90). Otherwise the species start in GR (adiabatic GR series).
+    eft_species_ic = .false.
+    if (CP%EFTCAMB%EFTflag /= 0 .and. CP%EFTCAMB%EFT_IC_type /= 1) then
+        eft_species_ic = EV%EFTturnOnTime <= tau .and. x <= 0.1_dl .and. &
+            a*(State%grhob + State%grhoc) <= 0.01_dl*(State%grhog + grhonu + a*(State%grhob + State%grhoc))
+    end if
+    if (.not. eft_species_ic) then
         initv(1, i_clxg) = -chi*EV%Kf(1)/3*x2*(1 - omtau/5)
         initv(1, i_clxr) = initv(1, i_clxg)
         initv(1, i_clxb) = 0.75_dl*initv(1, i_clxg)
@@ -2273,7 +2283,7 @@
         initv(1, i_pir) = chi*4._dl/3*x2/Rp15*(1 + omtau/4*(4*Rv - 5)/(2*Rv + 15))
         initv(1, i_aj3r) = chi*4/21._dl/Rp15*x3
         initv(1, i_eta) = -chi*2*EV%Kf(1)*(1 - x2/12*(-10._dl/Rp15 + EV%Kf(1)))
-    else if (CP%EFTCAMB%EFTflag /= 0 .and. CP%EFTCAMB%EFT_IC_type /= 1) then
+    else
         ! Evaluate EFT functions at the EFT perturbation turn-on time:
         a_eval = CP%EFTCAMB%EFTCAMB_pert_turn_on
 
@@ -2290,10 +2300,13 @@
         call EV%eft_cache%initialize()
 
         eft_ic_case = CP%EFTCAMB%EFT_IC_type
-        ! the case 3 expressions are 0/0 for Omega = Gamma3 = 0: use the case 2 limit there
+        ! the case 3 expressions are 0/0 for Omega = Gamma3 = 0: use the case 2 limit there (same test and
+        ! tolerance as for the pi initial conditions, EFT_IC_type3_tolerance in 09_EFTCAMB_IC.f90)
         if (eft_ic_case == 3) then
-            if (abs(3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2) < 1.e-12_dl .or. &
-                abs(3._dl*Gamma30 + 8._dl*Omega0 + 6._dl*Gamma30*Omega0 + 6._dl*Omega0**2) < 1.e-12_dl) then
+            if (min(abs(3._dl*Gamma30*(1._dl + Omega0) + Omega0*(5._dl + 3._dl*Omega0)), &
+                abs(1._dl + Gamma30 + Omega0), &
+                abs(3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2), &
+                abs(3._dl*Gamma30 + 8._dl*Omega0 + 6._dl*Gamma30*Omega0 + 6._dl*Omega0**2)) <= 1.e-10_dl) then
                 eft_ic_case = 2
             end if
         end if
@@ -2746,6 +2759,7 @@
     real(dl) clxq, vq, dgpnu, EFT_grhonu, EFT_gpinu, EFT_grhonudot, EFT_gpinudot, EFT_gpinudotdot, grhormass_t
     real(dl) pidotdot, EFTLensing, EFTISW, EFTsigmadot, EFTsigmadotdot, EFT_Psi, EFT_Phi, EFT_PsiDot, EFT_PhiDot, &
         EFTetakdot
+    real(dl) EFT_den_mu, EFT_den_sigma
     real(dl) dphi, ddphi, dddphi, dphi_safe
     real(dl) delta_phi, delta_phi_dot, delta_phi_ddot ! delta_phi equation variables
     real(dl) metric_h_dot, metric_h_ddot ! h' and h''
@@ -3849,9 +3863,15 @@
         EV%eft_cache%T_monopole = 0.25_dl*(clxg - sigma/k*4._dl*adotoa)
         EV%eft_cache%T_dipole = 0.75_dl*qg + sigma
         ! auxiliary MG functions:
-        EV%eft_cache%mu = -2._dl*k2*EFT_Psi/(dgrho + 3*dgq*adotoa/k + 2*dgpi)
-        EV%eft_cache%gamma = EFT_Phi/EFT_Psi + 2*dgpi/(dgrho + 3*dgq*adotoa/k + 2*dgpi)
-        EV%eft_cache%sigma_eft = -k2*(EFT_Phi + EFT_Psi)/(dgrho + 3*dgq*adotoa/k + dgpi)
+        ! (a vanishing denominator, e.g. all perturbations zero, gives the GR value 1 instead of 0/0)
+        EFT_den_mu = dgrho + 3*dgq*adotoa/k + 2*dgpi
+        EFT_den_sigma = dgrho + 3*dgq*adotoa/k + dgpi
+        EV%eft_cache%mu = 1._dl
+        EV%eft_cache%gamma = 1._dl
+        EV%eft_cache%sigma_eft = 1._dl
+        if (EFT_den_mu /= 0._dl) EV%eft_cache%mu = -2._dl*k2*EFT_Psi/EFT_den_mu
+        if (EFT_den_mu /= 0._dl .and. EFT_Psi /= 0._dl) EV%eft_cache%gamma = EFT_Phi/EFT_Psi + 2*dgpi/EFT_den_mu
+        if (EFT_den_sigma /= 0._dl) EV%eft_cache%sigma_eft = -k2*(EFT_Phi + EFT_Psi)/EFT_den_sigma
         ! effective DE quantities:
         EV%eft_cache%dgrho_Newt = dgrho + 3*dgq*adotoa/k
         EV%eft_cache%delta_DE_eff = -2._dl*k2*EFT_Phi - (dgrho + 3*dgq*adotoa/k)
