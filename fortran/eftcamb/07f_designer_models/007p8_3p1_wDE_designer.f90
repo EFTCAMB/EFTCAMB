@@ -561,6 +561,10 @@
     N1no = N1o + self%Designer3p1rho1N_ODE%parameter_number
     N2o = N1no + self%Designer3p1rho2_ODE%parameter_number
 
+    ! defaults for luminal GW (no rho1 blocks), so that N3 and N3o are always defined:
+    N3 = N2o
+    N3o = N2o
+
     if (.not. self%Designer3p1LuminalGW) then
         N3 = N2o + self%Designer3p1rho1%parameter_number
 
@@ -667,6 +671,14 @@
     N1no = N1o + self%Designer3p1rho1N_ODE%parameter_number
     N2o = N1no + self%Designer3p1rho2_ODE%parameter_number
 
+    ! defaults for luminal GW (no rho1 blocks), so that N3 and N3o are always defined:
+    N3 = N2o
+    N3o = N2o
+    if (.not. self%Designer3p1LuminalGW) then
+        N3 = N2o + self%Designer3p1rho1%parameter_number
+        N3o = N3 + self%Designer3p1rho1_ODE%parameter_number
+    end if
+
     ! check validity of input:
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
@@ -766,6 +778,10 @@
     N1o = N2 + self%Designer3p1sigma1_ODE%parameter_number
     N1no = N1o + self%Designer3p1rho1N_ODE%parameter_number
     N2o = N1no + self%Designer3p1rho2_ODE%parameter_number
+
+    ! defaults for luminal GW (no rho1 blocks), so that N3 and N3o are always defined:
+    N3 = N2o
+    N3o = N2o
 
     if (.not. self%Designer3p1LuminalGW) then
         N3 = N2o + self%Designer3p1rho1%parameter_number

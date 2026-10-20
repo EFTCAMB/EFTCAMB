@@ -808,9 +808,9 @@
             t2 = self%EFTc%x(i)
             ! check if function parametrizations are regular
             a = exp(t1)
-            if (.not. self%OL_Gamma1%compute_function_stability(a) .and. &
+            if (.not. (self%OL_Gamma1%compute_function_stability(a) .and. &
                 self%OL_Gamma2%compute_function_stability(a) .and. self%OL_Gamma3%compute_function_stability(a) .and. &
-                self%OL_Lambda%compute_function_stability(a) .and. self%OL_Omega%compute_function_stability(a)) then
+                self%OL_Lambda%compute_function_stability(a) .and. self%OL_Omega%compute_function_stability(a))) then
                 write(*, *) 'One or multiple EFT functions are not regular'
                 success = .false.
                 return
@@ -873,6 +873,8 @@
             else
                 success = .false.
                 write(*, *) 'DLSODA failed with code:', istate
+                ! define the function result on the failure path too:
+                dummy_solve = y_temp(1)
                 return
             end if
         end if

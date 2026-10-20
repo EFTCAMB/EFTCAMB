@@ -881,6 +881,8 @@
         else
             success = .false.
             if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
+            ! define the function result on the failure path too:
+            dummy_solve = y_temp(1)
             return
         end if
     end if
