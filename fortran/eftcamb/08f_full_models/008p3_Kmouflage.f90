@@ -136,14 +136,7 @@
     self%Kmimic = Ini%Read_Logical('Kmimic', .false.)
 
     ! read precision parameters
-    if (self%Kmimic) then
-        ! K-mimic perturbations do not converge with the background table resolution (the type-1 pi initial
-        ! conditions follow rapidly varying coefficients, audit item C2): keep the previous default until they are
-        ! regularised. With 10000 points sigma8 of the shipped 5_Kmimic_2 test goes from 0.77 to 249.
-        self%background_num_points = Ini%Read_Int('model_background_num_points', 1000)
-    else
-        self%background_num_points = Ini%Read_Int('model_background_num_points', 10000)
-    end if
+    self%background_num_points = Ini%Read_Int('model_background_num_points', 10000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-9))
     self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
 
