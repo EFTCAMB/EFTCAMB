@@ -39,7 +39,7 @@
 
     private
 
-    public EFTCAMB_model
+    public EFTCAMB_model, EFTCAMBStabilityScales
 
     ! ----------------------------------------------------------------------------------------
     !> This is the abstract type for EFTCAMB models. As a rule, when there is a
@@ -747,6 +747,78 @@
         (4._dl + a*eft_cache%EFTOmegaP + 4._dl*eft_cache%EFTOmegaV)*eft_cache%Hdot))
 
     end subroutine EFTCAMBModelComputeStabilityFactors
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the scales of the scalar no-ghost (EFT_kinetic) and gradient (EFT_gradient)
+    !! coefficients of EFTCAMBModelComputeStabilityFactors: the sums of the magnitudes of their terms.
+    !! They are the reference for the relative numerical floor EFTCAMB_stability_threshold of the stability check:
+    !! a coefficient that cancels to roundoff of its terms has no definite sign.
+    subroutine EFTCAMBStabilityScales(a, eft_par_cache, eft_cache, kinetic_scale, gradient_scale)
+
+    implicit none
+
+    real(dl), intent(in)                          :: a             !< the input scale factor.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+    real(dl), intent(out) :: kinetic_scale    !< sum of the magnitudes of the terms of EFT_kinetic
+    real(dl), intent(out) :: gradient_scale   !< sum of the magnitudes of the terms of EFT_gradient
+
+    real(dl) :: M
+
+    M = 1._dl + eft_cache%EFTOmegaV - eft_cache%EFTGamma4V
+    kinetic_scale = 9._dl*abs(M)*(abs(4._dl*eft_cache%EFTc*M) + &
+        3._dl*eft_cache%adotoa**2*eft_cache%EFTOmegaP**2*a**2 + &
+        a**2*eft_par_cache%h0_Mpc**2*(3._dl*eft_cache%EFTGamma2V**2 + abs(8._dl*eft_cache%EFTGamma1V*M)) + &
+        abs(6._dl*a**2*eft_par_cache%h0_Mpc*eft_cache%adotoa*eft_cache%EFTGamma2V*eft_cache%EFTOmegaP))
+    !
+    gradient_scale = 9._dl*(abs(8._dl*a*eft_cache%adotoa**2*eft_cache%EFTGamma5P) + &
+        abs(16._dl*eft_cache%adotoa**2*eft_cache%EFTGamma5V**2) + &
+        abs(16._dl*eft_cache%EFTc*eft_cache%EFTGamma5V**2) + &
+        abs(2._dl*a**2*eft_cache%adotoa**2*eft_cache%EFTGamma4P*eft_cache%EFTOmegaP) + &
+        abs(4._dl*a**2*eft_cache%adotoa**2*eft_cache%EFTGamma5P*eft_cache%EFTOmegaP) + &
+        abs(4._dl*a*eft_cache%adotoa**2*eft_cache%EFTGamma5V*eft_cache%EFTOmegaP) + &
+        abs(4._dl*a**2*eft_cache%adotoa**2*eft_cache%EFTGamma4P*eft_cache%EFTGamma5V*eft_cache%EFTOmegaP) + &
+        abs(8._dl*a*eft_cache%adotoa**2*eft_cache%EFTGamma5V**2*eft_cache%EFTOmegaP) + &
+        abs(3._dl*a**2*eft_cache%adotoa**2*eft_cache%EFTOmegaP**2) + &
+        abs(4._dl*a**2*eft_cache%adotoa**2*eft_cache%EFTGamma5V*eft_cache%EFTOmegaP**2) + &
+        abs(16._dl*a*eft_cache%adotoa**2*eft_cache%EFTGamma5P*eft_cache%EFTOmegaV) + &
+        abs(16._dl*eft_cache%EFTc*eft_cache%EFTGamma5V*eft_cache%EFTOmegaV) + &
+        abs(16._dl*eft_cache%adotoa**2*eft_cache%EFTGamma5V**2*eft_cache%EFTOmegaV) + &
+        abs(2._dl*a**2*eft_cache%adotoa**2*eft_cache%EFTGamma4P*eft_cache%EFTOmegaP*eft_cache%EFTOmegaV) + &
+        abs(4._dl*a**2*eft_cache%adotoa**2*eft_cache%EFTGamma5P*eft_cache%EFTOmegaP*eft_cache%EFTOmegaV) + &
+        abs(4._dl*a*eft_cache%adotoa**2*eft_cache%EFTGamma5V*eft_cache%EFTOmegaP*eft_cache%EFTOmegaV) + &
+        abs(3._dl*a**2*eft_cache%adotoa**2*eft_cache%EFTOmegaP**2*eft_cache%EFTOmegaV) + &
+        abs(8._dl*a*eft_cache%adotoa**2*eft_cache%EFTGamma5P*eft_cache%EFTOmegaV**2) + &
+        abs(a**2*eft_cache%EFTGamma2V**2*eft_par_cache%h0_Mpc**2*(1 + eft_cache%EFTOmegaV)) + &
+        abs(4._dl*a**2*eft_cache%adotoa**2*eft_cache%EFTGamma5V*eft_cache%EFTOmegaPP* (1._dl + 2._dl* &
+        eft_cache%EFTGamma5V + eft_cache%EFTOmegaV)) + &
+        abs(4._dl*eft_cache%EFTc*(4._dl*eft_cache%EFTGamma5V + (1._dl + eft_cache%EFTOmegaV)**2)) + &
+        abs(2._dl*a*eft_cache%adotoa*eft_par_cache%h0_Mpc* (a*eft_cache%EFTGamma2P*(1._dl - eft_cache%EFTGamma4V &
+        + eft_cache%EFTOmegaV)* (1._dl + 2._dl*eft_cache%EFTGamma5V + eft_cache%EFTOmegaV) + eft_cache%EFTGamma2V* &
+        (eft_cache%EFTGamma4V* (-1._dl + 2._dl*a*eft_cache%EFTGamma5P + 2._dl*eft_cache%EFTGamma5V + a* &
+        eft_cache%EFTOmegaP - eft_cache%EFTOmegaV) + (1._dl + eft_cache%EFTOmegaV)* (1._dl + a* &
+        (eft_cache%EFTGamma4P - 2._dl*eft_cache%EFTGamma5P - eft_cache%EFTOmegaP) + eft_cache%EFTOmegaV) - 2._dl* &
+        eft_cache%EFTGamma5V*(1._dl - a*eft_cache%EFTGamma4P + a*eft_cache%EFTOmegaP + eft_cache%EFTOmegaV)))) + &
+        abs(8._dl*eft_cache%EFTGamma5V*eft_cache%Hdot) + abs(16._dl*eft_cache%EFTGamma5V**2*eft_cache%Hdot) + &
+        abs(4._dl*a*eft_cache%EFTGamma5V*eft_cache%EFTOmegaP*eft_cache%Hdot) + &
+        abs(8._dl*a*eft_cache%EFTGamma5V**2*eft_cache%EFTOmegaP*eft_cache%Hdot) + &
+        abs(16._dl*eft_cache%EFTGamma5V*eft_cache%EFTOmegaV*eft_cache%Hdot) + &
+        abs(16._dl*eft_cache%EFTGamma5V**2*eft_cache%EFTOmegaV*eft_cache%Hdot) + &
+        abs(4._dl*a*eft_cache%EFTGamma5V*eft_cache%EFTOmegaP*eft_cache%EFTOmegaV*eft_cache%Hdot) + &
+        abs(8._dl*eft_cache%EFTGamma5V*eft_cache%EFTOmegaV**2*eft_cache%Hdot) + &
+        abs(4._dl*eft_cache%EFTGamma4V**2* (eft_cache%adotoa**2*(1._dl + 2._dl*a*eft_cache%EFTGamma5P + 4._dl* &
+        eft_cache%EFTGamma5V + a*eft_cache%EFTOmegaP + eft_cache%EFTOmegaV) - (1._dl + 2._dl* &
+        eft_cache%EFTGamma5V + eft_cache%EFTOmegaV)*eft_cache%Hdot)) + &
+        abs(2._dl*eft_cache%EFTGamma4V* (eft_cache%adotoa**2*(-(a**2*eft_cache%EFTOmegaP**2) + a**2* &
+        eft_cache%EFTOmegaPP*(1._dl + 2._dl*eft_cache%EFTGamma5V + eft_cache%EFTOmegaV) - 4._dl*(1._dl &
+        + eft_cache%EFTOmegaV)* (1._dl + 2._dl*a*eft_cache%EFTGamma5P + 4._dl*eft_cache%EFTGamma5V &
+        + eft_cache%EFTOmegaV) - a*eft_cache%EFTOmegaP*(3._dl + 2._dl*a*eft_cache%EFTGamma5P + 2._dl* &
+        eft_cache%EFTGamma5V + 3._dl*eft_cache%EFTOmegaV)) + (1._dl + 2._dl*eft_cache%EFTGamma5V &
+        + eft_cache%EFTOmegaV)* (4._dl + a*eft_cache%EFTOmegaP + 4._dl*eft_cache%EFTOmegaV)*eft_cache%Hdot)))
+
+    end subroutine EFTCAMBStabilityScales
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.

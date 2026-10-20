@@ -180,7 +180,7 @@
     logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep
     real(dl) :: EFT_instability_rate, tempk, temp1, temp2, temp3, temp4, temp5
     integer  :: ind_max, ind
-    real(dl) :: test_dtauda
+    real(dl) :: test_dtauda, thr, kinetic_scale, gradient_scale
     real(dl), external :: dtauda
 
     ! Stability check initialization
@@ -191,6 +191,10 @@
     call EFTStabilityComputation(a, input_EFTCAMB, input_EFTCAMB%model, params_cache, eft_cache)
     ! protect against k_max too small:
     if (k_max < 0.1_dl) k_max = 0.1_dl
+    ! relative numerical floor of the physical stability conditions: a condition passes if its value is
+    ! >= -thr*(sum of the magnitudes of its terms), i.e. if it is non-negative up to cancellation roundoff.
+    thr = max(input_EFTCAMB%EFTCAMB_stability_threshold, 0._dl)
+    call EFTCAMBStabilityScales(a, params_cache, eft_cache, kinetic_scale, gradient_scale)
 
     ! check stability of the theory:
 
@@ -305,32 +309,34 @@
     ! 5) enforce ghost viability:
     if (input_EFTCAMB%EFT_ghost_stability) then
 
-        ! the present conditions extend up to Horndeski. Enforce that:
-        if ((eft_cache%EFTGamma6V /= 0._dl) .or. &
-            ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl)) then
-            write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
-            write(*, '(a)') '      It will be added in a future release.'
-            write(*, '(a)') '      If you want to run this model disable EFT_ghost_stability.'
+        ! the present conditions extend up to Horndeski. Enforce that (up to the numerical floor):
+        if (abs(eft_cache%EFTGamma6V) > thr .or. abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
+            thr*(abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
+            if (input_EFTCAMB%EFTCAMB_feedback_level > 0) then
+                write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
+                write(*, '(a)') '      It will be added in a future release.'
+                write(*, '(a)') '      If you want to run this model disable EFT_ghost_stability.'
+            end if
             EFTTestStability = .false.
             return
         end if
 
         ! 1- Positive gravitational constant:
-        if (1._dl + eft_cache%EFTOmegaV <= 0) then
+        if (1._dl + eft_cache%EFTOmegaV <= -thr*(1._dl + abs(eft_cache%EFTOmegaV))) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl + eft_cache%EFTOmegaV
         end if
 
         ! 2- Ghost condition:
-        if (eft_cache%EFT_kinetic < 0._dl) then
+        if (eft_cache%EFT_kinetic < -thr*kinetic_scale) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: ghost instability. Kinetic term = ', eft_cache%EFT_kinetic
         end if
 
         ! 3- No tensor ghosts:
-        if (eft_cache%EFTAT < 0) then
+        if (eft_cache%EFTAT < -thr*(1._dl + abs(eft_cache%EFTOmegaV) + abs(eft_cache%EFTGamma4V))) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: tensor ghost instability. Tensor kinetic term = ', &
@@ -342,32 +348,34 @@
     ! 6) enforce gradient viability:
     if (input_EFTCAMB%EFT_gradient_stability) then
 
-        ! the present conditions extend up to Horndeski. Enforce that:
-        if ((eft_cache%EFTGamma6V /= 0._dl) .or. &
-            ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl)) then
-            write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
-            write(*, '(a)') '      It will be added in a future release.'
-            write(*, '(a)') '      If you want to run this model disable EFT_gradient_stability.'
+        ! the present conditions extend up to Horndeski. Enforce that (up to the numerical floor):
+        if (abs(eft_cache%EFTGamma6V) > thr .or. abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
+            thr*(abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
+            if (input_EFTCAMB%EFTCAMB_feedback_level > 0) then
+                write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
+                write(*, '(a)') '      It will be added in a future release.'
+                write(*, '(a)') '      If you want to run this model disable EFT_gradient_stability.'
+            end if
             EFTTestStability = .false.
             return
         end if
 
         ! 1- Positive gravitational constant:
-        if (1._dl + eft_cache%EFTOmegaV <= 0) then
+        if (1._dl + eft_cache%EFTOmegaV <= -thr*(1._dl + abs(eft_cache%EFTOmegaV))) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl + eft_cache%EFTOmegaV
         end if
 
         ! 2- Gradient instability:
-        if (eft_cache%EFT_gradient < 0._dl) then
+        if (eft_cache%EFT_gradient < -thr*gradient_scale) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: gradient instability. Gradient term = ', eft_cache%EFT_gradient
         end if
 
         ! 3- No tensor gradient:
-        if (eft_cache%EFTDT < 0) then
+        if (eft_cache%EFTDT < -thr*(1._dl + abs(eft_cache%EFTOmegaV))) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: tensor gradient instability. Tensor gradient term = ', &

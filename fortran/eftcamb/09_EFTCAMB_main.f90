@@ -120,8 +120,10 @@
         real(dl) :: EFTCAMB_GR_threshold = 1.e-8_dl
         !< Minimum scale factor at which the code checks for stability of a theory
         real(dl) :: EFTCAMB_stability_time = 1.e-10_dl
-        !< Threshold for the stability module to consider the model stable.
-        real(dl) :: EFTCAMB_stability_threshold = 0._dl
+        !< Relative numerical floor of the stability conditions (ghost, gradient, tensor, G > 0, GLPV): a condition
+        !! passes if its value is >= -threshold*(sum of the magnitudes of its terms). 0 is the strict test.
+        !! Default 1e-8: about 100 times the largest roundoff cancellation measured in the test models (~1e-10).
+        real(dl) :: EFTCAMB_stability_threshold = 1.e-8_dl
         !< Logical flag that establishes whether the model is designer or not.
         logical  :: EFTCAMB_model_is_designer = .false.
         !< Logical flag that establishes whether the model does have an effective w0wa parametrization.
@@ -240,7 +242,7 @@
     self%EFTCAMB_pert_turn_on = Ini%Read_Double ('EFTCAMB_turn_on_time', 1.d-2)
     self%EFTCAMB_GR_threshold = Ini%Read_Double ('EFTCAMB_GR_threshold', 1.d-8)
     self%EFTCAMB_stability_time = Ini%Read_Double ('EFTCAMB_stability_time', 1.d-10)
-    self%EFTCAMB_stability_threshold = Ini%Read_Double ('EFTCAMB_stability_threshold', 0._dl)
+    self%EFTCAMB_stability_threshold = Ini%Read_Double ('EFTCAMB_stability_threshold', 1.d-8)
     self%EFTCAMB_effective_w0wa = Ini%Read_Logical('EFTCAMB_effective_w0wa', .false.)
     ! flags currently only supported by the Horndeski module
     self%EFTCAMB_use_background = Ini%Read_Logical('EFTCAMB_use_background', .false.)
