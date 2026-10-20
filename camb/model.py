@@ -659,10 +659,29 @@ class CAMBparams(F2003Class):
                 theta_test = rs / (data.angular_diameter_distance(zstar) * (1 + zstar))
             return theta_test - theta
 
+        # EFTCAMB MOD START: EFT models can be invalid (unstable, background solver failure) far from the solution:
+        # search above the matter-only limit, and move bracket ends where the model fails towards the estimate
+        H0_min, H0_max = theta_H0_range
+        if self.EFTCAMB is not None and self.EFTCAMB.EFTflag != 0:
+            H0_min = max(H0_min, 1.1 * 100 * np.sqrt(self.ombh2 + self.omch2 + self.omnuh2))
+            H0_target = est_H0 if H0_min < est_H0 < H0_max else 0.5 * (H0_min + H0_max)
+
+            def valid_end(H0_end):
+                for _ in range(40):
+                    try:
+                        f(H0_end)
+                        return H0_end
+                    except CAMBError:
+                        H0_end = 0.5 * (H0_end + H0_target)
+                raise CAMBParamRangeError("No valid H0 for this EFTCAMB model found inside of theta_H0_range")
+
+            H0_min, H0_max = valid_end(H0_min), valid_end(H0_max)
+        # EFTCAMB MOD END
+
         try:
             # noinspection PyTypeChecker
             # use _set_H0 so any model state updated by setter_H0 matches the final H0
-            _set_H0(self, brentq(f, theta_H0_range[0], theta_H0_range[1], rtol=5e-5))
+            _set_H0(self, brentq(f, H0_min, H0_max, rtol=5e-5))
             if not cosmomc_approx and abs(self.H0 - est_H0) > iteration_threshold:
                 # iterate with recalculation of recombination and zstar
                 self.set_H0_for_theta(
@@ -808,17 +827,12 @@ class CAMBparams(F2003Class):
             if cosmomc_theta and thetastar:
                 raise CAMBError("Cannot set both cosmomc_theta and thetastar")
 
-            # EFTCAMB MOD START
-            min_H0 = 100 * np.sqrt(ombh2 + self.omnuh2 + omnuh2_sterile + omch2)
-            min_H0 = 1.1 * min_H0  # just to make sure we are safely above the limit
-            _H0_thmin = max(theta_H0_range[0], min_H0)
             self.set_H0_for_theta(
                 cosmomc_theta or thetastar,
                 cosmomc_approx=cosmomc_theta is not None,
-                theta_H0_range=(_H0_thmin, theta_H0_range[1]),
+                theta_H0_range=theta_H0_range,
                 setter_H0=setter_H0,
             )
-            # EFTCAMB MOD END
 
         else:
             if H0 is None:
