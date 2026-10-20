@@ -490,7 +490,7 @@
     end select
     ! compute massive neutrinos stuff:
     ! Massive neutrinos mod:
-    eft_cache%gpinudot_tot = 0._dl
+    eft_cache%gpinu_tot = 0._dl
     eft_cache%grhonu_tot = 0._dl
     eft_cache%grhonudot_tot = 0._dl
     eft_cache%gpinudot_tot = 0._dl
@@ -519,7 +519,7 @@
     ! compute remaining quantities related to H:
     call input_model%compute_H_derivs(a, params_cache, eft_cache)
     ! compute second derivative of massive neutrino pressure
-    eft_cache%gpinudot_tot = 0._dl
+    eft_cache%gpinu_tot = 0._dl
     eft_cache%grhonu_tot = 0._dl
     eft_cache%grhonudot_tot = 0._dl
     eft_cache%gpinudot_tot = 0._dl
