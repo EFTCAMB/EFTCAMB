@@ -1125,6 +1125,25 @@
         (1._dl/6._dl + self%DesfRwDE%value(a) + 1.5_dl*self%DesfRwDE%value(a)**2 - &
         0.5_dl*a*self%DesfRwDE%first_derivative(a)) + eft_cache%adotoa*eft_cache%grhonu_tot/6._dl - &
         0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot - 0.5_dl*eft_cache%gpinudot_tot
+    ! third derivative (same background as Pure EFT with w_DE): was never set.
+    eft_cache%Hdotdotdot = (2._dl*(eft_cache%grhob_t + eft_cache%grhoc_t)*eft_cache%adotoa**2 + &
+        eft_cache%Hdot*(eft_cache%grhob_t + eft_cache%grhoc_t) - &
+        3._dl*eft_cache%adotoa**2*(eft_cache%grhob_t + eft_cache%grhoc_t))/(6._dl) + &
+        (2._dl/3._dl)*(2._dl*eft_cache%adotoa**2*(eft_cache%grhor_t + eft_cache%grhog_t) + &
+        eft_cache%Hdot*(eft_cache%grhor_t + eft_cache%grhog_t) - &
+        4._dl*eft_cache%adotoa**2*(eft_cache%grhor_t + eft_cache%grhog_t)) + &
+        (2._dl*eft_cache%adotoa**2*eft_cache%grhov_t - &
+        3._dl*eft_cache%adotoa**2*eft_cache%grhov_t*(1._dl + self%DesfRwDE%value(a)) + &
+        eft_cache%Hdot*eft_cache%grhov_t)* &
+        (1._dl/6._dl + self%DesfRwDE%value(a) + (3._dl/2._dl)*self%DesfRwDE%value(a)**2 - &
+        (1._dl/2._dl)*a*self%DesfRwDE%first_derivative(a)) + &
+        a*eft_cache%adotoa**2*eft_cache%grhov_t* &
+        ((1._dl/2._dl)*self%DesfRwDE%first_derivative(a) + &
+        3._dl*self%DesfRwDE%value(a)*self%DesfRwDE%first_derivative(a) - &
+        (a/2._dl)*self%DesfRwDE%second_derivative(a)) + (eft_cache%adotoa**2/3._dl)*eft_cache%grhonu_tot - &
+        eft_cache%adotoa**2*eft_cache%gpinu_tot - (3._dl/2._dl)*eft_cache%adotoa*eft_cache%gpinudot_tot + &
+        (eft_cache%Hdot/6._dl)*eft_cache%grhonu_tot + (eft_cache%adotoa/6._dl)*eft_cache%grhonudot_tot - &
+        (eft_cache%Hdot/2._dl)*eft_cache%gpinu_tot - (1._dl/2._dl)*eft_cache%gpinudotdot_tot
 
     end subroutine EFTCAMBDesignerFRComputeHubbleDer
 
