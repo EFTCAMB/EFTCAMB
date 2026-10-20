@@ -496,7 +496,14 @@ class EFTCAMB(F2003Class):
 
     def get_effective_w0wa(self):
         """
-        Returns the effective w0 wa values.
+        Returns the effective (w0, wa) values used by the non-linear models (Halofit/HMcode).
+
+        The (w0, wa) of the model are given when EFTCAMB_effective_w0wa is set and the model provides them; otherwise
+        it is a CPL fit of the effective dark energy equation of state of the EFT background, computed when the
+        background is initialized. That fit is stored on the parameters of the results, so call it on
+        ``results.Params.EFTCAMB`` (the input parameters return (-1, 0) until they have been used for a calculation).
+
+        :return: tuple (w0, wa)
         """
         w0 = c_double(0)
         wa = c_double(0)

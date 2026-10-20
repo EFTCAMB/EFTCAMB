@@ -656,6 +656,9 @@
                 this%CP%eft_par_cache%grhov = this%grhov
             end if
 
+            ! effective CPL (w0, wa) of the EFT background, used by Halofit/HMcode (stored in this%CP%EFTCAMB):
+            call EFTCAMB_compute_effective_w0wa(this%CP%EFTCAMB, this%CP%eft_par_cache)
+
             if (.not. this%CP%EFTCAMB%EFTCAMB_skip_RGR) then
 
                 ! 3) compute the return to GR of the theory:
