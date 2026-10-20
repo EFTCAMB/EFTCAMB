@@ -312,7 +312,7 @@
 
         ! the present conditions extend up to Horndeski. Enforce that (up to the numerical floor):
         if (abs(eft_cache%EFTGamma6V) > thr .or. abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
-            thr*(abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
+            thr*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
             if (input_EFTCAMB%EFTCAMB_feedback_level > 0) then
                 write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
                 write(*, '(a)') '      It will be added in a future release.'
@@ -351,7 +351,7 @@
 
         ! the present conditions extend up to Horndeski. Enforce that (up to the numerical floor):
         if (abs(eft_cache%EFTGamma6V) > thr .or. abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
-            thr*(abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
+            thr*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
             if (input_EFTCAMB%EFTCAMB_feedback_level > 0) then
                 write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
                 write(*, '(a)') '      It will be added in a future release.'
