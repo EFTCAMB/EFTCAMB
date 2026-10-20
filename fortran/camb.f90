@@ -417,14 +417,20 @@
         if (.not. allocated(P%eft_par_cache)) allocate(P%eft_par_cache)
         ! keep only the parameters read by EFTCAMB:
         call Ini%ReadValues%Clear()
+        eft_error = 0
         call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
-        if (P%EFTCAMB%EFTflag /= 0) then
-            eft_error = 0
+        if (global_error_flag /= 0) eft_error = 1
+        if (P%EFTCAMB%EFTflag /= 0 .and. eft_error == 0) then
             call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
-            if (eft_error > 0) then
+        end if
+        if (eft_error > 0) then
+            ! keep the message of an error raised during the initialization:
+            if (global_error_flag /= 0) then
+                ErrMsg = trim(global_error_message)
+            else
                 ErrMsg = 'EFTCAMB: invalid model parameters'
-                CAMB_ReadParamFile = .false.
             end if
+            CAMB_ReadParamFile = .false.
         end if
         call P%EFTCAMB%EFTCAMB_store_read_parameters(Ini)
     end if
@@ -751,11 +757,20 @@
         if (.not. allocated(P%EFTCAMB)) allocate(P%EFTCAMB)
         if (.not. allocated(P%eft_par_cache)) allocate(P%eft_par_cache)
         call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
+        if (global_error_flag /= 0) then
+            ErrMsg = trim(global_error_message)
+            return
+        end if
         if (P%EFTCAMB%EFTflag /= 0) then
             eft_error = 0
             call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
             if (eft_error > 0) then
-                ErrMsg = 'EFTCAMB: invalid model parameters'
+                ! keep the message of an error raised during the initialization:
+                if (global_error_flag /= 0) then
+                    ErrMsg = trim(global_error_message)
+                else
+                    ErrMsg = 'EFTCAMB: invalid model parameters'
+                end if
                 return
             end if
         end if
@@ -945,6 +960,10 @@
     allocate(P%eft_par_cache)
     ! initialize model selection from file:
     call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
+    if (global_error_flag /= 0) then
+        ErrMsg = trim(global_error_message)
+        return
+    end if
     ! initialize outroot for debug printing:
     P%EFTCAMB%outroot = trim(outroot)
     ! initialize model:
@@ -954,7 +973,12 @@
         ! initialize the model from file:
         call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
         if (eft_error > 0) then
-            ErrMsg = 'Invalid parameter value'
+            ! keep the message of an error raised during the initialization:
+            if (global_error_flag /= 0) then
+                ErrMsg = trim(global_error_message)
+            else
+                ErrMsg = 'Invalid parameter value'
+            end if
             return
         end if
         ! print feedback:
@@ -1141,6 +1165,9 @@
     logical bad
     type(CAMBParams) :: P
     character(len=1024) :: ErrMsg
+    ! EFTCAMB MOD START: error code of the EFTCAMB model initialization
+    integer :: eft_error
+    ! EFTCAMB MOD END.
 
     call Ini%Open(InputFile, bad, .false.)
     if (bad) then
@@ -1150,6 +1177,20 @@
         write(*, *) trim(ErrMsg)
         error stop
     end if
+    ! EFTCAMB MOD START: also read the EFTCAMB flags and model (python read_ini validates the file with this in a
+    ! separate process: a value that cannot be read stops here, not in the python interpreter)
+    if (.not. allocated(P%EFTCAMB)) allocate(P%EFTCAMB)
+    eft_error = 0
+    call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
+    if (global_error_flag == 0 .and. P%EFTCAMB%EFTflag /= 0) call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
+    if (global_error_flag /= 0) then
+        write(*, *) trim(global_error_message)
+        error stop
+    else if (eft_error > 0) then
+        write(*, *) 'EFTCAMB: invalid model parameters'
+        error stop
+    end if
+    ! EFTCAMB MOD END.
 
     call Ini%Close()
 

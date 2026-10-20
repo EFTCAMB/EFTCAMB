@@ -582,6 +582,25 @@
                 if (present(error)) error = global_error_flag
                 return
             end if
+            ! flags that can also be set from python (the ini reader rejects them):
+            if ((this%CP%EFTCAMB%EFTCAMB_use_background .or. this%CP%EFTCAMB%EFTCAMB_evolve_delta_phi) .and. &
+                this%CP%EFTCAMB%EFTflag /= 5) then
+                call GlobalError('EFTCAMB_use_background and EFTCAMB_evolve_delta_phi = T are only supported by ' // &
+                    'the Horndeski module (EFTflag = 5)', error_unsupported_params)
+                if (present(error)) error = global_error_flag
+                return
+            end if
+            if (this%CP%EFTCAMB%EFT_IC_type < 1 .or. this%CP%EFTCAMB%EFT_IC_type > 3) then
+                call GlobalError('Invalid EFT_IC_type: must be 1 (GR), 2 (MG-Omega) or 3 (MG-Omega+Gamma)', &
+                    error_unsupported_params)
+                if (present(error)) error = global_error_flag
+                return
+            end if
+            if (this%CP%CustomSources%num_custom_sources > 0) then
+                call GlobalError('EFTCAMB is incompatible with custom sources so far', error_unsupported_params)
+                if (present(error)) error = global_error_flag
+                return
+            end if
         end if
         if (this%CP%EFTCAMB%EFTflag /= 0) then
             ! 0) make some noise if nonlinear is on
@@ -622,11 +641,14 @@
 
             call this%CP%EFTCAMB%model%initialize_background(this%CP%eft_par_cache, &
                 this%CP%EFTCAMB%EFTCAMB_feedback_level, success, outroot=this%CP%EFTCAMB%outroot)
-            if (.not. success) then
+            if (.not. success .or. global_error_flag /= 0) then
                 ! the unstable theory makes the code crash only if H0 is well-defined
                 ! workaround to allow for solving the background to define H0 in terms of 100\theta
-                global_error_flag = 1
-                global_error_message = 'EFTCAMB: background solver failed'
+                ! (keep the message of an error raised by the background solver)
+                if (global_error_flag == 0) then
+                    global_error_flag = 1
+                    global_error_message = 'EFTCAMB: background solver failed'
+                end if
                 if (present(error)) error = global_error_flag
                 ! 5) final feedback:
                 if (this%CP%EFTCAMB%EFTCAMB_feedback_level > 1) then

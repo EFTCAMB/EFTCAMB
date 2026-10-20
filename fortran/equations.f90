@@ -2422,7 +2422,10 @@
             ! write(*,'(a,1pe12.5)') 'IC Gamma2 = ', Gamma20
             ! write(*,'(a,1pe12.5)') 'IC Gamma3 = ', Gamma30
         case default
-            call MpiStop('Invalid EFT_IC_type: Must be 1 (GR), 2 (MG-Omega), or 3 (MG-Omega+Gamma)')
+            ! (rejected when the parameters are set; the per-k loops skip the remaining modes)
+            call GlobalError('Invalid EFT_IC_type: Must be 1 (GR), 2 (MG-Omega), or 3 (MG-Omega+Gamma)', &
+                error_unsupported_params)
+            return
         end select
     end if
     ! EFTCAMB MOD END.
@@ -4019,7 +4022,9 @@
             if (associated(EV%CustomSources)) then
                 ! EFTCAMB MOD START: block custom sources
                 if (CP%EFTCAMB%EFTflag /= 0) then
-                    call MpiStop('EFTCAMB is incompatible with custom sources so far.')
+                    ! (rejected when the parameters are set; the per-k loops skip the remaining modes)
+                    call GlobalError('EFTCAMB is incompatible with custom sources so far.', error_unsupported_params)
+                    return
                 end if
                 ! EFTCAMB MOD END.
                 select type (DE => State%CP%DarkEnergy)
