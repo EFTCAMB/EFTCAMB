@@ -422,6 +422,9 @@
     character(len=*), intent(out) :: ErrMsg
     character(len=:), allocatable :: NumStr, S, DarkEneryModel, RecombinationModel
     logical :: DoCounts, has_hubble, has_thetastar, has_cosmomc_theta
+    ! EFTCAMB MOD START: error code of the EFTCAMB model initialization
+    integer :: eft_error
+    ! EFTCAMB MOD END.
 
     ErrMsg = ''
     global_error_flag = 0
@@ -709,6 +712,20 @@
     end if
 
     if (has_thetastar .or. has_cosmomc_theta) then
+        ! EFTCAMB MOD START: the H0 solve needs the EFTCAMB background, read EFTCAMB from the same ini first
+        ! (the callers initialize EFTCAMB again afterwards)
+        if (.not. allocated(P%EFTCAMB)) allocate(P%EFTCAMB)
+        if (.not. allocated(P%eft_par_cache)) allocate(P%eft_par_cache)
+        call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
+        if (P%EFTCAMB%EFTflag /= 0) then
+            eft_error = 0
+            call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
+            if (eft_error > 0) then
+                ErrMsg = 'EFTCAMB: invalid model parameters'
+                return
+            end if
+        end if
+        ! EFTCAMB MOD END.
         if (.not. CAMB_SetH0ForTheta(P, theta, ErrMsg, cosmomc_approx=has_cosmomc_theta)) return
     end if
 
