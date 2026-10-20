@@ -155,6 +155,9 @@
     ! initialize:
     RGR_time = initial_time
 
+    ! the turn-on time of a model already found to be GR at all times (parameters of previous results):
+    if (initial_time == EFT_RGR_never_on) return
+
     ! validate the turn-on time (it can be set directly from python): for a non-positive or NaN time the
     ! logarithmic scan is NaN and no EFT perturbations would ever be switched on; a time > 1 does the same.
     if (.not. (initial_time > 0._dl .and. initial_time <= 1._dl)) then
@@ -189,7 +192,7 @@
 
     end do
 
-    RGR_time = 1.1_dl*a_final
+    RGR_time = EFT_RGR_never_on
 
     end subroutine EFTCAMBReturnToGR
 

@@ -305,7 +305,9 @@
     eft_error = 0
     ! validate the perturbation turn-on time: a non-positive, NaN or > 1 value would silently run
     ! GR perturbations on the EFT background.
-    if (.not. (self%EFTCAMB_pert_turn_on > 0._dl .and. self%EFTCAMB_pert_turn_on <= 1._dl)) then
+    ! (EFT_RGR_never_on is the turn-on stored for a model that is GR at all times)
+    if (.not. (self%EFTCAMB_pert_turn_on > 0._dl .and. self%EFTCAMB_pert_turn_on <= 1._dl) .and. &
+        self%EFTCAMB_pert_turn_on /= EFT_RGR_never_on) then
         write(*, '(a,E13.4)') 'EFTCAMB error: EFTCAMB_turn_on_time must be in (0,1]. Value: ', self%EFTCAMB_pert_turn_on
         eft_error = 1
         return
