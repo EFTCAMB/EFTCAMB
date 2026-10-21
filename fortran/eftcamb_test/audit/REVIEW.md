@@ -194,6 +194,27 @@ every agent-group boundary and all A9 commits build (15 commits checked in clean
     a <~ 1e-24 crashed. Fine as a hard limit?
 14. The physics workflow (track 7, including the C4 (a) mass-eigenvalue re-derivation) has not run.
 
+### Decisions on the open questions (user, 2026-10-21)
+
+| # | Decision | Action |
+|---|---|---|
+| 1 | Leave as is | Flag for later: check the 3+1 designer stability conditions against the literature |
+| 2 | Accepted | none |
+| 3 | Tune for performance; accept up to ~20% slower than A0 (linear physics; small-scale P(k) less important) | **To implement** after the commit review: tune `EFT_RGR_qs_threshold` (and/or the probe k) so 4_Des_F_R_LCDM_2 runs within ~1.2x its A0 time (40 s -> <= ~48 s); report the P(k) cost |
+| 4 | Accepted | none |
+| 5 | Leave as is | Flag for later: full Beyond Horndeski model check from the literature (massive neutrinos, `OmegaRadprime` term) |
+| 6 | Accepted | none |
+| 7 | Explained inline to the user; pending | |
+| 8 | No upstream report | none |
+| 9 | No upstream CAMB changes | none |
+| 10 | Accepted | none |
+| 11 | Yes | **To implement:** refuse theta input (cosmomc_theta / thetastar) for Horndeski models whose H0 is set by the EFT background (C7) |
+| 12 | Yes | **To implement:** initialise the EFTCAMB parameter cache at allocation |
+| 13 | Explained inline to the user; pending | |
+| 14 | Accepted (physics workflow later) | none |
+
+Items 3, 11, 12 wait until the user has reviewed the existing commits. Agent worktrees are kept.
+
 ## Implementation plan
 
 One commit per item (or per tightly coupled group) on `eftcamb-audit`, never pushed. Order, so that later physics
