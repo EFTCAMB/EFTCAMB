@@ -42,12 +42,14 @@
     !< number of points to sample logaritmically the time in the return to GR module.
     integer, parameter :: EFT_RGR_num_points = 1000
     !< scale (Mpc^-1) at which the quasi-static modification of gravity is tested: scale-dependent models
-    !! (e.g. designer f(R)) modify gravity at k >> aH by O(1) while their EFT functions are tiny.
-    real(dl), parameter :: EFT_RGR_kmax = 10._dl
+    !! (e.g. designer f(R)) modify gravity at k >> aH by O(1) while their EFT functions are tiny. The linear
+    !! scales k <= 1/Mpc are the target: a larger probe k turns near-GR f(R) on much earlier, where its pi equation
+    !! is very stiff (4_Des_F_R_LCDM_2: k = 10/Mpc, threshold 1e-3 gives turn-on 0.016 and 2.8x the runtime).
+    real(dl), parameter :: EFT_RGR_kmax = 1._dl
     !< the EFT perturbations are also switched on when the quasi-static mu or Sigma at EFT_RGR_kmax deviate from
-    !! 1 by more than this: the error of evolving GR perturbations before that is of this relative order.
-    !! (A smaller value turns on near-GR f(R) much earlier, where its pi equation is very stiff.)
-    real(dl), parameter :: EFT_RGR_qs_threshold = 1.e-3_dl
+    !! 1 by more than this. Tuned on 4_Des_F_R_LCDM_2 (turn-on 0.039) against an early turn-on (0.007): P(k <= 1/Mpc)
+    !! 4e-4, P(k <= 10/Mpc) 3.3e-2, sigma8 5e-6, lensed C_l 3e-5, C_l^phiphi 1.1e-4, runtime 1.1x the pre-C3 code.
+    real(dl), parameter :: EFT_RGR_qs_threshold = 5.e-4_dl
 
     contains
 
