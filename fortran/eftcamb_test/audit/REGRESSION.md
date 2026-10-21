@@ -1,6 +1,7 @@
 # EFTCAMB audit: final regression (HEAD vs pre-fix baseline)
 
-HEAD = `eftcamb-audit` at 4819c8f (all approved fixes, A9 included). Baseline A0 = the pre-fix code (f6f4ba9) as frozen
+HEAD = `eftcamb-audit` at 4819c8f (all approved fixes, A9 included). The later validation fix 5b214ea (turn-on
+before tau = 1e-12 Mpc refused instead of crashing) changes no shipped model (8 models rechecked bit-identical). Baseline A0 = the pre-fix code (f6f4ba9) as frozen
 in the audit tree `trees/A0`: `runs/A0` for the 73 shipped test models, plus a fresh A0 run of the 12 audit inis
 (`inis/0*.ini`, without the `*.ini.ini` byproducts) on the same tree (`runs/A0aud`). F2 = the integration state
 before A9 (`runs/F2`). All runs through `checks/harness.py` (`run_model`, 1 thread, 4 jobs), default accuracy.
@@ -23,9 +24,12 @@ and parametrizations (`me/gate_table.txt`); "-" = model not in that table.
   gamma4_power_1/2, wDE_LCDM_1: 1.5e-10 TT, from D F-136, doubled thermal-history sampling), 76 changed
   above 1e-5, 2 status changes (008p7-ext-galileon(_2): error -> ok, B15/B16), 2 refused in both (007p8-3p1(_2): A0
   "background solver failed" (A4), HEAD "theory unstable", see open questions in REVIEW.md).
-- Common floor: most models with active EFT perturbations move by TT ~2e-5, EE ~1.1e-5, P(k) <= 1e-6. This is B3
-  (pi''-dependent Einstein factors recomputed after the pi equation): the core-group tree with only B3 reverted
-  (`fixA/attr/noB3`) reproduces A0 bit-for-bit on all 29 models tried and on the six 007p5/6/7 audit inis.
+- Common floor: most models with active EFT perturbations move by TT ~2e-5, EE ~1.1e-5, P(k) <= 1e-6. This comes
+  from C9 (integration stops exactly at the EFT turn-on, extra source samples around it): in the core group the
+  change appears entirely at the C9 commit (`fixA/runs/groupC9/table_vs_groupD.txt`; groupD, which already has B3,
+  is within 8e-9 of the previous state for these models). A near-GR check (PEFT Omega = 1e-9 or Gamma1 = 1e-9,
+  RGR skipped) vs EFTflag = 0: TT 2.7e-6 (A0) -> 2.3e-5 (HEAD) with turn-on 0.01, 2.6e-6 with turn-on 1e-8, i.e.
+  the GR-limit consistency is now at the 2e-5 level (CAMB's own time-sampling sensitivity is ~6e-5).
 - Runtime: median HEAD/A0 0.98; total 2198 s -> 2268 s (+3%). Larger: 4_Des_F_R_LCDM_2 39.5 -> 109.5 s (C3, earlier
   turn-on 0.093 -> 0.016 where the f(R) pi equation is stiff), 008p5-beyond-horndeski(_2) 17.9/12.9 -> 28.3/19.1 s
   (B16, background from the model's own solution), 5_scg 20.2 -> 25.2 s (B15, massive nu in the ODE),
@@ -35,19 +39,19 @@ and parametrizations (`me/gate_table.txt`); "-" = model not in that table.
 
 | model(s) | biggest change HEAD vs A0 | items |
 |---|---|---|
-| 2_PEFT_Omega_const_1/2, gamma3_*, gamma5_const_1, gamma5_exp_1, gamma4_const_1 | TT 1.2e-2 (Omega_const_1, gamma5_const_1), 5-8e-3 (gamma3), P(k) <= 7e-5, sigma8 <= 2.5e-5 | B3 |
-| other 2_PEFT_* with EFT on, 4_Des_mc5e_*, 4_Des_F_R_LCDM_1, wCDM_1/2, 007p7-shiftsym(_2) | TT ~2e-5, EE 1.1e-5 (B3 floor); f(R) P(k) 2-4e-6 | B3; f(R) also stab group (C3 RGR, <= 3e-6) and B6 (Hdotdotdot, get_eft_functions only) |
-| 3_RPH_MB_const_1 | P(k) x100 at a single k (the IC pole), TT 1.0, sigma8 5.7e-6 | C2 (pi IC regularisation; the A0 spike and zeros across k_c are gone, default and boost2 agree); B3 TT 7e-2 |
-| 3_RPH_MB_OmegaDE_1, MK_const_1, KT/MK_OmegaDE_1, MK_power_1, KT_power_1 | TT 2.7e-3 / 6.5e-3 / 1e-4 | B3; stab group (C2/C8) <= 4.5e-5 |
+| 2_PEFT_Omega_const_1/2, gamma3_*, gamma5_const_1, gamma5_exp_1, gamma4_const_1 | TT 1.2e-2 (Omega_const_1, gamma5_const_1), 5-8e-3 (gamma3), P(k) <= 7e-5, sigma8 <= 2.5e-5 | C9 (turn-on jump integrated exactly and sampled; removes the A0 time-sampling error of 1-5e-2, F-029) |
+| other 2_PEFT_* with EFT on, 4_Des_mc5e_*, 4_Des_F_R_LCDM_1, wCDM_1/2, 007p7-shiftsym(_2) | TT ~2e-5, EE 1.1e-5 (C9 floor); f(R) P(k) 2-4e-6 | C9; f(R) also stab group (C3 RGR, <= 3e-6) and B6 (Hdotdotdot, get_eft_functions only) |
+| 3_RPH_MB_const_1 | P(k) x100 at a single k (the IC pole), TT 1.0, sigma8 5.7e-6 | C2 (pi IC regularisation; the A0 spike and zeros across k_c are gone, default and boost2 agree); C9 TT 7e-2 |
+| 3_RPH_MB_OmegaDE_1, MK_const_1, KT/MK_OmegaDE_1, MK_power_1, KT_power_1 | TT 2.7e-3 / 6.5e-3 / 1e-4 | C9; stab group (C2/C8) <= 4.5e-5 |
 | 4_Des_F_R_LCDM_2 | P(k) 0.13 (k >= 1/Mpc), sigma8 2.3e-4, PP 3.7e-3 | C3 (dimensionless, observable-based return to GR: turn-on 0.0931 -> 0.0162, converged answer); runtime x2.8 |
-| 5_ADE_1 | 8.6e-5 C_l, P(k) 7.3e-5, H 3.2e-5 | B21 (10x background tables), C3 (turn-on 1e-10 -> 1.16e-6), B3 |
-| 5_Horava_* | TT 0.49 (SolSyst_3), 0.38 (eta_4), 4.3e-2 (SolSyst_2); sigma8 <= 5.7e-3 | B7 (Hubble derivatives from the model's H(a), arXiv:1508.01787) and B3 |
-| 5_Kmimic_1/2/3 | P(k) 18 / 530 / 0.86 (single-k IC poles removed), TT 0.94 / 0.92 / 0.22, sigma8 0.776 -> 0.616 etc. (2.1e-1) | C2 (IC regularisation, k-independent IC time), B1 (EFTpiDfunction), B3, B21 (10000-point table, c6b0fb0) |
-| 5_Kmouflage_1/2/3 | TT 1.3e-2 / 7.7e-2 / 4e-4; H 7-8e-5 | B3; B21 (tables: 2.4e-4 C_l, 7e-5 H) |
-| 5_hdsk_TG_1/2/3 | sigma8 0.14 / 0.14 / 0.022; C_l <= 2e-4 | C7 (EFT background H0 adopted); TG_2 also C2 (P(k) 7e-4, now agrees with TG_1 delta_phi) and B3 |
+| 5_ADE_1 | 8.6e-5 C_l, P(k) 7.3e-5, H 3.2e-5 | B21 (10x background tables), C3 (turn-on 1e-10 -> 1.16e-6), C9 |
+| 5_Horava_* | TT 0.49 (SolSyst_3), 0.38 (eta_4), 4.3e-2 (SolSyst_2); sigma8 <= 5.7e-3 | B7 (Hubble derivatives from the model's H(a), arXiv:1508.01787), B3 (SolSyst_3 TT 0.40 and eta_4 5e-3 at the B3 step of the core group) and C9 (0.11 / 3e-2) |
+| 5_Kmimic_1/2/3 | P(k) 18 / 530 / 0.86 (single-k IC poles removed), TT 0.94 / 0.92 / 0.22, sigma8 0.776 -> 0.616 etc. (2.1e-1) | C2 (IC regularisation, k-independent IC time), B1 (EFTpiDfunction), C9 (core group 0.33 TT, P(k) x9), B21 (10000-point table, c6b0fb0) |
+| 5_Kmouflage_1/2/3 | TT 1.3e-2 / 7.7e-2 / 4e-4; H 7-8e-5 | C9; B21 (tables: 2.4e-4 C_l, 7e-5 H) |
+| 5_hdsk_TG_1/2/3 | sigma8 0.14 / 0.14 / 0.022; C_l <= 2e-4 | C7 (EFT background H0 adopted); TG_2 also C2 (P(k) 7e-4, now agrees with TG_1 delta_phi) |
 | 5_quint_* | C_l 1-2.4e-4, H 2-6e-5; quint_cubic P(k) 4.8e-4 | B21 (tables); C3 (turn-on 1e-8 -> 1-2.5e-3, frozen field, <= 3e-5); quint_cubic P(k) from the stab group |
 | 5_scg | TT 0.21, P(k) 1.4, sigma8 7.2e-2, H 1e-2 | B15 + B8 + B23 (massive nu in the background, third derivatives, _dl literal) |
-| 007p5-OL-gamma(_2), 007p6-OL-alpha(_2) (audit inis) | TT 1.5e-2 / 4.6e-3 / 4.9e-3 / 3.4e-3, P(k) <= 5.4e-4 | B3 (noB3 tree = A0 bit-for-bit) |
+| 007p5-OL-gamma(_2), 007p6-OL-alpha(_2) (audit inis) | TT 1.5e-2 / 4.6e-3 / 4.9e-3 / 3.4e-3, P(k) <= 5.4e-4 | C9 and/or B3 (the tree without both, `fixA/attr/noB3`, is A0 bit-for-bit; not separated further) |
 | 008p5-beyond-horndeski(_2) (audit inis) | H(z) 0.86 (A0: CAMB H(z=0) = 0.52 H0), C_l O(1) | B16 (EFT functions and H from the model's own background) |
 | 008p7-ext-galileon(_2) (audit inis) | A0 error -> HEAD ok | B15 + B16 (tracker background at all a, massive nu) |
 
@@ -158,3 +162,101 @@ windows in non-flat models.
 
 
 Scripts: scratchpad `final/batch.py` (runs), `final/regress.py` (this table), `final/gr_vs_camb.py`, `final/attr_aud.py`.
+
+## Reproducers on HEAD
+
+Every script in `repro/` run against HEAD (copies with the A0 tree replaced by HEAD; debug builds of HEAD with the
+AD/ADD flags for the three runtime-check reproducers; scratchpad `final/run_repros.py`, logs in `final/rplogs/`).
+Result: **fixed** = the expected behaviour is now observed; **error by design** = a clear Python exception
+(CAMBError/CAMBValueError) as decided; **partial** = much improved but the reproducer's own target is not fully met;
+**n/a** = needs a deleted instrumented tree (the item is checked otherwise, as noted); **upstream** = also in plain
+CAMB (B0).
+
+| reproducer | item | result on HEAD | number |
+|---|---|---|---|
+| 21cm-not-refused-in-python-with-eft | C6 | error by design | CAMBError "EFTCAMB is not compatible with 21 cm sources so far" |
+| additional-derivs-wrong-cache | B12 | fixed | EFTcdotdot, Gamma1PP, Gamma2PP vs finite differences 1e-4-7e-4 (were 0 or -2 H cdot) |
+| auto-lens-accuracy-enables-nonlinear-for-eft | C6 | by design | automatic non-linear lensing kept; Halofit now gets the model (w0, wa) from results.Params (the script prints the input params, still (-1, 0)) |
+| beyond-horndeski-hubble | B16 | fixed | H_BH(z=0)/H0 = 1.00000, DE present (was 0.52) |
+| cli-setparams-unallocated-eftcamb | A11 | fixed (run by hand) | -O0 -fcheck=all command-line exe of HEAD passes SetParams and computes 1_EFT_GR |
+| cosmomc-theta-exact-rs-use-background | B20 | fixed | theta(T)/theta(F) - 1 = -2.5e-8 (was -1e-3) |
+| curvature-silently-wrong-with-eft | C1 | error by design | CAMBError "EFTCAMB does not support spatial curvature" |
+| derivst-tensor-uninit-grhog | A20 | fixed (run by hand) | tensor-only 2_PEFT_Omega_const_1 with FP traps on the checked build: clean, BB(2..4) = 0.02559, 0.01482, 0.00877 |
+| eft-background-densities-bypass | B18 | fixed | H from get_background_densities / H - 1 = 2.2e-16 |
+| eft-getters-gr-segfault | A3 | fixed | all getters return (empty) values with EFTflag = 0 and after a failed init |
+| eft-kinetic-cross-term-extra-h0 | B2 | fixed | code / analytic = 1.000; ghost model B rejected |
+| eft-par-cache-realloc-abort, -crash | A1 | fixed | get_BAO and get_background(results.Params[.copy()]) rc = 0 with the fresh-run H(z) |
+| eft-pickle-repr-loses-model, pickle-deepcopy-eftcamb-segfault | A2 | fixed | copy/pickle/deepcopy/repr round trips keep the model and H(z) |
+| eft-turnon-jump-cmb-time-sampling | C9 | partial | 2_PEFT_Omega_const_1 low-l TT: windows on 4.6e-2 -> 1.4e-4; TimeStepBoost = 3 1.9e-2 -> 2.1e-3 (GR 6e-5) |
+| eftcamb-import-fails-non-gfortran | A18 | fixed | non-gfortran import branch works |
+| evolve-metric-h-inconsistent, metric-h-ic-violates-constraint | C5 | error by design | EFTCAMB_evolve_metric_h = T refused (unsupported parameters) |
+| ext-galileon-hdotdot | B15/B16 | fixed | Hdotdot vs exact 5.3e-8 |
+| extgal-adotoa-stale-grhonu | B15 | fixed | adotoa vs exact with nu 3e-15, no jump at a = 0.2 |
+| fourier-min-a0-zero-order | B13 (F-116) | fixed | 0.2 = expected |
+| fr-rgr-threshold-high-k-pk | C3 | fixed | threshold 1e-8 vs 1e-12: P(k=10) 8e-4, sigma8 identical (was percent level) |
+| fullmap-bg-eft-stale-background | B16 | n/a | instrumented LAG tree deleted; B16 checked by beyond-horndeski-hubble, ext-galileon-hdotdot |
+| fullmap-hdotdotdot-wrong, t10a-fullmap-hdotdotdot-formula | B6 | fixed | Hdotdotdot vs d(Hdotdot)/dtau 7e-4 (FD) / 5.4e-8; f(R) 8e-13 |
+| get-eft-functions-gr-segfault | A3 | error by design | CAMBValueError "the results have no EFTCAMB model" |
+| get-evolution-pi-highk-tolerance | C9 | partial | default vs IntTolBoost 8: pi 31.9 -> 3.0e-2, Psi 14 -> 1.4e-2, pidot 1101 -> 2.6; tight result sampling-independent (2.6e-9) |
+| get-evolution-sort-misalign | A5 | fixed | returned a = requested a (1.3e-9), tau order kept |
+| hdsk-h0-not-propagated | C7 | fixed | CAMB H0 = EFT H(z=0) = 85.54, sigma8 error 0; theta does not depend on the input H0 (by design: the EFT H0 is adopted) |
+| hdsk-num-eq-implicit-save, hdsk-num-eq-save | A19 | fixed | bit-identical after an evolve_hubble = T run |
+| horava-hdot-inconsistent | B7 | fixed | second Friedmann residual 1e-16; stored Hdot vs FD 2e-6 |
+| ic1-pi-attractor-pole | C2 | fixed | no pole: delta_c(a=1) 25-58 across k_c (was -7982); default and boost2 agree; the step of P/P_GR at k_c (1.37 -> 0.29) is the regularisation branch (open question) |
+| ic1-pidot-eftpid-typo | B1 | n/a | FIX tree deleted; code verified (EFTpiDfunction = D1 + k^2 D2) and K-mimic glitch gone (kmimic-pk-single-mode-glitch) |
+| ic1-pidot-transient-noisy-coefficients | C2 | fixed | 5_Kmimic_1 P/P_GR - 1 at k = 1 for turn-on 1e-9/1e-8/1e-7: 0.041/0.041/0.034 (was 1e8); TG_2 vs TG_1 5.7e-9 |
+| ic23-pi-radiation-series-at-turn-on | B22 | fixed | IC2 vs IC1 bit-identical; IC 3 runs |
+| ic23-stale-cache-gammas | A14 | n/a | instrumented env-var tree; A14 checked by ic3-nan and ic23 reproducers |
+| ic3-nan-when-omega-gamma3-zero | A14 | fixed | IC 3 = IC 1, no NaN |
+| ini-theta-h0-solved-without-eft | B17 | fixed | thetastar recovered to 6e-8 for 4 EFT models |
+| initialize-parameters-bad-value-kills-python, stop-kills-python | A9 | error by design | CAMBValueError / CAMBError with the Fortran message, interpreter alive |
+| interp-index-overflow-xfinal | A10 | fixed | checked build passes the stability check (the run then stops at the upstream windows + WantCls=F bound error, F-099) |
+| kmimic-pk-single-mode-glitch | C2 | fixed | largest single-k log P deviation -8.9e-3 (GR -9.2e-3; was +1.14) |
+| mass-stability-verdict-unreliable | C4 | by design | check experimental and ignored (C4 b); mu values unchanged until the C4 (a) re-derivation |
+| mass-stability-wrong-derivatives | B12 | fixed | used = model derivatives |
+| minkowski-tachpos-lambdadotdot-zero | B12/B6 | fixed | Minkowski verdict with code and FD EFTLambdadotdot agree (2887/2991 both) |
+| nonlinear-halofit-w0wa-lcdm-for-eft | C6 | fixed | P_nl/P_lin EFT vs fluid 5.5e-6 (was 3.3e-2) |
+| omp-private-ev-printing-uninit | A23 | fixed | 0 modes with EFTCAMB_printing = T |
+| output-pidotdot-zero | B3 | fixed | cached Ndot = FD(N) to FD error (adding the formerly missing term gives O(1)) |
+| pade-fourth-derivative, spline-*, spline5-*, steplog-d4-and-integral | B13 | fixed | d4/integrals exact to 1e-15; spline w = -1 identical to EFTwDE = 0; spline order 3 runs |
+| param-name-truncation | B14 | fixed | long keys read correctly |
+| pert-turn-on-nonpositive-silently-gr | A15 | error by design | 0, -0.1, NaN, 2: CAMBValueError; 1e-30: CAMBError (segfaulted before 5b214ea) |
+| pi-rk45-step-instability | C9 | fixed | 5_Horava_SolSyst_2 default/boost2 7.3e-4 = GR level |
+| pk-extrap-slope-bias | B19 | fixed | identical to upstream |
+| polterddot-nonflat-gr, t3-polterddot-curvature-gr | B9 | fixed | EFTflag = 0 non-flat vs CAMB <= 3.6e-15 |
+| qs-mu-nan-vanishing-denominator | A23 (F-103) | fixed | no NaN, GR value 1 |
+| qs-sigma-copy-of-qs-mu | B5 | fixed | QS_sigma = QS_sigma_gen |
+| read-parameters-roundtrip-bytes | A8 | fixed | str/float returned, round trip unchanged |
+| rgr-threshold-dimensionful-drops-de-perturbations | C3 | fixed | threshold 1e-7: sigma8 change 0 / 4.9e-9 |
+| rph-kinetic-early-roundoff-ghost | C8 | fixed | healthy RPH model stable at stability time 1e-10 |
+| rph-param-index-tensor-ode | A23 | fixed | last name/value correct |
+| scg-adotoa-drops-massive-nu | B15 | fixed | adotoa vs CAMB H 4e-16 (second column of the script is obsolete after B11 changed grhoa2) |
+| scg-higher-derivatives-wrong | B8 | fixed | all rows at the FD error (<= 1e-4) |
+| set-dark-energy-ignored-with-active-eft | C11 | error by design | CAMBValueError "set_dark_energy cannot be used with an active EFTCAMB model" |
+| set-params-cp-drops-eft-model, t3-set-params-cp-resets-eft-model | A6 | fixed | model kept (TT identical to control; EFTflag 3 after cp reuse) |
+| stability-cache-cdotdot-uninitialised, uninit-cache-fields-garbage | A12 | fixed | verdicts and outputs independent of prior cache content |
+| stability-gpinu-tot-tripled | A13 | fixed | ratio 1.0000 |
+| stability-sampler-stale-y, stability-third-pass-stale-y | B4 | fixed | ghost window near a = 1 detected; pass 3 reaches aend - 1e-10 |
+| t10a-forced-inttolboost-gr-limit | C10 | by design (documented) | EFT IntTolBoost >= 2 forced: LCDM-equivalent EFT vs EFTflag = 0 tensor TT 7.6e-2 at default, 1e-11 at matched IntTolBoost |
+| t10a-upstream-fluid-w-near-minus1-rk45-failure | none | upstream | fails identically in B0 |
+| t10a-upstream-get-background-windows-segfault | D (F-099) | upstream, still reproduces | WantCls = F with windows: segfault in HEAD and B0 |
+| t3-3p1-success-unset | A4 | fixed (solver); refused by physics checks | the background solver works; audit ini and GR point refused ("theory unstable"), forced GR point within 4.3e-5 of EFTflag = 0 (open question) |
+| t3-bg-table-resolution-gr-floor | B21 | fixed | 10x tables are now the default (identical rows); the remaining 3-4e-5 TT vs GR is the C9 floor |
+| t3-counts-rsd-gr-branch-missing-de | B10 | fixed | counts C_l vs CAMB 1.4e-7 |
+| t3-eft-curvature-ignored | C1 | error by design | omk != 0 runs refused |
+| t3-eft-turnon-before-tauminn-lmax | A16 | fixed | l_max_scalar 2000 runs |
+| t3-extgal-gr-point-background | B15 | fixed | S = 0: status ok, CAMB H = LCDM to 1e-16; the remaining 2.7e-5 in the adotoa row is the script's linear z interpolation of the reference H |
+| t3-fr-rgr-switch-gr-approach | C3 | fixed | P(k) deviations smooth in B0 (RGR a 0.075-0.091) |
+| t3-gamma1-mass-instability-near-gr | C4 | fixed | constant Gamma1 1e-2 ... 1e-9 accepted |
+| t3-get-evolution-transfer-only-segfault | A3 | fixed | get_scale_evolution works after a transfer-only run |
+| t3-pi-ic-singular-denominator | C2 | fixed | no spike; deviation -> 4e-6 as RPHmassP0 -> 0 |
+| t3-stability-dtauda-without-matter | B11 | fixed (dtauda); still refused | no "dtauda is NaN"; OL-gamma with OLOmega0 <= 1e-6 and its GR point now refused as ghost (kinetic -5e-3 / -9.4e-3 at a = 1e-10; open question) |
+| theta-h0-range-eft | D (F-139) | fixed | thetastar solved in both cases |
+| theta-solve-aborts-unstable-bracket-end | A17 | fixed | H0 recovered to <= 4e-6 |
+| wde-integral-unsupported-parametrizations | A9/B13 (F-047) | fixed | EFTwDE 6-11 run, <= 3.7e-11 from the constant reference |
+| write-ini-drops-eftcamb | A7 | fixed | 47 EFTCAMB keys written, re-read TT identical |
+
+Totals (97 scripts): 77 fixed (2 of them run by hand with a checked build of HEAD; 4 with a residual open question:
+ic1-pi-attractor-pole, t3-3p1-success-unset, t3-stability-dtauda-without-matter, hdsk-h0-not-propagated theta),
+13 error or behaviour by design, 2 partial (C9), 3 not applicable (deleted instrumented trees; items checked
+otherwise), 2 upstream (also in plain CAMB). One crash found by this run was fixed (5b214ea).
