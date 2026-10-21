@@ -367,6 +367,13 @@
                     return
                 end if
             end do
+            ! models whose H0 is set by the EFT background (e.g. Horndeski without designer potential) adopt it in
+            ! SetParams and ignore the input H0: theta does not depend on it and cannot be used to set it
+            if (abs(solver%Data%CP%H0/solver%Params%H0 - 1._dl) > 1.e-9_dl) then
+                write(ErrMsg, '(a,f0.4,a)') 'EFTCAMB: thetastar/cosmomc_theta cannot be used with this model: ' // &
+                    'its H0 (', solver%Data%CP%H0, ') is set by the EFT background, not by the input H0'
+                return
+            end if
         end if
     end if
     ! EFTCAMB MOD END.

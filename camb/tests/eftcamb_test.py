@@ -274,6 +274,46 @@ class EFTCAMBTest(unittest.TestCase):
         # the interpreter is still usable
         self.assertGreater(camb.get_results(self.read("2_PEFT_Omega_const_1")).get_sigma8_0(), 0)
 
+    def theta_ini(self, model, theta_line):
+        # the model ini with hubble removed from its DEFAULT chain and a theta input instead
+        def copy(path):
+            lines = []
+            with open(path) as f:
+                for line in f:
+                    if line.strip().startswith("DEFAULT("):
+                        lines.append(f"DEFAULT({copy(os.path.join(PARAMS, line.strip()[8:-1]))})\n")
+                    elif line.split("=")[0].strip() != "hubble":
+                        lines.append(line)
+            name = os.path.join(self.tmp, "nohubble_" + os.path.basename(path))
+            with open(name, "w") as f:
+                f.writelines(lines)
+            return name
+
+        name = os.path.join(self.tmp, f"{model}_theta_{abs(hash(theta_line))}.ini")
+        with open(name, "w") as f:
+            f.write(f"DEFAULT({copy(os.path.join(PARAMS, model + '.ini'))})\n{FAST}output_root = {self.tmp}/out\n")
+            f.write(f"EFTCAMB_feedback_level = 0\n{theta_line}\n")
+        return name
+
+    def test_theta_input(self):
+        # Horndeski without designer potential sets H0 from its own background (also with shooting): theta refused
+        for extra in ("", "Horndeski_shooting = T"):
+            with self.subTest(shooting=extra):
+                for key in ("thetastar", "cosmomc_theta"):
+                    with self.assertRaisesRegex(CAMBValueError, "H0 .* is set by the EFT background"):
+                        camb.read_ini(self.theta_ini("5_hdsk_TG_1", f"{extra}\n{key} = 0.0104"))
+                cp = self.read("5_hdsk_TG_1", f"EFTCAMB_feedback_level = 0\n{extra}")
+                with self.assertRaisesRegex(CAMBValueError, "set by the EFT background"):
+                    cp.set_cosmology(H0=None, thetastar=0.0104, ombh2=cp.ombh2, omch2=cp.omch2)
+                with self.assertRaisesRegex(CAMBValueError, "set by the EFT background"):
+                    cp.set_H0_for_theta(0.0104, cosmomc_approx=True)
+        # other EFT models keep the theta -> H0 solve on both paths
+        cp = camb.read_ini(self.theta_ini("4_Des_F_R_LCDM_1", "thetastar = 0.0104"))
+        self.assertAlmostEqual(camb.get_background(cp).get_derived_params()["thetastar"] / 1.04, 1, delta=1e-5)
+        cp = self.read("4_Des_F_R_LCDM_1")
+        cp.set_H0_for_theta(0.0104)
+        self.assertAlmostEqual(camb.get_background(cp).get_derived_params()["thetastar"] / 1.04, 1, delta=1e-5)
+
     # GR limit and regression
 
     def test_gr_flag_zero(self):

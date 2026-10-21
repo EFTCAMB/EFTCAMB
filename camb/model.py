@@ -676,6 +676,13 @@ class CAMBparams(F2003Class):
                 raise CAMBParamRangeError("No valid H0 for this EFTCAMB model found inside of theta_H0_range")
 
             H0_min, H0_max = valid_end(H0_min), valid_end(H0_max)
+            # models whose H0 is set by the EFT background (e.g. Horndeski without designer potential) adopt it and
+            # ignore the input H0: theta does not depend on it and cannot be used to set it
+            if abs(data.Params.H0 / H0_max - 1) > 1e-9:
+                raise CAMBValueError(
+                    "cosmomc_theta/thetastar cannot be used with this EFTCAMB model: its H0 "
+                    f"({data.Params.H0:.4f}) is set by the EFT background, not by the input H0"
+                )
         # EFTCAMB MOD END
 
         try:
