@@ -204,16 +204,16 @@ every agent-group boundary and all A9 commits build (15 commits checked in clean
 | 4 | Accepted | none |
 | 5 | Leave as is | Flag for later: full Beyond Horndeski model check from the literature (massive neutrinos, `OmegaRadprime` term) |
 | 6 | Accepted | none |
-| 7 | Explained inline to the user; pending | |
+| 7 | Option (a): keep the C2 regularisation tolerance 0.1 | none; the physics workflow's re-derived mass check (C4 a) decides whether such tachyonic-at-turn-on models are rejected |
 | 8 | No upstream report | none |
 | 9 | No upstream CAMB changes | none |
 | 10 | Accepted | none |
 | 11 | Yes | **To implement:** refuse theta input (cosmomc_theta / thetastar) for Horndeski models whose H0 is set by the EFT background (C7) |
 | 12 | Yes | **To implement:** initialise the EFTCAMB parameter cache at allocation |
-| 13 | Explained inline to the user; pending | |
+| 13 | Option (a): keep the hard error for turn-on earlier than tau = 1e-12 Mpc | none |
 | 14 | Accepted (physics workflow later) | none |
 
-Items 3, 11, 12 wait until the user has reviewed the existing commits. Agent worktrees are kept.
+Items 3, 11, 12 implemented on 2026-10-21 at the user's request (before the commit review). Agent worktrees are kept.
 
 ## Implementation plan
 
