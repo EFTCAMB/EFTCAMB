@@ -799,10 +799,11 @@
     ! scalar modes start no later than the EFT turn-on (otherwise high k modes, which start after an early turn-on,
     ! get the pi initial conditions at their own start time). The thermal history starts before it (InitVars).
     ! (DeltaTime is expensive for some models: skip it when the turn-on is clearly later, a ~ adotrad tau at the
-    ! start; the factor 10 allows for an early expansion rate faster than the radiation one)
+    ! start; the factor 10 allows for an early expansion rate faster than the radiation one). Not earlier than
+    ! tau = 1e-12 Mpc, where the thermal history still works (see InitVars).
     if (CP%EFTCAMB%EFTflag /= 0 .and. CP%WantScalars) then
         if (10._dl*State%adotrad*taustart >= CP%EFTCAMB%EFTCAMB_pert_turn_on) &
-            taustart = min(taustart, State%DeltaTime(0._dl, CP%EFTCAMB%EFTCAMB_pert_turn_on))
+            taustart = min(taustart, max(State%DeltaTime(0._dl, CP%EFTCAMB%EFTCAMB_pert_turn_on), 1.e-12_dl))
     end if
     ! EFTCAMB MOD END.
 
@@ -927,9 +928,12 @@
     ! EFTCAMB MOD START: the thermal history must start before the EFT perturbations turn on
     ! (tauminn = 0.95 taumin); taumin only changes for turn-on times earlier than that.
     ! Only the scalar equations have EFT perturbations (the tensor pass keeps its thermal history).
+    ! The thermal history is not extended below tau = 1e-12 Mpc: below ~1e-18 Mpc its visibility integral breaks
+    ! down numerically (start of recombination found at the first step, ~1e21 source time steps, crash); an
+    ! earlier turn-on is then refused by initial() (EFTCAMB starts before thermo tauminn).
     if (CP%EFTCAMB%EFTflag /= 0 .and. CP%WantScalars) then
         tau_eft_on = State%DeltaTime(0._dl, CP%EFTCAMB%EFTCAMB_pert_turn_on)
-        if (tau_eft_on < 0.95_dl*taumin) taumin = tau_eft_on
+        if (tau_eft_on < 0.95_dl*taumin) taumin = max(tau_eft_on, 1.e-12_dl)
     end if
     ! EFTCAMB MOD END.
 
