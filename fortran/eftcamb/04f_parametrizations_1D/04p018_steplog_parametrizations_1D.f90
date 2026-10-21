@@ -26,6 +26,7 @@
     module EFTCAMB_steplog_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use MpiUtils
     use EFT_def
     use EFTCAMB_cache
@@ -135,7 +136,10 @@
     case default
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in steplogParametrized1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end select
 
     end subroutine steplogParametrized1DParameterValues
@@ -187,7 +191,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in steplogParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -221,7 +228,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in steplogParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then
@@ -340,15 +350,13 @@
     if (x == 0) then
         steplogParametrized1DFourthDerivative = 0._dl
     else
-        steplogParametrized1DFourthDerivative = (1._dl/2._dl)*(self%v2 - self%v1)* &
-            (-(3._dl*log(x/self%aT))/(self%Delta**2*x**4*(1._dl - log(x/self%aT)/self%Delta**2)**(1.5_dl)) - &
-            6._dl/(x**4*sqrt(1._dl - log(x/self%aT)/self%Delta**2)) + &
-            11._dl/(self%Delta**2*x**4*(1._dl - log(x/self%aT)/self%Delta**2)**(1.5_dl)) + &
-            (105._dl*log(x/self%aT))/(16._dl*self%Delta**8*x**4*(1._dl - log(x/self%aT)/self%Delta**2)**(4.5_dl)) - &
-            (45._dl*log(x/self%aT))/(4._dl*self%Delta**6*x**4*(1._dl - log(x/self%aT)/self%Delta**2)**(3.5_dl)) + &
-            15._dl/(2._dl*self%Delta**6*x**4*(1._dl - log(x/self%aT)/self%Delta**2)**(3.5_dl)) + &
-            (33._dl*log(x/self%aT))/(4._dl*self%Delta**4*x**4*(1._dl - log(x/self%aT)/self%Delta**2)**(2.5_dl)) - &
-            27._dl/(2._dl*self%Delta**4*x**4*(1._dl - log(x/self%aT)/self%Delta**2)**(2.5_dl)))/self%Delta
+        ! L = ln(x/aT)/Delta, value = (v2-v1)/2 L/sqrt(1+L^2) + (v1+v2)/2:
+        term1 = (log(x) - log(self%aT))/self%Delta
+        steplogParametrized1DFourthDerivative = 0.5_dl*(self%v2 - self%v1)/x**4*( &
+            15._dl*term1*(3._dl - 4._dl*term1**2)/(1._dl + term1**2)**4.5_dl/self%Delta**4 &
+            - 6._dl*(12._dl*term1**2 - 3._dl)/(1._dl + term1**2)**3.5_dl/self%Delta**3 &
+            - 33._dl*term1/(1._dl + term1**2)**2.5_dl/self%Delta**2 &
+            - 6._dl/(1._dl + term1**2)**1.5_dl/self%Delta)
     end if
 
     end function steplogParametrized1DFourthDerivative
@@ -368,11 +376,10 @@
     if (x == 0) then
         steplogParametrized1DIntegral = 0._dl
     else
-        term1 = x**(-1._dl - 1.5_dl*(self%v1 + self%v2) - &
-            1.5_dl*(self%v2 - self%v1)*(log(x) - 2*log(self%aT) + log(self%aT)**2/log(x))/ &
-            sqrt(self%Delta**2 + (log(x) - log(self%aT))**2))
-        term2 = exp(1.5_dl*(self%v1 - self%v2)* &
-            (self%Delta**2/sqrt(self%Delta**2 + (log(x) - log(self%aT))**2) - sqrt(self%Delta**2 + log(self%aT)**2)))
+        ! I(x) = x^2 exp(3 int_{ln x}^0 (1+w) dN), no division by ln(x) (which made I(1) wrong):
+        term1 = x**(-1._dl - 1.5_dl*(self%v1 + self%v2))
+        term2 = exp(-1.5_dl*(self%v2 - self%v1)* &
+            (sqrt(self%Delta**2 + (log(x) - log(self%aT))**2) - sqrt(self%Delta**2 + log(self%aT)**2)))
         steplogParametrized1DIntegral = term1*term2
     end if
 

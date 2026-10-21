@@ -63,7 +63,7 @@
     implicit none
 
     class(EFTCAMB_des_mc_quint) :: self      !< the base class
-    type(TIniFile)              :: Ini       !< Input ini file
+    class(TIniFile)             :: Ini       !< Input ini file
     integer                     :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer                     :: temp_feedback

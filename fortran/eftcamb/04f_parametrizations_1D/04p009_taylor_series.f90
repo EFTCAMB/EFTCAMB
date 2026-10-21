@@ -28,6 +28,7 @@
     module EFTCAMB_taylor_series_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use EFT_def
     use MpiUtils
@@ -125,7 +126,7 @@
     implicit none
 
     class(taylorseries_parametrization_1D) :: self   !< the base class
-    type(TIniFile)                         :: Ini    !< Input ini file
+    class(TIniFile)                        :: Ini    !< Input ini file
     integer                                :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read order of the Taylor expansion:
@@ -156,7 +157,10 @@
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in TaylorSeriesParametrized1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     end subroutine TaylorSeriesParametrized1DParameterValues
@@ -210,7 +214,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in TaylorSeriesParametrized1DParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -240,7 +247,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in TaylorSeriesParametrized1DParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then
@@ -410,11 +420,8 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: TaylorSeriesParametrized1DIntegral                  !< the output value
 
-    TaylorSeriesParametrized1DIntegral = 0._dl
-    !< No analytic solution >!
-    write(*, *) 'TaylorSeriesParametrized1DIntegral is not implemented.'
-    write(*, *) 'Calculations cannot proceed.'
-    call MpiStop('EFTCAMB error')
+    ! no closed form: numerical integral (see parametrized_function_1D%numerical_integral).
+    TaylorSeriesParametrized1DIntegral = self%numerical_integral(x, eft_cache=eft_cache)
 
     end function TaylorSeriesParametrized1DIntegral
 

@@ -30,6 +30,7 @@
     use IniObjects
     use MpiUtils
     use classes
+    use config, only: GlobalError, global_error_flag, error_unsupported_params
     use EFT_def
     use EFTCAMB_abstract_model
     use EFTCAMB_abstract_model_full
@@ -120,8 +121,10 @@
         real(dl) :: EFTCAMB_GR_threshold = 1.e-8_dl
         !< Minimum scale factor at which the code checks for stability of a theory
         real(dl) :: EFTCAMB_stability_time = 1.e-10_dl
-        !< Threshold for the stability module to consider the model stable.
-        real(dl) :: EFTCAMB_stability_threshold = 0._dl
+        !< Relative numerical floor of the stability conditions (ghost, gradient, tensor, G > 0, GLPV): a condition
+        !! passes if its value is >= -threshold*(sum of the magnitudes of its terms). 0 is the strict test.
+        !! Default 1e-8: about 100 times the largest roundoff cancellation measured in the test models (~1e-10).
+        real(dl) :: EFTCAMB_stability_threshold = 1.e-8_dl
         !< Logical flag that establishes whether the model is designer or not.
         logical  :: EFTCAMB_model_is_designer = .false.
         !< Logical flag that establishes whether the model does have an effective w0wa parametrization.
@@ -190,7 +193,7 @@
     implicit none
 
     class(TEFTCAMB) :: self  !< the base class
-    type(TIniFile)  :: Ini   !< Input ini file
+    class(TIniFile) :: Ini   !< Input ini file
 
     character(len=:), allocatable :: outroot
 
@@ -233,6 +236,11 @@
 
     ! ) initial condition types
     self%EFT_IC_type = Ini%Read_Int('EFT_IC_type', 1)
+    if (self%EFT_IC_type < 1 .or. self%EFT_IC_type > 3) then
+        call GlobalError('EFTCAMB error: invalid EFT_IC_type, must be 1 (GR), 2 (MG-Omega) or 3 (MG-Omega+Gamma)', &
+            error_unsupported_params)
+        return
+    end if
 
     ! EFTCAMB working flags:
     self%EFTCAMB_feedback_level = Ini%Read_Int    ('feedback_level', 1)
@@ -240,20 +248,20 @@
     self%EFTCAMB_pert_turn_on = Ini%Read_Double ('EFTCAMB_turn_on_time', 1.d-2)
     self%EFTCAMB_GR_threshold = Ini%Read_Double ('EFTCAMB_GR_threshold', 1.d-8)
     self%EFTCAMB_stability_time = Ini%Read_Double ('EFTCAMB_stability_time', 1.d-10)
-    self%EFTCAMB_stability_threshold = Ini%Read_Double ('EFTCAMB_stability_threshold', 0._dl)
+    self%EFTCAMB_stability_threshold = Ini%Read_Double ('EFTCAMB_stability_threshold', 1.d-8)
     self%EFTCAMB_effective_w0wa = Ini%Read_Logical('EFTCAMB_effective_w0wa', .false.)
     ! flags currently only supported by the Horndeski module
     self%EFTCAMB_use_background = Ini%Read_Logical('EFTCAMB_use_background', .false.)
     if (self%EFTCAMB_use_background .and. (self%EFTflag /= 5)) then
-        write(*, *) 'EFTCAMB Error: EFTCAMB_use_background=True currently only supported by the Horndeski module ' // &
-            '(EFTflag=5)'
-        call MpiStop("EFTCAMB error")
+        call GlobalError('EFTCAMB error: EFTCAMB_use_background=True currently only supported by the Horndeski ' // &
+            'module (EFTflag=5)', error_unsupported_params)
+        return
     end if
     self%EFTCAMB_evolve_delta_phi = Ini%Read_Logical('EFTCAMB_evolve_delta_phi', .false.)
     if (self%EFTCAMB_evolve_delta_phi .and. (self%EFTflag /= 5)) then
-        write(*, *) "EFTCAMB Error: EFTCAMB_evolve_delta_phi=True currently only supported by the Horndeski " // &
-            "module (EFTflag = 5)."
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: EFTCAMB_evolve_delta_phi=True currently only supported by the Horndeski ' // &
+            'module (EFTflag=5)', error_unsupported_params)
+        return
     end if
     self%EFTCAMB_evolve_metric_h = Ini%Read_Logical('EFTCAMB_evolve_metric_h', .false.)
     self%EFTCAMB_skip_stability = Ini%Read_Logical('EFTCAMB_skip_stability', .false.)
@@ -275,7 +283,7 @@
     implicit none
 
     class(TEFTCAMB) :: self  !< the base class
-    type(TIniFile)  :: Ini   !< Input ini file
+    class(TIniFile) :: Ini   !< Input ini file
 
     integer :: i, num_read
 
@@ -297,21 +305,35 @@
     implicit none
 
     class(TEFTCAMB) :: self      !< the base class
-    type(TIniFile)  :: Ini       !< input ini file
+    class(TIniFile) :: Ini       !< input ini file
     integer         :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     eft_error = 0
+    ! validate the perturbation turn-on time: a non-positive, NaN or > 1 value would silently run
+    ! GR perturbations on the EFT background.
+    ! (EFT_RGR_never_on is the turn-on stored for a model that is GR at all times)
+    if (.not. (self%EFTCAMB_pert_turn_on > 0._dl .and. self%EFTCAMB_pert_turn_on <= 1._dl) .and. &
+        self%EFTCAMB_pert_turn_on /= EFT_RGR_never_on) then
+        write(*, '(a,E13.4)') 'EFTCAMB error: EFTCAMB_turn_on_time must be in (0,1]. Value: ', self%EFTCAMB_pert_turn_on
+        eft_error = 1
+        return
+    end if
     ! allocate model:
+    ! (a step can also fail with a global error: the model is then not usable either)
     call self%EFTCAMB_allocate_model(eft_error)
+    if (global_error_flag /= 0) eft_error = max(eft_error, 1)
     if (eft_error > 0) return
     ! read the parameters defining the model from file:
     call self%EFTCAMB_read_model_selection(Ini, eft_error)
+    if (global_error_flag /= 0) eft_error = max(eft_error, 1)
     if (eft_error > 0) return
     ! allocate model functions and parameters:
     call self%EFTCAMB_allocate_model_functions(Ini, eft_error)
+    if (global_error_flag /= 0) eft_error = max(eft_error, 1)
     if (eft_error > 0) return
     ! read model parameters from file:
     call self%EFTCAMB_read_model_parameters(Ini, eft_error)
+    if (global_error_flag /= 0) eft_error = max(eft_error, 1)
     if (eft_error > 0) return
     ! compute model number of parameters:
     call self%model%compute_param_number()
@@ -328,12 +350,17 @@
     real(dl)        :: w0        !< the effective w0 value (output)
     real(dl)        :: wa        !< the effective wa value (output)
 
+    w0 = -1._dl
+    wa = 0._dl
+    if (self%EFTflag == 0 .or. .not. allocated(self%model)) return
     if (self%EFTCAMB_effective_w0wa) then
+        ! (w0, wa) provided by the model:
         w0 = self%model%w0
         wa = self%model%wa
-    else
-        w0 = -1._dl
-        wa = 0._dl
+    else if (self%model%background_w0wa_computed) then
+        ! CPL fit of the effective dark energy equation of state of the background:
+        w0 = self%model%w0_background
+        wa = self%model%wa_background
     end if
 
     end subroutine EFTCAMB_effective_w0wa_values
@@ -406,7 +433,7 @@
     ! check the allocation of the model:
     if (.not. allocated(self%model)) then
         write(*, *) 'EFTCAMB WARNING: trying to call EFTCAMB model feedback without allocating the model'
-        call MpiStop('EFTCAMB error')
+        return
     end if
 
     ! check feedback level:
@@ -493,6 +520,8 @@
                 write(*, '(a)')    'Please select an appropriate model:'
                 write(*, '(a)')    'PureEFTmodel=1  standard Pure EFT'
             end if
+            call GlobalError('EFTCAMB error: no model corresponding to the EFTCAMB model selection flags', &
+                error_unsupported_params)
             eft_error = 1
             return
         end select
@@ -522,6 +551,8 @@
                 write(*, '(a)')    'AltParEFTmodel=3  Lambda-Omega parametrization with alpha functions'
                 write(*, '(a)')    'AltParEFTmodel=4  Shift Symmetric Gravity with alpha_B'
             end if
+            call GlobalError('EFTCAMB error: no model corresponding to the EFTCAMB model selection flags', &
+                error_unsupported_params)
             eft_error = 1
             return
         end select
@@ -547,6 +578,8 @@
                 write(*, '(a)')    'DesignerEFTmodel=2  designer minimally coupled quintessence'
                 write(*, '(a)')    'DesignerEFTmodel=3  designer full 3+1 theory'
             end if
+            call GlobalError('EFTCAMB error: no model corresponding to the EFTCAMB model selection flags', &
+                error_unsupported_params)
             eft_error = 1
             return
         end select
@@ -588,6 +621,8 @@
                 write(*, '(a)')    'FullMappingEFTmodel=6  Scaling Cubic Galileon'
                 write(*, '(a)')    'FullMappingEFTmodel=7  Extended Galileon'
             end if
+            call GlobalError('EFTCAMB error: no model corresponding to the EFTCAMB model selection flags', &
+                error_unsupported_params)
             eft_error = 1
             return
         end select
@@ -607,6 +642,8 @@
             write(*, '(a)') 'EFTFlag=4  full mapping EFT'
             write(*, '(a)') 'EFTFlag=5  Horndeski'
         end if
+        call GlobalError('EFTCAMB error: no model corresponding to the EFTCAMB model selection flags', &
+            error_unsupported_params)
         eft_error = 1
         return
 
@@ -629,7 +666,7 @@
     implicit none
 
     class(TEFTCAMB) :: self      !< the base class
-    type(TIniFile)  :: Ini       !< Input ini file
+    class(TIniFile) :: Ini       !< Input ini file
     integer         :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! check the allocation of the model:
@@ -655,7 +692,7 @@
     implicit none
 
     class(TEFTCAMB) :: self       !< the base class
-    type(TIniFile)  :: Ini        !< Input ini file
+    class(TIniFile) :: Ini        !< Input ini file
     integer         :: eft_error  !< error code: 0 all fine, 1 initialization failed
 
     ! check the allocation of the model:
@@ -680,7 +717,7 @@
     implicit none
 
     class(TEFTCAMB) :: self       !< the base class
-    type(TIniFile)  :: Ini        !< Input ini file
+    class(TIniFile) :: Ini        !< Input ini file
     integer         :: eft_error  !< error code: 0 all fine, 1 initialization failed
 
     ! check the allocation of the model:

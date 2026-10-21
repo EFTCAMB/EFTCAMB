@@ -27,6 +27,7 @@
     module EFTCAMB_double_exponential_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use EFT_def
     use MpiUtils
     use EFTCAMB_cache
@@ -130,7 +131,10 @@
     case default
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in DoubleExponentialParametrized1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end select
 
     end subroutine DoubleExponentialParametrized1DParameterValues
@@ -259,12 +263,8 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: DoubleExponentialParametrized1DIntegral                   !< the output value
 
-    DoubleExponentialParametrized1DIntegral = 0._dl
-
-    !< No analytic solution >!
-    write(*, *) 'DoubleExponentialParametrized1DIntegral is not implemented.'
-    write(*, *) 'Calculations cannot proceed.'
-    call MpiStop('EFTCAMB error')
+    ! no closed form: numerical integral (see parametrized_function_1D%numerical_integral).
+    DoubleExponentialParametrized1DIntegral = self%numerical_integral(x, eft_cache=eft_cache)
 
     end function DoubleExponentialParametrized1DIntegral
 

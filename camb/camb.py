@@ -9,6 +9,7 @@ from . import constants, model, recombination
 from ._config import config
 from .baseconfig import CAMBError as CAMBError
 from .baseconfig import CAMBUnknownArgumentError, CAMBValueError, camblib, filepath_to_fortran, np
+from .eftcamb import is_eftcamb_parameter
 from .model import CAMBparams
 from .results import CAMBdata
 from .results import ClTransferData as ClTransferData
@@ -33,6 +34,20 @@ def _get_setter_spec(setter) -> dict[str, Parameter]:
         }
         _setter_spec_cache[func] = spec
         return spec
+
+
+# EFTCAMB MOD START: names (model_name()) of the EFTCAMB models that compute the higher order derivatives of the EFT
+# functions used by the positivity bounds and Minkowski limit checks
+_EFT_HIGHER_DERIVATIVES_MODELS = (
+    "Standard Pure EFT",
+    "RPH",
+    "OL gamma",
+    "Shift Symmetric alpha B",
+    "Designer full3p1",
+    "K-mouflage",
+    "Scaling Cubic Galileon",
+)
+# EFTCAMB MOD END
 
 
 def set_feedback_level(level=1):
@@ -196,6 +211,9 @@ def set_params(cp=None, verbose=False, **params):
     if "ALens" in params:
         raise ValueError("Use Alens not ALens")
 
+    # EFTCAMB MOD START: whether the input parameters are updated
+    cp_given = cp is not None
+    # EFTCAMB MOD END
     if cp is None:
         cp = model.CAMBparams()
     else:
@@ -212,16 +230,41 @@ def set_params(cp=None, verbose=False, **params):
             setter(**kwargs)
 
     # EFTCAMB MOD START
+    # EFTCAMB model of the input parameters, kept (and updated with the EFTCAMB keys given here) when cp is reused
+    if cp_given and cp.EFTCAMB is not None and cp.EFTCAMB.EFTflag != 0:
+        existing_eft_params = cp.EFTCAMB.current_parameters()
+    else:
+        existing_eft_params = {}
+
+    if existing_eft_params and params.get("EFTflag", None) == 0:
+        # EFTCAMB switched off: before set_classes, which refuses other dark energy models while EFTCAMB is on
+        cp.EFTCAMB.initialize_parameters(cp, {"EFTflag": 0}, print_header=False)
+
     # dedicated setter for the initialization of EFTCAMB
     def EFT_do_set(setter):
+        if cp_given:
+            # re-initialize only when EFTCAMB keys are given, or when set_classes(dark_energy_model="EFTCAMB") reset
+            # the EFTCAMB object, starting from the existing EFTCAMB parameters
+            if (
+                "EFTflag" not in params
+                and not any(key in existing_eft_params for key in params)
+                and not (existing_eft_params and cp.EFTCAMB.EFTflag == 0)
+            ):
+                return
+            eft_params = {**existing_eft_params, **params}
+        else:
+            eft_params = params
         if verbose:
-            logging.warning("Calling %s(**%s)" % (setter.__name__, params))
+            logger.warning(f"Calling {setter.__name__}(cp, **{eft_params})")
         # get feedback flag:
         _feedback_level = params.get("feedback_level", 0)
         # call setter:
-        setter(cp, params, print_header=_feedback_level > 0)
+        setter(cp, eft_params, print_header=_feedback_level > 0)
         # update parameters that are actually used:
-        used_params.update(cp.EFTCAMB.read_parameters())
+        used_params.update(cp.EFTCAMB.read_parameters(raw=True))
+        if cp.EFTCAMB.EFTflag == 0 and "EFTflag" in params:
+            # EFTCAMB switched off explicitly: accept and ignore the EFTCAMB parameters, as the ini reader does
+            used_params.update(key for key in params if is_eftcamb_parameter(key))
 
     # EFTCAMB MOD END
 
@@ -268,24 +311,19 @@ def set_params(cp=None, verbose=False, **params):
                 raise CAMBUnknownArgumentError(f"Unrecognized parameter: {k}")
 
     # EFTCAMB MOD START
-    # Note : positivity bounds are implemented only for some specific cases this check avoid that they are used improperly
-    if cp.EFTCAMB.EFTflag != 0:
-        EFTpars = cp.EFTCAMB.read_parameters()
-        if EFTpars["EFT_positivity_bounds"]:
-            if cp.EFTCAMB.model_name() not in [
-                "OL gamma",
-                "Standard Pure EFT",
-                "K-mouflage",
-                "Scaling Cubic Galileon",
-                "RPHalphaDE",
-            ]:
-                raise CAMBValueError(
-                    "Higher order derivatives of the EFTfunctions not implemented. Positivity Bounds cannot be calculated properly for %s"
-                    % cp.EFTCAMB.model_name()
-                )
-            if cp.EFTCAMB.model_name() in ["Standard Pure EFT"]:
-                if any([EFTpars["PureEFTmodelGamma4"], EFTpars["PureEFTmodelGamma5"], EFTpars["PureEFTmodelGamma6"]]):
-                    print("Warning: positivity bounds are implemented up to Gamma3.")
+    # Note : positivity bounds and the Minkowski limit need the higher order derivatives of the EFT functions, which
+    # only some models compute: this check avoids that they are used improperly
+    if cp.EFTCAMB.EFTflag != 0 and (cp.EFTCAMB.EFT_positivity_bounds or cp.EFTCAMB.EFT_minkowski_limit):
+        _model_name = cp.EFTCAMB.model_name()
+        if _model_name not in _EFT_HIGHER_DERIVATIVES_MODELS:
+            raise CAMBValueError(
+                "Higher order derivatives of the EFT functions not implemented. Positivity bounds and the Minkowski "
+                f"limit cannot be calculated properly for {_model_name}"
+            )
+        if _model_name == "Standard Pure EFT":
+            EFTpars = cp.EFTCAMB.read_parameters()
+            if any(EFTpars.get(f"PureEFTmodelGamma{i}", 0) for i in (4, 5, 6)):
+                print("Warning: positivity bounds are implemented up to Gamma3.")
 
     # EFTCAMB MOD END
 

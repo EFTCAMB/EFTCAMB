@@ -795,6 +795,18 @@
         taustart = min(taustart, 1.d-3/maxval(State%nu_masses(1:CP%Nu_mass_eigenstates))/State%adotrad)
     end if
 
+    ! EFTCAMB MOD START: impose the initial conditions of the EFT perturbations at the same time for every k: the
+    ! scalar modes start no later than the EFT turn-on (otherwise high k modes, which start after an early turn-on,
+    ! get the pi initial conditions at their own start time). The thermal history starts before it (InitVars).
+    ! (DeltaTime is expensive for some models: skip it when the turn-on is clearly later, a ~ adotrad tau at the
+    ! start; the factor 10 allows for an early expansion rate faster than the radiation one). Not earlier than
+    ! tau = 1e-12 Mpc, where the thermal history still works (see InitVars).
+    if (CP%EFTCAMB%EFTflag /= 0 .and. CP%WantScalars) then
+        if (10._dl*State%adotrad*taustart >= CP%EFTCAMB%EFTCAMB_pert_turn_on) &
+            taustart = min(taustart, max(State%DeltaTime(0._dl, CP%EFTCAMB%EFTCAMB_pert_turn_on), 1.e-12_dl))
+    end if
+    ! EFTCAMB MOD END.
+
     GetTauStart = taustart
 
     end function GetTauStart
@@ -870,6 +882,9 @@
     type(CAMBdata) :: ActiveState
     real(dl) taumin, maxq, initAccuracyBoost
     integer itf
+    ! EFTCAMB MOD START: turn-on time of the EFT perturbations
+    real(dl) tau_eft_on
+    ! EFTCAMB MOD END.
 
     call SetActiveState(ActiveState)
 
@@ -910,6 +925,17 @@
     end if
 
     taumin = GetTauStart(maxq)
+    ! EFTCAMB MOD START: the thermal history must start before the EFT perturbations turn on
+    ! (tauminn = 0.95 taumin); taumin only changes for turn-on times earlier than that.
+    ! Only the scalar equations have EFT perturbations (the tensor pass keeps its thermal history).
+    ! The thermal history is not extended below tau = 1e-12 Mpc: below ~1e-18 Mpc its visibility integral breaks
+    ! down numerically (start of recombination found at the first step, ~1e21 source time steps, crash); an
+    ! earlier turn-on is then refused by initial() (EFTCAMB starts before thermo tauminn).
+    if (CP%EFTCAMB%EFTflag /= 0 .and. CP%WantScalars) then
+        tau_eft_on = State%DeltaTime(0._dl, CP%EFTCAMB%EFTCAMB_pert_turn_on)
+        if (tau_eft_on < 0.95_dl*taumin) taumin = max(tau_eft_on, 1.e-12_dl)
+    end if
+    ! EFTCAMB MOD END.
 
     !     Initialize baryon temperature and ionization fractions vs. time.
     !     This subroutine also fixes the timesteps where the sources are
@@ -1183,6 +1209,8 @@
                             State%TimeSteps%points(j + 1) > State%transfer_times(itf)) goto 101
                     else
                         ! EFTCAMB MOD START: enforce also relative precision
+                        ! Intended: the mismatch is an error (not only a warning), raised when print_fortran_warnings
+                        ! is on. Documented in CAMB_README.rst (EFTCAMB section).
                         if (abs(tau - State%transfer_times(itf - 1)) > 5.e-5_dl .and. &
                             abs(tau - State%transfer_times(itf - 1))/tau > 5.e-5_dl .and. print_fortran_warnings) then
                             write(*, *) 'WARNING: mismatch in integrated times (CAMB: CalcScalarSources)'

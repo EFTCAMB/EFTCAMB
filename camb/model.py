@@ -447,6 +447,32 @@ class CAMBparams(F2003Class):
         self.InitPower.set_params()
         super().__init__(**kwargs)
 
+    # EFTCAMB MOD START: save and restore the EFTCAMB model (pickle, deepcopy, repr/eval)
+    # The python EFTCAMB class maps only the flags of the Fortran TEFTCAMB, not its allocated model: the state also
+    # stores the EFTCAMB parameters, and the model is re-initialized from them when the state is restored.
+    def __getstate__(self) -> dict:
+        state = super().__getstate__()
+        eft = self.EFTCAMB
+        if eft is not None and eft.EFTflag != 0:
+            state["EFTCAMB_parameters"] = eft.current_parameters()
+            # filled again by every calculation
+            state.pop("EFTCAMB_parameter_cache", None)
+        return state
+
+    def __setstate__(self, state):
+        state = dict(state)
+        eft_parameters = state.pop("EFTCAMB_parameters", None)
+        super().__setstate__(state)
+        if eft_parameters:
+            # flags as saved, including those not set from the parameters
+            eft_flags = self.EFTCAMB.__getstate__()
+            self.EFTCAMB.initialize_parameters(self, eft_parameters, print_header=False)
+            eft = self.EFTCAMB
+            for key, value in eft_flags.items():
+                setattr(eft, key, value)
+
+    # EFTCAMB MOD END.
+
     def validate(self):
         """
         Do some quick tests for sanity
@@ -633,10 +659,36 @@ class CAMBparams(F2003Class):
                 theta_test = rs / (data.angular_diameter_distance(zstar) * (1 + zstar))
             return theta_test - theta
 
+        # EFTCAMB MOD START: EFT models can be invalid (unstable, background solver failure) far from the solution:
+        # search above the matter-only limit, and move bracket ends where the model fails towards the estimate
+        H0_min, H0_max = theta_H0_range
+        if self.EFTCAMB is not None and self.EFTCAMB.EFTflag != 0:
+            H0_min = max(H0_min, 1.1 * 100 * np.sqrt(self.ombh2 + self.omch2 + self.omnuh2))
+            H0_target = est_H0 if H0_min < est_H0 < H0_max else 0.5 * (H0_min + H0_max)
+
+            def valid_end(H0_end):
+                for _ in range(40):
+                    try:
+                        f(H0_end)
+                        return H0_end
+                    except CAMBError:
+                        H0_end = 0.5 * (H0_end + H0_target)
+                raise CAMBParamRangeError("No valid H0 for this EFTCAMB model found inside of theta_H0_range")
+
+            H0_min, H0_max = valid_end(H0_min), valid_end(H0_max)
+            # models whose H0 is set by the EFT background (e.g. Horndeski without designer potential) adopt it and
+            # ignore the input H0: theta does not depend on it and cannot be used to set it
+            if abs(data.Params.H0 / H0_max - 1) > 1e-9:
+                raise CAMBValueError(
+                    "cosmomc_theta/thetastar cannot be used with this EFTCAMB model: its H0 "
+                    f"({data.Params.H0:.4f}) is set by the EFT background, not by the input H0"
+                )
+        # EFTCAMB MOD END
+
         try:
             # noinspection PyTypeChecker
             # use _set_H0 so any model state updated by setter_H0 matches the final H0
-            _set_H0(self, brentq(f, theta_H0_range[0], theta_H0_range[1], rtol=5e-5))
+            _set_H0(self, brentq(f, H0_min, H0_max, rtol=5e-5))
             if not cosmomc_approx and abs(self.H0 - est_H0) > iteration_threshold:
                 # iterate with recalculation of recombination and zstar
                 self.set_H0_for_theta(
@@ -782,17 +834,12 @@ class CAMBparams(F2003Class):
             if cosmomc_theta and thetastar:
                 raise CAMBError("Cannot set both cosmomc_theta and thetastar")
 
-            # EFTCAMB MOD START
-            min_H0 = 100 * np.sqrt(ombh2 + self.omnuh2 + omnuh2_sterile + omch2)
-            min_H0 = 1.1 * min_H0  # just to make sure we are safely above the limit
-            _H0_thmin = max(theta_H0_range[0], min_H0)
             self.set_H0_for_theta(
                 cosmomc_theta or thetastar,
                 cosmomc_approx=cosmomc_theta is not None,
-                theta_H0_range=(_H0_thmin, theta_H0_range[1]),
+                theta_H0_range=theta_H0_range,
                 setter_H0=setter_H0,
             )
-            # EFTCAMB MOD END
 
         else:
             if H0 is None:
@@ -867,13 +914,14 @@ class CAMBparams(F2003Class):
         """
 
         # EFTCAMB MOD START: EFTCAMB is selected with dark_energy_model
-        # EFTCAMB is initialized using the flags for the darkenergy model
-        # should prevent double counting the DE. When dark_energy_model \= EFTCAMB
-        # EFTCAMB is initialized with EFTflag = 0 (default params)
+        # dark_energy_model = EFTCAMB initializes EFTCAMB with EFTflag = 0 (default params), to be set up with
+        # EFTCAMB.initialize_parameters. Another dark energy model cannot be selected while an EFTCAMB model
+        # (EFTflag != 0, which replaces the dark energy model) is active.
         if dark_energy_model == "EFTCAMB":
             self.EFTCAMB = self.make_class_named("EFTCAMB", EFTCAMB)
             self.DarkEnergy = self.make_class_named("fluid", DarkEnergyModel)
         elif dark_energy_model:
+            self._check_no_active_eft_model(f"dark_energy_model={dark_energy_model!r}")
             self.DarkEnergy = self.make_class_named(dark_energy_model, DarkEnergyModel)
         # Original code:
         # if dark_energy_model:
@@ -888,6 +936,19 @@ class CAMBparams(F2003Class):
             self.Recomb = self.make_class_named(recombination_model, RecombinationModel)
         if reionization_model:
             self.Reion = self.make_class_named(reionization_model, ReionizationModel)
+
+    # EFTCAMB MOD START
+    def _check_no_active_eft_model(self, what):
+        """
+        Raise CAMBValueError if an EFTCAMB model is active: it replaces the dark energy model, which would be ignored.
+        """
+        if self.EFTCAMB is not None and self.EFTCAMB.EFTflag != 0:
+            raise CAMBValueError(
+                f"{what} cannot be used with an active EFTCAMB model (EFTflag={self.EFTCAMB.EFTflag}), which replaces "
+                "the dark energy model: switch EFTCAMB off first, e.g. set_params(cp=pars, EFTflag=0, ...)"
+            )
+
+    # EFTCAMB MOD END
 
     def set_dark_energy(
         self,
@@ -912,6 +973,9 @@ class CAMBparams(F2003Class):
         :param dark_energy_model: model to use ('fluid' or 'ppf'), default is 'fluid'
         :return: self
         """
+        # EFTCAMB MOD START
+        self._check_no_active_eft_model("set_dark_energy")
+        # EFTCAMB MOD END
 
         de = self.make_class_named(dark_energy_model, DarkEnergyEqnOfState)
         de.set_params(
@@ -929,6 +993,9 @@ class CAMBparams(F2003Class):
         :param dark_energy_model:  model to use ('fluid' or 'ppf'), default is 'fluid'
         :return: self
         """
+        # EFTCAMB MOD START
+        self._check_no_active_eft_model("set_dark_energy_w_a")
+        # EFTCAMB MOD END
         if dark_energy_model == "fluid" and np.any(np.asarray(w) < -1):
             raise CAMBError("fluid dark energy model does not support w crossing -1")
         self.DarkEnergy = self.make_class_named(dark_energy_model, DarkEnergyEqnOfState)

@@ -45,6 +45,8 @@
         real(dl) :: tau_solve_accuracy_boost = 1._dl
         real(dl) :: timestep_boost = 1._dl
         ! EFTCAMB MOD START: larger redshift range for the reionization search
+        ! Intended for all runs (models with early reionization); moves z_re within the solver tolerance, so
+        ! EFTflag = 0 differs from CAMB at ~2e-5 (low-l EE/BB). Documented in CAMB_README.rst (EFTCAMB section).
         real(dl) :: max_redshift = 1000._dl
         ! Original code:
         ! real(dl) :: max_redshift = 50._dl

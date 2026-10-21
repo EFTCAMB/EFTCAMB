@@ -31,6 +31,23 @@
 
     implicit none
 
+    ! parameters of the initial conditions:
+    !< IC types 2/3 (radiation era, super-horizon series) are used only for k tau below this value ...
+    real(dl), parameter :: EFT_IC_series_max_ktau = 0.1_dl
+    !< ... and if the (baryon + CDM) density is below this fraction of the total density.
+    real(dl), parameter :: EFT_IC_series_max_matter_fraction = 0.01_dl
+    !< IC type 3 falls back to type 2 when one of its (dimensionless) denominators is below this value.
+    real(dl), parameter :: EFT_IC_type3_tolerance = 1.e-10_dl
+    !< IC type 1: the attractor is regularised where |C + k^2 D1 + k^4 D2| is below this fraction of
+    !! |C| + k^2 |D1| + k^4 |D2|.
+    real(dl), parameter :: EFT_IC_den_tolerance = 0.1_dl
+    !< IC type 1: pi' = 0 if |d ln(C + k^2 D1 + k^4 D2)/d ln a| exceeds this value ...
+    real(dl), parameter :: EFT_IC_max_dlnden = 10._dl
+    !< ... or if the relative error of the finite-difference derivative exceeds this value.
+    real(dl), parameter :: EFT_IC_max_relerr = 0.1_dl
+    !< warnings already printed:
+    logical, save :: EFT_IC_warned(4) = .false.
+
     contains
 
     ! ---------------------------------------------------------------------------------------------
@@ -49,8 +66,9 @@
     real(dl) :: clxr, qr, pir, clxg, qg, pig, opacity, vb, clxc, clxb, EFTpiEdot
     real(dl) :: Omega0, Gamma10, Gamma20, Gamma30
     real(dl) :: wnu_arr(max_nu)
+    real(dl) :: pi_den, pi_den_scale, pi_A, pi_w, pi_den_da, pi_den_err, pidot
 
-    integer  :: nu_i
+    integer  :: nu_i, ic_type
 
     k = EV%k_buf
     k2 = EV%k2_buf
@@ -289,20 +307,61 @@
         ! this is h_prime = 2kz
         if (CP%EFTCAMB%EFTCAMB_evolve_metric_h) y(EV%w_ix + 2) = 2._dl*k*z
     else
-        select case (CP%EFTCAMB%EFT_IC_type)
+        ic_type = CP%EFTCAMB%EFT_IC_type
+        ! IC types 2 and 3 are the leading terms of a radiation era, super-horizon series for pi: use them only
+        ! where that series is valid, otherwise use the type 1 (quasi-static attractor) initial conditions.
+        if (ic_type == 2 .or. ic_type == 3) then
+            if (k*tau > EFT_IC_series_max_ktau .or. &
+                (grhob_t + grhoc_t) > EFT_IC_series_max_matter_fraction*grho) then
+                ic_type = 1
+                call EFTCAMB_IC_warning(1, 'EFTCAMB WARNING: EFT_IC_type 2/3 radiation era series not valid at the' &
+                    // ' EFT turn-on (k tau or matter fraction too large): type 1 initial conditions used.')
+            end if
+        end if
+        ! IC type 3 is singular (0/0) for Omega = Gamma3 = 0: its limit there is the constant Omega series (type 2).
+        if (ic_type == 3) then
+            if (min(abs(3._dl*Gamma30*(1._dl + Omega0) + Omega0*(5._dl + 3._dl*Omega0)), &
+                abs(1._dl + Gamma30 + Omega0), &
+                abs(3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2), &
+                abs(3._dl*Gamma30 + 8._dl*Omega0 + 6._dl*Gamma30*Omega0 + 6._dl*Omega0**2)) <= &
+                EFT_IC_type3_tolerance) ic_type = 2
+        end if
+        select case (ic_type)
             ! --- CASE 1: Standard EFTCAMB / GR ---
         case (1)
-            if (EV%eft_cache%EFTpiC + k2*EV%eft_cache%EFTpiD1 + k2**2*EV%eft_cache%EFTpiD2 /= 0._dl) then
-                y(EV%w_ix) = -CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/ &
-                    (EV%eft_cache%EFTpiC + k2*EV%eft_cache%EFTpiD1 + k2**2*EV%eft_cache%EFTpiD2)
-                y(EV%w_ix + 1) = CP%eft_par_cache%h0_Mpc* &
-                    (EV%eft_cache%EFTpiE/(EV%eft_cache%EFTpiC + k2*EV%eft_cache%EFTpiD1 + &
-                    k2**2*EV%eft_cache%EFTpiD2)**2*a*EV%eft_cache%adotoa* &
-                    (EFTpiCdotFunction(a, k) + k*k*EFTpiDdotFunction(a, k)) - &
-                    EFTpiEdot/(EV%eft_cache%EFTpiC + k2*EV%eft_cache%EFTpiD1 + k2**2*EV%eft_cache%EFTpiD2))
-            else
+            ! quasi-static attractor of the pi equation A pi'' + B pi' + (C + k^2 D1 + k^4 D2) pi + h0 E = 0:
+            ! pi = -h0 E/(C + k^2 D1 + k^4 D2), pi' its conformal time derivative.
+            pi_den = EV%eft_cache%EFTpiC + k2*EV%eft_cache%EFTpiD1 + k2**2*EV%eft_cache%EFTpiD2
+            pi_den_scale = abs(EV%eft_cache%EFTpiC) + k2*abs(EV%eft_cache%EFTpiD1) + k2**2*abs(EV%eft_cache%EFTpiD2)
+            pi_A = EV%eft_cache%EFTpiA1 + k2*EV%eft_cache%EFTpiA2
+            if (pi_den == 0._dl .or. pi_den*pi_A < 0._dl) then
+                ! no stable attractor ((C + k^2 D1 + k^4 D2)/A <= 0: tachyonic or vanishing mass and gradient
+                ! term): start from pi = pi' = 0.
                 y(EV%w_ix) = 0._dl
                 y(EV%w_ix + 1) = 0._dl
+                if (pi_den_scale /= 0._dl) call EFTCAMB_IC_warning(2, 'EFTCAMB WARNING: no stable quasi-static' &
+                    // ' attractor for pi at the EFT turn-on for some k: pi = pi'' = 0 initial conditions used.')
+            else
+                ! regularised attractor: the weight w = min(1, (den/(tol*scale))^2) removes the pole of the attractor
+                ! solution continuously where the denominator vanishes relative to its terms; w = 1 elsewhere.
+                pi_w = min(1._dl, (pi_den/(EFT_IC_den_tolerance*pi_den_scale))**2)
+                if (pi_w < 0.5_dl) call EFTCAMB_IC_warning(3, 'EFTCAMB WARNING: C + k^2 D1 + k^4 D2 nearly' &
+                    // ' vanishes at the EFT turn-on for some k: pi initial conditions regularised.')
+                y(EV%w_ix) = -pi_w*CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/pi_den
+                ! derivative of the denominator, d/da, by finite differences of the pi coefficients:
+                pi_den_da = dfridr(EFTpiDenFunction_helper, a, 0.03_dl*a, pi_den_err)
+                pidot = CP%eft_par_cache%h0_Mpc*(EV%eft_cache%EFTpiE/pi_den**2*a*EV%eft_cache%adotoa*pi_den_da - &
+                    EFTpiEdot/pi_den)
+                ! pi' is meaningful only if the coefficients are smooth on the finite-difference scale: if the
+                ! denominator changes by more than a factor e^10 per e-fold or its derivative is not converged,
+                ! the derivative is noise and pi' = 0 is used.
+                if (abs(a*pi_den_da) > EFT_IC_max_dlnden*abs(pi_den) .or. &
+                    pi_den_err > EFT_IC_max_relerr*abs(pi_den_da) .or. pidot /= pidot) then
+                    pidot = 0._dl
+                    call EFTCAMB_IC_warning(4, 'EFTCAMB WARNING: pi attractor varies too fast at the EFT turn-on' &
+                        // ' for some k: pi'' = 0 initial condition used.')
+                end if
+                y(EV%w_ix + 1) = pi_w*pidot
             end if
         case (2)
             ! --- CASE 2: Constant Omega ---
@@ -340,12 +399,46 @@
             y(EV%w_ix) = 0._dl
             y(EV%w_ix + 1) = 0._dl
         end select
+        ! a NaN initial condition would silently give NaN spectra:
+        if (y(EV%w_ix) /= y(EV%w_ix) .or. y(EV%w_ix + 1) /= y(EV%w_ix + 1)) then
+            call GlobalError('EFTCAMB: NaN in the pi initial conditions', error_evolution)
+            y(EV%w_ix) = 0._dl
+            y(EV%w_ix + 1) = 0._dl
+        end if
     end if
 
     ! reset the cache:
     call EV%eft_cache%initialize()
 
+    contains
+
+    !> the denominator C + k^2 D1 + k^4 D2 of the attractor solution at scale factor temp_a.
+    function EFTpiDenFunction_helper(temp_a)
+    real(dl) :: temp_a, EFTpiDenFunction_helper
+    EFTpiDenFunction_helper = EFTpiCfunction(temp_a, k) + k*k*EFTpiDfunction(temp_a, k)
+    end function EFTpiDenFunction_helper
+
     end subroutine EFTCAMBInitialConditions
+
+    ! ----------------------------------------------------------------------------------------
+    !> Subroutine that prints, once per session and only if feedback_level > 0, a warning of the initial
+    !! conditions calculator (called from the OpenMP k loop).
+    subroutine EFTCAMB_IC_warning(id, message)
+
+    implicit none
+
+    integer, intent(in)      :: id       !< the index of the warning
+    character(*), intent(in) :: message  !< the warning
+
+    if (EFT_IC_warned(id)) return
+    !$OMP CRITICAL(EFTCAMB_IC_warning_lock)
+    if (.not. EFT_IC_warned(id)) then
+        EFT_IC_warned(id) = .true.
+        if (CP%EFTCAMB%EFTCAMB_feedback_level > 0) write(*, '(a)') message
+    end if
+    !$OMP END CRITICAL(EFTCAMB_IC_warning_lock)
+
+    end subroutine EFTCAMB_IC_warning
 
     ! ----------------------------------------------------------------------------------------
     !> Function that computes the pi field coefficient C at a given time and scale.
@@ -586,7 +679,7 @@
     ! compute Einstein equations factors:
     call CP%EFTCAMB%model%compute_pi_factors(a, CP%eft_par_cache, eft_cache)
 
-    EFTpiDfunction = eft_cache%EFTpiD1 + k*k*eft_cache%EFTpiD1
+    EFTpiDfunction = eft_cache%EFTpiD1 + k*k*eft_cache%EFTpiD2
 
     end function EFTpiDfunction
 

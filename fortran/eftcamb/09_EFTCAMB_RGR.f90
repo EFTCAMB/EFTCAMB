@@ -25,6 +25,7 @@
     module EFTCAMB_ReturnToGR
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use EFT_def
     use EFTCAMB_cache
     use EFTCAMB_abstract_model
@@ -40,6 +41,15 @@
 
     !< number of points to sample logaritmically the time in the return to GR module.
     integer, parameter :: EFT_RGR_num_points = 1000
+    !< scale (Mpc^-1) at which the quasi-static modification of gravity is tested: scale-dependent models
+    !! (e.g. designer f(R)) modify gravity at k >> aH by O(1) while their EFT functions are tiny. The linear
+    !! scales k <= 1/Mpc are the target: a larger probe k turns near-GR f(R) on much earlier, where its pi equation
+    !! is very stiff (4_Des_F_R_LCDM_2: k = 10/Mpc, threshold 1e-3 gives turn-on 0.016 and 2.8x the runtime).
+    real(dl), parameter :: EFT_RGR_kmax = 1._dl
+    !< the EFT perturbations are also switched on when the quasi-static mu or Sigma at EFT_RGR_kmax deviate from
+    !! 1 by more than this. Tuned on 4_Des_F_R_LCDM_2 (turn-on 0.039) against an early turn-on (0.007): P(k <= 1/Mpc)
+    !! 4e-4, P(k <= 10/Mpc) 3.3e-2, sigma8 5e-6, lensed C_l 3e-5, C_l^phiphi 1.1e-4, runtime 1.1x the pre-C3 code.
+    real(dl), parameter :: EFT_RGR_qs_threshold = 5.e-4_dl
 
     contains
 
@@ -71,9 +81,14 @@
         write(*, '(a)') "***************************************************************"
         write(*, '(a,E13.4)') ' EFTCAMB Return to GR time:     ', RGR_time
         write(*, '(a,E13.4)') ' EFTCAMB Return to GR threshold:', RGR_threshold
-        if (RGR_time == initial_time) then
+        ! (the RGR scan samples 10**log10(a): equal up to roundoff)
+        if (abs(RGR_time - initial_time) <= 1.e-10_dl*initial_time) then
             write(*, '(a)') ' Warning, RGR time and turn on time coincide.'
             write(*, '(a)') ' The model might be far from GR at initial time.'
+        end if
+        if (RGR_time > 1._dl) then
+            write(*, '(a)') ' Warning, the model is GR within the threshold at all times:'
+            write(*, '(a)') ' EFT perturbations are never switched on.'
         end if
     end if
 
@@ -85,13 +100,13 @@
         write(*, '(a)') ' EFT functions at RGR time: '
 
         if (eft_functions(1) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   OmegaV       = ', eft_functions(1)
-        if (eft_functions(2) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   OmegaP       = ', eft_functions(2)
-        if (eft_functions(3) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   OmegaPP      = ', eft_functions(3)
+        if (eft_functions(2) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   a OmegaP     = ', eft_functions(2)
+        if (eft_functions(3) > EFT_RGR_qs_threshold) write(*, '(a18,E13.4)') '   |QS mu-1|    = ', eft_functions(3)
         if (eft_functions(4) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   OmegaPPP     = ', eft_functions(4)
-        if (eft_functions(5) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTc         = ', eft_functions(5)
-        if (eft_functions(6) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTLambda    = ', eft_functions(6)
-        if (eft_functions(7) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTcdot      = ', eft_functions(7)
-        if (eft_functions(8) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTLambdadot = ', eft_functions(8)
+        if (eft_functions(5) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   c/3H^2       = ', eft_functions(5)
+        if (eft_functions(6) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   dLambda/3H^2 = ', eft_functions(6)
+        if (eft_functions(7) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   cdot/3H^3    = ', eft_functions(7)
+        if (eft_functions(8) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   Lambdadot/3H3= ', eft_functions(8)
         if (eft_functions(9) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma1V   = ', eft_functions(9)
         if (eft_functions(10) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma1P   = ', eft_functions(10)
         if (eft_functions(11) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma2V   = ', eft_functions(11)
@@ -137,11 +152,21 @@
     real(dl), intent(in)  :: RGR_threshold
 
     real(dl) :: eft_functions(29)
-    real(dl) :: a_initial, a_final, log_a_initial, log_a_final, log_a_used, a_used
+    real(dl) :: a_initial, a_final, log_a_initial, log_a_final, log_a_used, a_used, qs_deviation
     integer  :: i
 
     ! initialize:
     RGR_time = initial_time
+
+    ! the turn-on time of a model already found to be GR at all times (parameters of previous results):
+    if (initial_time == EFT_RGR_never_on) return
+
+    ! validate the turn-on time (it can be set directly from python): for a non-positive or NaN time the
+    ! logarithmic scan is NaN and no EFT perturbations would ever be switched on; a time > 1 does the same.
+    if (.not. (initial_time > 0._dl .and. initial_time <= 1._dl)) then
+        call GlobalError('EFTCAMB: EFTCAMB_turn_on_time must be in (0,1]', error_unsupported_params)
+        return
+    end if
 
     ! initial and final scale factors:
     a_initial = initial_time
@@ -160,15 +185,17 @@
         ! compute RGR functions:
         call EFTCAMBReturnToGR_functions(a_used, input_model, params_cache, eft_functions)
 
-        ! check if above threshold:
-        if (any(eft_functions - RGR_threshold > 0._dl)) then
+        ! check if above threshold (eft_functions(3), the observable-based quasi-static criterion, has its own):
+        qs_deviation = eft_functions(3)
+        eft_functions(3) = 0._dl
+        if (any(eft_functions - RGR_threshold > 0._dl) .or. qs_deviation > EFT_RGR_qs_threshold) then
             RGR_time = a_used
             return
         end if
 
     end do
 
-    RGR_time = 1.1_dl*a_final
+    RGR_time = EFT_RGR_never_on
 
     end subroutine EFTCAMBReturnToGR
 
@@ -188,7 +215,7 @@
 
     type(TEFTCAMB_timestep_cache) :: eft_cache
 
-    real(dl) :: a2, adotoa, grhonu, gpinu, grhonudot, gpinudot, grhormass_t, gpinudotdot
+    real(dl) :: a2, adotoa, grhonu, gpinu, grhonudot, gpinudot, grhormass_t, gpinudotdot, qs_mu, qs_sigma
     integer  :: nu_i
 
     ! prepare:
@@ -308,15 +335,25 @@
     ! compute second order EFT functions:
     call input_model%compute_secondorder_EFT_functions(a, params_cache, eft_cache)
 
-    ! get the EFT functions:
+    ! quasi-static modification of the Poisson and lensing equations at k = EFT_RGR_kmax:
+    call input_model%compute_QS_Mu_Sigma(a, EFT_RGR_kmax, params_cache, eft_cache)
+
+    ! get the EFT functions, all dimensionless: the dimensionful c, Lambda (H^2 units, a^2-weighted in the cache)
+    ! are normalised by 3 adotoa^2 = 3 a^2 H^2 and their conformal time derivatives by 3 adotoa^3.
     eft_functions(1) = abs(eft_cache%EFTOmegaV)
-    eft_functions(2) = abs(a*adotoa*eft_cache%EFTOmegaP)
-    eft_functions(3) = 0._dl
+    eft_functions(2) = abs(a*eft_cache%EFTOmegaP)
+    ! observable-based criterion (scale-dependent models): deviation of the quasi-static mu, Sigma from GR at
+    ! k = EFT_RGR_kmax (NaN values, e.g. at poles of the quasi-static ratios, are ignored).
+    qs_mu = abs(eft_cache%QS_mu_gen - 1._dl)
+    qs_sigma = abs(eft_cache%QS_sigma_gen - 1._dl)
+    if (qs_mu /= qs_mu) qs_mu = 0._dl
+    if (qs_sigma /= qs_sigma) qs_sigma = 0._dl
+    eft_functions(3) = max(qs_mu, qs_sigma)
     eft_functions(4) = 0._dl
-    eft_functions(5) = abs(eft_cache%EFTc/a2)
-    eft_functions(6) = abs(eft_cache%EFTLambda/a2 + params_cache%grhov)
-    eft_functions(7) = abs(eft_cache%EFTcdot/a2)
-    eft_functions(8) = abs(eft_cache%EFTLambdadot/a2)
+    eft_functions(5) = abs(eft_cache%EFTc)/(3._dl*adotoa**2)
+    eft_functions(6) = abs(eft_cache%EFTLambda + params_cache%grhov*a2)/(3._dl*adotoa**2)
+    eft_functions(7) = abs(eft_cache%EFTcdot)/(3._dl*adotoa**3)
+    eft_functions(8) = abs(eft_cache%EFTLambdadot)/(3._dl*adotoa**3)
     eft_functions(9) = abs(eft_cache%EFTGamma1V)
     eft_functions(10) = abs(eft_cache%EFTGamma1P)
     eft_functions(11) = abs(eft_cache%EFTGamma2V)

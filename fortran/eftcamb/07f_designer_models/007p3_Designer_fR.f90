@@ -25,6 +25,7 @@
     module EFTCAMB_designer_fR
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use FileUtils
@@ -136,7 +137,7 @@
     implicit none
 
     class(EFTCAMB_fR_designer) :: self      !< the base class
-    type(TIniFile)             :: Ini       !< Input ini file
+    class(TIniFile)            :: Ini       !< Input ini file
     integer                    :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -155,7 +156,7 @@
     implicit none
 
     class(EFTCAMB_fR_designer) :: self      !< the base class
-    type(TIniFile)             :: Ini       !< Input ini file
+    class(TIniFile)            :: Ini       !< Input ini file
     integer                    :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     !< an array of strings containing the names of the function parameters
@@ -220,6 +221,8 @@
         temp(i) = array(i + 1)
     end do
     call self%DesfRwDE%init_parameters(temp)
+    ! w_DE integral of parametrizations without a closed form, for the new parameters:
+    call self%DesfRwDE%tabulate_numerical_integral()
 
     end subroutine EFTCAMBDesignerFRInitModelParameters
 
@@ -230,13 +233,15 @@
     implicit none
 
     class(EFTCAMB_fR_designer) :: self      !< the base class
-    type(TIniFile)             :: Ini       !< Input ini file
+    class(TIniFile)            :: Ini       !< Input ini file
     integer                    :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read B0:
     self%B0 = Ini%Read_Double('EFTB0', 0._dl)
     ! read w_DE parameters:
     call self%DesfRwDE%init_from_file(Ini, eft_error)
+    ! w_DE integral of parametrizations without a closed form, for the new parameters:
+    call self%DesfRwDE%tabulate_numerical_integral()
 
     end subroutine EFTCAMBDesignerFRInitModelParametersFromFile
 
@@ -319,6 +324,7 @@
     logical, optional                          :: only_B0
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
     integer, intent(in)                        :: feedback_level   !< whether be noisy
+    logical :: only_B0_temp
 
     integer, parameter :: num_eq = 2   !<  Number of equations
 
@@ -334,7 +340,8 @@
     integer, allocatable :: iwork(:)
 
     ! digedt the input:
-    if (.not. present(only_B0)) only_B0 = .false.
+    only_B0_temp = .false.
+    if (present(only_B0)) only_B0_temp = only_B0
 
     ! 1) Cosmological parameters:
     Omegam_EFT = params_cache%omegab + params_cache%omegac
@@ -406,7 +413,7 @@
     ! store the first value of the EFT functions:
     t1 = self%EFTOmega%x(1)
     ! compute output EFT functions if needed:
-    if (.not. only_B0) then
+    if (.not. only_B0_temp) then
         call output(num_eq, 1, t1, y, B0)
     end if
 
@@ -431,14 +438,14 @@
             end if
         end if
         ! compute output EFT functions if needed:
-        if (.not. only_B0) then
+        if (.not. only_B0_temp) then
             call output(num_eq, i + 1, t2, y, B0)
         end if
 
     end do
 
     ! compute B0:
-    if (only_B0) then
+    if (only_B0_temp) then
         call output(num_eq, self%EFTOmega%num_points, t2, y, B0)
     end if
 
@@ -935,7 +942,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesignerFRParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
         ! the first parameter is B0:
     else if (i == 1) then
         name = trim('B0')
@@ -962,7 +972,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesignerFRParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
         ! the first parameter is B0:
     else if (i == 1) then
         latexname = trim('B_0')
@@ -989,7 +1002,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesignerFRParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
         ! the first parameter is B0:
     else if (i == 1) then
         value = self%B0
@@ -1123,6 +1139,25 @@
         (1._dl/6._dl + self%DesfRwDE%value(a) + 1.5_dl*self%DesfRwDE%value(a)**2 - &
         0.5_dl*a*self%DesfRwDE%first_derivative(a)) + eft_cache%adotoa*eft_cache%grhonu_tot/6._dl - &
         0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot - 0.5_dl*eft_cache%gpinudot_tot
+    ! third derivative (same background as Pure EFT with w_DE): was never set.
+    eft_cache%Hdotdotdot = (2._dl*(eft_cache%grhob_t + eft_cache%grhoc_t)*eft_cache%adotoa**2 + &
+        eft_cache%Hdot*(eft_cache%grhob_t + eft_cache%grhoc_t) - &
+        3._dl*eft_cache%adotoa**2*(eft_cache%grhob_t + eft_cache%grhoc_t))/(6._dl) + &
+        (2._dl/3._dl)*(2._dl*eft_cache%adotoa**2*(eft_cache%grhor_t + eft_cache%grhog_t) + &
+        eft_cache%Hdot*(eft_cache%grhor_t + eft_cache%grhog_t) - &
+        4._dl*eft_cache%adotoa**2*(eft_cache%grhor_t + eft_cache%grhog_t)) + &
+        (2._dl*eft_cache%adotoa**2*eft_cache%grhov_t - &
+        3._dl*eft_cache%adotoa**2*eft_cache%grhov_t*(1._dl + self%DesfRwDE%value(a)) + &
+        eft_cache%Hdot*eft_cache%grhov_t)* &
+        (1._dl/6._dl + self%DesfRwDE%value(a) + (3._dl/2._dl)*self%DesfRwDE%value(a)**2 - &
+        (1._dl/2._dl)*a*self%DesfRwDE%first_derivative(a)) + &
+        a*eft_cache%adotoa**2*eft_cache%grhov_t* &
+        ((1._dl/2._dl)*self%DesfRwDE%first_derivative(a) + &
+        3._dl*self%DesfRwDE%value(a)*self%DesfRwDE%first_derivative(a) - &
+        (a/2._dl)*self%DesfRwDE%second_derivative(a)) + (eft_cache%adotoa**2/3._dl)*eft_cache%grhonu_tot - &
+        eft_cache%adotoa**2*eft_cache%gpinu_tot - (3._dl/2._dl)*eft_cache%adotoa*eft_cache%gpinudot_tot + &
+        (eft_cache%Hdot/6._dl)*eft_cache%grhonu_tot + (eft_cache%adotoa/6._dl)*eft_cache%grhonudot_tot - &
+        (eft_cache%Hdot/2._dl)*eft_cache%gpinu_tot - (1._dl/2._dl)*eft_cache%gpinudotdot_tot
 
     end subroutine EFTCAMBDesignerFRComputeHubbleDer
 

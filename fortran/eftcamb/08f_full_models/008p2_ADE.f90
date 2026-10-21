@@ -24,6 +24,7 @@
     module EFTCAMB_ADE_Mod
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use FileUtils
@@ -63,7 +64,7 @@
 
         ! some designer parameters:
         !< Number of points sampled by the designer code.
-        integer  :: background_num_points = 1500
+        integer  :: background_num_points = 15000
         real(dl) :: x_initial = log(10._dl**(-10._dl))        !< log(a start)
         real(dl) :: x_final = 0.0_dl                        !< log(a final)
 
@@ -124,13 +125,13 @@
     implicit none
 
     class(EFTCAMB_ADE) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
 
     ! read precision parameters
-    self%background_num_points = Ini%Read_Int('model_background_num_points', 1500)
+    self%background_num_points = Ini%Read_Int('model_background_num_points', 15000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-10))
     self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
 
@@ -143,7 +144,7 @@
     implicit none
 
     class(EFTCAMB_ADE) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! nothing to be done here.
@@ -175,7 +176,7 @@
     implicit none
 
     class(EFTCAMB_ADE) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     self%cs2 = Ini%Read_Double('cs2', 1._dl)
@@ -236,7 +237,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBADEParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
         ! other parameters:
     else if (i == 1) then
         name = trim('cs2')
@@ -267,7 +271,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBADEParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
         ! other parameters:
     else if (i == 1) then
         latexname = trim('c_s^2')
@@ -302,7 +309,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBADEParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
         ! other parameters:
     else if (i == 1) then
         value = self%cs2

@@ -28,6 +28,7 @@
     module EFTCAMB_cosine_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use MpiUtils
     use constants, only: const_pi, const_twopi, const_fourpi
     use EFT_def
@@ -138,7 +139,10 @@
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Cosine1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     end subroutine Cosine1DParameterValues
@@ -262,11 +266,8 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: Cosine1DIntegral                                   !< the output value
 
-    Cosine1DIntegral = 0._dl
-    !< No analytic solution >!
-    write(*, *) 'Cosine1DIntegral is not implemented.'
-    write(*, *) 'Calculations cannot proceed.'
-    call MpiStop('EFTCAMB error')
+    ! no closed form: numerical integral (see parametrized_function_1D%numerical_integral).
+    Cosine1DIntegral = self%numerical_integral(x, eft_cache=eft_cache)
 
     end function Cosine1DIntegral
 

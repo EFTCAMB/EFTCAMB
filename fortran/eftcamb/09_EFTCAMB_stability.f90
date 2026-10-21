@@ -39,6 +39,7 @@
     private
 
     public EFTCAMB_Stability_Check, EFTTestStability, EFTStability_cleanup, EFTStabilityComputation
+    public EFTCAMB_compute_effective_w0wa
 
     ! storage for some utility values that needs to be stored for the stability check.
     real(dl), save :: PastA1 = 0._dl
@@ -77,6 +78,12 @@
     end if
     if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
         write(*, '(a)')
+    end if
+
+    ! the mass stability check is experimental and is ignored:
+    if (input_EFTCAMB%EFT_mass_stability .and. input_EFTCAMB%EFTCAMB_feedback_level > 0) then
+        write(*, '(a)') ' EFTCAMB WARNING: EFT_mass_stability is experimental and is ignored:'
+        write(*, '(a)') '   the mass eigenvalues are computed but models are not rejected on them.'
     end if
 
     ! debug open cache files:
@@ -124,6 +131,7 @@
     if (success) then
         call EFTStability_cleanup()
         do ind = 1, indMax
+            y = LogSamplingScale + real(ind - 1)*(0._dl - LogSamplingScale)/real(indMax - 1)
             Atest = aend + (astart - aend)*10._dl**y
             success = EFTTestStability(Atest, k_max, input_EFTCAMB, params_cache, eft_cache)
             if (.not. success) then
@@ -173,7 +181,7 @@
     logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep
     real(dl) :: EFT_instability_rate, tempk, temp1, temp2, temp3, temp4, temp5
     integer  :: ind_max, ind
-    real(dl) :: test_dtauda
+    real(dl) :: test_dtauda, thr, kinetic_scale, gradient_scale
     real(dl), external :: dtauda
 
     ! Stability check initialization
@@ -184,6 +192,10 @@
     call EFTStabilityComputation(a, input_EFTCAMB, input_EFTCAMB%model, params_cache, eft_cache)
     ! protect against k_max too small:
     if (k_max < 0.1_dl) k_max = 0.1_dl
+    ! relative numerical floor of the physical stability conditions: a condition passes if its value is
+    ! >= -thr*(sum of the magnitudes of its terms), i.e. if it is non-negative up to cancellation roundoff.
+    thr = max(input_EFTCAMB%EFTCAMB_stability_threshold, 0._dl)
+    call EFTCAMBStabilityScales(a, params_cache, eft_cache, kinetic_scale, gradient_scale)
 
     ! check stability of the theory:
 
@@ -298,32 +310,34 @@
     ! 5) enforce ghost viability:
     if (input_EFTCAMB%EFT_ghost_stability) then
 
-        ! the present conditions extend up to Horndeski. Enforce that:
-        if ((eft_cache%EFTGamma6V /= 0._dl) .or. &
-            ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl)) then
-            write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
-            write(*, '(a)') '      It will be added in a future release.'
-            write(*, '(a)') '      If you want to run this model disable EFT_ghost_stability.'
+        ! the present conditions extend up to Horndeski. Enforce that (up to the numerical floor):
+        if (abs(eft_cache%EFTGamma6V) > thr .or. abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
+            thr*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
+            if (input_EFTCAMB%EFTCAMB_feedback_level > 0) then
+                write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
+                write(*, '(a)') '      It will be added in a future release.'
+                write(*, '(a)') '      If you want to run this model disable EFT_ghost_stability.'
+            end if
             EFTTestStability = .false.
             return
         end if
 
         ! 1- Positive gravitational constant:
-        if (1._dl + eft_cache%EFTOmegaV <= 0) then
+        if (1._dl + eft_cache%EFTOmegaV <= -thr*(1._dl + abs(eft_cache%EFTOmegaV))) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl + eft_cache%EFTOmegaV
         end if
 
         ! 2- Ghost condition:
-        if (eft_cache%EFT_kinetic < 0._dl) then
+        if (eft_cache%EFT_kinetic < -thr*kinetic_scale) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: ghost instability. Kinetic term = ', eft_cache%EFT_kinetic
         end if
 
         ! 3- No tensor ghosts:
-        if (eft_cache%EFTAT < 0) then
+        if (eft_cache%EFTAT < -thr*(1._dl + abs(eft_cache%EFTOmegaV) + abs(eft_cache%EFTGamma4V))) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: tensor ghost instability. Tensor kinetic term = ', &
@@ -335,32 +349,34 @@
     ! 6) enforce gradient viability:
     if (input_EFTCAMB%EFT_gradient_stability) then
 
-        ! the present conditions extend up to Horndeski. Enforce that:
-        if ((eft_cache%EFTGamma6V /= 0._dl) .or. &
-            ((eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) /= 0._dl)) then
-            write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
-            write(*, '(a)') '      It will be added in a future release.'
-            write(*, '(a)') '      If you want to run this model disable EFT_gradient_stability.'
+        ! the present conditions extend up to Horndeski. Enforce that (up to the numerical floor):
+        if (abs(eft_cache%EFTGamma6V) > thr .or. abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
+            thr*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
+            if (input_EFTCAMB%EFTCAMB_feedback_level > 0) then
+                write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
+                write(*, '(a)') '      It will be added in a future release.'
+                write(*, '(a)') '      If you want to run this model disable EFT_gradient_stability.'
+            end if
             EFTTestStability = .false.
             return
         end if
 
         ! 1- Positive gravitational constant:
-        if (1._dl + eft_cache%EFTOmegaV <= 0) then
+        if (1._dl + eft_cache%EFTOmegaV <= -thr*(1._dl + abs(eft_cache%EFTOmegaV))) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl + eft_cache%EFTOmegaV
         end if
 
         ! 2- Gradient instability:
-        if (eft_cache%EFT_gradient < 0._dl) then
+        if (eft_cache%EFT_gradient < -thr*gradient_scale) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: gradient instability. Gradient term = ', eft_cache%EFT_gradient
         end if
 
         ! 3- No tensor gradient:
-        if (eft_cache%EFTDT < 0) then
+        if (eft_cache%EFTDT < -thr*(1._dl + abs(eft_cache%EFTOmegaV))) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: tensor gradient instability. Tensor gradient term = ', &
@@ -369,22 +385,16 @@
 
     end if
 
-    ! 7) enforce mass viability:
-    if (input_EFTCAMB%EFT_mass_stability) then
-        ! 1 - Check first mass eigenvalue
-        if (eft_cache%EFT_mu1 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2 .and. &
-            a > input_EFTCAMB%EFTCAMB_pert_turn_on) then
-            EFTTestStability = .false.
-            if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
-                '(a,E11.4)') '   Physical instability: Mass instability. mu_1/H^2 = ', &
+    ! 7) mass viability: EXPERIMENTAL, never rejects a model.
+    !    The mass eigenvalues mu_1, mu_2 reject canonical quintessence (|mu|/H^2 ~ 1e9) and are dominated by
+    !    roundoff near GR (audit findings F-042, F-063): until they are re-derived the check only reports.
+    if (input_EFTCAMB%EFT_mass_stability .and. a > input_EFTCAMB%EFTCAMB_pert_turn_on) then
+        if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
+            if (eft_cache%EFT_mu1 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2) &
+                write(*, '(a,E11.4)') '   Experimental mass check (ignored): mu_1/H^2 = ', &
                 eft_cache%EFT_mu1*(a/eft_cache%adotoa)**2
-        end if
-        ! 2 - Check second mass eigenvalue
-        if (eft_cache%EFT_mu2 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2 .and. &
-            a > input_EFTCAMB%EFTCAMB_pert_turn_on) then
-            EFTTestStability = .false.
-            if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
-                '(a,E11.4)') '   Physical instability: Mass instability. mu_2/H^2 = ', &
+            if (eft_cache%EFT_mu2 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2) &
+                write(*, '(a,E11.4)') '   Experimental mass check (ignored): mu_2/H^2 = ', &
                 eft_cache%EFT_mu2*(a/eft_cache%adotoa)**2
         end if
     end if
@@ -474,6 +484,8 @@
     eft_cache%grhom_t = &
         eft_cache%grhob_t + eft_cache%grhoc_t + eft_cache%grhor_t + eft_cache%grhog_t + eft_cache%grhonu_tot
     eft_cache%gpresm_t = (+eft_cache%grhor_t + eft_cache%grhog_t)/3._dl + eft_cache%gpinu_tot
+    ! total matter density times a^4, used by compute_dtauda (as in dtauda of CAMB):
+    eft_cache%grhoa2 = eft_cache%grhom_t*a**2
     ! compute the other things:
     select type (model_temp => input_model)
         ! compute the background and the background EFT functions.
@@ -490,7 +502,7 @@
     end select
     ! compute massive neutrinos stuff:
     ! Massive neutrinos mod:
-    eft_cache%gpinudot_tot = 0._dl
+    eft_cache%gpinu_tot = 0._dl
     eft_cache%grhonu_tot = 0._dl
     eft_cache%grhonudot_tot = 0._dl
     eft_cache%gpinudot_tot = 0._dl
@@ -519,7 +531,7 @@
     ! compute remaining quantities related to H:
     call input_model%compute_H_derivs(a, params_cache, eft_cache)
     ! compute second derivative of massive neutrino pressure
-    eft_cache%gpinudot_tot = 0._dl
+    eft_cache%gpinu_tot = 0._dl
     eft_cache%grhonu_tot = 0._dl
     eft_cache%grhonudot_tot = 0._dl
     eft_cache%gpinudot_tot = 0._dl
@@ -566,11 +578,18 @@
     call input_model%compute_tensor_factors(a, params_cache, eft_cache)
     ! Compute kinetic, gradient and mass terms:
     call input_model%compute_stability_factors(a, params_cache, eft_cache)
+    ! Higher derivatives of the EFT functions used by the mass eigenvalues, the positivity bounds and the
+    ! Minkowski limit: compute them first (models that do not provide them analytically would otherwise use
+    ! zeros), then recompute the Hubble derivatives so that Hdotdotdot includes EFTLambdadotdot and EFTOmegaPPPP.
+    if (input_EFTCAMB%EFT_positivity_bounds .or. input_EFTCAMB%EFT_minkowski_limit .or. &
+        (input_EFTCAMB%EFT_mass_stability .and. a > input_EFTCAMB%EFTCAMB_pert_turn_on)) then
+        call input_model%compute_additional_derivs(a, params_cache, eft_cache)
+        call input_model%compute_H_derivs(a, params_cache, eft_cache)
+    end if
     ! Compute positivity bounds:
     call input_model%compute_positivity_bounds(a, params_cache, eft_cache)
-
+    ! Compute the mass eigenvalues:
     if (a > input_EFTCAMB%EFTCAMB_pert_turn_on .and. input_EFTCAMB%EFT_mass_stability) then
-        call input_model%compute_additional_derivs(a, params_cache, eft_cache)
         call input_model%compute_mass_factors(a, params_cache, eft_cache)
     end if
 
@@ -580,6 +599,56 @@
     end if
 
     end subroutine EFTStabilityComputation
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the effective CPL equation of state (w0, wa) of the model background, as used by
+    !! Halofit/HMcode. The effective dark energy is everything in the expansion history that is not matter,
+    !! radiation or neutrinos: rho_DE = 3 H^2 - rho_m, p_DE = -(2 dH/dtau + H^2) - p_m (a^2-weighted, conformal H),
+    !! which equals rho_Q, P_Q of compute_rhoQPQ when Omega = 0 and gives the wDE parametrization exactly for
+    !! designer models. w(a) = p_DE/rho_DE is fitted by least squares with w0 + wa (1-a) on 51 points uniform in
+    !! a in [0.5, 1] (z <= 1, where the non-linear corrections matter). Call after the background initialization.
+    subroutine EFTCAMB_compute_effective_w0wa(input_EFTCAMB, params_cache)
+
+    implicit none
+
+    type(TEFTCAMB), intent(inout) :: input_EFTCAMB                  !< the EFTCAMB object
+    type(TEFTCAMB_parameter_cache), intent(inout) :: params_cache   !< the EFTCAMB parameter cache
+
+    integer, parameter :: num_points = 51
+    real(dl), parameter :: a_min = 0.5_dl
+    type(TEFTCAMB) :: temp_EFTCAMB
+    type(TEFTCAMB_timestep_cache) :: eft_cache
+    real(dl) :: a, x, w, rho_de, p_de, s0, s1, s2, sw, sxw, det
+    integer  :: ind
+
+    if (input_EFTCAMB%EFTflag == 0 .or. .not. allocated(input_EFTCAMB%model)) return
+    input_EFTCAMB%model%background_w0wa_computed = .false.
+    ! only the background is needed: no optional stability derivatives.
+    temp_EFTCAMB%EFTflag = input_EFTCAMB%EFTflag
+    temp_EFTCAMB%EFTCAMB_pert_turn_on = input_EFTCAMB%EFTCAMB_pert_turn_on
+    temp_EFTCAMB%EFT_mass_stability = .false.
+    temp_EFTCAMB%EFT_positivity_bounds = .false.
+    temp_EFTCAMB%EFT_minkowski_limit = .false.
+    s0 = 0._dl; s1 = 0._dl; s2 = 0._dl; sw = 0._dl; sxw = 0._dl
+    do ind = 1, num_points
+        a = a_min + real(ind - 1, dl)*(1._dl - a_min)/real(num_points - 1, dl)
+        call eft_cache%initialize()
+        call EFTStabilityComputation(a, temp_EFTCAMB, input_EFTCAMB%model, params_cache, eft_cache)
+        rho_de = 3._dl*eft_cache%adotoa**2 - eft_cache%grhom_t
+        p_de = -(2._dl*eft_cache%Hdot + eft_cache%adotoa**2) - eft_cache%gpresm_t
+        if (.not. (rho_de > 0._dl)) cycle
+        w = p_de/rho_de
+        if (w /= w) cycle
+        x = 1._dl - a
+        s0 = s0 + 1._dl; s1 = s1 + x; s2 = s2 + x*x; sw = sw + w; sxw = sxw + x*w
+    end do
+    det = s0*s2 - s1*s1
+    if (s0 < 2._dl .or. det <= 0._dl) return
+    input_EFTCAMB%model%w0_background = (s2*sw - s1*sxw)/det
+    input_EFTCAMB%model%wa_background = (s0*sxw - s1*sw)/det
+    input_EFTCAMB%model%background_w0wa_computed = .true.
+
+    end subroutine EFTCAMB_compute_effective_w0wa
 
     ! ----------------------------------------------------------------------------------------
 

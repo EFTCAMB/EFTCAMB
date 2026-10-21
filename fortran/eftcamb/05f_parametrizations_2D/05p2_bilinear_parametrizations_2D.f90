@@ -27,6 +27,7 @@
     module EFTCAMB_bilinear_parametrizations_2D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use MpiUtils
     use EFT_def
     use EFTCAMB_cache
@@ -124,7 +125,10 @@
     case default
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in BilinearParametrized2DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end select
 
     end subroutine BilinearParametrized2DParameterValues

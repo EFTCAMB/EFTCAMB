@@ -26,6 +26,7 @@
     module EFTCAMB_spline_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use EFT_splines
@@ -55,8 +56,8 @@
         type(linear_interpolate_function_1D) :: interpolation  !< auxiliary interpolation function
 
         ! internal variables:
-        !< internal coefficients for the spline interpolation
-        real(dl), dimension(:, :), allocatable :: cy, cyp, cypp, cyppp, cypppp, cyint
+        !< internal coefficients for the spline interpolation. Derivatives are computed from the same coefficients.
+        real(dl), dimension(:, :), allocatable :: cy
 
     contains
 
@@ -90,6 +91,8 @@
     procedure :: fourth_derivative => Spline1DFourthDerivative
     !< function that returns the strange integral that we need for w_DE.
     procedure :: integral => Spline1DIntegral
+    !< function that returns the break points (the nodes) of the numerical integral.
+    procedure :: numerical_integral_breaks => Spline1DNumericalIntegralBreaks
 
     end type spline_parametrization_1D
 
@@ -122,40 +125,33 @@
     real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
 
     integer :: ind
+    logical :: valid
 
     self%x_coord = array(1:self%num_pixels)
     self%pixels = array(self%num_pixels + 1:)
     ! check the coordinates:
+    valid = .true.
     do ind = 1, self%num_pixels - 1
-        if (self%x_coord(ind) >= self%x_coord(ind + 1)) call MpiStop(trim(self%name) // &
-            ' error: spline x coordinate must be increasing. Pass correct vaalues for ' // trim(self%name) // 'xN')
+        if (self%x_coord(ind) >= self%x_coord(ind + 1)) then
+            ! (the initialization is completed, with zero spline coefficients, so the function can be used safely
+            ! until the error is handled)
+            if (valid) call GlobalError(trim(self%name) // &
+                ' error: spline x coordinate must be increasing. Pass correct values for ' // trim(self%name) // 'xN', &
+                    error_unsupported_params)
+            valid = .false.
+        end if
     end do
     ! initialize the interpolation:
     call self%interpolation%initialize(self%x_coord, self%null_value)
     self%interpolation%y = self%pixels
-    ! initialize derivatives:
-    call self%interpolation%initialize_derivatives()
-    ! initialize integration:
-    call self%interpolation%initialize_integration()
-    ! create the spline coefficients:
+    ! create the spline coefficients (natural cubic spline). The derivatives are the derivatives of this spline:
     if (allocated(self%cy)) deallocate(self%cy)
-    if (allocated(self%cyp)) deallocate(self%cyp)
-    if (allocated(self%cypp)) deallocate(self%cypp)
-    if (allocated(self%cyppp)) deallocate(self%cyppp)
-    if (allocated(self%cypppp)) deallocate(self%cypppp)
-    if (allocated(self%cyint)) deallocate(self%cyint)
     allocate(self%cy   (5, self%num_pixels - 1))
-    allocate(self%cyp  (5, self%num_pixels - 1))
-    allocate(self%cypp (5, self%num_pixels - 1))
-    allocate(self%cyppp(5, self%num_pixels - 1))
-    allocate(self%cypppp(5, self%num_pixels - 1))
-    allocate(self%cyint (5, self%num_pixels - 1))
-    call spline3pars(self%x_coord, self%interpolation%y, [2, 2], [0._dl, 0._dl], self%cy)
-    call spline3pars(self%x_coord, self%interpolation%yp, [2, 2], [0._dl, 0._dl], self%cyp)
-    call spline3pars(self%x_coord, self%interpolation%ypp, [2, 2], [0._dl, 0._dl], self%cypp)
-    call spline3pars(self%x_coord, self%interpolation%yppp, [2, 2], [0._dl, 0._dl], self%cyppp)
-    call spline3pars(self%x_coord, self%interpolation%ypppp, [2, 2], [0._dl, 0._dl], self%cypppp)
-    call spline3pars(self%x_coord, self%interpolation%yint, [2, 2], [0._dl, 0._dl], self%cyint)
+    if (valid) then
+        call spline3pars(self%x_coord, self%interpolation%y, [2, 2], [0._dl, 0._dl], self%cy)
+    else
+        self%cy = 0._dl
+    end if
 
     end subroutine Spline1DInitParams
 
@@ -166,10 +162,11 @@
     implicit none
 
     class(spline_parametrization_1D) :: self      !< the base class
-    type(TIniFile)                   :: Ini       !< Input ini file
+    class(TIniFile)                  :: Ini       !< Input ini file
     integer                          :: eft_error !< error code: 0 all fine, 1 initialization failed
 
-    character(len=EFT_names_max_length)        :: param_name
+    !< one more character than the maximum name length, to detect names that would be truncated:
+    character(len=EFT_names_max_length + 1)    :: param_name
     real(dl), dimension(self%parameter_number) :: parameters
 
     integer :: i
@@ -180,6 +177,13 @@
     ! read the parameters and store them in a vector:
     do i = 1, self%parameter_number
         call self%parameter_names(i, param_name)
+        if (len_trim(param_name) > EFT_names_max_length) then
+            write(*, '(a,a)') 'EFTCAMB error: parameter name too long, it cannot be read from the ini file: ', &
+                trim(param_name)
+            write(*, '(a,I4,a)') 'Names are limited to EFT_names_max_length = ', EFT_names_max_length, ' characters.'
+            eft_error = 1
+            return
+        end if
         if (i <= self%num_pixels) then
             parameters(i) = Ini%Read_Double(trim(param_name), 1._dl*real(i - 1)/real(self%num_pixels - 1))
         else
@@ -199,13 +203,14 @@
     implicit none
 
     class(spline_parametrization_1D) :: self      !< the base class
-    type(TIniFile)                   :: Ini       !< Input ini file
+    class(TIniFile)                  :: Ini       !< Input ini file
     integer                          :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read number of points:
     self%num_pixels = Ini%Read_Int(trim(self%name) // '_Spline_Pixels', 6)
-    if (self%num_pixels < 3) then
-        write(*, *) 'Spline requires ', trim(self%name) // '_Spline_Pixels', ' to be at least 6'
+    ! (the natural cubic spline with consistent end conditions needs at least 4 nodes)
+    if (self%num_pixels < 4) then
+        write(*, *) 'Spline requires ', trim(self%name) // '_Spline_Pixels', ' to be at least 4'
         eft_error = 1
         return
     end if
@@ -237,7 +242,10 @@
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Spline1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     end subroutine Spline1DParameterValues
@@ -291,7 +299,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Spline1DParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -321,7 +332,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Spline1DParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then
@@ -354,7 +368,7 @@
     ! Spline1DValue = self%interpolation%value(x)
     ! Default is cubic spline:
     Spline1DValue = self%null_value
-    if (x <= self%interpolation%x_initial .or. x >= self%interpolation%x_final) return
+    if (x < self%interpolation%x_initial .or. x > self%interpolation%x_final) return
     ! if inside return the cubic spline value:
     ip = iixmin(x, self%x_coord, 0)
     Spline1DValue = poly3 (x, self%cy(:, ip))
@@ -377,11 +391,12 @@
 
     ! Spline1DFirstDerivative = self%interpolation%first_derivative(x)
     ! Default is cubic spline:
-    Spline1DFirstDerivative = self%null_value
-    if (x <= self%interpolation%x_initial .or. x >= self%interpolation%x_final) return
-    ! if inside return the cubic spline value:
+    ! outside the nodes the function is the constant null_value:
+    Spline1DFirstDerivative = 0._dl
+    if (x < self%interpolation%x_initial .or. x > self%interpolation%x_final) return
+    ! if inside return the derivative of the cubic spline:
     ip = iixmin(x, self%x_coord, 0)
-    Spline1DFirstDerivative = poly3 (x, self%cyp(:, ip))
+    Spline1DFirstDerivative = dpoly3 (x, self%cy(:, ip))
 
     end function Spline1DFirstDerivative
 
@@ -401,11 +416,12 @@
 
     ! Spline1DSecondDerivative = self%interpolation%second_derivative(x)
     ! Default is cubic spline:
-    Spline1DSecondDerivative = self%null_value
-    if (x <= self%interpolation%x_initial .or. x >= self%interpolation%x_final) return
-    ! if inside return the cubic spline value:
+    ! outside the nodes the function is the constant null_value:
+    Spline1DSecondDerivative = 0._dl
+    if (x < self%interpolation%x_initial .or. x > self%interpolation%x_final) return
+    ! if inside return the derivative of the cubic spline:
     ip = iixmin(x, self%x_coord, 0)
-    Spline1DSecondDerivative = poly3 (x, self%cypp(:, ip))
+    Spline1DSecondDerivative = d2poly3 (x, self%cy(:, ip))
 
     end function Spline1DSecondDerivative
 
@@ -423,11 +439,12 @@
     real(dl) :: x_temp
     integer  :: ind, ip
 
-    Spline1DThirdDerivative = self%null_value
-    if (x <= self%interpolation%x_initial .or. x >= self%interpolation%x_final) return
-    ! if inside return the cubic spline value:
+    ! outside the nodes the function is the constant null_value:
+    Spline1DThirdDerivative = 0._dl
+    if (x < self%interpolation%x_initial .or. x > self%interpolation%x_final) return
+    ! if inside return the derivative of the cubic spline:
     ip = iixmin(x, self%x_coord, 0)
-    Spline1DThirdDerivative = poly3 (x, self%cyppp(:, ip))
+    Spline1DThirdDerivative = 6._dl*self%cy(5, ip)
 
     end function Spline1DThirdDerivative
 
@@ -442,19 +459,9 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: Spline1DFourthDerivative                             !< the output value
 
-    real(dl) :: x_temp
-    integer  :: ind, ip
+    ! the fourth derivative of a cubic spline vanishes inside each interval, and outside the nodes:
+    Spline1DFourthDerivative = 0._dl
 
-    Spline1DFourthDerivative = self%null_value
-    if (x <= self%interpolation%x_initial .or. x >= self%interpolation%x_final) return
-    ! if inside return the cubic spline value:
-    ip = iixmin(x, self%x_coord, 0)
-    Spline1DFourthDerivative = poly3 (x, self%cypppp(:, ip))
-    ! Spline1DFourthDerivative = 0._dl
-
-    !< Only up to third order spline is implemented >!
-    ! write(*,*) 'Spline1DFourthDerivative is not implemented'
-    ! write(*,*) 'Calculations cannot proceed.'
     end function Spline1DFourthDerivative
 
     ! ---------------------------------------------------------------------------------------------
@@ -468,22 +475,23 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: Spline1DIntegral
 
-    real(dl) :: x_temp
-    integer  :: ind, ip
-
-    Spline1DIntegral = 0._dl
-    if (x <= self%interpolation%x_initial .or. x >= self%interpolation%x_final) return
-    ! if inside return the cubic spline value:
-    ip = iixmin(x, self%x_coord, 0)
-    Spline1DIntegral = poly3 (x, self%cyint(:, ip)) !< the output value
-
-    ! Spline1DIntegral = 0._dl
-    !< No analytic solution >!
-    ! write(*,*) 'Spline1DIntegral is not implemented.'
-    ! write(*,*) 'Calculations cannot proceed.'
-    ! call MpiStop('EFTCAMB error')
+    ! no closed form: numerical integral of the spline, split at the nodes.
+    Spline1DIntegral = self%numerical_integral(x, self%x_coord, eft_cache)
 
     end function Spline1DIntegral
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the break points of the numerical integral: the spline nodes.
+    function Spline1DNumericalIntegralBreaks(self) result(breaks)
+
+    implicit none
+
+    class(spline_parametrization_1D)    :: self       !< the base class
+    real(dl), allocatable, dimension(:) :: breaks     !< the values of the scale factor where w is not smooth
+
+    breaks = self%x_coord
+
+    end function Spline1DNumericalIntegralBreaks
 
     ! ---------------------------------------------------------------------------------------------
 

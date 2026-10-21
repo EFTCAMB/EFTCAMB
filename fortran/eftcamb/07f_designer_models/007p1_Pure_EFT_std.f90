@@ -27,6 +27,7 @@
     module EFTCAMB_pure_EFT_std
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use EFTCAMB_cache
@@ -159,7 +160,7 @@
     implicit none
 
     class(EFTCAMB_std_pure_EFT) :: self      !< the base class
-    type(TIniFile)              :: Ini       !< Input ini file
+    class(TIniFile)             :: Ini       !< Input ini file
     integer                     :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -194,7 +195,7 @@
     implicit none
 
     class(EFTCAMB_std_pure_EFT) :: self      !< the base class
-    type(TIniFile)              :: Ini       !< Input ini file
+    class(TIniFile)             :: Ini       !< Input ini file
     integer                     :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer                     :: temp_feedback
@@ -483,7 +484,8 @@
         write(*, *) 'Length of num_params_temp and self%parameter_number do not coincide.'
         write(*, *) 'num_params_temp:', num_params_temp - 1
         write(*, *) 'self%parameter_number:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: inconsistent number of model parameters', error_unsupported_params)
+        return
     end if
 
     end subroutine EFTCAMBPureEFTstdInitModelParameters
@@ -495,7 +497,7 @@
     implicit none
 
     class(EFTCAMB_std_pure_EFT) :: self      !< the base class
-    type(TIniFile)              :: Ini       !< Input ini file
+    class(TIniFile)             :: Ini       !< Input ini file
     integer                     :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     call self%PureEFTOmega%init_from_file (Ini, eft_error)
@@ -655,7 +657,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBPureEFTstdParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
 
         ! parameter from Omega function
     else if (i <= NOmega) then
@@ -813,7 +818,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBPureEFTstdParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
 
         ! parameter from Omega function
     else if (i <= NOmega) then
@@ -971,7 +979,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBPureEFTstdParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
 
         ! parameter from Omega function
     else if (i <= NOmega) then

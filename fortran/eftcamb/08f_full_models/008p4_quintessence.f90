@@ -25,6 +25,7 @@
     module EFTCAMB_FM_quintessence
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use FileUtils
@@ -82,7 +83,7 @@
 
         ! some parameters:
         !< Number of points sampled by the background solver code.
-        integer  :: interpolation_num_points = 1100
+        integer  :: interpolation_num_points = 11000
         real(dl) :: x_initial = log(10._dl**(-8._dl))      !< log(a start)
         real(dl) :: x_final = 0.1_dl                     !< log(a final)
 
@@ -145,7 +146,7 @@
     implicit none
 
     class(EFTCAMB_5e) :: self      !< the base class
-    type(TIniFile)    :: Ini       !< Input ini file
+    class(TIniFile)   :: Ini       !< Input ini file
     integer           :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -167,7 +168,7 @@
     self%drag_initial_conditions = Ini%Read_Logical('drag_initial_conditions', .false.)
 
     ! read precision parameters
-    self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 1100)
+    self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 11000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
     self%x_final = log(Ini%Read_Double('model_background_a_final', 1.1_dl))
 
@@ -180,7 +181,7 @@
     implicit none
 
     class(EFTCAMB_5e) :: self      !< the base class
-    type(TIniFile)    :: Ini       !< Input ini file
+    class(TIniFile)   :: Ini       !< Input ini file
     integer           :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer           :: temp_feedback
@@ -284,7 +285,7 @@
     implicit none
 
     class(EFTCAMB_5e) :: self      !< the base class
-    type(TIniFile)    :: Ini       !< Input ini file
+    class(TIniFile)   :: Ini       !< Input ini file
     integer           :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read standard parameters:
@@ -370,7 +371,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMB5eParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
         ! other parameters:
     else if (i == 1 .and. .not. self%drag_initial_conditions) then
         name = trim('phidot_ini')
@@ -403,7 +407,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMB5eParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
         ! other parameters:
     else if (i == 1 .and. .not. self%drag_initial_conditions) then
         latexname = trim('\dot{\phi}_{\rm ini}')
@@ -436,7 +443,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMB5eParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
         ! other parameters:
     else if (i == 1 .and. .not. self%drag_initial_conditions) then
         value = self%phidot_ini
@@ -674,6 +684,7 @@
     !< logical flag that tells the code wether to compute only the solution or also the EFT functions.
     logical, optional                          :: only_solve
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
+    logical :: only_solve_temp
 
     integer, parameter :: num_eq = 2   !<  Number of equations
 
@@ -694,7 +705,8 @@
     integer  :: nu_i
 
     ! digest the input:
-    if (.not. present(only_solve)) only_solve = .false.
+    only_solve_temp = .false.
+    if (present(only_solve)) only_solve_temp = only_solve
 
     ! set omega_m, notice that we do not include radiation for compatibility with CAMB
     ! omega_m = params_cache%omegac + params_cache%omegab + params_cache%omegan + params_cache%omegag + params_cache%omegar
@@ -756,7 +768,7 @@
     JacobianMode = 1
 
     ! compute output EFT functions if needed:
-    if (.not. only_solve) then
+    if (.not. only_solve_temp) then
         call output(num_eq, 1, t1, y)
     end if
 
@@ -802,7 +814,7 @@
         end if
 
         ! compute output EFT functions if needed:
-        if (.not. only_solve) then
+        if (.not. only_solve_temp) then
             call output(num_eq, i + 1, t2, y)
             ! check the results:
             if (IsNan(self%EFTLambda%yp(i + 1)) .or. IsNan(self%EFTc%yp(i + 1))) then

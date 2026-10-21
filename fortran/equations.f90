@@ -277,12 +277,28 @@
     type(RungeKuttaDP45Settings), intent(inout) :: rk_settings
     real(dl) w(EV%nvar, 9), y(EV%nvar), tol1, tau, tauend
     integer ind
+    ! EFTCAMB MOD START: pi field oscillation frequency
+    real(dl) pi_A, pi_omega
+    ! EFTCAMB MOD END.
 
     if (EV%q < 2e-3_dl .and. tau <= State%taurend .and. CP%WantCls) then
         rk_settings%max_step_size = 2._dl
     else
         rk_settings%max_step_size = 20._dl/CP%Accuracy%IntTolBoost
     end if
+    ! EFTCAMB MOD START: keep the RK45 step inside its stability region for the oscillating pi field,
+    ! omega_pi from the pi equation coefficients cached by the last derivs call
+    if (CP%EFTCAMB%EFTflag /= 0 .and. EV%EFTCAMBactive .and. .not. CP%EFTCAMB%EFTCAMB_evolve_delta_phi) then
+        pi_A = EV%eft_cache%EFTpiA1 + EV%k2_buf*EV%eft_cache%EFTpiA2
+        if (pi_A /= 0._dl) then
+            pi_omega = sqrt(abs((EV%eft_cache%EFTpiC + EV%k2_buf*EV%eft_cache%EFTpiD1 + &
+                EV%k2_buf**2*EV%eft_cache%EFTpiD2)/pi_A)) + abs((EV%eft_cache%EFTpiB1 + &
+                EV%k2_buf*EV%eft_cache%EFTpiB2)/pi_A)
+            if (pi_omega > 0._dl) rk_settings%max_step_size = &
+                min(rk_settings%max_step_size, 1.5_dl/pi_omega/CP%Accuracy%IntTolBoost)
+        end if
+    end if
+    ! EFTCAMB MOD END.
     rk_settings%reuse_first_derivative = .true.
 
     call RungeKuttaDP45(EV, EV%ScalEqsToPropagate, derivs, tau, y, tauend, tol1, ind, rk_settings, EV%nvar, w)
@@ -323,6 +339,7 @@
 
     recursive subroutine GaugeInterface_EvolveScal(EV, tau, y, tauend, tol1, ind, rk_settings, w)
     use Recombination, only: CB1
+    use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
     type(EvolutionVars) EV, EVout
     type(RungeKuttaDP45Settings), intent(inout) :: rk_settings
     real(dl) w(EV%nvar, 9), y(EV%nvar), yout(EV%nvar), tol1, tau, tauend
@@ -399,7 +416,11 @@
     ! EFTCAMB MOD END
 
     if (next_switch < tauend) then
-        if (next_switch > tau + smallTime) then
+        ! EFTCAMB MOD START: integrate exactly to the EFT turn-on (the switch is a jump of the potentials)
+        if (next_switch > tau + smallTime .or. (next_switch == EV%EFTturnOnTime .and. next_switch > tau)) then
+            ! original code:
+            ! if (next_switch > tau + smallTime) then
+            ! EFTCAMB MOD END.
             call GaugeInterface_ScalEv(EV, y, tau, next_switch, tol1, ind, rk_settings, w)
             if (global_error_flag /= 0) return
         end if
@@ -527,6 +548,10 @@
             y = yout
             EV = EVout
             call EFTCAMBInitialConditions(y, EV, tau)
+            if (any(ieee_is_nan(y(1:EV%nvar)))) then
+                call GlobalError('EFTCAMB: NaN in the initial conditions of the EFT perturbations', error_evolution)
+                return
+            end if
             ! EFTCAMB MOD STOP
         end if
 
@@ -1648,6 +1673,9 @@
     integer j
     real(dl) Tmat, Trad, Delta_source, Delta_source2
     real(dl) xe, chi, polter_line
+    ! EFTCAMB MOD START: gpres + grho/3 including dark energy
+    real(dl) rsd_gpres_grho
+    ! EFTCAMB MOD END.
 
     j = EV%OutputStep
     if (CP%SourceTerms%line_reionization) sources(2) = 0
@@ -1695,7 +1723,13 @@
                     ! EFTCAMB MOD START: ! MR: should be OK.
                     if (CP%EFTCAMB%EFTflag == 0 .or. .not. EV%EFTCAMBactive) then
                         ! Main redshift distortion from kV_N/H j'' integrated by parts twice (V_N = sigma in synch gauge)
-                        counts_redshift_source = ((4.d0*adotoa**2 + gpres + grho/3.d0)/k*w%wing2(j) + &
+                        ! For EFT models grho, gpres have no dark energy: use gpres + grho/3 = -2 Hdot of the EFT background
+                        if (CP%EFTCAMB%EFTflag == 0) then
+                            rsd_gpres_grho = gpres + grho/3.d0
+                        else
+                            rsd_gpres_grho = -2._dl*EV%eft_cache%Hdot
+                        end if
+                        counts_redshift_source = ((4.d0*adotoa**2 + rsd_gpres_grho)/k*w%wing2(j) + &
                             (-4.d0*w%dwing2(j)*adotoa + w%ddwing2(j))/k)*sigma + (-etak/adotoa*k/3.d0 - dgrho/ &
                             adotoa/6.d0 + (etak/adotoa*k/3.d0 + dgrho/adotoa/6.d0 + (dgq/2.d0 - 2.d0*etak*adotoa)/k) &
                             /EV%Kf(1))*w%wing2(j) + 2.d0*w%dwing2(j)*etak/k/EV%Kf(1)
@@ -2129,6 +2163,8 @@
     ! EFTCAMB MOD START: variables for the EFT initial conditions
     real(dl) Omega0, Gamma10, Gamma20, Gamma30
     real(dl) :: a_eval
+    integer  :: eft_ic_case
+    logical  :: eft_species_ic
     ! EFTCAMB MOD END.
     real(dl) a, a2, iqg, rhomass, a_massive, ep, nu_l_accuracy_boost
     integer l, i, nu_i, j, ind
@@ -2140,6 +2176,11 @@
     nullify(EV%OutputTransfer) ! Should not be needed, but avoids issues in ifort 14
     nullify(EV%OutputSources)
     nullify(EV%CustomSources)
+    ! EFTCAMB MOD START: reset the EFTCAMB part of the (OpenMP-private) evolution variables for every k mode
+    EV%EFTCAMB_printing = .false.
+    EV%EFTCAMB_QS = .false.
+    call EV%eft_cache%initialize()
+    ! EFTCAMB MOD END.
 
     EV%is_cosmological_constant = State%CP%DarkEnergy%is_cosmological_constant
 
@@ -2222,7 +2263,16 @@
 
     chi = 1 ! Get transfer function for chi
     ! EFTCAMB MOD START
-    if (CP%EFTCAMB%EFTflag == 0 .or. CP%EFTCAMB%EFT_IC_type == 1) then
+    ! The EFT_IC_type 2/3 species initial conditions are the radiation era, super-horizon series with the EFT
+    ! perturbations already on: use them only if the EFT turns on at or before the start of this mode and the mode
+    ! starts super-horizon (k tau <= 0.1) deep in the radiation era (baryons + CDM <= 1% of the density), as the pi
+    ! initial conditions do (09_EFTCAMB_IC.f90). Otherwise the species start in GR (adiabatic GR series).
+    eft_species_ic = .false.
+    if (CP%EFTCAMB%EFTflag /= 0 .and. CP%EFTCAMB%EFT_IC_type /= 1) then
+        eft_species_ic = EV%EFTturnOnTime <= tau .and. x <= 0.1_dl .and. &
+            a*(State%grhob + State%grhoc) <= 0.01_dl*(State%grhog + grhonu + a*(State%grhob + State%grhoc))
+    end if
+    if (.not. eft_species_ic) then
         initv(1, i_clxg) = -chi*EV%Kf(1)/3*x2*(1 - omtau/5)
         initv(1, i_clxr) = initv(1, i_clxg)
         initv(1, i_clxb) = 0.75_dl*initv(1, i_clxg)
@@ -2233,21 +2283,35 @@
         initv(1, i_pir) = chi*4._dl/3*x2/Rp15*(1 + omtau/4*(4*Rv - 5)/(2*Rv + 15))
         initv(1, i_aj3r) = chi*4/21._dl/Rp15*x3
         initv(1, i_eta) = -chi*2*EV%Kf(1)*(1 - x2/12*(-10._dl/Rp15 + EV%Kf(1)))
-    else if (CP%EFTCAMB%EFTflag /= 0 .and. CP%EFTCAMB%EFT_IC_type /= 1) then
+    else
         ! Evaluate EFT functions at the EFT perturbation turn-on time:
         a_eval = CP%EFTCAMB%EFTCAMB_pert_turn_on
 
         ! Also respect the background safety floor:
         a_eval = max(a_eval, CP%EFTCAMB%EFTCAMB_back_turn_on)
 
-        call CP%EFTCAMB%model%compute_background_EFT_functions(a_eval, CP%eft_par_cache, EV%eft_cache)
+        ! fill the background and second order EFT functions at a_eval (EV%eft_cache is reused between modes):
+        call EFTCAMB_fill_background_cache(State, a_eval, EV%eft_cache)
 
         Omega0 = EV%eft_cache%EFTOmegaV
         Gamma10 = EV%eft_cache%EFTGamma1V
         Gamma20 = EV%eft_cache%EFTGamma2V
         Gamma30 = EV%eft_cache%EFTGamma3V
+        call EV%eft_cache%initialize()
 
-        select case (CP%EFTCAMB%EFT_IC_type)
+        eft_ic_case = CP%EFTCAMB%EFT_IC_type
+        ! the case 3 expressions are 0/0 for Omega = Gamma3 = 0: use the case 2 limit there (same test and
+        ! tolerance as for the pi initial conditions, EFT_IC_type3_tolerance in 09_EFTCAMB_IC.f90)
+        if (eft_ic_case == 3) then
+            if (min(abs(3._dl*Gamma30*(1._dl + Omega0) + Omega0*(5._dl + 3._dl*Omega0)), &
+                abs(1._dl + Gamma30 + Omega0), &
+                abs(3._dl*Gamma30 + 5._dl*Omega0 + 3._dl*Gamma30*Omega0 + 3._dl*Omega0**2), &
+                abs(3._dl*Gamma30 + 8._dl*Omega0 + 6._dl*Gamma30*Omega0 + 6._dl*Omega0**2)) <= 1.e-10_dl) then
+                eft_ic_case = 2
+            end if
+        end if
+
+        select case (eft_ic_case)
         case (2)
             ! -----------------------------------------------------------
             ! CASE 2: Modified Gravity (Constant Omega)
@@ -2358,7 +2422,10 @@
             ! write(*,'(a,1pe12.5)') 'IC Gamma2 = ', Gamma20
             ! write(*,'(a,1pe12.5)') 'IC Gamma3 = ', Gamma30
         case default
-            call MpiStop('Invalid EFT_IC_type: Must be 1 (GR), 2 (MG-Omega), or 3 (MG-Omega+Gamma)')
+            ! (rejected when the parameters are set; the per-k loops skip the remaining modes)
+            call GlobalError('Invalid EFT_IC_type: Must be 1 (GR), 2 (MG-Omega), or 3 (MG-Omega+Gamma)', &
+                error_unsupported_params)
+            return
         end select
     end if
     ! EFTCAMB MOD END.
@@ -2494,6 +2561,12 @@
     real(dl) k, k2, a, omtau
     real(dl) yt(eV%nvart)
     real(dl) tens0, ep, tensfac
+
+    ! EFTCAMB MOD START: reset the EFTCAMB part of the (OpenMP-private) evolution variables for every k mode
+    eV%EFTCAMB_printing = .false.
+    eV%EFTCAMB_QS = .false.
+    call eV%eft_cache%initialize()
+    ! EFTCAMB MOD END.
 
     if (State%flat) then
         eV%aux_buf = 1._dl
@@ -2689,6 +2762,7 @@
     real(dl) clxq, vq, dgpnu, EFT_grhonu, EFT_gpinu, EFT_grhonudot, EFT_gpinudot, EFT_gpinudotdot, grhormass_t
     real(dl) pidotdot, EFTLensing, EFTISW, EFTsigmadot, EFTsigmadotdot, EFT_Psi, EFT_Phi, EFT_PsiDot, EFT_PhiDot, &
         EFTetakdot
+    real(dl) EFT_den_mu, EFT_den_sigma
     real(dl) dphi, ddphi, dddphi, dphi_safe
     real(dl) delta_phi, delta_phi_dot, delta_phi_ddot ! delta_phi equation variables
     real(dl) metric_h_dot, metric_h_ddot ! h' and h''
@@ -2752,6 +2826,7 @@
         end if
     else
         grhov_t = 0._dl
+        w_dark_energy_t = -1._dl ! not used (grhov_t = 0) but must be defined
     end if
     ! EFTCAMB MOD END.
 
@@ -2789,7 +2864,7 @@
         EV%eft_cache%tau = tau
         EV%eft_cache%k = k
         EV%eft_cache%grhom_t = grho
-        EV%eft_cache%grhoa2 = grho/a2**2
+        EV%eft_cache%grhoa2 = grho*a2 ! 8 pi G rho a^4 (grho is 8 pi G rho a^2)
         EV%eft_cache%gpresm_t = gpres_noDE
         EV%eft_cache%grhob_t = grhob_t
         EV%eft_cache%grhoc_t = grhoc_t
@@ -2894,9 +2969,9 @@
         ! store:
         adotdota = EV%eft_cache%Hdot + EV%eft_cache%adotoa**2
         ! finish computing the background:
-        if (CP%EFTCAMB%EFTCAMB_model_is_designer) then
-            call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
-        end if
+        ! (again for full models, now with the current adotoa, Hdot, Hdotdot: their background EFT
+        ! functions may use them)
+        call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
         ! compute all other background stuff:
         call CP%EFTCAMB%model%compute_rhoQPQ(a, CP%eft_par_cache, EV%eft_cache)
         ! compute second order EFT functions:
@@ -2986,7 +3061,9 @@
             ! initialize DE perturbations:
             clxq = ay(EV%w_ix)
             vq = ay(EV%w_ix + 1)
-            pidotdot = ayprime(EV%w_ix + 1)
+            ! pi'' is not known yet (ayprime(w_ix+1) holds a stale value): the factors that depend on it
+            ! (EFTeomM, EFTeomNdot) are recomputed after the pi field equation.
+            pidotdot = 0._dl
             ! initialize DE perturbations cache:
             EV%eft_cache%pi = clxq
             EV%eft_cache%pidot = vq
@@ -3260,6 +3337,15 @@
             ! store in cache:
             EV%eft_cache%pidot = ayprime(EV%w_ix)
             EV%eft_cache%pidotdot = ayprime(EV%w_ix + 1)
+            ! recompute the Einstein equation factors with the current pi'' (EFTeomM, EFTeomNdot) and dz:
+            if (EV%EFTCAMBactive) then
+                call CP%EFTCAMB%model%compute_Einstein_factors(a, CP%eft_par_cache, EV%eft_cache)
+                EV%eft_cache%dz = 1._dl/EV%eft_cache%EFTeomU* &
+                    (-2._dl*adotoa*(1._dl + EV%eft_cache%EFTeomY)*z + etak - &
+                    0.5_dl/k/(1._dl + EV%eft_cache%EFTOmegaV)*(grhog_t*clxg + grhor_t*clxr + 3._dl*dgpnu) - &
+                    1.5_dl/k/(1._dl + EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+                dz = EV%eft_cache%dz
+            end if
             if (.not. EV%EFTCAMBactive .and. DebugEFTCAMB) then
                 ayprime(EV%w_ix) = 0._dl
                 ayprime(EV%w_ix + 1) = 0._dl
@@ -3780,9 +3866,15 @@
         EV%eft_cache%T_monopole = 0.25_dl*(clxg - sigma/k*4._dl*adotoa)
         EV%eft_cache%T_dipole = 0.75_dl*qg + sigma
         ! auxiliary MG functions:
-        EV%eft_cache%mu = -2._dl*k2*EFT_Psi/(dgrho + 3*dgq*adotoa/k + 2*dgpi)
-        EV%eft_cache%gamma = EFT_Phi/EFT_Psi + 2*dgpi/(dgrho + 3*dgq*adotoa/k + 2*dgpi)
-        EV%eft_cache%sigma_eft = -k2*(EFT_Phi + EFT_Psi)/(dgrho + 3*dgq*adotoa/k + dgpi)
+        ! (a vanishing denominator, e.g. all perturbations zero, gives the GR value 1 instead of 0/0)
+        EFT_den_mu = dgrho + 3*dgq*adotoa/k + 2*dgpi
+        EFT_den_sigma = dgrho + 3*dgq*adotoa/k + dgpi
+        EV%eft_cache%mu = 1._dl
+        EV%eft_cache%gamma = 1._dl
+        EV%eft_cache%sigma_eft = 1._dl
+        if (EFT_den_mu /= 0._dl) EV%eft_cache%mu = -2._dl*k2*EFT_Psi/EFT_den_mu
+        if (EFT_den_mu /= 0._dl .and. EFT_Psi /= 0._dl) EV%eft_cache%gamma = EFT_Phi/EFT_Psi + 2*dgpi/EFT_den_mu
+        if (EFT_den_sigma /= 0._dl) EV%eft_cache%sigma_eft = -k2*(EFT_Phi + EFT_Psi)/EFT_den_sigma
         ! effective DE quantities:
         EV%eft_cache%dgrho_Newt = dgrho + 3*dgq*adotoa/k
         EV%eft_cache%delta_DE_eff = -2._dl*k2*EFT_Phi - (dgrho + 3*dgq*adotoa/k)
@@ -3855,9 +3947,10 @@
             polter = pig/10 + 9._dl/15*E(2)
             polterdot = (1.0d0/10.0d0)*pigdot + (3.0d0/5.0d0)*Edot(2)
             ! EFTCAMB MOD START: polterddot from the photon equations, with sigmadot instead of the GR constraints
-            pigddot = 2._dl/5._dl*k*qgdot - 3._dl/5._dl*k*octgdot - dopacity*(pig - polter) - &
+            ! (curvature factors Kf(2) on the octupole and E3 terms as in the original CAMB expression)
+            pigddot = 2._dl/5._dl*k*qgdot - 3._dl/5._dl*k*EV%Kf(2)*octgdot - dopacity*(pig - polter) - &
                 opacity*(pigdot - polterdot) + 8._dl/15._dl*k*sigmadot
-            E2ddot = -dopacity*(E(2) - polter) - opacity*(Edot(2) - polterdot) - k/3._dl*Edot(3)
+            E2ddot = -dopacity*(E(2) - polter) - opacity*(Edot(2) - polterdot) - k/3._dl*EV%Kf(2)*Edot(3)
             polterddot = pigddot/10._dl + 3._dl/5._dl*E2ddot
             ! Original code:
             ! polterddot = -2.0d0/25.0d0*adotoa*dgq/(k*EV%Kf(1)) - 4.0d0/75.0d0*adotoa* &
@@ -3929,7 +4022,9 @@
             if (associated(EV%CustomSources)) then
                 ! EFTCAMB MOD START: block custom sources
                 if (CP%EFTCAMB%EFTflag /= 0) then
-                    call MpiStop('EFTCAMB is incompatible with custom sources so far.')
+                    ! (rejected when the parameters are set; the per-k loops skip the remaining modes)
+                    call GlobalError('EFTCAMB is incompatible with custom sources so far.', error_unsupported_params)
+                    return
                 end if
                 ! EFTCAMB MOD END.
                 select type (DE => State%CP%DarkEnergy)
@@ -4260,15 +4355,16 @@
                 end do
             end if
             ! compute pressure ddot:
-            EV%eft_cache%gpresdotdotm_t = -(4._dl/3._dl)*EV%eft_cache%Hdot*(grhog_t + grhor_t) + &
-                (16._dl/3._dl)*(grhog_t + grhor_t)*adotoa**2 + EV%eft_cache%gpinudotdot_tot
+            EV%eft_cache%gpresdotdotm_t = -(4._dl/3._dl)*EV%eft_cache%Hdot* &
+                (EV%eft_cache%grhog_t + EV%eft_cache%grhor_t) + &
+                (16._dl/3._dl)*(EV%eft_cache%grhog_t + EV%eft_cache%grhor_t)*adotoa**2 + EV%eft_cache%gpinudotdot_tot
             ! compute third derivatives of H:
             call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
 
             ! finish computing the background:
-            if (CP%EFTCAMB%EFTCAMB_model_is_designer) then
-                call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
-            end if
+            ! (again for full models, now with the current adotoa, Hdot, Hdotdot: their background EFT
+            ! functions may use them)
+            call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
             ! compute all other background stuff:
             call CP%EFTCAMB%model%compute_rhoQPQ(a, CP%eft_par_cache, EV%eft_cache)
             ! compute second order EFT functions:

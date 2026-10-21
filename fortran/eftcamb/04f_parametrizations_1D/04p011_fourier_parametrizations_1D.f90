@@ -26,6 +26,7 @@
     module EFTCAMB_fourier_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use constants, only: const_pi, const_twopi, const_fourpi
@@ -145,7 +146,7 @@
     implicit none
 
     class(fourier_parametrization_1D) :: self      !< the base class
-    type(TIniFile)                    :: Ini       !< Input ini file
+    class(TIniFile)                   :: Ini       !< Input ini file
     integer                           :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read order of the expansion:
@@ -183,7 +184,10 @@
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Fourier1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     end subroutine Fourier1DParameterValues
@@ -246,7 +250,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Fourier1DParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -280,7 +287,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in Fourier1DParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -319,7 +329,8 @@
     num_points = 4*2*max(self%order_cos, self%order_sin) + 1 ! try to be well above the Shannon rate
 
     ! 2) search for the roots of the first derivative and look for the global minimum:
-    global_minimum = 1.d16 ! just initialize to a big number
+    ! initialize with the value at the start of the period (also the answer for a constant function):
+    global_minimum = self%value(min_sample)
     do i = 1, num_points - 1
         initial_value = min_sample + real(i - 1)/real(num_points - 1)*(max_sample - min_sample)
         final_value = min_sample + real(i)/real(num_points - 1)*(max_sample - min_sample)
@@ -506,11 +517,8 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: Fourier1DIntegral                                   !< the output value
 
-    Fourier1DIntegral = 0._dl
-    !< No analytic solution >!
-    write(*, *) 'Fourier1DIntegral is not implemented.'
-    write(*, *) 'Calculations cannot proceed.'
-    call MpiStop('EFTCAMB error')
+    ! no closed form: numerical integral (see parametrized_function_1D%numerical_integral).
+    Fourier1DIntegral = self%numerical_integral(x, eft_cache=eft_cache)
 
     end function Fourier1DIntegral
 

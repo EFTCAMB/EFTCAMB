@@ -27,6 +27,7 @@
     module EFTCAMB_LE_Horava
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use EFTCAMB_cache
@@ -105,7 +106,7 @@
     implicit none
 
     class(EFTCAMB_Horava) :: self      !< the base class
-    type(TIniFile)        :: Ini       !< Input ini file
+    class(TIniFile)       :: Ini       !< Input ini file
     integer               :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -120,7 +121,7 @@
     implicit none
 
     class(EFTCAMB_Horava) :: self      !< the base class
-    type(TIniFile)        :: Ini       !< Input ini file
+    class(TIniFile)       :: Ini       !< Input ini file
     integer               :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     end subroutine EFTCAMBHoravaAllocateModelSelection
@@ -157,7 +158,7 @@
     implicit none
 
     class(EFTCAMB_Horava) :: self      !< the base class
-    type(TIniFile)        :: Ini       !< Input ini file
+    class(TIniFile)       :: Ini       !< Input ini file
     integer               :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     self%Horava_eta = Ini%Read_Double('Horava_eta', 0._dl)
@@ -239,7 +240,10 @@
     if (i > self%parameter_number) then
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBHoravaParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the appropriate name:
     if (i == 1) then
@@ -271,7 +275,10 @@
     if (i > self%parameter_number) then
         write(*, *) 'Illegal index for parameter_names_latex.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBHoravaParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the appropriate name:
     if (i == 1) then
@@ -303,7 +310,10 @@
     if (i > self%parameter_number) then
         write(*, *) 'Illegal index for parameter_value.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBHoravaParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
     ! return the appropriate name:
     if (i == 1) then
@@ -449,17 +459,20 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    eft_cache%gpiv_t = -eft_cache%grhov_t
-    eft_cache%Hdot = -0.5_dl*(eft_cache%adotoa**2 + eft_cache%gpresm_t + eft_cache%gpiv_t)
-    eft_cache%Hdotdot = eft_cache%adotoa* &
-        ((eft_cache%grhob_t + eft_cache%grhoc_t)/6._dl + 2._dl*(eft_cache%grhor_t + eft_cache%grhog_t)/3._dl) + &
-        2._dl*eft_cache%adotoa*eft_cache%grhov_t/3._dl + eft_cache%adotoa*eft_cache%grhonu_tot/6._dl - &
-        0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot - 0.5_dl*eft_cache%gpinudot_tot
+    real(dl) :: F, P, Pdot, Pdotdot
 
-    eft_cache%Hdot = &
-        eft_cache%Hdot*sqrt((2._dl + 2._dl*self%Horava_xi - self%Horava_eta)/(3._dl*self%Horava_lambda + 2._dl))
-    eft_cache%Hdotdot = &
-        eft_cache%Hdotdot*sqrt((2._dl + 2._dl*self%Horava_xi - self%Horava_eta)/(3._dl*self%Horava_lambda + 2._dl))
+    ! H^2 = F (grhom_t + grhov_t)/3 with F = G_cosmo/G_N (arXiv:1508.01787, eq. Hubble), and the matter fluid obeying
+    ! the standard continuity equation. P is the total pressure (a^2-weighted), Pdot and Pdotdot its conformal time
+    ! derivatives (gpresdotm_t and gpresdotdotm_t are a^2 times the time derivatives of the matter pressure).
+    F = (2._dl + 2._dl*self%Horava_xi - self%Horava_eta)/(3._dl*self%Horava_lambda + 2._dl)
+    eft_cache%gpiv_t = -eft_cache%grhov_t
+    P = eft_cache%gpresm_t + eft_cache%gpiv_t
+    Pdot = eft_cache%gpresdotm_t + 2._dl*eft_cache%adotoa*P
+    eft_cache%Hdot = -0.5_dl*(eft_cache%adotoa**2 + F*P)
+    eft_cache%Hdotdot = -eft_cache%adotoa*eft_cache%Hdot - 0.5_dl*F*Pdot
+    Pdotdot = eft_cache%gpresdotdotm_t + 4._dl*eft_cache%adotoa*eft_cache%gpresdotm_t + &
+        (2._dl*eft_cache%Hdot + 4._dl*eft_cache%adotoa**2)*P
+    eft_cache%Hdotdotdot = -eft_cache%Hdot**2 - eft_cache%adotoa*eft_cache%Hdotdot - 0.5_dl*F*Pdotdot
 
     end subroutine EFTCAMBHoravaComputeHubbleDer
 

@@ -27,6 +27,7 @@
     module EFTCAMB_JBP_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use EFT_def
     use MpiUtils
     use EFTCAMB_cache
@@ -131,7 +132,10 @@
     case default
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in JBPParametrized1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end select
 
     end subroutine JBPParametrized1DParameterValues
