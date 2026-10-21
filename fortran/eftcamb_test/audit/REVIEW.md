@@ -74,7 +74,7 @@ your sign-off. Size of the change is from the reproducers.
 ## Decisions (user review, 2026-10-20)
 
 **Status: all items approved.** Groups A, B and D are accepted as proposed in the tables below; group C is
-resolved as listed here. Nothing has been implemented yet.
+resolved as listed here. Implemented on `eftcamb-audit`: see "Status (implementation)" below.
 
 | Item | Decision | Implementation plan |
 |---|---|---|
@@ -92,6 +92,107 @@ resolved as listed here. Nothing has been implemented yet.
 | C9 | OK if runtime does not grow much | Implement step limit and turn-on time samples; measure runtime on all 73 models, accept if the median grows < ~10-20% |
 | C10 | Intended | Keep; document in the EFTCAMB README |
 | C11 | Raise | `set_classes(dark_energy_model!=EFTCAMB)` / `set_dark_energy` with an active EFT model raise CAMBValueError |
+
+## Status (implementation, 2026-10-21)
+
+All approved items are committed on `eftcamb-audit` (`git log 3a2a4bb..HEAD`), never pushed. Final validation:
+every agent-group boundary and all A9 commits build (15 commits checked in clean copies, plus HEAD);
+`camb.tests.camb_test` passes (22 tests); pre-commit passes on all changed files; new `camb/tests/eftcamb_test.py`
+(10 tests, ~11 s) passes; full regression and the result of every reproducer on HEAD are in `REGRESSION.md`
+("repro" below = reproducer result on HEAD; "fixed" means the expected behaviour is observed).
+
+| Item | Commits | Verification on HEAD |
+|---|---|---|
+| A1 | e20b307, 0e66c94 | repro eft-par-cache-realloc-abort/-crash fixed (get_BAO, reused Params, never-on RGR turn-on accepted) |
+| A2 | 936a0a2 | repro eft-pickle-repr-loses-model, pickle-deepcopy fixed; eftcamb_test |
+| A3 | cce814e, bde1b86 | getters/get_eft_functions/transfer-only evolution: values or CAMBValueError, no segfault |
+| A4 | d38102a, d629225, 40444c2 | 3+1 background solver works; audit inis refused by the physics checks (open question 1) |
+| A5 | e2a442b | repro fixed; eftcamb_test |
+| A6, A22 | 0d36074 | repros fixed (model kept, EFT-only update); eftcamb_test |
+| A7 | 785ce47 | repro fixed (47 keys, identical re-read); eftcamb_test |
+| A8 | bc0324e | repro fixed |
+| A9 / C12 | 3c759e7, 073de3d, 3a787c0, cf87fca, e756367, aa9a9a7, d7a9cda, 4819c8f | each commit builds; repros stop-kills-python, initialize-parameters-bad-value fixed (CAMBError/CAMBValueError with the Fortran message); all 85 runs bit-identical to F2 |
+| A10 | aaf358d | checked build passes the stability check of 3_RPH_KT_power_1 |
+| A11 | 1463967 | checked command-line exe of HEAD runs 1_EFT_GR past SetParams |
+| A12 | 13b4f3d, cce9832 | repros fixed; 5_hdsk_TG_2 V_scf 23 (garbage) -> 0 |
+| A13 | 7f96bad | repro fixed (ratio 1) |
+| A14 | d983709, 42bbce3, 6fa6a74 | IC 3 = IC 1 for Omega = Gamma3 = 0; IC 2 = IC 1 |
+| A15 | 878b118, df6840b, 6fe65d3 | turn-on 0, <0, NaN, >1 raise CAMBValueError, also with skip_RGR |
+| A16 | 6ce961f, 0113598, 5b214ea | l_max_scalar 2000 with turn-on 1e-10 runs; 5b214ea: turn-on <= ~1e-24 segfaulted (found by this validation), now refused below tau = 1e-12 Mpc |
+| A17 | 9e7f38c, 51b0327 | repro fixed (H0 to 4e-6) |
+| A18 | 7a9bd1d | repro fixed |
+| A19 | 1eb9367 | repros fixed (bit-identical after evolve_hubble = T) |
+| A20 | 0de6891 | tensor-only run clean with FP traps on the checked build |
+| A21 | 7a9bd1d, d0a1232, c7e004c, 3c41651 | string getters round-trip (eftcamb_test, read-parameters repro) |
+| A23 | ca7de92, 14473b6, e024587, ccf65e1, edddf4f, 5fe97db, 6fa6a74 | repros rph-param-index, omp-private, qs-mu-nan fixed |
+| B1 | 4209b57 | code verified; K-mimic single-mode glitch gone |
+| B2 | 2d7e5ef | repro fixed (code/analytic = 1, ghost rejected) |
+| B3 | a072620 | output-pidotdot repro fixed; Horava SolSyst_3 TT 0.40 at this commit |
+| B4 | a78272a | both sampler repros fixed |
+| B5 | 5fe97db | QS_sigma = general formula |
+| B6, B12 | 27404a1, a26acac, 2d63421 | Hdotdotdot and additional derivatives vs finite differences 1e-4-7e-4; Minkowski verdict consistent |
+| B7 | 28228ea | second Friedmann residual 1e-16; Horava spectra moved (REGRESSION.md) |
+| B8, B15, B23 | d265ee6, 1423196, aba34f6, ec7bd8c, e5bed71 | Scaling Cubic H = CAMB H to 4e-16; Extended Galileon runs (was error), tracker background exact |
+| B9 | f555f07 | EFTflag = 0, omk = +-0.05 vs CAMB 3e-14 |
+| B10 | 9dc2900 | counts C_l vs CAMB 1.4e-7 |
+| B11 | 97d774f, fe411a1 | no "dtauda is NaN"; OL-gamma GR point now refused as ghost (open question 6) |
+| B13 | a37145e, 6493412, 90016be, 052eb5d, 7203f81, b1e1cf5, 748fa8e | all parametrization repros exact; numerical w_DE integral tabulated (runtime back to EFTwDE = 1 level) |
+| B14 | 5db2def, efda336 | long keys read |
+| B16 | 1423196, 3b63d3a, 9f944c7 | Beyond Horndeski H(z=0) = H0 (was 0.52 H0), spectra O(1) changes |
+| B17 | 978cd52 | ini thetastar solved to 6e-8 for EFT models |
+| B18 | b3e8280 | H from densities = H to 2e-16 |
+| B19 | 8b11691 | extrapolation identical to upstream |
+| B20 | 4f1decb | theta(T)/theta(F) - 1 = -2.5e-8 |
+| B21 | 38eea73, 643f762, c6b0fb0 | 10x tables default (K-mimic included); H(z) changes 2-8e-5 |
+| B22 | 42bbce3, 6fa6a74 | IC 2/3 series only where valid; IC 2 = IC 1 for late turn-on |
+| C1 | 562e026 | omk != 0 with EFT: CAMBError |
+| C2 | f152a94, 3ecaae6, 15370af, 4ebb732 | IC poles gone (RPH_MB_const_1, K-mimic); K-mimic turn-on dependence 1e8 -> 4% at k = 1 |
+| C3 | a87186a, df6840b, 6fe65d3 | RGR threshold convergence; 4_Des_F_R_LCDM_2 P(k) -13% at k >= 1, runtime 40 -> 110 s |
+| C4 (b)+(c) | 58cd024 | mass check prints "experimental" and is ignored; removed from the 14 inis; (a) left to the physics workflow |
+| C5 | 2061238 | evolve_metric_h = T raises |
+| C6 | d28a30a, ee26ecc, 2d6116d | 21cm refused; Halofit/HMcode get the background CPL (w0, wa): Pure EFT wCDM vs fluid P_nl/P_lin 3.3e-2 -> 5.5e-6 |
+| C7 | e5d2b33 | Horndeski H0 adopted (5_hdsk_TG_1/2 sigma8 changes by 14%, now from the EFT H0) |
+| C8 | cdcc3e3, 40444c2, 3c41651 | healthy RPH accepted at stability time 1e-10; threshold 1e-8 in the shipped inis |
+| C9 | 2e86262 | turn-on jump sampled; low-l TT windows sensitivity 4.6e-2 -> 1.4e-4; RK45 step limit; get_evolution tolerance (partial, open question 4) |
+| C10 | c9e1499 | README EFTCAMB section and MOD comments; EFTflag = 0 vs CAMB = roundoff with max_redshift = 50 |
+| C11 | 006e9cf | set_dark_energy / set_classes raise with an active model |
+| D | 209fdb5, f37f5f3, cce9832, d629225, d7bac4f (F-124), e5bed71 (F-106), b1e1cf5/90016be (F-116, F-117, F-109), ccf65e1 (F-096), 51b0327 (F-139), a87186a/df6840b (F-122) | done as listed; not done (S3, no approved change): F-108 exact real comparisons, F-121/F-131 massive-nu pressure approximation, F-123 test inis that run LCDM, F-126/F-127 sampler coverage, F-130/F-138 dead code, F-137 Makefile flags; F-135 documented only (C10); upstream-only F-099, F-100, F-115, F-120 untouched |
+
+### Open questions for the user
+
+1. **3+1 designer (007p8 audit inis).** A4 fixes the background solver, d629225/40444c2 accept the exact GR point,
+   but both audit inis are still refused ("theory unstable": gradient instability -1.9e-26 at a = 1e-10 with threshold
+   1e-8, beyond-GLPV warning with the ini's threshold 0). Is that physical? Also: when b3 = rho2/sigma1 -> 0 with
+   rho2 != 0 somewhere, should the zz ghost test use the limit of Azz instead of skipping it?
+2. **K-mimic turn-on sensitivity.** After C2, sigma8 still moves by ~2e-4 (0.61604 vs 0.61609-0.61625) and P(k) by
+   1.5-3e-2 at k ~ 10/Mpc with the turn-on time or table density; the C2 branch chosen at the turn-on differs.
+   Acceptable, or should the physics workflow look at K-mimic ICs?
+3. **4_Des_F_R_LCDM_2 runtime** 40 s -> ~110 s (C3: earlier, converged turn-on 0.016 where the f(R) pi equation is
+   stiff). Accept, or tune EFT_RGR_qs_threshold (1e-3) for speed?
+4. **C9 residuals.** (a) GR-limit consistency: a near-GR EFT model (Omega = 1e-9, turn-on 0.01) now differs from
+   EFTflag = 0 by TT 2.3e-5 (A0: 2.7e-6), from integrating exactly to the turn-on and the extra source samples;
+   this is the ~2e-5 floor seen in most models. (b) 2_PEFT_Omega_const_1 low-l TT still changes by 2.1e-3 with
+   TimeStepBoost = 3 (was 1.9e-2; GR 6e-5). (c) get_evolution at default accuracy: pi'(k ~ 1/Mpc) still O(1) off the
+   IntTolBoost = 8 result (pi 3e-2). Accept, or refine further?
+5. **Beyond Horndeski.** No massive neutrinos in its background (not approved, still missing); its hpprime contains
+   an `OmegaRadprime` that looks like a typo (to be checked in the physics workflow).
+6. **OL-gamma GR limit.** With B11 the "dtauda is NaN" rejection is gone, but 007p5 with OLOmega0 <= 1e-6 and its exact
+   GR point are refused as ghosts at a = 1e-10 (kinetic -5e-3 / -9.4e-3 relative): the designer background leaves
+   c != 0 at early times (c ~ -2.6e-4 at a = 1e-9). The shipped 007p5 inis (Omega0 = 0.05) run.
+7. **3_RPH_MB_const_1 IC regularisation tolerance.** The C2 weight (0.1 of the term scale) removes the pole; P/P_GR
+   still steps from 1.37 to 0.29 across k_c = 1.6e-3/Mpc (default and boost2 agree). Is the branch choice right?
+8. **Upstream CAMB bug:** `get_background` (and Thermo_Init) with source windows and WantCls = False segfaults
+   (bounds error on State%Redshift_W in the checked build); identical in plain CAMB v2 (B0). Report upstream?
+9. **read_ini(no_validate=True)** with an unreadable EFTCAMB value still stops the interpreter (as for CAMB keys,
+   upstream behaviour); the validated read_ini raises CAMBValueError. Change the CAMB ini reader too?
+10. **F-135** (transfer-time mismatch error only with print_fortran_warnings) is documented only (C10), not changed.
+11. **Horndeski theta.** With C7 (EFT H0 adopted, Horndeski_shooting = F), cosmomc_theta does not depend on the input
+    H0, so theta -> H0 solvers cannot work for such models: refuse theta input for them?
+12. **EFTCAMB_parameter_cache on input parameters** holds uninitialised values until the first calculation (it is
+    filled in SetParams; harmless, but visible from Python). Initialise it at allocation?
+13. Turn-on times below tau = 1e-12 Mpc (a ~ 2e-18) are now refused (5b214ea); previously a <~ 1e-22 ran and
+    a <~ 1e-24 crashed. Fine as a hard limit?
+14. The physics workflow (track 7, including the C4 (a) mass-eigenvalue re-derivation) has not run.
 
 ## Implementation plan
 
