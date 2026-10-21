@@ -147,7 +147,7 @@ every agent-group boundary and all A9 commits build (15 commits checked in clean
 | B22 | 42bbce3, 6fa6a74 | IC 2/3 series only where valid; IC 2 = IC 1 for late turn-on |
 | C1 | 562e026 | omk != 0 with EFT: CAMBError |
 | C2 | f152a94, 3ecaae6, 15370af, 4ebb732 | IC poles gone (RPH_MB_const_1, K-mimic); K-mimic turn-on dependence 1e8 -> 4% at k = 1 |
-| C3 | a87186a, df6840b, 6fe65d3 | RGR threshold convergence; 4_Des_F_R_LCDM_2 P(k) -13% at k >= 1, runtime 40 -> 110 s |
+| C3 | a87186a, df6840b, 6fe65d3; tuned in da3c2d1 (Q3) | RGR threshold convergence; 4_Des_F_R_LCDM_2 P(k) -13% at k >= 1, runtime 40 -> 110 s; after Q3 (probe k = 1/Mpc, threshold 5e-4): turn-on 0.039, 36 s vs A0 33 s, P(k <= 1/Mpc) 4e-4 from the converged result |
 | C4 (b)+(c) | 58cd024 | mass check prints "experimental" and is ignored; removed from the 14 inis; (a) left to the physics workflow |
 | C5 | 2061238 | evolve_metric_h = T raises |
 | C6 | d28a30a, ee26ecc, 2d6116d | 21cm refused; Halofit/HMcode get the background CPL (w0, wa): Pure EFT wCDM vs fluid P_nl/P_lin 3.3e-2 -> 5.5e-6 |
@@ -200,7 +200,7 @@ every agent-group boundary and all A9 commits build (15 commits checked in clean
 |---|---|---|
 | 1 | Leave as is | Flag for later: check the 3+1 designer stability conditions against the literature |
 | 2 | Accepted | none |
-| 3 | Tune for performance; accept up to ~20% slower than A0 (linear physics; small-scale P(k) less important) | **To implement** after the commit review: tune `EFT_RGR_qs_threshold` (and/or the probe k) so 4_Des_F_R_LCDM_2 runs within ~1.2x its A0 time (40 s -> <= ~48 s); report the P(k) cost |
+| 3 | Tune for performance; accept up to ~20% slower than A0 (linear physics; small-scale P(k) less important) | **Done, da3c2d1:** quasi-static probe k = 10 -> 1/Mpc, `EFT_RGR_qs_threshold` 1e-3 -> 5e-4. 4_Des_F_R_LCDM_2 turn-on 0.016 -> 0.039, runtime 94 -> 36 s (A0 33 s, 1.08x; 1 thread, run alone). Vs an early turn-on (0.007): P(k <= 1/Mpc) 4.0e-4, P(k <= 10/Mpc) 3.3e-2, sigma8 5.4e-6, lensed C_l 2.8e-5, C_l^phiphi 1.1e-4 (A0: 1.6e-2, 0.15, 2.3e-4, 3.3e-5, 3.7e-3). No other test model or audit ini changes its turn-on; trade-off table in REGRESSION.md |
 | 4 | Accepted | none |
 | 5 | Leave as is | Flag for later: full Beyond Horndeski model check from the literature (massive neutrinos, `OmegaRadprime` term) |
 | 6 | Accepted | none |
@@ -208,12 +208,14 @@ every agent-group boundary and all A9 commits build (15 commits checked in clean
 | 8 | No upstream report | none |
 | 9 | No upstream CAMB changes | none |
 | 10 | Accepted | none |
-| 11 | Yes | **To implement:** refuse theta input (cosmomc_theta / thetastar) for Horndeski models whose H0 is set by the EFT background (C7) |
-| 12 | Yes | **To implement:** initialise the EFTCAMB parameter cache at allocation |
+| 11 | Yes | **Done, eff41e9:** both theta -> H0 solvers (`CAMB_SetH0ForTheta`, ini path; `set_H0_for_theta`, Python `set_cosmology`) fail when the computed H0 differs from the trial H0: "thetastar/cosmomc_theta cannot be used with this model: its H0 (85.5373) is set by the EFT background" (CAMBValueError; CAMBError for `read_ini(no_validate=True)`). Horndeski_shooting = T also refused (the background still fixes H0); other EFT models (and designer-potential Horndeski, which starts from the input H0) unchanged; test `test_theta_input` |
+| 12 | Yes | **Done, af2504f:** default initialisation (0, arrays unallocated) of every `TEFTCAMB_parameter_cache` component in the type, so every allocation (CAMB_SetDefParams, read_ini, command line, Python `F2003Class_new` with mold) is defined; test `test_parameter_cache_initialised` (CAMBparams(), new instance, read_ini: all 0); spectra bit-identical |
 | 13 | Option (a): keep the hard error for turn-on earlier than tau = 1e-12 Mpc | none |
 | 14 | Accepted (physics workflow later) | none |
 
-Items 3, 11, 12 implemented on 2026-10-21 at the user's request (before the commit review). Agent worktrees are kept.
+Items 3, 11, 12 implemented on 2026-10-21 at the user's request (before the commit review): da3c2d1 (Q3), af2504f (Q12),
+eff41e9 (Q11). Regression of all 85 inis vs F2: only 4_Des_F_R_LCDM_2 changes (Q3); `camb_test` + `eftcamb_test` pass.
+Agent worktrees are kept.
 
 ## Implementation plan
 

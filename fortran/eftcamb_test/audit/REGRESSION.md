@@ -1,6 +1,7 @@
 # EFTCAMB audit: final regression (HEAD vs pre-fix baseline)
 
-HEAD = `eftcamb-audit` at 4819c8f (all approved fixes, A9 included). The later validation fix 5b214ea (turn-on
+HEAD = `eftcamb-audit` at 4819c8f (all approved fixes, A9 included); updated for the Q3/Q11/Q12 commits (eff41e9), see the
+last section. The later validation fix 5b214ea (turn-on
 before tau = 1e-12 Mpc refused instead of crashing) changes no shipped model (8 models rechecked bit-identical). Baseline A0 = the pre-fix code (f6f4ba9) as frozen
 in the audit tree `trees/A0`: `runs/A0` for the 73 shipped test models, plus a fresh A0 run of the 12 audit inis
 (`inis/0*.ini`, without the `*.ini.ini` byproducts) on the same tree (`runs/A0aud`). F2 = the integration state
@@ -31,7 +32,7 @@ and parametrizations (`me/gate_table.txt`); "-" = model not in that table.
   RGR skipped) vs EFTflag = 0: TT 2.7e-6 (A0) -> 2.3e-5 (HEAD) with turn-on 0.01, 2.6e-6 with turn-on 1e-8, i.e.
   the GR-limit consistency is now at the 2e-5 level (CAMB's own time-sampling sensitivity is ~6e-5).
 - Runtime: median HEAD/A0 0.98; total 2198 s -> 2268 s (+3%). Larger: 4_Des_F_R_LCDM_2 39.5 -> 109.5 s (C3, earlier
-  turn-on 0.093 -> 0.016 where the f(R) pi equation is stiff), 008p5-beyond-horndeski(_2) 17.9/12.9 -> 28.3/19.1 s
+  turn-on 0.093 -> 0.016 where the f(R) pi equation is stiff; after Q3 40.1 s, see the update below), 008p5-beyond-horndeski(_2) 17.9/12.9 -> 28.3/19.1 s
   (B16, background from the model's own solution), 5_scg 20.2 -> 25.2 s (B15, massive nu in the ODE),
   007p5/007p6 +12-18%, 008p7-ext-galileon(_2) 204/177 s (failed after 58/31 s in A0).
 
@@ -43,7 +44,7 @@ and parametrizations (`me/gate_table.txt`); "-" = model not in that table.
 | other 2_PEFT_* with EFT on, 4_Des_mc5e_*, 4_Des_F_R_LCDM_1, wCDM_1/2, 007p7-shiftsym(_2) | TT ~2e-5, EE 1.1e-5 (C9 floor); f(R) P(k) 2-4e-6 | C9; f(R) also stab group (C3 RGR, <= 3e-6) and B6 (Hdotdotdot, get_eft_functions only) |
 | 3_RPH_MB_const_1 | P(k) x100 at a single k (the IC pole), TT 1.0, sigma8 5.7e-6 | C2 (pi IC regularisation; the A0 spike and zeros across k_c are gone, default and boost2 agree); C9 TT 7e-2 |
 | 3_RPH_MB_OmegaDE_1, MK_const_1, KT/MK_OmegaDE_1, MK_power_1, KT_power_1 | TT 2.7e-3 / 6.5e-3 / 1e-4 | C9; stab group (C2/C8) <= 4.5e-5 |
-| 4_Des_F_R_LCDM_2 | P(k) 0.13 (k >= 1/Mpc), sigma8 2.3e-4, PP 3.7e-3 | C3 (dimensionless, observable-based return to GR: turn-on 0.0931 -> 0.0162, converged answer); runtime x2.8 |
+| 4_Des_F_R_LCDM_2 | P(k) 0.18 (k > 3/Mpc; 1.6e-2 at k <= 1/Mpc), PP 3.6e-3, sigma8 2.3e-4 | C3 + Q3 (dimensionless, observable-based return to GR at k = 1/Mpc: turn-on 0.0931 -> 0.0393; A0 is the less converged one: vs an early turn-on A0 P(k <= 1/Mpc) 1.6e-2, HEAD 4e-4); runtime 1.08x (run alone) |
 | 5_ADE_1 | 8.6e-5 C_l, P(k) 7.3e-5, H 3.2e-5 | B21 (10x background tables), C3 (turn-on 1e-10 -> 1.16e-6), C9 |
 | 5_Horava_* | TT 0.49 (SolSyst_3), 0.38 (eta_4), 4.3e-2 (SolSyst_2); sigma8 <= 5.7e-3 | B7 (Hubble derivatives from the model's H(a), arXiv:1508.01787), B3 (SolSyst_3 TT 0.40 and eta_4 5e-3 at the B3 step of the core group) and C9 (0.11 / 3e-2) |
 | 5_Kmimic_1/2/3 | P(k) 18 / 530 / 0.86 (single-k IC poles removed), TT 0.94 / 0.92 / 0.22, sigma8 0.776 -> 0.616 etc. (2.1e-1) | C2 (IC regularisation, k-independent IC time), B1 (EFTpiDfunction), C9 (core group 0.33 TT, P(k) x9), B21 (10000-point table, c6b0fb0) |
@@ -113,7 +114,7 @@ windows in non-flat models.
 | 3_RPH_MK_const_1 | ok | 6.5e-03 | 1.2e-05 | 3.9e-03 | 1.7e-05 | 2.4e-05 | 4.9e-07 | 2.3e-08 | 0 | 36.3 / 38.6 | bit | 8.1e-03 / 3.3e-07 / 0 |
 | 3_RPH_MK_power_1 | ok | 7.1e-05 | 1.2e-05 | 4.5e-05 | 4.4e-07 | 4.7e-05 | 3.4e-07 | 1.7e-09 | 0 | 44.9 / 45.9 | bit | 8.7e-05 / 6.5e-07 / 0 |
 | 4_Des_F_R_LCDM_1 | ok | 2.1e-05 | 1.1e-05 | 1.2e-05 | 2.2e-07 | 2.8e-07 | 4.3e-06 | 4.1e-09 | 0 | 27.1 / 25.4 | bit | 2.3e-05 / 3.3e-06 / 0 |
-| 4_Des_F_R_LCDM_2 | ok | 3.2e-05 | 8.7e-06 | 5.1e-06 | 1.1e-03 | 3.7e-03 | 1.3e-01 | 2.3e-04 | 0 | 39.5 / 109.5 | bit | 1.9e-04 / 1.3e-01 / 0 |
+| 4_Des_F_R_LCDM_2 | ok | 3.0e-05 | 8.4e-06 | 1.3e-05 | 1.1e-03 | 3.6e-03 | 1.8e-01 | 2.3e-04 | 0 | 39.5 / 40.1 | Q3: P(k) 1.3e-1, PP 1.0e-4, sigma8 5.3e-6 | 1.9e-04 / 1.3e-01 / 0 |
 | 4_Des_F_R_wCDM_1 | ok | 2.0e-05 | 1.0e-05 | 1.1e-05 | 2.0e-07 | 2.4e-07 | 3.4e-06 | 8.2e-12 | 0 | 24.2 / 24.1 | bit | 2.2e-05 / 2.4e-06 / 0 |
 | 4_Des_F_R_wCDM_2 | ok | 2.0e-05 | 1.0e-05 | 1.1e-05 | 2.0e-07 | 2.3e-07 | 2.6e-06 | 1.2e-09 | 0 | 24.1 / 24.3 | bit | 2.2e-05 / 2.6e-06 / 0 |
 | 4_Des_mc5e_CPL_1 | ok | 2.1e-05 | 1.1e-05 | 1.2e-05 | 3.5e-07 | 4.6e-07 | 2.5e-07 | 1.3e-10 | 0 | 29.5 / 31.0 | bit | 2.3e-05 / 1.0e-09 / 0 |
@@ -162,6 +163,68 @@ windows in non-flat models.
 
 
 Scripts: scratchpad `final/batch.py` (runs), `final/regress.py` (this table), `final/gr_vs_camb.py`, `final/attr_aud.py`.
+
+## Update 2026-10-21: Q3, Q11, Q12 (da3c2d1, af2504f, eff41e9)
+
+**Regression vs F2** (all 85 inis on eff41e9, `run_model`, 1 thread, 4 jobs; scratchpad `q3/regr.py`, runs in
+`q3/regr`): 82 bit-identical, 2 refused in both (007p8-3p1(_2)), 1 changed: 4_Des_F_R_LCDM_2 (Q3: P(k) 0.13 at
+k > 3/Mpc, C_l^phiphi 1.0e-4, BB 3.0e-5, TT 1.3e-5, sigma8 5.3e-6). Q11 and Q12 change no result.
+`camb.tests.camb_test` + `camb.tests.eftcamb_test` (34 tests): OK; the eftcamb_test reference models are unchanged.
+
+**Q3 trade-off** (4_Des_F_R_LCDM_2; scratch tree with the probe k and threshold read from the environment,
+`q3/scan.py`, `q3/errs.py`). Runtime = harness elapsed, 1 thread, one run at a time (A0 32.6-33.4 s in six runs on
+the same machine state; pre-Q3 HEAD 94.3 s). Errors = max fractional difference vs a converged reference with turn-on
+forced to a = 0.007 (336 s; the turn-on 0.01 run differs from it by P(k <= 10) 7.6e-5, C_l 1.2e-5), linear P(k) at
+z = 0, lensed TT/EE/TE (TE / sqrt(TT EE)) and C_l^phiphi for l <= 2500. The C_l column has a ~2e-5 floor (the C9
+floor; the turn-on 0.01 reference itself is at 1.2e-5).
+
+| probe k [1/Mpc] | threshold | turn-on a | runtime [s] | P(k <= 1) | P(k <= 10) | sigma8 | lensed C_l | C_l^phiphi |
+|---|---|---|---|---|---|---|---|---|
+| (A0, Omega-based) | - | 0.0931 | 33.2 | 1.6e-2 | 1.5e-1 | 2.3e-4 | 3.3e-5 | 3.7e-3 |
+| 10 (pre-Q3 HEAD) | 1e-3 | 0.0162 | 94.3 | 7.9e-6 | 7.7e-4 | 1.1e-7 | 2.2e-5 | 2.3e-6 |
+| 10 | 1e-2 | 0.0274 | 50.3 | 8.2e-5 | 7.7e-3 | 1.1e-6 | 2.4e-5 | 2.3e-5 |
+| 10 | 3e-2 | 0.0359 | 39.2 | 2.7e-4 | 2.3e-2 | 3.6e-6 | 2.7e-5 | 7.2e-5 |
+| 10 | 5e-2 | 0.0408 | 35.0 | 4.7e-4 | 3.8e-2 | 6.4e-6 | 3.1e-5 | 1.3e-4 |
+| 10 | 1e-1 | 0.0500 | 30.4 | 1.1e-3 | 7.4e-2 | 1.6e-5 | 3.3e-5 | 3.0e-4 |
+| 3 | 1e-3 | 0.0280 | 49.7 | 8.9e-5 | 8.4e-3 | 1.2e-6 | 2.3e-5 | 2.5e-5 |
+| 3 | 3e-3 | 0.0360 | 38.9 | 2.7e-4 | 2.4e-2 | 3.7e-6 | 4.7e-5 | 7.3e-5 |
+| 1 | 1e-4 | 0.0273 | 50.5 | 8.1e-5 | 7.6e-3 | 1.1e-6 | 2.2e-5 | 2.2e-5 |
+| 1 | 3e-4 | 0.0350 | 39.6 | 2.4e-4 | 2.1e-2 | 3.3e-6 | 2.6e-5 | 6.5e-5 |
+| **1 (Q3)** | **5e-4** | **0.0393** | **36.0** | **4.0e-4** | **3.3e-2** | **5.4e-6** | **2.8e-5** | **1.1e-4** |
+| 1 | 1e-3 | 0.0462 | 32.2 | 8.1e-4 | 5.8e-2 | 1.1e-5 | 5.9e-5 | 2.1e-4 |
+| 1 | 3e-3 | 0.0593 | 27.3 | 2.4e-3 | 1.1e-1 | 3.3e-5 | 9.5e-5 | 6.1e-4 |
+| 1 | 1e-2 | 0.0635 | 26.2 | 3.2e-3 | 1.3e-1 | 4.4e-5 | 1.2e-4 | 8.1e-4 |
+
+Chosen: k = 1/Mpc (the linear scales the criterion should protect), threshold 5e-4: the cheapest setting with
+P(k <= 1/Mpc) < 1e-3 and all C_l (C_l^phiphi included) at <~ 1e-4; 36.0 s vs A0 33.3 s (1.08x, target <= 1.2x).
+Threshold 1e-3 at k = 1 is cheaper (32 s) with lensed C_l 5.9e-5 but C_l^phiphi 2.1e-4. Runtime falls with the
+turn-on time (the f(R) pi equation is stiff at early times); 0.0635 is the latest possible turn-on (the c/3H^2
+criterion takes over). The price is at small scales: P(k) 3.6e-3 at k <= 3/Mpc, 3.3e-2 at k <= 10/Mpc, 0.14 at
+k <= 33/Mpc (A0: 9.2e-2 / 0.15 / 0.15).
+
+**Turn-on and runtime of the models C3 changed** (turn-on from a background-only run for both settings; runtime run
+alone, 1 thread; "before" = pre-Q3 setting, 1e-3 at k = 10/Mpc):
+
+| model | turn-on before / after | runtime before / after [s] |
+|---|---|---|
+| 4_Des_F_R_LCDM_1 | 0.01 / 0.01 (requested time) | 22.0 / 22.5 |
+| 4_Des_F_R_LCDM_2 | 0.0162 / 0.0393 | 94.3 / 36.0 (A0 33.3) |
+| 4_Des_F_R_wCDM_1 | 0.01 / 0.01 | 21.5 / 22.1 |
+| 4_Des_F_R_wCDM_2 | 0.01 / 0.01 | 21.3 / 21.5 |
+| 5_ADE_1 | 1.16e-6 / 1.16e-6 | 22.4 / 22.4 |
+| 5_quint_axion | 1.11e-3 / 1.11e-3 | 24.2 / 24.2 |
+| 5_quint_cubic | unchanged | 28.1 / 28.1 |
+| 5_quint_exponential | unchanged | 21.4 / 21.4 |
+| 5_quint_inverse_power | unchanged | 21.8 / 21.7 |
+| 5_quint_quadratic | unchanged | 22.5 / 22.5 |
+
+All other test models and the audit inis keep their turn-on time (all 73 + 12 checked); their results are
+bit-identical to F2.
+
+**Q11**: thetastar / cosmomc_theta with 5_hdsk_TG_1 (Horndeski_shooting = F and T) refused on both paths
+("thetastar/cosmomc_theta cannot be used with this model: its H0 (85.5373) is set by the EFT background"); PEFT and
+f(R) models still solve theta -> H0 on both paths. **Q12**: the parameter cache of `CAMBparams()`, of a new
+`EFTCAMB_parameter_cache()` and after `read_ini` is all zero before the first calculation.
 
 ## Reproducers on HEAD
 
