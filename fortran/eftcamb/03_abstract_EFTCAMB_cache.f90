@@ -68,35 +68,37 @@
     !! the cosmological parameters that we need from CAMB and then use this for the interfaces.
     !! This also contains a wrapper for Massive Neutrinos quantities that can be used in
     !! the background code.
+    !! All components are default-initialised (zero, arrays unallocated) at allocation, so that the cache held by
+    !! input parameters does not expose undefined values before the first calculation fills it (SetParams).
     type, extends(TCambComponent) :: TEFTCAMB_parameter_cache
 
         ! 1) relative densities:
-        real(dl) :: omegac         !< the value of \f$ \Omega_{\rm CDM}^0 \f$.
-        real(dl) :: omegab         !< the value of \f$ \Omega_{\rm b}^0 \f$.
-        real(dl) :: omegav         !< the value of \f$ \Omega_{\Lambda}^0 \f$.
-        real(dl) :: omegak         !< the value of \f$ \Omega_{\rm K}^0 \f$.
-        real(dl) :: omegan         !< the value of \f$ \Omega_{m\nu}^0 \f$ of massive neutrinos.
-        real(dl) :: omegag         !< the value of \f$ \Omega_{ \gamma }^0 \f$.
-        real(dl) :: omegar         !< the value of \f$ \Omega_{ \nu }^0 \f$ of massless neutrinos.
+        real(dl) :: omegac = 0._dl !< the value of \f$ \Omega_{\rm CDM}^0 \f$.
+        real(dl) :: omegab = 0._dl !< the value of \f$ \Omega_{\rm b}^0 \f$.
+        real(dl) :: omegav = 0._dl !< the value of \f$ \Omega_{\Lambda}^0 \f$.
+        real(dl) :: omegak = 0._dl !< the value of \f$ \Omega_{\rm K}^0 \f$.
+        real(dl) :: omegan = 0._dl !< the value of \f$ \Omega_{m\nu}^0 \f$ of massive neutrinos.
+        real(dl) :: omegag = 0._dl !< the value of \f$ \Omega_{ \gamma }^0 \f$.
+        real(dl) :: omegar = 0._dl !< the value of \f$ \Omega_{ \nu }^0 \f$ of massless neutrinos.
         ! 2) Hubble constant:
-        real(dl) :: h0             !< the Hubble constant \f$ H_0 \f$ in km/s/Mpc.
-        real(dl) :: h0_Mpc         !< the Hubble constant in MegaParsec \f$ 10^3 \cdot H_0/c \f$.
+        real(dl) :: h0 = 0._dl     !< the Hubble constant \f$ H_0 \f$ in km/s/Mpc.
+        real(dl) :: h0_Mpc = 0._dl !< the Hubble constant in MegaParsec \f$ 10^3 \cdot H_0/c \f$.
         ! 3) densities:
-        real(dl) :: grhog          !< the value of \f$ 8 \pi G_{N} \rho_{\gamma}(t_0) \f$.
-        real(dl) :: grhornomass    !< the value of \f$ 8 \pi G_{N} \rho_{\nu}(t_0) \f$.
-        real(dl) :: grhoc          !< the value of \f$ 8 \pi G_{N} \rho_{\rm CDM}(t_0) \f$.
-        real(dl) :: grhob          !< the value of \f$ 8 \pi G_{N} \rho_{\rm b}(t_0) \f$.
-        real(dl) :: grhov          !< the value of \f$ 8 \pi G_{N} \rho_{\Lambda}(t_0) \f$.
-        real(dl) :: grhok          !< the value of \f$ 8 \pi G_{N} \rho_{\rm K}(t_0) \f$.
+        real(dl) :: grhog = 0._dl  !< the value of \f$ 8 \pi G_{N} \rho_{\gamma}(t_0) \f$.
+        real(dl) :: grhornomass = 0._dl !< the value of \f$ 8 \pi G_{N} \rho_{\nu}(t_0) \f$.
+        real(dl) :: grhoc = 0._dl  !< the value of \f$ 8 \pi G_{N} \rho_{\rm CDM}(t_0) \f$.
+        real(dl) :: grhob = 0._dl  !< the value of \f$ 8 \pi G_{N} \rho_{\rm b}(t_0) \f$.
+        real(dl) :: grhov = 0._dl  !< the value of \f$ 8 \pi G_{N} \rho_{\Lambda}(t_0) \f$.
+        real(dl) :: grhok = 0._dl  !< the value of \f$ 8 \pi G_{N} \rho_{\rm K}(t_0) \f$.
         ! 4) massive neutrinos:
-        integer  :: Num_Nu_Massive                        !< number of massive neutrinos
-        integer  :: Nu_mass_eigenstates                   !< number of mass eigenstates
+        integer  :: Num_Nu_Massive = 0                    !< number of massive neutrinos
+        integer  :: Nu_mass_eigenstates = 0               !< number of mass eigenstates
         !< densities of neutrinos in each mass eigenstate \f$ 8 \pi G_{N} \rho_{ m\nu }(t_0) \f$
         real(dl), allocatable, dimension(:) :: grhormass
         real(dl), allocatable, dimension(:) :: nu_masses  !< neutrino masses
         ! 5a) Horndeski module: EDE shooting parameters
-        real(dl) :: maxfrac_hdsk           !< max of Horndeski field energy fraction
-        real(dl) :: z_maxfrac_hdsk         !< redshift where Horndeski field energy fraction peaks
+        real(dl) :: maxfrac_hdsk = 0._dl   !< max of Horndeski field energy fraction
+        real(dl) :: z_maxfrac_hdsk = 0._dl !< redshift where Horndeski field energy fraction peaks
         ! 5b) Horndeski module: designer approach products
         ! real(dl), allocatable, dimension(:) :: designer_hdsk_phi      !< reconstructed value of the Horndeski field phi
         ! real(dl), allocatable, dimension(:) :: designer_hdsk_V        !< reconstructed value of the Horndeski field potential

@@ -136,6 +136,19 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertGreaterEqual(len(cache.nu_masses), p.nu_mass_eigenstates)
         self.assertGreater(cache.nu_masses[0], 0)
 
+    def test_parameter_cache_initialised(self):
+        # the cache of input parameters is zero (arrays unallocated) until a calculation fills it
+        fresh = camb.CAMBparams()
+        new = eftcamb.EFTCAMB_parameter_cache()
+        read = self.read("2_PEFT_Omega_const_1")
+        caches = {"CAMBparams": fresh.EFTCAMB_parameter_cache, "new": new, "read_ini": read.EFTCAMB_parameter_cache}
+        for name, cache in caches.items():
+            for field, *_ in cache._fields_:
+                if field.startswith("_"):
+                    self.assertEqual(len(getattr(cache, field[1:])), 0, msg=f"{name}.{field}")
+                else:
+                    self.assertEqual(getattr(cache, field), 0, msg=f"{name}.{field}")
+
     # ini reading and the set_params path
 
     def test_read_ini_set_params(self):
