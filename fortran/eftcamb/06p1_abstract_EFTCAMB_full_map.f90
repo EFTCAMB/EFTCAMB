@@ -119,7 +119,7 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: a2, denom, one_plus_omega, adotoa2, N1
+    real(dl) :: a2, denom, one_plus_omega, adotoa2, denomdot
 
     a2 = a*a
     adotoa2 = eft_cache%adotoa**2._dl
@@ -138,35 +138,37 @@
         0.5_dl*(eft_cache%gpresdotm_t + 2.0_dl*eft_cache%adotoa*eft_cache%gpresm_t + eft_cache%EFTLambdadot + &
         2.0_dl*eft_cache%adotoa*eft_cache%EFTLambda))
 
-    denom = one_plus_omega + 0.5*a*eft_cache%EFTOmegaP
+    ! Hdotdotdot is the exact conformal time derivative of the Hdotdot expression above:
+    ! Hdotdotdot = (d/dtau[numerator] - Hdotdot*d(denom)/dtau)/denom, with d/dtau = a H d/da on Omega and its
+    ! derivatives and dX/dtau = Xdot + 2 H X for the a^2-weighted pressures and Lambda.
+    ! It needs EFTLambdadotdot and EFTOmegaPPPP: full mapping models that do not compute them analytically get
+    ! them from compute_additional_derivs, after which compute_H_derivs has to be called again.
+    denom = one_plus_omega + 0.5_dl*a*eft_cache%EFTOmegaP
+    denomdot = a*eft_cache%adotoa*(1.5_dl*eft_cache%EFTOmegaP + 0.5_dl*a*eft_cache%EFTOmegaPP)
 
-    N1 = -a*eft_cache%adotoa*(3.0_dl*eft_cache%EFTOmegaP + 0.5_dl*a*eft_cache%EFTOmegaPP)
-
-    eft_cache%Hdotdotdot = N1/2._dl/denom**2._dl* &
-        (-0.5_dl*a*eft_cache%adotoa**3._dl* &
-        (3._dl*eft_cache%EFTOmegaP + 4._dl*a*eft_cache%EFTOmegaPP + a2*eft_cache%EFTOmegaPPP) - &
-        eft_cache%adotoa*eft_cache%Hdot* &
-        (one_plus_omega + 3.5_dl*a*eft_cache%EFTOmegaP*1.5_dl*a2*eft_cache%EFTOmegaPP) - &
-        0.5_dl*(eft_cache%gpresdotdotm_t + 2.0_dl*eft_cache%adotoa*eft_cache%gpresdotm_t - &
-        0.5_dl*(eft_cache%EFTLambdadot + 2.0_dl*eft_cache%adotoa*eft_cache%EFTLambda))) + &
-        1/denom*(-a*adotoa2*(adotoa2 + 3.0_dl*eft_cache%adotoa)* &
-        (3._dl*eft_cache%EFTOmegaP + 4._dl*a*eft_cache%EFTOmegaPP + a2*eft_cache%EFTOmegaPPP) - &
-        0.5_dl*a2*eft_cache%adotoa**4._dl* &
-        (7._dl*eft_cache%EFTOmegaPP + 6._dl*a*eft_cache%EFTOmegaPPP + a2*eft_cache%EFTOmegaPPPP) - &
-        (eft_cache%Hdot**2. + eft_cache%adotoa*eft_cache%Hdotdot)* &
-        (one_plus_omega + 3.5_dl*a*eft_cache%EFTOmegaP*1.5_dl*a2*eft_cache%EFTOmegaPP) - &
-        0.5_dl*a*adotoa2*eft_cache%Hdot* &
-        (9._dl*eft_cache%EFTOmegaP + 13._dl*a*eft_cache%EFTOmegaPP + 3._dl*a2*eft_cache%EFTOmegaPPP) - &
-        0.5_dl*(eft_cache%gpresdotdotm_t + 4._dl*eft_cache%adotoa*eft_cache%gpresdotm_t + &
-        2._dl*eft_cache%Hdot*eft_cache%gpresm_t + 4._dl*adotoa2*eft_cache%gpresm_t) - &
-        0.5_dl*(eft_cache%EFTLambdadotdot + 4._dl*eft_cache%adotoa*eft_cache%EFTLambdadot + &
+    eft_cache%Hdotdotdot = 1._dl/denom*(-denomdot*eft_cache%Hdotdot &
+        - a*adotoa2*(0.5_dl*adotoa2 + 1.5_dl*eft_cache%Hdot)* &
+        (3._dl*eft_cache%EFTOmegaP + 4._dl*a*eft_cache%EFTOmegaPP + a2*eft_cache%EFTOmegaPPP) &
+        - 0.5_dl*a2*adotoa2**2*(7._dl*eft_cache%EFTOmegaPP + 6._dl*a*eft_cache%EFTOmegaPPP + &
+        a2*eft_cache%EFTOmegaPPPP) &
+        - (eft_cache%Hdot**2 + eft_cache%adotoa*eft_cache%Hdotdot)* &
+        (one_plus_omega + 3.5_dl*a*eft_cache%EFTOmegaP + 1.5_dl*a2*eft_cache%EFTOmegaPP) &
+        - 0.5_dl*a*adotoa2*eft_cache%Hdot* &
+        (9._dl*eft_cache%EFTOmegaP + 13._dl*a*eft_cache%EFTOmegaPP + 3._dl*a2*eft_cache%EFTOmegaPPP) &
+        - 0.5_dl*(eft_cache%gpresdotdotm_t + 4._dl*eft_cache%adotoa*eft_cache%gpresdotm_t + &
+        2._dl*eft_cache%Hdot*eft_cache%gpresm_t + 4._dl*adotoa2*eft_cache%gpresm_t) &
+        - 0.5_dl*(eft_cache%EFTLambdadotdot + 4._dl*eft_cache%adotoa*eft_cache%EFTLambdadot + &
         2._dl*eft_cache%Hdot*eft_cache%EFTLambda + 4._dl*adotoa2*eft_cache%EFTLambda))
 
     end subroutine EFTCAMBFullModelComputeHubbleDer
 
 ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes additional derivatives of the EFT functions, as needed by the
-    !> stability calculation.
+    !> stability calculation (mass eigenvalues, positivity bounds, Minkowski limit).
+    !! The derivatives are finite differences (dfridr) of the lower derivatives evaluated, at the shifted scale
+    !! factor, on a separate cache filled exactly as in the stability calculation. Values that the model already
+    !! provides analytically (non-zero in the input cache) are kept. Derivatives of quantities that the model does
+    !! not provide (e.g. EFTGamma3PPPP when EFTGamma3PPP is not computed) stay zero.
     subroutine EFTCAMBFullModelComputeAdditionalDer(self, a, eft_par_cache, eft_cache)
 
     implicit none
@@ -178,232 +180,168 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: dEFTcdot_da, dEFTLambdadot_da, err
+    integer, parameter :: num_fields = 9, max_memo = 512
+    real(dl) :: err, memo_a(max_memo), memo_v(num_fields, max_memo)
+    integer  :: n_memo
 
-    eft_cache%EFTGamma1PP = dfridr(dummy_helper_gamma_1, a, 0.03_dl*a, err)
-    eft_cache%EFTGamma2PP = dfridr(dummy_helper_gamma_2, a, 0.03_dl*a, err)
-    eft_cache%EFTGamma3PP = dfridr(dummy_helper_gamma_3, a, 0.03_dl*a, err)
-    eft_cache%EFTGamma2PPP = dfridr(dummy_helper_gamma_23, a, 0.03_dl*a, err)
-    eft_cache%EFTGamma3PPP = dfridr(dummy_helper_gamma_33, a, 0.03_dl*a, err)
-    eft_cache%EFTGamma3PPPP = dfridr(dummy_helper_gamma_34, a, 0.03_dl*a, err)
+    n_memo = 0
 
-    dEFTcdot_da = dfridr(dummy_helper_cP, a, 0.03_dl*a, err)
-
-    eft_cache%EFTcdotdot = a*eft_cache%adotoa*dEFTcdot_da - 2._dl*eft_cache%adotoa*eft_cache%EFTcdot
-
-    dEFTLambdadot_da = dfridr(dummy_helper_LambdaP, a, 0.03_dl*a, err)
-
-    eft_cache%EFTLambdadotdot = a*eft_cache%adotoa*dEFTLambdadot_da - 2._dl*eft_cache%adotoa*eft_cache%EFTLambdadot
+    if (eft_cache%EFTGamma1PP == 0._dl) eft_cache%EFTGamma1PP = dfridr(helper_1, a, 0.03_dl*a, err)
+    if (eft_cache%EFTGamma2PP == 0._dl) eft_cache%EFTGamma2PP = dfridr(helper_2, a, 0.03_dl*a, err)
+    if (eft_cache%EFTGamma3PP == 0._dl) eft_cache%EFTGamma3PP = dfridr(helper_3, a, 0.03_dl*a, err)
+    if (eft_cache%EFTGamma2PPP == 0._dl) eft_cache%EFTGamma2PPP = dfridr(helper_4, a, 0.03_dl*a, err)
+    if (eft_cache%EFTGamma3PPP == 0._dl) eft_cache%EFTGamma3PPP = dfridr(helper_5, a, 0.03_dl*a, err)
+    if (eft_cache%EFTGamma3PPPP == 0._dl) eft_cache%EFTGamma3PPPP = dfridr(helper_6, a, 0.03_dl*a, err)
+    if (eft_cache%EFTOmegaPPPP == 0._dl) eft_cache%EFTOmegaPPPP = dfridr(helper_7, a, 0.03_dl*a, err)
+    ! the dotted EFT functions follow Xdot = dX/dtau - 2 H X (a^2-weighted), so Xdotdot = a H dXdot/da - 2 H Xdot:
+    if (eft_cache%EFTcdotdot == 0._dl) eft_cache%EFTcdotdot = a*eft_cache%adotoa*dfridr(helper_8, a, 0.03_dl*a, err) &
+        - 2._dl*eft_cache%adotoa*eft_cache%EFTcdot
+    if (eft_cache%EFTLambdadotdot == 0._dl) eft_cache%EFTLambdadotdot = &
+        a*eft_cache%adotoa*dfridr(helper_9, a, 0.03_dl*a, err) - 2._dl*eft_cache%adotoa*eft_cache%EFTLambdadot
 
     contains
 
-    subroutine dummy_helper(temp_a, gamma1P, gamma2P, gamma2PP, gamma3P, gamma3PP, gamma3PPP, cP, LambdaP)
+    !> returns the i-th differentiated quantity at temp_a (memoized: all dfridr calls use the same points).
+    function helper_value(temp_a, i)
 
-    real(dl) temp_a, gamma1P, gamma2P, gamma2PP, gamma3P, gamma3PP, gamma3PPP, cP, LambdaP
+    real(dl), intent(in) :: temp_a
+    integer, intent(in)  :: i
+    real(dl) :: helper_value
 
     type(TEFTCAMB_timestep_cache)  :: temp_cache
     type(TEFTCAMB_parameter_cache) :: temp_par_cache
+    real(dl) :: a2, adotoa, EFT_grhonu, EFT_gpinu, EFT_gpinudot, grhormass_t
+    integer  :: nu_i, j
 
-    real(dl) :: a2
-    real(dl) :: grhob_t, grhoc_t, grhor_t, grhog_t, grho_matter, gpres, grho, adotoa
-    real(dl) :: EFT_grhonudot, EFT_gpinudot, EFT_gpinudotdot, adotdota, EFT_grhonu, EFT_gpinu, grhormass_t
+    do j = 1, n_memo
+        if (memo_a(j) == temp_a) then
+            helper_value = memo_v(i, j)
+            return
+        end if
+    end do
 
-    integer :: nu_i
-
-    ! initialize:
-    temp_cache = eft_cache
     temp_par_cache = eft_par_cache
-    ! initialize the cache:
     call temp_cache%initialize()
-    ! prepare:
     a2 = temp_a*temp_a
-    ! compute background densities of different species
-    grhob_t = temp_par_cache%grhob/temp_a    ! 8\pi G_N \rho_b a^2: baryons background density
-    grhoc_t = temp_par_cache%grhoc/temp_a    ! 8\pi G_N \rho_{cdm} a^2: cold dark matter background density
-    grhor_t = temp_par_cache%grhornomass/a2  ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
-    grhog_t = temp_par_cache%grhog/a2        ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
-    ! start computing background total pressure and total density:
-    grho_matter = grhob_t + grhoc_t
-    gpres = (grhog_t + grhor_t)/3._dl
-    ! add radiation, massless neutrinos and Lambda to total background density:
-    grho = grho_matter + grhor_t + grhog_t
+    ! background densities of the different species at temp_a:
+    temp_cache%a = temp_a
+    temp_cache%grhob_t = temp_par_cache%grhob/temp_a
+    temp_cache%grhoc_t = temp_par_cache%grhoc/temp_a
+    temp_cache%grhor_t = temp_par_cache%grhornomass/a2
+    temp_cache%grhog_t = temp_par_cache%grhog/a2
     temp_cache%grhonu_tot = 0._dl
     temp_cache%gpinu_tot = 0._dl
     if (temp_par_cache%Num_Nu_Massive /= 0) then
         do nu_i = 1, temp_par_cache%Nu_mass_eigenstates
-            EFT_grhonu = 0._dl
-            EFT_gpinu = 0._dl
-            grhormass_t = temp_par_cache%grhormass(nu_i)/temp_a**2
+            grhormass_t = temp_par_cache%grhormass(nu_i)/a2
             call ThermalNuBackground%rho_P(temp_a*temp_par_cache%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
             temp_cache%grhonu_tot = temp_cache%grhonu_tot + grhormass_t*EFT_grhonu
             temp_cache%gpinu_tot = temp_cache%gpinu_tot + grhormass_t*EFT_gpinu
         end do
     end if
-    grho = grho + temp_cache%grhonu_tot
-    gpres = gpres + temp_cache%gpinu_tot
-    ! start to fill the cache:
-    temp_cache%a = temp_a
-    temp_cache%grhom_t = grho
-    temp_cache%gpresm_t = gpres
-    temp_cache%grhob_t = grhob_t
-    temp_cache%grhoc_t = grhoc_t
-    temp_cache%grhor_t = grhor_t
-    temp_cache%grhog_t = grhog_t
-    ! compute the other things:
-    ! background for full models. Here the expansion history is computed from the
-    ! EFT functions. Hence compute them first and then compute the expansion history.
-    call self%compute_background_EFT_functions(a, temp_par_cache, eft_cache)
-    call self%compute_adotoa(a, temp_par_cache, eft_cache)
-    ! store adotoa:
+    temp_cache%grhom_t = temp_cache%grhob_t + temp_cache%grhoc_t + temp_cache%grhor_t + temp_cache%grhog_t + &
+        temp_cache%grhonu_tot
+    temp_cache%gpresm_t = (temp_cache%grhor_t + temp_cache%grhog_t)/3._dl + temp_cache%gpinu_tot
+    temp_cache%grhoa2 = temp_cache%grhom_t*a2
+    ! full mapping: background EFT functions first, then the expansion history:
+    call self%compute_background_EFT_functions(temp_a, temp_par_cache, temp_cache)
+    call self%compute_adotoa(temp_a, temp_par_cache, temp_cache)
     adotoa = temp_cache%adotoa
-    ! compute massive neutrinos stuff:
-    ! Massive neutrinos mod:
-    temp_cache%grhonu_tot = 0._dl
-    temp_cache%gpinu_tot = 0._dl
+    ! first derivatives of the massive neutrino quantities:
     temp_cache%grhonudot_tot = 0._dl
     temp_cache%gpinudot_tot = 0._dl
     if (temp_par_cache%Num_Nu_Massive /= 0) then
         do nu_i = 1, temp_par_cache%Nu_mass_eigenstates
-            EFT_grhonu = 0._dl
-            EFT_gpinu = 0._dl
-            EFT_grhonudot = 0._dl
-            EFT_gpinudot = 0._dl
-            grhormass_t = temp_par_cache%grhormass(nu_i)/a**2
-            call ThermalNuBackground%rho_P(a*temp_par_cache%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
-            temp_cache%grhonu_tot = temp_cache%grhonu_tot + grhormass_t*EFT_grhonu
-            temp_cache%gpinu_tot = temp_cache%gpinu_tot + grhormass_t*EFT_gpinu
+            grhormass_t = temp_par_cache%grhormass(nu_i)/a2
+            call ThermalNuBackground%rho_P(temp_a*temp_par_cache%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
             temp_cache%grhonudot_tot = temp_cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(a*temp_par_cache%nu_masses(nu_i), adotoa) - &
+                grhormass_t*(ThermalNuBackground%drho(temp_a*temp_par_cache%nu_masses(nu_i), adotoa) - &
                 4._dl*adotoa*EFT_grhonu)
             temp_cache%gpinudot_tot = temp_cache%gpinudot_tot + &
-                grhormass_t*(ThermalNuBackground%pidot(a*temp_par_cache%nu_masses(nu_i), adotoa, EFT_gpinu) - &
+                grhormass_t*(ThermalNuBackground%pidot(temp_a*temp_par_cache%nu_masses(nu_i), adotoa, EFT_gpinu) - &
                 4._dl*adotoa*EFT_gpinu)
         end do
     end if
-    ! compute pressure dot:
-    temp_cache%gpresdotm_t = -4._dl*adotoa*(grhog_t + grhor_t)/3._dl + temp_cache%gpinudot_tot
-    ! derivatives of H, third derivative of H not included:
+    temp_cache%gpresdotm_t = -4._dl*adotoa*(temp_cache%grhog_t + temp_cache%grhor_t)/3._dl + temp_cache%gpinudot_tot
     call self%compute_H_derivs(temp_a, temp_par_cache, temp_cache)
-    ! compute massive neutrinos stuff:
-    ! Massive neutrinos mod:
-    temp_cache%grhonu_tot = 0._dl
-    temp_cache%gpinu_tot = 0._dl
-    temp_cache%grhonudot_tot = 0._dl
-    temp_cache%gpinudot_tot = 0._dl
+    ! second derivative of the massive neutrino pressure (needs Hdot):
     temp_cache%gpinudotdot_tot = 0._dl
     if (temp_par_cache%Num_Nu_Massive /= 0) then
         do nu_i = 1, temp_par_cache%Nu_mass_eigenstates
-            EFT_grhonu = 0._dl
-            EFT_gpinu = 0._dl
-            EFT_grhonudot = 0._dl
-            EFT_gpinudot = 0._dl
-            grhormass_t = temp_par_cache%grhormass(nu_i)/a**2
-            call ThermalNuBackground%rho_P(a*temp_par_cache%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
-            temp_cache%grhonu_tot = temp_cache%grhonu_tot + grhormass_t*EFT_grhonu
-            temp_cache%gpinu_tot = temp_cache%gpinu_tot + grhormass_t*EFT_gpinu
-            temp_cache%grhonudot_tot = temp_cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(a*temp_par_cache%nu_masses(nu_i), adotoa) - &
-                4._dl*adotoa*EFT_grhonu)
-            EFT_gpinudot = ThermalNuBackground%pidot(a*temp_par_cache%nu_masses(nu_i), adotoa, EFT_gpinu)
-            temp_cache%gpinudot_tot = temp_cache%gpinudot_tot + grhormass_t*(EFT_gpinudot &
-                - 4._dl*adotoa*EFT_gpinu)
+            grhormass_t = temp_par_cache%grhormass(nu_i)/a2
+            call ThermalNuBackground%rho_P(temp_a*temp_par_cache%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
+            EFT_gpinudot = ThermalNuBackground%pidot(temp_a*temp_par_cache%nu_masses(nu_i), adotoa, EFT_gpinu)
             temp_cache%gpinudotdot_tot = temp_cache%gpinudotdot_tot - &
                 4._dl*adotoa*grhormass_t*(EFT_gpinudot - 4._dl*adotoa*EFT_gpinu) + &
-                grhormass_t*(ThermalNuBackground%pidotdot(a*temp_par_cache%nu_masses(nu_i), adotoa, eft_cache%Hdot, &
-                EFT_gpinu, EFT_gpinudot) - 4._dl*eft_cache%Hdot*EFT_gpinu - 4._dl*adotoa*EFT_gpinudot)
+                grhormass_t*(ThermalNuBackground%pidotdot(temp_a*temp_par_cache%nu_masses(nu_i), adotoa, &
+                temp_cache%Hdot, EFT_gpinu, EFT_gpinudot) - 4._dl*temp_cache%Hdot*EFT_gpinu - &
+                4._dl*adotoa*EFT_gpinudot)
         end do
     end if
-    ! compute pressure ddot:
-    temp_cache%gpresdotdotm_t = -(4._dl/3._dl)*temp_cache%Hdot*(grhog_t + grhor_t) + &
-        (16._dl/3._dl)*(grhog_t + grhor_t)*adotoa**2 + temp_cache%gpinudotdot_tot
-    ! compute remaining quantities related to H:
+    temp_cache%gpresdotdotm_t = -(4._dl/3._dl)*temp_cache%Hdot*(temp_cache%grhog_t + temp_cache%grhor_t) + &
+        (16._dl/3._dl)*(temp_cache%grhog_t + temp_cache%grhor_t)*adotoa**2 + temp_cache%gpinudotdot_tot
     call self%compute_H_derivs(temp_a, temp_par_cache, temp_cache)
-    ! store:
-    adotdota = temp_cache%Hdot + temp_cache%adotoa**2
-    ! compute backgrond EFT functions if model is designer:
-    ! compute all other background stuff:
     call self%compute_rhoQPQ(temp_a, temp_par_cache, temp_cache)
-    ! compute second order EFT functions:
     call self%compute_secondorder_EFT_functions(temp_a, temp_par_cache, temp_cache)
-    ! copy out value:
-    gamma1P = temp_cache%EFTGamma1P
-    gamma2P = temp_cache%EFTGamma2P
-    gamma3P = temp_cache%EFTGamma3P
-    cP = eft_cache%EFTcdot/(a*eft_cache%adotoa) + 2._dl*eft_cache%EFTc/a
-    LambdaP = eft_cache%EFTLambdadot/(a*eft_cache%adotoa) + 2._dl*eft_cache%EFTLambda/a
-    end subroutine dummy_helper
 
-    ! Helper function to compute second derivative of gamma1
-    function dummy_helper_gamma_1(a_temp)
-    real(dl) :: a_temp
-    real(dl) :: dummy_helper_gamma_1
-    real(dl) :: gamma1P, gamma2P, gamma3P, cP, gamma2PP, gamma3PP, gamma3PPP, LambdaP
-    call dummy_helper(a_temp, gamma1P, gamma2P, gamma2PP, gamma3P, gamma3PP, gamma3PPP, cP, LambdaP)
-    dummy_helper_gamma_1 = gamma1P
-    end function dummy_helper_gamma_1
+    if (n_memo < max_memo) then
+        n_memo = n_memo + 1
+        j = n_memo
+    else
+        j = max_memo
+    end if
+    memo_a(j) = temp_a
+    memo_v(:, j) = [temp_cache%EFTGamma1P, temp_cache%EFTGamma2P, temp_cache%EFTGamma3P, &
+        temp_cache%EFTGamma2PP, temp_cache%EFTGamma3PP, temp_cache%EFTGamma3PPP, temp_cache%EFTOmegaPPP, &
+        temp_cache%EFTcdot, temp_cache%EFTLambdadot]
+    helper_value = memo_v(i, j)
 
-    ! Helper function to compute second derivative of gamma2
-    function dummy_helper_gamma_2(a_temp)
-    real(dl) :: a_temp
-    real(dl) :: dummy_helper_gamma_2
-    real(dl) :: gamma1P, gamma2P, gamma3P, cP, gamma2PP, gamma3PP, gamma3PPP, LambdaP
-    call dummy_helper(a_temp, gamma1P, gamma2P, gamma2PP, gamma3P, gamma3PP, gamma3PPP, cP, LambdaP)
-    dummy_helper_gamma_2 = gamma2P
-    end function dummy_helper_gamma_2
+    end function helper_value
 
-    ! Helper function to compute third derivative of gamma2
-    function dummy_helper_gamma_23(a_temp)
-    real(dl) :: a_temp
-    real(dl) :: dummy_helper_gamma_23
-    real(dl) :: gamma1P, gamma2P, gamma3P, cP, gamma2PP, gamma3PP, gamma3PPP, LambdaP
-    call dummy_helper(a_temp, gamma1P, gamma2P, gamma2PP, gamma3P, gamma3PP, gamma3PPP, cP, LambdaP)
-    dummy_helper_gamma_23 = gamma2PP
-    end function dummy_helper_gamma_23
+    function helper_1(temp_a)
+    real(dl) :: temp_a, helper_1
+    helper_1 = helper_value(temp_a, 1)
+    end function helper_1
 
-    ! Helper function to compute second derivative of gamma3
-    function dummy_helper_gamma_3(a_temp)
-    real(dl) :: a_temp
-    real(dl) :: dummy_helper_gamma_3
-    real(dl) :: gamma1P, gamma2P, gamma3P, cP, gamma2PP, gamma3PP, gamma3PPP, LambdaP
-    call dummy_helper(a_temp, gamma1P, gamma2P, gamma2PP, gamma3P, gamma3PP, gamma3PPP, cP, LambdaP)
-    dummy_helper_gamma_3 = gamma3P
-    end function dummy_helper_gamma_3
+    function helper_2(temp_a)
+    real(dl) :: temp_a, helper_2
+    helper_2 = helper_value(temp_a, 2)
+    end function helper_2
 
-    ! Helper function to compute third derivative of gamma3
-    function dummy_helper_gamma_33(a_temp)
-    real(dl) :: a_temp
-    real(dl) :: dummy_helper_gamma_33
-    real(dl) :: gamma1P, gamma2P, gamma3P, cP, gamma2PP, gamma3PP, gamma3PPP, LambdaP
-    call dummy_helper(a_temp, gamma1P, gamma2P, gamma2PP, gamma3P, gamma3PP, gamma3PPP, cP, LambdaP)
-    dummy_helper_gamma_33 = gamma3PP
-    end function dummy_helper_gamma_33
+    function helper_3(temp_a)
+    real(dl) :: temp_a, helper_3
+    helper_3 = helper_value(temp_a, 3)
+    end function helper_3
 
-    ! Helper function to compute fourth derivative of gamma3
-    function dummy_helper_gamma_34(a_temp)
-    real(dl) :: a_temp
-    real(dl) :: dummy_helper_gamma_34
-    real(dl) :: gamma1P, gamma2P, gamma3P, cP, gamma2PP, gamma3PP, gamma3PPP, LambdaP
-    call dummy_helper(a_temp, gamma1P, gamma2P, gamma2PP, gamma3P, gamma3PP, gamma3PPP, cP, LambdaP)
-    dummy_helper_gamma_34 = gamma3PPP
-    end function dummy_helper_gamma_34
+    function helper_4(temp_a)
+    real(dl) :: temp_a, helper_4
+    helper_4 = helper_value(temp_a, 4)
+    end function helper_4
 
-    ! Helper function to compute the derivative of cdot*a^2/m_0^2
-    function dummy_helper_cP(a_temp)
-    real(dl) :: a_temp
-    real(dl) :: dummy_helper_cP
-    real(dl) :: gamma1P, gamma2P, gamma3P, cP, gamma2PP, gamma3PP, gamma3PPP, LambdaP
-    call dummy_helper(a_temp, gamma1P, gamma2P, gamma2PP, gamma3P, gamma3PP, gamma3PPP, cP, LambdaP)
-    dummy_helper_cP = cP
-    end function dummy_helper_cP
+    function helper_5(temp_a)
+    real(dl) :: temp_a, helper_5
+    helper_5 = helper_value(temp_a, 5)
+    end function helper_5
 
-    function dummy_helper_LambdaP(a_temp)
-    real(dl) :: a_temp
-    real(dl) :: dummy_helper_LambdaP
-    real(dl) :: gamma1P, gamma2P, gamma3P, cP, gamma2PP, gamma3PP, gamma3PPP, LambdaP
-    call dummy_helper(a_temp, gamma1P, gamma2P, gamma2PP, gamma3P, gamma3PP, gamma3PPP, cP, LambdaP)
-    dummy_helper_LambdaP = LambdaP
-    end function dummy_helper_LambdaP
+    function helper_6(temp_a)
+    real(dl) :: temp_a, helper_6
+    helper_6 = helper_value(temp_a, 6)
+    end function helper_6
 
+    function helper_7(temp_a)
+    real(dl) :: temp_a, helper_7
+    helper_7 = helper_value(temp_a, 7)
+    end function helper_7
+
+    function helper_8(temp_a)
+    real(dl) :: temp_a, helper_8
+    helper_8 = helper_value(temp_a, 8)
+    end function helper_8
+
+    function helper_9(temp_a)
+    real(dl) :: temp_a, helper_9
+    helper_9 = helper_value(temp_a, 9)
+    end function helper_9
 
     end subroutine EFTCAMBFullModelComputeAdditionalDer
 

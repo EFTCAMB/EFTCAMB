@@ -189,6 +189,13 @@ def _update_ini_state_from_params(params: model.CAMBparams, state: CambIniFile) 
         state.set_sequence("initial_vector", params.InitialConditionVector)
     state.set("use_cl_spline_template", params.use_cl_spline_template)
 
+    # EFTCAMB MOD START: EFTCAMB parameters. The model parameters are held by the Fortran model, not by python fields:
+    # write the parameters read at initialization, with the flags changed from python since then.
+    if params.EFTCAMB is not None and params.EFTCAMB.EFTflag != 0:
+        for key, value in params.EFTCAMB.current_parameters().items():
+            state.set(key, value)
+    # EFTCAMB MOD END
+
 
 def _roundtrip_expected_params(params: model.CAMBparams) -> model.CAMBparams:
     expected = params.copy()

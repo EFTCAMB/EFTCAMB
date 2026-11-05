@@ -57,7 +57,11 @@
     external func
 
     ! initial check:
-    if (x1 == x2) stop 'you have to guess an initial range in zbrac'
+    if (x1 == x2) then
+        ! no initial range: no bracket
+        succes = .false.
+        return
+    end if
     ! get an ordered interval:
     if (x2 < x1) then
         temp = x2

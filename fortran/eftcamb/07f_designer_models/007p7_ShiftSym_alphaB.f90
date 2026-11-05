@@ -25,6 +25,7 @@
     module EFTCAMB_designer_ShiftSym_alphaB
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use EFTCAMB_cache
     use MpiUtils
@@ -135,7 +136,7 @@
     implicit none
 
     class(EFTCAMB_ShiftSym_alphaB) :: self      !< the base class
-    type(TIniFile)                 :: Ini       !< Input ini file
+    class(TIniFile)                :: Ini       !< Input ini file
     integer                        :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -154,7 +155,7 @@
     implicit none
 
     class(EFTCAMB_ShiftSym_alphaB) :: self      !< the base class
-    type(TIniFile)                 :: Ini       !< Input ini file
+    class(TIniFile)                :: Ini       !< Input ini file
     integer                        :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     !< an array of strings containing the names of the function parameters
@@ -221,6 +222,8 @@
         temp(i) = array(i + 1)
     end do
     call self%ShiftSymwDE%init_parameters(temp)
+    ! w_DE integral of parametrizations without a closed form, for the new parameters:
+    call self%ShiftSymwDE%tabulate_numerical_integral()
 
     end subroutine EFTCAMBShiftSymmetricInitModelParameters
 
@@ -231,7 +234,7 @@
     implicit none
 
     class(EFTCAMB_ShiftSym_alphaB) :: self      !< the base class
-    type(TIniFile)                 :: Ini       !< Input ini file
+    class(TIniFile)                :: Ini       !< Input ini file
     integer                        :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read the alpha_B parameters:
@@ -241,6 +244,8 @@
     self%SS_alphaK0 = Ini%Read_Double('Shift_Symmetric_alphaK0', 0._dl)
     ! read w_DE parameters:
     call self%ShiftSymwDE%init_from_file(Ini, eft_error)
+    ! w_DE integral of parametrizations without a closed form, for the new parameters:
+    call self%ShiftSymwDE%tabulate_numerical_integral()
 
     end subroutine EFTCAMBShiftSymmetricInitModelParametersFromFile
 
@@ -298,7 +303,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBShiftSymmetricParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
         ! the first parameter is alpha_B0:
     else if (i == 1) then
         name = trim('alpha_B0')
@@ -333,7 +341,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBShiftSymmetricParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
         ! the first parameter is alpha_B0:
     else if (i == 1) then
         latexname = trim('alpha_B0')
@@ -368,7 +379,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBShiftSymmetricParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
         ! the first parameter is alpha_B0:
     else if (i == 1) then
         value = self%SS_alphaB0

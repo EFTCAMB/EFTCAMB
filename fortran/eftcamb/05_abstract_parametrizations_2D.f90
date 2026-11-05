@@ -30,6 +30,7 @@
     module EFTCAMB_abstract_parametrizations_2D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use EFT_def
@@ -298,7 +299,9 @@
         write(*, *) 'Length of param_names and number of parameters do not coincide.'
         write(*, *) 'Parameter number:', num_params
         write(*, *) 'Size of the param_names array:', size(param_names)
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: inconsistent parameter names of a parametrized function', &
+            error_unsupported_params)
+        return
     end if
     if (present(param_names_latex)) then
         ! check length:
@@ -307,9 +310,23 @@
             write(*, *) 'Length of param_names_latex and number of parameters do not coincide.'
             write(*, *) 'Parameter number:', self%parameter_number
             write(*, *) 'Size of the param_names array:', size(param_names_latex)
-            call MpiStop('EFTCAMB error')
+            call GlobalError('EFTCAMB error: inconsistent parameter names of a parametrized function', &
+                error_unsupported_params)
+            return
         end if
     end if
+
+    ! the parameter names are the ini keys: they must not exceed the maximum length of the name buffers.
+    do ind = 1, num_params
+        if (len_trim(param_names(ind)) > EFT_names_max_length) then
+            write(*, *) 'In parametrized_function_2D:', self%name
+            write(*, *) 'Parameter name longer than EFT_names_max_length =', EFT_names_max_length
+            write(*, *) 'Parameter name:', trim(param_names(ind))
+            call GlobalError('EFTCAMB error: inconsistent parameter names of a parametrized function', &
+                error_unsupported_params)
+            return
+        end if
+    end do
 
     ! allocate self%param_names and self%param_names_latex:
     if (allocated(self%param_names)) deallocate(self%param_names)
@@ -336,10 +353,11 @@
     implicit none
 
     class(parametrized_function_2D) :: self      !< the base class
-    type(TIniFile)                  :: Ini       !< Input ini file
+    class(TIniFile)                 :: Ini       !< Input ini file
     integer                         :: eft_error !< error code: 0 all fine, 1 initialization failed
 
-    character(len=EFT_names_max_length)        :: param_name
+    !< one more character than the maximum name length, to detect names that would be truncated:
+    character(len=EFT_names_max_length + 1)    :: param_name
     real(dl), dimension(self%parameter_number) :: parameters
 
     integer :: i
@@ -350,6 +368,13 @@
     ! read the parameters and store them in a vector:
     do i = 1, self%parameter_number
         call self%parameter_names(i, param_name)
+        if (len_trim(param_name) > EFT_names_max_length) then
+            write(*, '(a,a)') 'EFTCAMB error: parameter name too long, it cannot be read from the ini file: ', &
+                trim(param_name)
+            write(*, '(a,I4,a)') 'Names are limited to EFT_names_max_length = ', EFT_names_max_length, ' characters.'
+            eft_error = 1
+            return
+        end if
         parameters(i) = Ini%Read_Double(trim(param_name), 0._dl)
     end do
     ! initialize the function parameters from the vector:
@@ -370,12 +395,14 @@
     integer                             :: i
     real(dl)                            :: param_value
     character(len=EFT_names_max_length) :: param_name
+    logical                             :: print_params_temp
 
-    if (.not. present(print_params)) print_params = .true.
+    print_params_temp = .true.
+    if (present(print_params)) print_params_temp = print_params
 
     if (self%parameter_number > 0) then
         write(*, *)     'Parametrized function 2D: ', self%name
-        if (print_params) then
+        if (print_params_temp) then
             do i = 1, self%parameter_number
                 call self%parameter_names(i, param_name)
                 call self%parameter_value(i, param_value)
@@ -401,7 +428,10 @@
         write(*, *) 'In parametrized_function_2D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in ParametrizedFunction2DParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -427,7 +457,10 @@
         write(*, *) 'In parametrized_function_2D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in ParametrizedFunction2DParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then

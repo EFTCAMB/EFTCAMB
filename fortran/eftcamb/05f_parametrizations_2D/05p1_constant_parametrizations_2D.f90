@@ -27,6 +27,7 @@
     module EFTCAMB_constant_parametrization_2D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use MpiUtils
     use EFT_def
     use EFTCAMB_cache
@@ -152,7 +153,10 @@
         write(*, *) 'In constant_parametrization_2D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in ConstantParametrized2DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end select
 
     end subroutine ConstantParametrized2DParameterValues

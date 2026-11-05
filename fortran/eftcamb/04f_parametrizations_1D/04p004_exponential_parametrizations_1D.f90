@@ -27,6 +27,7 @@
     module EFTCAMB_exponential_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use EFT_def
     use MpiUtils
     use EFTCAMB_cache
@@ -124,7 +125,10 @@
     case default
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in ExponentialParametrized1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end select
 
     end subroutine ExponentialParametrized1DParameterValues
@@ -220,10 +224,13 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: ExponentialParametrized1DThirdDerivative            !< the output value
 
-    ExponentialParametrized1DThirdDerivative = self%coefficient*self%exponent*exp(self%coefficient*x**self%exponent)* &
-        x**(self%exponent - 3._dl)* &
-        (2._dl + self%exponent*(-3._dl + self%exponent + &
-        x**self%exponent*self%coefficient*(-3._dl + self%exponent*(3._dl + x**self%exponent*self%coefficient))))
+    real(dl) :: y1, y2, y3
+
+    ! f = exp(y) - 1 with y = c x^n, written in a form without cancellations at small x:
+    y1 = ExponentialYDerivative(self, x, 1)
+    y2 = ExponentialYDerivative(self, x, 2)
+    y3 = ExponentialYDerivative(self, x, 3)
+    ExponentialParametrized1DThirdDerivative = exp(self%coefficient*x**self%exponent)*(y3 + 3._dl*y1*y2 + y1**3)
 
     end function ExponentialParametrized1DThirdDerivative
 
@@ -238,13 +245,15 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: ExponentialParametrized1DFourthDerivative            !< the output value
 
-    ExponentialParametrized1DFourthDerivative = self%coefficient*self%exponent*(x**(self%exponent - 4._dl))* &
-        exp(self%coefficient*x**self%exponent)* &
-        (-6._dl*self%exponent**2*(self%coefficient**2*x**(2._dl*self%exponent) + &
-        3._dl*self%coefficient*x**self%exponent + 1._dl) + &
-        self%exponent**3*(self%coefficient**3*x**(3._dl*self%exponent) + &
-        6._dl*self%coefficient**2*x**(2._dl*self%exponent) + 7._dl*self%coefficient*x**(self%exponent) + 1._dl) + &
-        11._dl*self%exponent*(self%coefficient*x**(self%exponent) + 1._dl) - 6._dl)
+    real(dl) :: y1, y2, y3, y4
+
+    ! f = exp(y) - 1 with y = c x^n, written in a form without cancellations at small x:
+    y1 = ExponentialYDerivative(self, x, 1)
+    y2 = ExponentialYDerivative(self, x, 2)
+    y3 = ExponentialYDerivative(self, x, 3)
+    y4 = ExponentialYDerivative(self, x, 4)
+    ExponentialParametrized1DFourthDerivative = exp(self%coefficient*x**self%exponent)* &
+        (y4 + 4._dl*y1*y3 + 3._dl*y2**2 + 6._dl*y1**2*y2 + y1**4)
 
     end function ExponentialParametrized1DFourthDerivative
 
@@ -259,14 +268,39 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: ExponentialParametrized1DIntegral                   !< the output value
 
-    ExponentialParametrized1DIntegral = 0._dl
-
-    !< No analytic solution >!
-    write(*, *) 'ExponentialParametrized1DIntegral is not implemented.'
-    write(*, *) 'Calculations cannot proceed.'
-    call MpiStop('EFTCAMB error')
+    ! no closed form: numerical integral (see parametrized_function_1D%numerical_integral).
+    ExponentialParametrized1DIntegral = self%numerical_integral(x, eft_cache=eft_cache)
 
     end function ExponentialParametrized1DIntegral
+
+    ! ---------------------------------------------------------------------------------------------
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the k-th derivative of the exponent y = coefficient*x**exponent.
+    !! Terms with a vanishing coefficient (integer exponent) are exactly zero.
+    function ExponentialYDerivative(self, x, k)
+
+    implicit none
+
+    class(exponential_parametrization_1D) :: self   !< the base class
+    real(dl), intent(in)                  :: x      !< the input scale factor
+    integer, intent(in)                   :: k      !< the order of the derivative
+    real(dl) :: ExponentialYDerivative              !< the output value
+
+    real(dl) :: coeff
+    integer  :: i
+
+    coeff = self%coefficient
+    do i = 0, k - 1
+        coeff = coeff*(self%exponent - real(i, dl))
+    end do
+    if (coeff == 0._dl) then
+        ExponentialYDerivative = 0._dl
+    else
+        ExponentialYDerivative = coeff*x**(self%exponent - real(k, dl))
+    end if
+
+    end function ExponentialYDerivative
 
     ! ---------------------------------------------------------------------------------------------
 

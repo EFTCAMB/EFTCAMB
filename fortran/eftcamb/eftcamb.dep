@@ -1,5 +1,6 @@
 
 04_abstract_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	01_EFT_def.o \
 	constants.o \
@@ -25,12 +26,14 @@
 	massive_neutrinos.o
 
 05_abstract_parametrizations_2D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	01_EFT_def.o \
 	constants.o \
 	02_utilities.o
 
 09_EFTCAMB_main.o :  \
+	config.o \
 	007p6_Omega_Lambda_alpha.o \
 	06p2_abstract_EFTCAMB_designer.o \
 	008p0_Horndeski.o \
@@ -69,6 +72,7 @@
 	09_EFTCAMB_main.o
 
 09_EFTCAMB_RGR.o :  \
+	config.o \
 	06_abstract_EFTCAMB_model.o \
 	03_abstract_EFTCAMB_cache.o \
 	01_EFT_def.o \
@@ -78,6 +82,7 @@
 	06p1_abstract_EFTCAMB_full_map.o
 
 02_interpolation_linear_1D.o :  \
+	config.o \
 	02p10_splines.o \
 	02_utilities.o \
 	02p12_splines5.o \
@@ -103,9 +108,12 @@
 	02_utilities.o
 
 02_interpolation.o :  \
+	config.o \
 	constants.o
 
 04p1_parametrizations_1D_allocator.o :  \
+	config.o \
+	02_utilities.o \
 	04p007_turning_point_parametrizations_1D.o \
 	04p008_taylor_expansion_parametrizations_1D.o \
 	04p006_JBP_parametrizations_1D.o \
@@ -127,9 +135,11 @@
 	04_abstract_parametrizations_1D.o \
 	04p009_taylor_series.o \
 	04p005_CPL_parametrizations_1D.o \
-	04p000_neutral_parametrizations_1D.o
+	04p000_neutral_parametrizations_1D.o \
+	04p020_spline3_parametrizations_1D.o
 
 11_EFTCAMB_python.o :  \
+	config.o \
 	results.o \
 	09_EFTCAMB_stability.o \
 	massive_neutrinos.o \
@@ -137,17 +147,20 @@
 	cmbmain.o
 
 02_equispaced_interpolation_linear_1D.o :  \
+	config.o \
 	02p10_splines.o \
 	02_utilities.o \
 	constants.o
 
 06_abstract_EFTCAMB_model.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	01_EFT_def.o \
 	02_utilities.o \
 	constants.o
 
 007p6_Omega_Lambda_alpha.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -160,6 +173,7 @@
 	02_root_finding.o
 
 007p2_RPH.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -170,6 +184,7 @@
 	02_equispaced_interpolation_linear_1D.o
 
 007p1_Pure_EFT_std.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -180,6 +195,7 @@
 	02_equispaced_interpolation_linear_1D.o
 
 007p7_ShiftSym_alphaB.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -188,6 +204,7 @@
 	constants.o
 
 007p3_Designer_fR.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -199,6 +216,7 @@
 	02_root_finding.o
 
 007p8_3p1_wDE_designer.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -209,6 +227,7 @@
 	02_equispaced_interpolation_linear_1D.o
 
 007p5_Omega_Lambda_gamma.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -226,12 +245,15 @@
 	04p1_parametrizations_1D_allocator.o
 
 02p12_splines5.o :  \
+	config.o \
 	constants.o
 
 02p10_splines.o :  \
+	config.o \
 	constants.o
 
 008p6_Scaling_Cubic.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -241,12 +263,14 @@
 	02_equispaced_interpolation_linear_1D.o
 
 008p1_Horava.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	01_EFT_def.o \
 	06p2_abstract_EFTCAMB_designer.o \
 	constants.o
 
 008p4_quintessence.o :  \
+	config.o \
 	constants.o \
 	04p014_cosine_parametrizations_1D.o \
 	04p010_pade_series_1D.o \
@@ -269,6 +293,7 @@
 	02_root_finding.o
 
 008p3_Kmouflage.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -278,6 +303,7 @@
 	02_equispaced_interpolation_linear_1D.o
 
 008p0_Horndeski.o :  \
+	config.o \
 	constants.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
@@ -291,6 +317,7 @@
 	02_root_finding.o
 
 008p5_Beyond_Horndeski.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -300,12 +327,14 @@
 	02_equispaced_interpolation_linear_1D.o
 
 008p7_Extended_Galileon.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	01_EFT_def.o \
 	constants.o \
 	06p1_abstract_EFTCAMB_full_map.o
 
 008p2_ADE.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -317,6 +346,7 @@
 	02_equispaced_interpolation_linear_1D.o
 
 05p2_bilinear_parametrizations_2D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	01_EFT_def.o \
 	constants.o \
@@ -328,12 +358,14 @@
 	05_abstract_parametrizations_2D.o
 
 05p1_constant_parametrizations_2D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	01_EFT_def.o \
 	constants.o \
 	05_abstract_parametrizations_2D.o
 
 04p004_exponential_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -345,6 +377,7 @@
 	04_abstract_parametrizations_1D.o
 
 04p015_axion_potential.o :  \
+	config.o \
 	constants.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
@@ -355,24 +388,28 @@
 	02_root_finding.o
 
 04p019_power_law_sum_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p001_constant_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p013_double_exponential_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p019_spline5_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -383,6 +420,7 @@
 	constants.o
 
 04p010_pade_series_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -391,6 +429,7 @@
 	02_utilities.o
 
 04p009_taylor_series.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -398,45 +437,59 @@
 	02_utilities.o
 
 04p018_steplog_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p008_taylor_expansion_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p007_turning_point_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p002_linear_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p016_spline_parametrizations_1D.o :  \
-	03_abstract_EFTCAMB_cache.o \
-	04_abstract_parametrizations_1D.o \
+	04p020_spline3_parametrizations_1D.o \
+	constants.o \
 	01_EFT_def.o \
-	02p10_splines.o \
+	03_abstract_EFTCAMB_cache.o \
+	02p10_splines.o
+
+04p020_spline3_parametrizations_1D.o :  \
+	04_abstract_parametrizations_1D.o \
 	02_utilities.o \
+	constants.o \
+	01_EFT_def.o \
 	02_interpolation_linear_1D.o \
-	constants.o
+	03_abstract_EFTCAMB_cache.o \
+	config.o \
+	02p10_splines.o
 
 04p003_power_law_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p011_fourier_parametrizations_1D.o :  \
+	config.o \
 	constants.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
@@ -447,18 +500,21 @@
 	02_root_finding.o
 
 04p005_CPL_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p017_step_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p014_cosine_parametrizations_1D.o :  \
+	config.o \
 	constants.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
@@ -469,12 +525,14 @@
 	02_root_finding.o
 
 04p012_exponential_2_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
 	constants.o
 
 04p006_JBP_parametrizations_1D.o :  \
+	config.o \
 	03_abstract_EFTCAMB_cache.o \
 	04_abstract_parametrizations_1D.o \
 	01_EFT_def.o \
@@ -502,6 +560,7 @@ model.o :  \
 	09_EFTCAMB_main.o
 
 $(DLL_DIR)/04_abstract_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o \
@@ -527,12 +586,14 @@ $(DLL_DIR)/03_abstract_EFTCAMB_cache.o :  \
 	$(DLL_DIR)/massive_neutrinos.o
 
 $(DLL_DIR)/05_abstract_parametrizations_2D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/02_utilities.o
 
 $(DLL_DIR)/09_EFTCAMB_main.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/007p6_Omega_Lambda_alpha.o \
 	$(DLL_DIR)/06p2_abstract_EFTCAMB_designer.o \
 	$(DLL_DIR)/008p0_Horndeski.o \
@@ -571,6 +632,7 @@ $(DLL_DIR)/09_EFTCAMB_stability.o :  \
 	$(DLL_DIR)/09_EFTCAMB_main.o
 
 $(DLL_DIR)/09_EFTCAMB_RGR.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/06_abstract_EFTCAMB_model.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -580,6 +642,7 @@ $(DLL_DIR)/09_EFTCAMB_RGR.o :  \
 	$(DLL_DIR)/06p1_abstract_EFTCAMB_full_map.o
 
 $(DLL_DIR)/02_interpolation_linear_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/02p10_splines.o \
 	$(DLL_DIR)/02_utilities.o \
 	$(DLL_DIR)/02p12_splines5.o \
@@ -605,9 +668,12 @@ $(DLL_DIR)/06p2_abstract_EFTCAMB_designer.o :  \
 	$(DLL_DIR)/02_utilities.o
 
 $(DLL_DIR)/02_interpolation.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p1_parametrizations_1D_allocator.o :  \
+	$(DLL_DIR)/config.o \
+	$(DLL_DIR)/02_utilities.o \
 	$(DLL_DIR)/04p007_turning_point_parametrizations_1D.o \
 	$(DLL_DIR)/04p008_taylor_expansion_parametrizations_1D.o \
 	$(DLL_DIR)/04p006_JBP_parametrizations_1D.o \
@@ -629,9 +695,11 @@ $(DLL_DIR)/04p1_parametrizations_1D_allocator.o :  \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/04p009_taylor_series.o \
 	$(DLL_DIR)/04p005_CPL_parametrizations_1D.o \
-	$(DLL_DIR)/04p000_neutral_parametrizations_1D.o
+	$(DLL_DIR)/04p000_neutral_parametrizations_1D.o \
+	$(DLL_DIR)/04p020_spline3_parametrizations_1D.o
 
 $(DLL_DIR)/11_EFTCAMB_python.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/results.o \
 	$(DLL_DIR)/09_EFTCAMB_stability.o \
 	$(DLL_DIR)/massive_neutrinos.o \
@@ -639,17 +707,20 @@ $(DLL_DIR)/11_EFTCAMB_python.o :  \
 	$(DLL_DIR)/cmbmain.o
 
 $(DLL_DIR)/02_equispaced_interpolation_linear_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/02p10_splines.o \
 	$(DLL_DIR)/02_utilities.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/06_abstract_EFTCAMB_model.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/02_utilities.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/007p6_Omega_Lambda_alpha.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -662,6 +733,7 @@ $(DLL_DIR)/007p6_Omega_Lambda_alpha.o :  \
 	$(DLL_DIR)/02_root_finding.o
 
 $(DLL_DIR)/007p2_RPH.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -672,6 +744,7 @@ $(DLL_DIR)/007p2_RPH.o :  \
 	$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o
 
 $(DLL_DIR)/007p1_Pure_EFT_std.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -682,6 +755,7 @@ $(DLL_DIR)/007p1_Pure_EFT_std.o :  \
 	$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o
 
 $(DLL_DIR)/007p7_ShiftSym_alphaB.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -690,6 +764,7 @@ $(DLL_DIR)/007p7_ShiftSym_alphaB.o :  \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/007p3_Designer_fR.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -701,6 +776,7 @@ $(DLL_DIR)/007p3_Designer_fR.o :  \
 	$(DLL_DIR)/02_root_finding.o
 
 $(DLL_DIR)/007p8_3p1_wDE_designer.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -711,6 +787,7 @@ $(DLL_DIR)/007p8_3p1_wDE_designer.o :  \
 	$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o
 
 $(DLL_DIR)/007p5_Omega_Lambda_gamma.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -728,12 +805,15 @@ $(DLL_DIR)/007p4_Designer_mc_quintessence.o :  \
 	$(DLL_DIR)/04p1_parametrizations_1D_allocator.o
 
 $(DLL_DIR)/02p12_splines5.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/02p10_splines.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/008p6_Scaling_Cubic.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -743,12 +823,14 @@ $(DLL_DIR)/008p6_Scaling_Cubic.o :  \
 	$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o
 
 $(DLL_DIR)/008p1_Horava.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/06p2_abstract_EFTCAMB_designer.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/008p4_quintessence.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/04p014_cosine_parametrizations_1D.o \
 	$(DLL_DIR)/04p010_pade_series_1D.o \
@@ -771,6 +853,7 @@ $(DLL_DIR)/008p4_quintessence.o :  \
 	$(DLL_DIR)/02_root_finding.o
 
 $(DLL_DIR)/008p3_Kmouflage.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -780,6 +863,7 @@ $(DLL_DIR)/008p3_Kmouflage.o :  \
 	$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o
 
 $(DLL_DIR)/008p0_Horndeski.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
@@ -793,6 +877,7 @@ $(DLL_DIR)/008p0_Horndeski.o :  \
 	$(DLL_DIR)/02_root_finding.o
 
 $(DLL_DIR)/008p5_Beyond_Horndeski.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -802,12 +887,14 @@ $(DLL_DIR)/008p5_Beyond_Horndeski.o :  \
 	$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o
 
 $(DLL_DIR)/008p7_Extended_Galileon.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/06p1_abstract_EFTCAMB_full_map.o
 
 $(DLL_DIR)/008p2_ADE.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -819,6 +906,7 @@ $(DLL_DIR)/008p2_ADE.o :  \
 	$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o
 
 $(DLL_DIR)/05p2_bilinear_parametrizations_2D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o \
@@ -830,12 +918,14 @@ $(DLL_DIR)/05p0_neutral_parametrizations_2D.o :  \
 	$(DLL_DIR)/05_abstract_parametrizations_2D.o
 
 $(DLL_DIR)/05p1_constant_parametrizations_2D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/05_abstract_parametrizations_2D.o
 
 $(DLL_DIR)/04p004_exponential_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -847,6 +937,7 @@ $(DLL_DIR)/04p000_neutral_parametrizations_1D.o :  \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o
 
 $(DLL_DIR)/04p015_axion_potential.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
@@ -857,24 +948,28 @@ $(DLL_DIR)/04p015_axion_potential.o :  \
 	$(DLL_DIR)/02_root_finding.o
 
 $(DLL_DIR)/04p019_power_law_sum_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p001_constant_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p013_double_exponential_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p019_spline5_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -885,6 +980,7 @@ $(DLL_DIR)/04p019_spline5_parametrizations_1D.o :  \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p010_pade_series_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -893,6 +989,7 @@ $(DLL_DIR)/04p010_pade_series_1D.o :  \
 	$(DLL_DIR)/02_utilities.o
 
 $(DLL_DIR)/04p009_taylor_series.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
@@ -900,45 +997,59 @@ $(DLL_DIR)/04p009_taylor_series.o :  \
 	$(DLL_DIR)/02_utilities.o
 
 $(DLL_DIR)/04p018_steplog_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p008_taylor_expansion_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p007_turning_point_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p002_linear_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p016_spline_parametrizations_1D.o :  \
-	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
-	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
+	$(DLL_DIR)/04p020_spline3_parametrizations_1D.o \
+	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/01_EFT_def.o \
-	$(DLL_DIR)/02p10_splines.o \
+	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
+	$(DLL_DIR)/02p10_splines.o
+
+$(DLL_DIR)/04p020_spline3_parametrizations_1D.o :  \
+	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/02_utilities.o \
+	$(DLL_DIR)/constants.o \
+	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/02_interpolation_linear_1D.o \
-	$(DLL_DIR)/constants.o
+	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
+	$(DLL_DIR)/config.o \
+	$(DLL_DIR)/02p10_splines.o
 
 $(DLL_DIR)/04p003_power_law_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p011_fourier_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
@@ -949,18 +1060,21 @@ $(DLL_DIR)/04p011_fourier_parametrizations_1D.o :  \
 	$(DLL_DIR)/02_root_finding.o
 
 $(DLL_DIR)/04p005_CPL_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p017_step_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p014_cosine_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
@@ -971,12 +1085,14 @@ $(DLL_DIR)/04p014_cosine_parametrizations_1D.o :  \
 	$(DLL_DIR)/02_root_finding.o
 
 $(DLL_DIR)/04p012_exponential_2_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/04p006_JBP_parametrizations_1D.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/04_abstract_parametrizations_1D.o \
 	$(DLL_DIR)/01_EFT_def.o \

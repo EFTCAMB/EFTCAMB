@@ -25,6 +25,7 @@
     module EFTCAMB_interpolation
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
 
     implicit none
 
@@ -71,8 +72,10 @@
             wpl = cc(i + 1) - d(i)
             den = ho - hp
             if (den == 0.) then
-                write(*, *) 'failure in polint'
-                stop
+                call GlobalError('EFTCAMB error: failure in polint (two equal x values)', error_unsupported_params)
+                ypl = 0._dl
+                dypl = 0._dl
+                return
             end if
             den = wpl/den
             d(i) = hp*den
