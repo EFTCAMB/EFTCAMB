@@ -663,7 +663,7 @@
 
     real(dl) :: taustart
     integer  :: q_ix
-    logical  :: want_scalars
+    logical  :: want_scalars, want_tensors, want_vectors
     type(EvolutionVars) :: Ev
     ! activate status:
     call SetActiveState(this)
@@ -683,6 +683,12 @@
     ! GetNumEqns sets up the scalar hierarchy only when scalars are wanted (not after a transfer-only run):
     want_scalars = this%CP%WantScalars
     this%CP%WantScalars = .true.
+    ! Scalar modes only: with WantTensors, GetNumEqns would set up the tensor indices in the same EV,
+    ! overwriting the scalar g_ix and r_ix (as in CAMB_TimeEvolution and CAMB_TransfersToPowers)
+    want_tensors = this%CP%WantTensors
+    want_vectors = this%CP%WantVectors
+    this%CP%WantTensors = .false.
+    this%CP%WantVectors = .false.
     ! do the parallel loop over the requested k modes.
     !$OMP PARALLEL DO DEFAULT(SHARED), SCHEDULE(DYNAMIC), PRIVATE(EV, q_ix)
     do q_ix = 1, nq
@@ -704,6 +710,8 @@
     end do
     !$OMP END PARALLEL DO
     this%CP%WantScalars = want_scalars
+    this%CP%WantTensors = want_tensors
+    this%CP%WantVectors = want_vectors
 
     end subroutine EFTCAMB_GetEvolution
 
