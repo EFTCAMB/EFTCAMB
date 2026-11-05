@@ -18,6 +18,7 @@
     ! grained control is needed.
 
     use precision, only: dl
+    use config, only: GlobalError, error_unsupported_params
     ! use lapack, only: dgesv, dgbsv
     implicit none
     private
@@ -97,11 +98,31 @@
     integer info
 
     ! check input parameters
-    if (bctype(1) < 1 .or. bctype(1) > 2) stop "spline5pars error: bctype /= 1 or 2."
-    if (bctype(2) < 1 .or. bctype(2) > 2) stop "spline5pars error: bctype /= 1 or 2."
-    if (size(c, 1) /= 7) stop "spline5pars error: size(c,1) /= 7."
-    if (size(c, 2) /= size(xi) - 1) stop "spline5pars error: size(c,2) /= size(xi)-1."
-    if (size(xi) /= size(yi)) stop "spline5pars error: size(xi) /= size(yi)"
+    if (bctype(1) < 1 .or. bctype(1) > 2) then
+        call GlobalError("spline5pars error: bctype /= 1 or 2.", error_unsupported_params)
+        c = 0
+        return
+    end if
+    if (bctype(2) < 1 .or. bctype(2) > 2) then
+        call GlobalError("spline5pars error: bctype /= 1 or 2.", error_unsupported_params)
+        c = 0
+        return
+    end if
+    if (size(c, 1) /= 7) then
+        call GlobalError("spline5pars error: size(c,1) /= 7.", error_unsupported_params)
+        c = 0
+        return
+    end if
+    if (size(c, 2) /= size(xi) - 1) then
+        call GlobalError("spline5pars error: size(c,2) /= size(xi)-1.", error_unsupported_params)
+        c = 0
+        return
+    end if
+    if (size(xi) /= size(yi)) then
+        call GlobalError("spline5pars error: size(xi) /= size(yi)", error_unsupported_params)
+        c = 0
+        return
+    end if
 
     ! To get rid of compiler warnings:
     d1p1 = 0
@@ -119,7 +140,11 @@
     ! compute interpolating-cubic 3rd and 4th derivs at ends, if required
     ! left end
     if (bctype(1) == 2) then
-        if (n < 6) stop "spline5pars error: n < 6"
+        if (n < 6) then
+            call GlobalError("spline5pars error: n < 6", error_unsupported_params)
+            c = 0
+            return
+        end if
         xe = xi(1:6)
         ye = yi(1:6)
         x0 = xe(1) ! center at end
@@ -131,14 +156,22 @@
         Ae(:, 1) = 1   ! set 0^0 = 1
         be = ye; bemat(:, 1) = be
         call dgesv(6, 1, Ae, 6, ipiv, bemat, 6, info)
-        if (info /= 0) stop "spline5pars error: dgesv error."
+        if (info /= 0) then
+            call GlobalError("spline5pars error: dgesv error.", error_unsupported_params)
+            c = 0
+            return
+        end if
         ce = bemat(:, 1)
         d1p1 = ce(2)
         d2p1 = 2._dl*ce(3)
     end if
     ! right end
     if (bctype(2) == 2) then
-        if (n < 6) stop "spline5pars error: n < 6"
+        if (n < 6) then
+            call GlobalError("spline5pars error: n < 6", error_unsupported_params)
+            c = 0
+            return
+        end if
         xe = xi(n - 5:n)
         ye = yi(n - 5:n)
         x0 = xe(6) ! center at end
@@ -150,7 +183,11 @@
         Ae(:, 1) = 1   ! set 0^0 = 1
         be = ye; bemat(:, 1) = be
         call dgesv(6, 1, Ae, 6, ipiv, bemat, 6, info)
-        if (info /= 0) stop "spline5pars error: dgesv error."
+        if (info /= 0) then
+            call GlobalError("spline5pars error: dgesv error.", error_unsupported_params)
+            c = 0
+            return
+        end if
         ce = bemat(:, 1)
         d1pn = ce(2)
         d2pn = 2._dl*ce(3)
@@ -219,7 +256,11 @@
     ! solve spline equations -- full matrix
     bmat(:, 1) = bs
     call dgesv(4*(n - 1), 1, As, 4*(n - 1), ipiv2, bmat, 4*(n - 1), info)
-    if (info /= 0) stop "spline5pars error: dgesv error."
+    if (info /= 0) then
+        call GlobalError("spline5pars error: dgesv error.", error_unsupported_params)
+        c = 0
+        return
+    end if
     cs = bmat(:, 1)
     ! write(*,*) cs(1:6)
 
@@ -261,8 +302,16 @@
 
     ! initialize, check input parameters
     n = size(xi)
-    if (size(c, 1) /= 7) stop "spline5 error: size(c,1) /= 7."
-    if (size(c, 2) /= size(xi) - 1) stop "spline3 error: size(c,2) /= size(xi)-1."
+    if (size(c, 1) /= 7) then
+        call GlobalError("spline5 error: size(c,1) /= 7.", error_unsupported_params)
+        val = 0; der = 0
+        return
+    end if
+    if (size(c, 2) /= size(xi) - 1) then
+        call GlobalError("spline3 error: size(c,2) /= size(xi)-1.", error_unsupported_params)
+        val = 0; der = 0
+        return
+    end if
     ! find interval containing x
     i1 = iix(x, xi)
     ! return value and derivative
@@ -286,7 +335,9 @@
     n = size(xi)
     i1 = 1
     if (n < 2) then
-        stop "error in iix: n < 2"
+        call GlobalError("error in iix: n < 2", error_unsupported_params)
+        i1 = 1
+        return
     else if (n == 2) then
         i1 = 1
     else if (n == 3) then
@@ -388,7 +439,7 @@
     real(dl), intent(in) :: c(0:)  ! coefficients: poly = \sum_{i=1}^6 c(i) (x-c(0))^(i-1)
     real(dl) dx
     dx = x - c(0)
-    poly5 = c(1) + c(2)*dx + c(3)*dx**2 + c(4)*dx**3 + c(5)*dx**4 + c(6)*dx**6
+    poly5 = c(1) + c(2)*dx + c(3)*dx**2 + c(4)*dx**3 + c(5)*dx**4 + c(6)*dx**5
     end function
 
     ! --------------------------------------------------------------------------------------------------!

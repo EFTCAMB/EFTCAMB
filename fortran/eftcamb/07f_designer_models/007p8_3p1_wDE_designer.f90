@@ -27,6 +27,7 @@
     module EFTCAMB_designer_full3p1_wDE
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use EFTCAMB_cache
@@ -172,7 +173,7 @@
     implicit none
 
     class(EFTCAMB_full3p1_wDE) :: self      !< the base class
-    type(TIniFile)             :: Ini       !< Input ini file
+    class(TIniFile)            :: Ini       !< Input ini file
     integer                    :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -213,7 +214,7 @@
     implicit none
 
     class(EFTCAMB_full3p1_wDE) :: self      !< the base class
-    type(TIniFile)             :: Ini       !< Input ini file
+    class(TIniFile)            :: Ini       !< Input ini file
     integer                    :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer                    :: temp_feedback
@@ -421,7 +422,8 @@
         write(*, *) 'Length of num_params_temp and self%parameter_number do not coincide.'
         write(*, *) 'num_params_temp:', num_params_temp - 1
         write(*, *) 'self%parameter_number:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: inconsistent number of model parameters', error_unsupported_params)
+        return
     end if
 
     end subroutine EFTCAMBDesigner3p1InitModelParameters
@@ -433,7 +435,7 @@
     implicit none
 
     class(EFTCAMB_full3p1_wDE) :: self      !< the base class
-    type(TIniFile)             :: Ini       !< Input ini file
+    class(TIniFile)            :: Ini       !< Input ini file
     integer                    :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     call self%Designer3p1wDE%init_from_file   (Ini, eft_error)
@@ -561,6 +563,10 @@
     N1no = N1o + self%Designer3p1rho1N_ODE%parameter_number
     N2o = N1no + self%Designer3p1rho2_ODE%parameter_number
 
+    ! defaults for luminal GW (no rho1 blocks), so that N3 and N3o are always defined:
+    N3 = N2o
+    N3o = N2o
+
     if (.not. self%Designer3p1LuminalGW) then
         N3 = N2o + self%Designer3p1rho1%parameter_number
 
@@ -571,7 +577,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesigner3p1ParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
 
         ! parameter from wDE function
     else if (i <= Nw) then
@@ -667,11 +676,22 @@
     N1no = N1o + self%Designer3p1rho1N_ODE%parameter_number
     N2o = N1no + self%Designer3p1rho2_ODE%parameter_number
 
+    ! defaults for luminal GW (no rho1 blocks), so that N3 and N3o are always defined:
+    N3 = N2o
+    N3o = N2o
+    if (.not. self%Designer3p1LuminalGW) then
+        N3 = N2o + self%Designer3p1rho1%parameter_number
+        N3o = N3 + self%Designer3p1rho1_ODE%parameter_number
+    end if
+
     ! check validity of input:
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesigner3p1ParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
 
         ! parameter from wDE function
     else if (i <= Nw) then
@@ -767,6 +787,10 @@
     N1no = N1o + self%Designer3p1rho1N_ODE%parameter_number
     N2o = N1no + self%Designer3p1rho2_ODE%parameter_number
 
+    ! defaults for luminal GW (no rho1 blocks), so that N3 and N3o are always defined:
+    N3 = N2o
+    N3o = N2o
+
     if (.not. self%Designer3p1LuminalGW) then
         N3 = N2o + self%Designer3p1rho1%parameter_number
 
@@ -777,7 +801,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBDesigner3p1ParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
 
         ! parameter from wDE function
     else if (i <= Nw) then
@@ -904,6 +931,9 @@
     real(dl) :: rtol, atol, t1, t2
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
+
+    ! success is intent(out): set it before any return path that does not fail.
+    success = .true.
 
     ! 1) Cosmological parameters:
     grhom0 = params_cache%grhob + params_cache%grhoc
@@ -1610,8 +1640,10 @@
             H = H/a
             Ht = Ht/a/a - H**2
 
-            ! custom ghost stability for this beyond GLPV model
-            if (self%Designer3p1GhostStability) then
+            ! custom ghost stability for this beyond GLPV model. Azz is proportional to b3 = rho2/sigma1: for rho2 = 0
+            ! (GLPV/Horndeski limit, e.g. the GR point) it vanishes identically and there is no extra kinetic term to
+            ! test (the scalar is tested by the general ghost condition), so the degenerate case is not a ghost.
+            if (self%Designer3p1GhostStability .and. b3 /= 0._dl) then
                 Azz = 6._dl*(1._dl + aL)*b3*k2/(6._dl*H**2*(1._dl + aL) + aL*b3*k2)
                 if (Azz <= 0._dl) then
                     EFTCAMBDesigner3p1AdditionalModelStability = .false.

@@ -27,6 +27,7 @@
     module linear_interpolation_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use EFT_splines
     use EFTCAMB_mixed_algorithms
     use MpiUtils
@@ -129,8 +130,10 @@
     ! check the ordering of the x array:
     do i = 1, self%num_points - 1
         if (self%x(i) > self%x(i + 1)) then
-            write(*, *) 'ERROR: the x vector is not ordered'
-            call MpiStop('EFTCAMB error')
+            ! (the initialization is completed, so the object can be used safely until the error is handled)
+            call GlobalError('EFTCAMB error: the x vector of a linear interpolation is not ordered', &
+                error_unsupported_params)
+            exit
         end if
     end do
 

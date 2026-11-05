@@ -28,6 +28,7 @@
     module EFTCAMB_Reparametrized_Horndeski
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use EFTCAMB_cache
     use MpiUtils
@@ -170,7 +171,7 @@
     implicit none
 
     class(EFTCAMB_RPH) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read alphaM flag
@@ -214,7 +215,7 @@
     implicit none
 
     class(EFTCAMB_RPH) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer            :: temp_feedback
@@ -453,7 +454,8 @@
         write(*, *) 'Length of num_params_temp and self%parameter_number do not coincide.'
         write(*, *) 'num_params_temp:', num_params_temp - 1
         write(*, *) 'self%parameter_number:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: inconsistent number of model parameters', error_unsupported_params)
+        return
     end if
 
     end subroutine EFTCAMBRPHInitModelParameters
@@ -465,7 +467,7 @@
     implicit none
 
     class(EFTCAMB_RPH) :: self      !< the base class
-    type(TIniFile)     :: Ini       !< Input ini file
+    class(TIniFile)    :: Ini       !< Input ini file
     integer            :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     call self%RPH_wDE%init_from_file(Ini, eft_error)
@@ -607,7 +609,7 @@
     if (self%RPHusealphaM) then
         NMo = NT + self%RPH_alphaM_ODE%parameter_number
     else
-        NMo = NT + self%RPH_Tensor_ODE%parameter_number
+        NMo = NT + self%RPH_PlanckMass_ODE%parameter_number
     end if
     NKo = NMo + self%RPH_Kineticity_ODE%parameter_number
     NBo = NKo + self%RPH_Braiding_ODE%parameter_number
@@ -617,7 +619,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBRPHParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
 
         ! parameter from wDE function
     else if (i <= Nw) then
@@ -728,7 +733,7 @@
     if (self%RPHusealphaM) then
         NMo = NT + self%RPH_alphaM_ODE%parameter_number
     else
-        NMo = NT + self%RPH_Tensor_ODE%parameter_number
+        NMo = NT + self%RPH_PlanckMass_ODE%parameter_number
     end if
     NKo = NMo + self%RPH_Kineticity_ODE%parameter_number
     NBo = NKo + self%RPH_Braiding_ODE%parameter_number
@@ -738,7 +743,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBRPHParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
 
         ! parameter from wDE function
     else if (i <= Nw) then
@@ -849,7 +857,7 @@
     if (self%RPHusealphaM) then
         NMo = NT + self%RPH_alphaM_ODE%parameter_number
     else
-        NMo = NT + self%RPH_Tensor_ODE%parameter_number
+        NMo = NT + self%RPH_PlanckMass_ODE%parameter_number
     end if
     NKo = NMo + self%RPH_Kineticity_ODE%parameter_number
     NBo = NKo + self%RPH_Braiding_ODE%parameter_number
@@ -859,7 +867,10 @@
     if (i > self%parameter_number .or. i <= 0) then
         write(*, '(a,I3)') 'No parameter corresponding to: ', i
         write(*, '(a,I3)') 'Total number of parameters is: ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBRPHParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
 
         ! parameter from wDE function
     else if (i <= Nw) then

@@ -304,6 +304,8 @@
         end do
         if (CP%Max_l >= 10 .and. Cphil3(10) > lensing_sanity_check_amplitude) then
             ! EFTCAMB MOD START: some theories really destroy the Cls
+            ! Intended (also for EFTflag = 0): lensed C_l are silently not computed (left zero) instead of an
+            ! error. Documented in CAMB_README.rst (EFTCAMB section).
             ! call AmplitudeError()
             ! EFTCAMB MOD END.
             return

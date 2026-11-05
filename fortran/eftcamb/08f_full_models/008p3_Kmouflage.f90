@@ -24,6 +24,7 @@
     module EFTCAMB_Kmouflage_Mod
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use FileUtils
@@ -67,7 +68,7 @@
 
         ! some designer parameters:
         !< Number of points sampled by the designer code.
-        integer  :: background_num_points = 1000
+        integer  :: background_num_points = 10000
         real(dl) :: x_initial = log(10._dl**(-9._dl))         !< log(a start)
         real(dl) :: x_final = 0.0_dl                        !< log(a final)
 
@@ -129,14 +130,14 @@
     implicit none
 
     class(EFTCAMB_Kmouflage) :: self   !< the base class
-    type(TIniFile)           :: Ini    !< Input ini file
+    class(TIniFile)          :: Ini    !< Input ini file
     integer                  :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
     self%Kmimic = Ini%Read_Logical('Kmimic', .false.)
 
     ! read precision parameters
-    self%background_num_points = Ini%Read_Int('model_background_num_points', 1000)
+    self%background_num_points = Ini%Read_Int('model_background_num_points', 10000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-9))
     self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
 
@@ -149,7 +150,7 @@
     implicit none
 
     class(EFTCAMB_Kmouflage) :: self      !< the base class
-    type(TIniFile)           :: Ini       !< Input ini file
+    class(TIniFile)          :: Ini       !< Input ini file
     integer                  :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! nothing to be done here.
@@ -184,7 +185,7 @@
     implicit none
 
     class(EFTCAMB_Kmouflage) :: self      !< the base class
-    type(TIniFile)           :: Ini       !< Input ini file
+    class(TIniFile)          :: Ini       !< Input ini file
     integer                  :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     self%alphaU = Ini%Read_Double('alphaU', 0.2_dl)
@@ -255,7 +256,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBKmouflageParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
         ! other parameters:
     else if (i == 1) then
         name = trim('alphaU')
@@ -287,7 +291,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBKmouflageParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
         ! other parameters:
     else if (i == 1) then
         latexname = trim('\alpha_{U}')
@@ -322,7 +329,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBKmouflageParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
         ! other parameters:
     else if (i == 1) then
         value = self%alphaU
@@ -433,9 +443,10 @@
 
     ! protect against massive neutrinos that are not yet implemented:
     if (params_cache%Num_Nu_Massive /= 0) then
-        write(*, *) 'Massive neutrinos are not implemented for K-mouflage models'
-        write(*, *) 'The value of Num_Nu_Massive should be 0'
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: massive neutrinos are not implemented for K-mouflage models ' // &
+            '(Num_Nu_Massive should be 0)', error_unsupported_params)
+        success = .false.
+        return
     end if
 
     ! initialize interpolating functions:

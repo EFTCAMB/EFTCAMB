@@ -29,6 +29,8 @@
 
     ! general modules:
     use EFT_def
+    use config, only: GlobalError, error_unsupported_params
+    use EFTCAMB_mixed_algorithms, only: integer_to_string
     use EFTCAMB_abstract_parametrizations_1D
 
     ! specific implementations:
@@ -52,6 +54,7 @@
     use EFTCAMB_steplog_parametrizations_1D
     use EFTCAMB_spline_parametrizations_1D
     use EFTCAMB_spline5_parametrizations_1D
+    use EFTCAMB_spline3_parametrizations_1D
 
     implicit none
 
@@ -102,17 +105,22 @@
     case(8)
         allocate(steplog_parametrization_1D :: in_function)
     case(9)
-        allocate(spline_parametrization_1D :: in_function)
+        allocate(spline_rec_parametrization_1D :: in_function)
     case(10)
         allocate(spline5_parametrization_1D :: in_function)
     case(11)
         allocate(exponential_parametrization_2_1D :: in_function)
+    case(12)
+        allocate(spline3_parametrization_1D :: in_function)
     case default
         if (feedback > 0) then
             write(*, '(a,I3)') 'No model corresponding to flag =', model_flag
             write(*, '(a,a)')  'For function =', function_name
             write(*, '(a)')    'Please select an appropriate model.'
         end if
+        call GlobalError('EFTCAMB error: no parametrization corresponding to flag ' // &
+            trim(integer_to_string(model_flag)) // ' for the function ' // trim(function_name), &
+            error_unsupported_params)
         eft_error = 1
         return
     end select

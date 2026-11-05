@@ -181,11 +181,13 @@
    - Steplog: **PureEFTmodelOmega** = 8&emsp; ->&emsp; $ \Omega(a) = \frac{(v_2-v_1)log\frac{a}{a_{\rm T}}}{2\delta\sqrt{1+(\frac{log\frac{a}{a_{\rm T}}}{\delta}})^2}+\frac{v_1+v_2}{2}$
    Names of the parameters: **EFTOmega_v1, EFTOmega_v2, EFTOmega_at, EFTOmega_delta**
    <br>
-   - Spline: **PureEFTmodelOmega** = 9&emsp;
+   - Spline (spline_rec): **PureEFTmodelOmega** = 9&emsp;
    Spline interpolation is a method used to construct a smooth curve that passes through a given set of data points. Here we implement the cubic and fifth-order splines for non-parametrizations of the functions you want to specify.
+   This is the natural cubic spline of the nodes with approximate derivatives: each derivative is a separate cubic spline through derivatives estimated at the nodes, set to zero at the first and last node. It is not the derivative of the value spline. Use Spline3 (flag 12) for exact derivatives.
    **EFTOmega_Spline_Pixels** defines the number N of chosen pixels.
    Name of the parameters: **EFTOmegaxn,n$\in${1,N}** are the scale coordinates, **EFTOmegavn,n$\in${1,N}** are their values.
-   *Notes: [1] Spline x coordinate must be increasing. [2] N to be at least 6.*
+   **EFTOmega_null_value** is the value of the function outside the nodes (default 0); there the derivatives are 0.
+   *Notes: [1] Spline x coordinate must be increasing. [2] N to be at least 4.*
    <br>   
    - Spline5: **PureEFTmodelOmega** = 10&emsp;
    Fifth order spline.
@@ -193,4 +195,9 @@
    - Exponential_Parametrization_2_1D: **PureEFTmodelOmega** = 11&emsp; ->&emsp; $\Omega(a) = \Omega_0e^{-sa}$.
    The other parametrization method of exponential.
    Names of the parameters: Default defination
+   <br>
+   - Spline3: **PureEFTmodelOmega** = 12&emsp;
+   Natural cubic spline of the nodes with exact derivatives: the first, second and third derivatives are those of the value spline, the fourth derivative is zero.
+   Same parameters as Spline (flag 9): **EFTOmega_Spline_Pixels**, **EFTOmegaxn**, **EFTOmegavn**, **EFTOmega_null_value**.
+   *Notes: [1] Spline x coordinate must be increasing. [2] N to be at least 4.*
     

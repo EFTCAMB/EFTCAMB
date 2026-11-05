@@ -67,6 +67,32 @@ After installation you can also run CAMB from the command line reading parameter
 To compile the Fortran command-line code run "make camb" in the fortran directory. For full details
 see the  `ReadMe <https://camb.info/readme.html>`_.
 
+.. EFTCAMB MOD START: changes of EFTCAMB to the behaviour of CAMB
+
+EFTCAMB changes to CAMB
+=============================
+
+EFTCAMB modifies the behaviour of CAMB in a few places, also for runs with EFTflag = 0:
+
+- **Reionization:** the default upper bound of the tau -> z_re search (``TTanhReionization`` ``max_redshift``,
+  python ``Reion.max_redshift``) is 1000 instead of 50, so models with an early reionization are still found.
+  The different starting bracket moves z_re within the solver tolerance: EFTflag = 0 spectra differ from plain
+  CAMB at the 2e-5 level (low-l EE/BB). Set ``max_redshift = 50`` to reproduce CAMB.
+- **Integration accuracy:** with EFTflag /= 0 the perturbation integration uses ``IntTolBoost >= 2`` (the
+  RungeKuttaDP45 integrator needs it for stiff EFT models such as Horava and RPH). The input parameters are not
+  changed. An EFT model in its exact GR limit therefore agrees with an EFTflag = 0 run at ``IntTolBoost = 2``.
+- **Lensing:** when the lensing potential is unrealistically large (``lensing_sanity_check_amplitude``) the lensed
+  power spectra are not computed and stay zero, without an error (some theories destroy the C_l); the high-L
+  template normalization check is disabled as well.
+- **Transfer times:** a mismatch between the source and transfer time steps (CalcScalarSources) is an error,
+  raised only when ``print_fortran_warnings`` is on.
+
+With EFTflag /= 0 the following are refused with an error: spatial curvature (omk /= 0, the EFT equations are
+flat), ``EFTCAMB_evolve_metric_h = T`` (not validated) and 21cm sources. Models that fix the expansion rate today
+(Horndeski with its own background) set ``H0`` to the H0 of their background.
+
+.. EFTCAMB MOD END
+
 Citation
 ===================
 You can refer to the papers::

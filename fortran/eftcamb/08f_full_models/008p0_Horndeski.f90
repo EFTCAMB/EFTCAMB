@@ -25,6 +25,7 @@
     module EFTCAMB_Horndeski
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use MpiUtils
     use FileUtils
@@ -806,7 +807,7 @@
     implicit none
 
     class(EFTCAMB_Hdsk) :: self      !< the base class
-    type(TIniFile) :: Ini       !< Input ini file
+    class(TIniFile) :: Ini       !< Input ini file
     integer        :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read model selection flags:
@@ -857,7 +858,7 @@
     implicit none
 
     class(EFTCAMB_Hdsk) :: self      !< the base class
-    type(TIniFile) :: Ini       !< Input ini file
+    class(TIniFile) :: Ini       !< Input ini file
     integer        :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer :: temp_feedback, temp_model
@@ -868,64 +869,88 @@
     ! 1) Allocate w_DE
     temp_model = Ini%Read_Int("Horndeski_wDE_model", 0)
     call allocate_parametrized_1D_function(self%wDE, temp_model, 'HorndeskiwDE', 'w_{DE}', eft_error, temp_feedback)
+    if (eft_error > 0) return
     call self%wDE%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
 
     ! 2) Allocate the Horndeski free functions
     ! c0
     temp_model = Ini%Read_Int("Horndeski_freefunc0_model", 0)
     call allocate_parametrized_1D_function(self%free_c0, temp_model, 'Horndeskic0', 'c_{0,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c0%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
     ! c1
     temp_model = Ini%Read_Int("Horndeski_freefunc1_model", 0)
     call allocate_parametrized_1D_function(self%free_c1, temp_model, 'Horndeskic1', 'c_{1,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c1%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
     ! c2
     temp_model = Ini%Read_Int("Horndeski_freefunc2_model", 0)
     call allocate_parametrized_1D_function(self%free_c2, temp_model, 'Horndeskic2', 'c_{2,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c2%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
     ! c3
     temp_model = Ini%Read_Int("Horndeski_freefunc3_model", 0)
     call allocate_parametrized_1D_function(self%free_c3, temp_model, 'Horndeskic3', 'c_{3,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c3%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
     ! c4
     temp_model = Ini%Read_Int("Horndeski_freefunc4_model", 0)
     call allocate_parametrized_1D_function(self%free_c4, temp_model, 'Horndeskic4', 'c_{4,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c4%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
     ! c5
     temp_model = Ini%Read_Int("Horndeski_freefunc5_model", 0)
     call allocate_parametrized_1D_function(self%free_c5, temp_model, 'Horndeskic5', 'c_{5,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c5%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
     ! c6
     temp_model = Ini%Read_Int("Horndeski_freefunc6_model", 0)
     call allocate_parametrized_1D_function(self%free_c6, temp_model, 'Horndeskic6', 'c_{6,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c6%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
     ! c7
     temp_model = Ini%Read_Int("Horndeski_freefunc7_model", 0)
     call allocate_parametrized_1D_function(self%free_c7, temp_model, 'Horndeskic7', 'c_{7,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c7%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
     ! c8
     temp_model = Ini%Read_Int("Horndeski_freefunc8_model", 0)
     call allocate_parametrized_1D_function(self%free_c8, temp_model, 'Horndeskic8', 'c_{8,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c8%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
     ! c9
     temp_model = Ini%Read_Int("Horndeski_freefunc9_model", 0)
     call allocate_parametrized_1D_function(self%free_c9, temp_model, 'Horndeskic9', 'c_{9,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c9%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
     ! c10
     temp_model = Ini%Read_Int("Horndeski_freefunc10_model", 0)
     call allocate_parametrized_1D_function(self%free_c10, temp_model, 'Horndeskic10', 'c_{10,hdsk}', eft_error, &
         temp_feedback)
+    if (eft_error > 0) return
     call self%free_c10%init_func_from_file(Ini, eft_error)
+    if (eft_error > 0) return
 
     ! 3) model name
     select case (self%model)
@@ -960,9 +985,17 @@
     end select
 
     ! 4) Model checks
+    if (self%model < 1 .or. self%model > 8) then
+        call GlobalError('EFTCAMB error: undefined Horndeski model ' // trim(integer_to_string(self%model)), &
+            error_unsupported_params)
+        eft_error = 1
+        return
+    end if
     if (self%designerV .and. self%evolve_hubble) then
-        write(*, *) "Horndeski_designer_V and Horndeski_evolve_hubble cannot both be true."
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: Horndeski_designer_V and Horndeski_evolve_hubble cannot both be true', &
+            error_unsupported_params)
+        eft_error = 1
+        return
     end if
 
     end subroutine EFTCAMBHdskAllocateModelSelection
@@ -1136,6 +1169,8 @@
         num_params_model = 6
     case(7, 8)
         num_params_model = 0
+    case default
+        num_params_model = 0
     end select
     if (allocated(self%model_params)) deallocate(self%model_params)
     if (num_params_model > 0) then
@@ -1155,7 +1190,7 @@
     implicit none
 
     class(EFTCAMB_Hdsk) :: self      !< the base class
-    type(TIniFile) :: Ini       !< Input ini file
+    class(TIniFile) :: Ini       !< Input ini file
     integer        :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     integer :: i, num_params_model
@@ -1195,6 +1230,8 @@
     case(6)
         num_params_model = 6
     case(7, 8)
+        num_params_model = 0
+    case default
         num_params_model = 0
     end select
     if (allocated(self%model_params)) deallocate(self%model_params)
@@ -1332,6 +1369,8 @@
         num_params_model = 6
     case(7, 8)
         num_params_model = 0
+    case default
+        num_params_model = 0
     end select
     write(*, *)
     if (num_params_model > 0) then
@@ -1358,7 +1397,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBHdskParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
 
     ! 0) phi_ini and phidot_ini
@@ -1463,6 +1505,8 @@
         num_params_model = 6
     case(7, 8)
         num_params_model = 0
+    case default
+        num_params_model = 0
     end select
     if (num_params_model > 0 .and. i <= num_params_temp + num_params_model) then
         name = trim('Horndeski_param') // integer_to_string(i - num_params_temp)
@@ -1487,7 +1531,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBHdskParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
 
     ! 0) phi_ini and phidot_ini
@@ -1592,6 +1639,8 @@
         num_params_model = 6
     case(7, 8)
         num_params_model = 0
+    case default
+        num_params_model = 0
     end select
     if (num_params_model > 0 .and. i <= num_params_temp + num_params_model) then
         latexname = trim('Horndeski_param') // integer_to_string(i - num_params_temp)
@@ -1616,7 +1665,10 @@
     if (i <= 0 .or. i > self%parameter_number) then
         write(*, '(a,I3)') 'EFTCAMB error: no parameter corresponding to number ', i
         write(*, '(a,I3)') 'Total number of parameters is ', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in EFTCAMBHdskParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     ! 0) phi_ini and phidot_ini
@@ -1720,6 +1772,8 @@
     case(6)
         num_params_model = 6
     case(7, 8)
+        num_params_model = 0
+    case default
         num_params_model = 0
     end select
     if (num_params_model > 0 .and. i <= num_params_temp + num_params_model) then
@@ -2014,6 +2068,12 @@
     call self%Vscf%initialize (self%interpolation_num_points, self%x_initial, self%x_final)
     call self%dVscf%initialize (self%interpolation_num_points, self%x_initial, self%x_final)
     call self%ddVscf%initialize (self%interpolation_num_points, self%x_initial, self%x_final)
+    ! the potential tables are filled only for the designer potential: without it V = 0 (V_scf output)
+    if (.not. self%designerV) then
+        self%Vscf%y = 0._dl
+        self%dVscf%y = 0._dl
+        self%ddVscf%y = 0._dl
+    end if
 
     ! find model specific ICs:
     call self%find_initial_conditions(params_cache, feedback_level, success)
@@ -2034,7 +2094,7 @@
     params_cache%maxfrac_hdsk = self%maxfrac_hdsk
     params_cache%z_maxfrac_hdsk = self%z_maxfrac_hdsk
     params_cache%h0_Mpc = self%H%y(self%H%num_points)
-    params_cache%h0 = params_cache%h0_Mpc/3.33564d-6
+    params_cache%h0 = params_cache%h0_Mpc*c/1000._dl
     if (DebugEFTCAMB .or. feedback_level > 2) then
         call params_cache%print()
     end if
@@ -2378,7 +2438,7 @@
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
     integer, intent(in)                        :: feedback_level   !< whether the calculation ended correctly or not
 
-    integer :: num_eq = 5   !<  Number of equations
+    integer :: num_eq   !<  Number of equations
 
     ! y = tau, phi, phi', (H)
     real(dl), allocatable :: y(:), ydot(:)
@@ -2417,10 +2477,15 @@
     integer :: ind
 
     ! error message happened during integration
-    character(len=1024) :: integration_error_message = ''
+    character(len=1024) :: integration_error_message
+    logical :: only_solve_temp
 
+    ! initialise the locals here: initialisation in a declaration would imply the save attribute.
+    integration_error_message = ''
+    num_eq = 5
     ! digest the input:
-    if (.not. present(only_solve)) only_solve = .false.
+    only_solve_temp = .false.
+    if (present(only_solve)) only_solve_temp = only_solve
 
     if (self%evolve_hubble .or. self%designerV) then
         num_eq = 6
@@ -2717,9 +2782,12 @@
             ! use exact root when E3 = 0
             H = 0.5_dl*(-E1 + sqrt(E1*E1 - 4._dl*E2*E0))/E2
         else
-            write(*, *) "E3 = ", E3, "is non-zero."
-            write(*, *) "You have G5x != 0 or G5xx != 0. Horndeski_evolve_hubble must be enabled in this case."
-            call MpiStop('EFTCAMB error')
+            ! (cubic Hubble equation: stop the background integration with an error)
+            call GlobalError('EFTCAMB error: E3 is non-zero (G5x /= 0 or G5xx /= 0): Horndeski_evolve_hubble ' // &
+                'must be enabled in this case', error_unsupported_params)
+            integration_error_message = 'E3 is non-zero: Horndeski_evolve_hubble must be enabled.'
+            success = .false.
+            H = sqrt(abs(rho_tot)/3._dl)
         end if
     end if
 
@@ -2764,7 +2832,7 @@
                 a**4*H**2*self%wDE%second_derivative(a)
         else
             ! quickly damps w_DE to -0.99 in the past
-            wdot_DE = self%hubble_friction*adotoa*(0.99 + w_DE)
+            wdot_DE = self%hubble_friction*adotoa*(0.99_dl + w_DE)
             wdotdot_DE = self%hubble_friction*((adotoa**2 + a*H_prime)*(1._dl + w_DE) + adotoa*wdot_DE)
         end if
         rhodot_de = -3._dl*adotoa*(rho_de + pres_de)
@@ -2909,7 +2977,7 @@
     ! if ( a>self%a_designer_output_min ) write(*,*) 1._dl/a-1._dl, phi, phi_prime/adotoa, phi_prime_prime, V, pres_de/rho_de
 
     ! stop here if no further output are required
-    if (only_solve) return
+    if (only_solve_temp) return
 
     ! 4) compute additional background quantities
     aH_prime = a2*H*H + a*H_prime
@@ -3327,7 +3395,7 @@
         self%phidot_ini = a*G2p/5._dl/H
     case(3)
         ! tracking solution H dphi/dt =  (-1 + sqrt(1 - 12/5*(xi*V_phi)))/(6 xi)
-        if (abs(self%model_params(1)*G2p) > 0.01) then
+        if (abs(self%model_params(1)*G2p) > 0.01_dl) then
             self%phidot_ini = a*(-1._dl + sqrt(1._dl + 2.4_dl*self%model_params(1)*G2p))/(6._dl*self%model_params(1)*H)
         else
             self%phidot_ini = a*G2p/5._dl/H
@@ -3403,8 +3471,11 @@
     external func
 
     ! initial check:
-    if (x1 == x2) stop 'you have to guess an initial range in zbrac'
-    if (x1 < 0 .or. x2 < 0) stop 'only support positive roots'
+    if (x1 == x2 .or. x1 < 0 .or. x2 < 0) then
+        ! no initial range, or not positive (only positive roots are supported): no bracket
+        succes = .false.
+        return
+    end if
     ! get an ordered interval:
     if (x2 < x1) then
         temp = x2
@@ -3747,8 +3818,17 @@
 
     case default
 
-        write(*, '(a,I3)') 'Undefined Horndeski model', self%model
-        call MpiStop('EFTCAMB error')
+        ! (rejected when the model is selected)
+        call GlobalError('EFTCAMB error: undefined Horndeski model ' // trim(integer_to_string(self%model)), &
+            error_unsupported_params)
+        G2 = 0._dl; G2p = 0._dl; G2x = 0._dl; G2pp = 0._dl; G2px = 0._dl; G2xx = 0._dl; G2ppp = 0._dl
+        G2ppx = 0._dl; G2pxx = 0._dl; G2xxx = 0._dl; G3p = 0._dl; G3x = 0._dl; G3pp = 0._dl; G3px = 0._dl
+        G3xx = 0._dl; G3ppp = 0._dl; G3ppx = 0._dl; G3pxx = 0._dl; G3xxx = 0._dl; G4 = 0._dl; G4p = 0._dl
+        G4x = 0._dl; G4pp = 0._dl; G4px = 0._dl; G4xx = 0._dl; G4ppp = 0._dl; G4ppx = 0._dl; G4pxx = 0._dl
+        G4xxx = 0._dl; G4pppp = 0._dl; G4pppx = 0._dl; G4ppxx = 0._dl; G4pxxx = 0._dl; G4xxxx = 0._dl
+        G5 = 0._dl; G5p = 0._dl; G5x = 0._dl; G5pp = 0._dl; G5px = 0._dl; G5xx = 0._dl; G5ppp = 0._dl
+        G5ppx = 0._dl; G5pxx = 0._dl; G5xxx = 0._dl; G5pppp = 0._dl; G5pppx = 0._dl; G5ppxx = 0._dl
+        G5pxxx = 0._dl; G5xxxx = 0._dl
 
     end select
 

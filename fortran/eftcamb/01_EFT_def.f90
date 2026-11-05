@@ -31,9 +31,14 @@
     ! EFT compile time flags:
     character(len=*), parameter :: EFTCAMB_version = 'V3.1 Jan26'
 
-    integer, parameter :: EFT_names_max_length = 20    !< maximum length of names for EFT functions and parameters.
+    integer, parameter :: EFT_names_max_length = 128   !< maximum length of names for EFT functions and parameters.
     !< maximum length of latex names for EFT functions and parameters.
     integer, parameter :: EFT_names_latex_max_length = 40
+
+    !< return to GR time (> 1) of a model that is GR within the threshold at all times: the EFT perturbations are
+    !! never switched on. It is stored as the perturbation turn-on time, so it is also accepted as an input turn-on
+    !! (e.g. when the parameters of a CAMBdata, results.Params, are used again).
+    real(dl), parameter :: EFT_RGR_never_on = 1.1_dl
 
     ! Debug flag. This sintax allows for compile time decorators that look nice.
 #ifdef DEBUG

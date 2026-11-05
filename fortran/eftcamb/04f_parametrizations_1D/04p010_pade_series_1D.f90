@@ -28,6 +28,7 @@
     module EFTCAMB_pade_series_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use IniObjects
     use EFT_def
     use MpiUtils
@@ -141,7 +142,7 @@
     implicit none
 
     class(padeseries_parametrization_1D) :: self   !< the base class
-    type(TIniFile)                       :: Ini    !< Input ini file
+    class(TIniFile)                      :: Ini    !< Input ini file
     integer                              :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read order of the Pade expansion:
@@ -187,7 +188,10 @@
     else
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in PadeSeriesParametrized1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end if
 
     end subroutine PadeSeriesParametrized1DParameterValues
@@ -242,7 +246,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in PadeSeriesParametrized1DParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -274,7 +281,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in PadeSeriesParametrized1DParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then
@@ -416,7 +426,7 @@
 
     PadeSeriesParametrized1DFourthDerivative = (ddddup/down) - 4._dl*(dddup*ddown/down**2) + &
         6._dl*ddup*(2._dl*ddown**2/down**3 - dddown/down**2) + &
-        4._dl*(-ddddown/down**2 - 6._dl*ddown**3/down**4 + 6._dl*ddown*dddown/down**3) + &
+        4._dl*dup*(-ddddown/down**2 - 6._dl*ddown**3/down**4 + 6._dl*ddown*dddown/down**3) + &
         up*(-dddddown/down**2 + 6._dl*dddown**2/down**3 + 24._dl*ddown**4/down**5 + 8._dl*ddddown*ddown/down**3 - &
         36._dl*dddown*ddown**2/down**4)
 
@@ -433,11 +443,8 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: PadeSeriesParametrized1DIntegral                  !< the output value
 
-    PadeSeriesParametrized1DIntegral = 0._dl
-    !< No analytic solution >!
-    write(*, *) 'PadeSeriesParametrized1DIntegral is not implemented.'
-    write(*, *) 'Calculations cannot proceed.'
-    call MpiStop('EFTCAMB error')
+    ! no closed form: numerical integral (see parametrized_function_1D%numerical_integral).
+    PadeSeriesParametrized1DIntegral = self%numerical_integral(x, eft_cache=eft_cache)
 
     end function PadeSeriesParametrized1DIntegral
 

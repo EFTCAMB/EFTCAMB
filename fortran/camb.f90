@@ -308,6 +308,11 @@
     real(dl) :: H0_range(2), initial_H0, H0_iteration_threshold
     real(dl) :: xzero, fzero
     integer :: error, iflag
+    ! EFTCAMB MOD START: valid bracket for EFT models
+    real(dl) :: H0_target
+    integer :: i_end, it
+    logical :: valid
+    ! EFTCAMB MOD END.
 
     CAMB_SetH0ForTheta = .false.
     ErrMsg = ''
@@ -336,6 +341,42 @@
     end if
 
     if (.not. solver%cosmomc_approx) solver%zstar = solver%Data%get_zstar()
+
+    ! EFTCAMB MOD START: EFT models can be invalid (unstable, background solver failure) far from the solution:
+    ! search above the matter-only limit, and move bracket ends where the model fails towards the estimate
+    ! (as camb.model.CAMBparams.set_H0_for_theta)
+    if (allocated(P%EFTCAMB)) then
+        if (P%EFTCAMB%EFTflag /= 0) then
+            H0_range(1) = max(H0_range(1), 1.1_dl*100._dl*sqrt(P%ombh2 + P%omch2 + P%omnuh2))
+            if (initial_H0 > H0_range(1) .and. initial_H0 < H0_range(2)) then
+                H0_target = initial_H0
+            else
+                H0_target = 0.5_dl*(H0_range(1) + H0_range(2))
+            end if
+            do i_end = 1, 2
+                valid = .false.
+                do it = 1, 40
+                    if (CAMB_ThetaH0Difference(solver, H0_range(i_end)) /= huge(1._dl)) then
+                        valid = .true.
+                        exit
+                    end if
+                    H0_range(i_end) = 0.5_dl*(H0_range(i_end) + H0_target)
+                end do
+                if (.not. valid) then
+                    ErrMsg = 'No valid H0 for this EFTCAMB model found inside of theta_H0_range'
+                    return
+                end if
+            end do
+            ! models whose H0 is set by the EFT background (e.g. Horndeski without designer potential) adopt it in
+            ! SetParams and ignore the input H0: theta does not depend on it and cannot be used to set it
+            if (abs(solver%Data%CP%H0/solver%Params%H0 - 1._dl) > 1.e-9_dl) then
+                write(ErrMsg, '(a,f0.4,a)') 'EFTCAMB: thetastar/cosmomc_theta cannot be used with this model: ' // &
+                    'its H0 (', solver%Data%CP%H0, ') is set by the EFT background, not by the input H0'
+                return
+            end if
+        end if
+    end if
+    ! EFTCAMB MOD END.
 
     call brentq(solver, CAMB_ThetaH0Difference, H0_range(1), H0_range(2), 5e-5_dl, xzero, fzero, iflag)
     if (iflag /= 0) then
@@ -383,14 +424,20 @@
         if (.not. allocated(P%eft_par_cache)) allocate(P%eft_par_cache)
         ! keep only the parameters read by EFTCAMB:
         call Ini%ReadValues%Clear()
+        eft_error = 0
         call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
-        if (P%EFTCAMB%EFTflag /= 0) then
-            eft_error = 0
+        if (global_error_flag /= 0) eft_error = 1
+        if (P%EFTCAMB%EFTflag /= 0 .and. eft_error == 0) then
             call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
-            if (eft_error > 0) then
+        end if
+        if (eft_error > 0) then
+            ! keep the message of an error raised during the initialization:
+            if (global_error_flag /= 0) then
+                ErrMsg = trim(global_error_message)
+            else
                 ErrMsg = 'EFTCAMB: invalid model parameters'
-                CAMB_ReadParamFile = .false.
             end if
+            CAMB_ReadParamFile = .false.
         end if
         call P%EFTCAMB%EFTCAMB_store_read_parameters(Ini)
     end if
@@ -422,6 +469,9 @@
     character(len=*), intent(out) :: ErrMsg
     character(len=:), allocatable :: NumStr, S, DarkEneryModel, RecombinationModel
     logical :: DoCounts, has_hubble, has_thetastar, has_cosmomc_theta
+    ! EFTCAMB MOD START: error code of the EFTCAMB model initialization
+    integer :: eft_error
+    ! EFTCAMB MOD END.
 
     ErrMsg = ''
     global_error_flag = 0
@@ -709,6 +759,29 @@
     end if
 
     if (has_thetastar .or. has_cosmomc_theta) then
+        ! EFTCAMB MOD START: the H0 solve needs the EFTCAMB background, read EFTCAMB from the same ini first
+        ! (the callers initialize EFTCAMB again afterwards)
+        if (.not. allocated(P%EFTCAMB)) allocate(P%EFTCAMB)
+        if (.not. allocated(P%eft_par_cache)) allocate(P%eft_par_cache)
+        call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
+        if (global_error_flag /= 0) then
+            ErrMsg = trim(global_error_message)
+            return
+        end if
+        if (P%EFTCAMB%EFTflag /= 0) then
+            eft_error = 0
+            call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
+            if (eft_error > 0) then
+                ! keep the message of an error raised during the initialization:
+                if (global_error_flag /= 0) then
+                    ErrMsg = trim(global_error_message)
+                else
+                    ErrMsg = 'EFTCAMB: invalid model parameters'
+                end if
+                return
+            end if
+        end if
+        ! EFTCAMB MOD END.
         if (.not. CAMB_SetH0ForTheta(P, theta, ErrMsg, cosmomc_approx=has_cosmomc_theta)) return
     end if
 
@@ -894,6 +967,10 @@
     allocate(P%eft_par_cache)
     ! initialize model selection from file:
     call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
+    if (global_error_flag /= 0) then
+        ErrMsg = trim(global_error_message)
+        return
+    end if
     ! initialize outroot for debug printing:
     P%EFTCAMB%outroot = trim(outroot)
     ! initialize model:
@@ -903,7 +980,12 @@
         ! initialize the model from file:
         call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
         if (eft_error > 0) then
-            ErrMsg = 'Invalid parameter value'
+            ! keep the message of an error raised during the initialization:
+            if (global_error_flag /= 0) then
+                ErrMsg = trim(global_error_message)
+            else
+                ErrMsg = 'Invalid parameter value'
+            end if
             return
         end if
         ! print feedback:
@@ -914,8 +996,8 @@
 
     ! 21 cm sources are not checked for MG effects, have to stop
     if (P%EFTCAMB%EFTflag /= 0 .and. P%Do21cm) then
-        write(*, *) 'EFTCAMB is not compatible with 21 cm sources so far'
-        error stop 'Invalid parameter'
+        ErrMsg = 'EFTCAMB is not compatible with 21 cm sources so far'
+        return
     end if
     ! EFTCAMB MOD END
 
@@ -1090,6 +1172,9 @@
     logical bad
     type(CAMBParams) :: P
     character(len=1024) :: ErrMsg
+    ! EFTCAMB MOD START: error code of the EFTCAMB model initialization
+    integer :: eft_error
+    ! EFTCAMB MOD END.
 
     call Ini%Open(InputFile, bad, .false.)
     if (bad) then
@@ -1099,6 +1184,20 @@
         write(*, *) trim(ErrMsg)
         error stop
     end if
+    ! EFTCAMB MOD START: also read the EFTCAMB flags and model (python read_ini validates the file with this in a
+    ! separate process: a value that cannot be read stops here, not in the python interpreter)
+    if (.not. allocated(P%EFTCAMB)) allocate(P%EFTCAMB)
+    eft_error = 0
+    call P%EFTCAMB%EFTCAMB_init_from_file(Ini)
+    if (global_error_flag == 0 .and. P%EFTCAMB%EFTflag /= 0) call P%EFTCAMB%EFTCAMB_init_model_from_file(Ini, eft_error)
+    if (global_error_flag /= 0) then
+        write(*, *) trim(global_error_message)
+        error stop
+    else if (eft_error > 0) then
+        write(*, *) 'EFTCAMB: invalid model parameters'
+        error stop
+    end if
+    ! EFTCAMB MOD END.
 
     call Ini%Close()
 

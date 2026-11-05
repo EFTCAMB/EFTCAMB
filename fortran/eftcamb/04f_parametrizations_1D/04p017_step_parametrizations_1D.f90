@@ -26,6 +26,7 @@
     module EFTCAMB_step_parametrizations_1D
 
     use precision
+    use config, only: GlobalError, error_unsupported_params
     use MpiUtils
     use EFT_def
     use EFTCAMB_cache
@@ -135,7 +136,10 @@
     case default
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in stepParametrized1DParameterValues', &
+            error_unsupported_params)
+        value = 0._dl
+        return
     end select
 
     end subroutine stepParametrized1DParameterValues
@@ -187,7 +191,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in stepParameterNames', &
+            error_unsupported_params)
+        name = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names)) then
@@ -221,7 +228,10 @@
         write(*, *) 'In parametrized_function_1D:', self%name
         write(*, *) 'Illegal index for parameter_names.'
         write(*, *) 'Maximum value is:', self%parameter_number
-        call MpiStop('EFTCAMB error')
+        call GlobalError('EFTCAMB error: illegal parameter index in stepParameterNamesLatex', &
+            error_unsupported_params)
+        latexname = ''
+        return
     end if
     ! return the parameter name:
     if (allocated(self%param_names_latex)) then
@@ -322,7 +332,7 @@
 
     stepParametrized1DFourthDerivative = (15._dl/2._dl)*(self%v2 - self%v1)*(self%aT - x)* &
         (4._dl*(self%aT - x)**2 - 3._dl*self%Delta**2)* &
-        (1._dl/(self%Delta**7*((self%aT - x)**2 + self%Delta**2)**(4.5_dl)))
+        (self%Delta**2/((self%aT - x)**2 + self%Delta**2)**(4.5_dl))
 
     end function stepParametrized1DFourthDerivative
 
