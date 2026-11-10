@@ -397,6 +397,124 @@ class EFTCAMBTest(unittest.TestCase):
         )
         self.assertGreater(camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model)).get_sigma8_0(), 0)
 
+    def test_horndeski_coefficient_identities(self):
+        # the generated Horndeski background coefficients are conformal-time derivatives of each other: checked at
+        # random inputs with central differences along a' = a^2 H, X = dphi^2/(2 a^2), dG/dtau = G_phi phi' + G_X X'
+        # (a G4pxx for G4ppp typo broke cs1p, d0 and dp0)
+        from camb.baseconfig import camblib
+
+        g_names = [
+            "G2",
+            "G2p",
+            "G2x",
+            "G2pp",
+            "G2px",
+            "G2xx",
+            "G2ppp",
+            "G2ppx",
+            "G2pxx",
+            "G2xxx",
+            "G3p",
+            "G3x",
+            "G3pp",
+            "G3px",
+            "G3xx",
+            "G3ppp",
+            "G3ppx",
+            "G3pxx",
+            "G3xxx",
+            "G4",
+            "G4p",
+            "G4x",
+            "G4pp",
+            "G4px",
+            "G4xx",
+            "G4ppp",
+            "G4ppx",
+            "G4pxx",
+            "G4xxx",
+            "G4pppp",
+            "G4pppx",
+            "G4ppxx",
+            "G4pxxx",
+            "G4xxxx",
+            "G5",
+            "G5p",
+            "G5x",
+            "G5pp",
+            "G5px",
+            "G5xx",
+            "G5ppp",
+            "G5ppx",
+            "G5pxx",
+            "G5xxx",
+            "G5pppp",
+            "G5pppx",
+            "G5ppxx",
+            "G5pxxx",
+            "G5xxxx",
+        ]
+        signatures = {
+            "backeq": ("horndeski_backeq_coefficients", ("a", "H", "dphi", "rptot"), 6),
+            "backeq_p": ("horndeski_backeq_coefficients_p", ("a", "H", "dH", "dphi", "ddphi", "rptot", "drptot"), 6),
+            "designer": ("horndeski_designereq_coefficients", ("a", "H", "dH", "ddH", "dphi", "rptot", "drptot"), 3),
+            "designer_p": (
+                "horndeski_designereq_coefficients_p",
+                ("a", "H", "dH", "ddH", "dddH", "dphi", "ddphi", "rptot", "drptot", "ddrptot"),
+                2,
+            ),
+        }
+
+        def call(name, v):
+            symbol, first, n_out = signatures[name]
+            outputs = [c_double() for _ in range(n_out)]
+            getattr(camblib, symbol)(*[c_double(v[k]) for k in first + tuple(g_names)], *[byref(o) for o in outputs])
+            return np.array([o.value for o in outputs])
+
+        def rates(v):
+            xdot = v["dphi"] * v["ddphi"] / v["a"] ** 2 - v["dphi"] ** 2 * v["H"] / v["a"]
+            r = {"a": v["a"] ** 2 * v["H"], "H": v["dH"], "dH": v["ddH"], "ddH": v["dddH"], "dphi": v["ddphi"],
+                 "ddphi": v["dddphi"], "rptot": v["drptot"], "drptot": v["ddrptot"]}  # fmt: skip
+            for g in g_names:
+                base, n_p, n_x = g[:2], g[2:].count("p"), g[2:].count("x")
+                g_p, g_x = base + "p" * (n_p + 1) + "x" * n_x, base + "p" * n_p + "x" * (n_x + 1)
+                r[g] = v.get(g_p, 0.0) * v["dphi"] + v.get(g_x, 0.0) * xdot
+            return r
+
+        def shifted(v, s, h=1e-6):
+            r = rates(v)
+            return {k: x + s * h * r.get(k, 0.0) for k, x in v.items()}
+
+        rng = np.random.default_rng(1)
+        for _ in range(10):
+            v = {k: rng.uniform(-1, 1) for k in g_names}
+            v.update(a=rng.uniform(0.3, 1), H=rng.uniform(0.5, 2), dphi=rng.uniform(0.2, 1), rptot=rng.uniform(0, 1))
+            v.update({k: rng.uniform(-1, 1) for k in ("dH", "ddH", "dddH", "ddphi", "dddphi", "drptot", "ddrptot")})
+            # backeq_p = d/dtau backeq
+            fd = (call("backeq", shifted(v, 1)) - call("backeq", shifted(v, -1))) / 2e-6
+            np.testing.assert_allclose(call("backeq_p", v), fd, rtol=1e-6)
+            # d0 + d1 phi'' + d2 phi''^2 = d/dtau(cp1 phi'' + ch1 H' + cs1) - cp1 phi'''
+            d, b, bp = call("designer", v), call("backeq", v), call("backeq_p", v)
+            lhs = d[0] + d[1] * v["ddphi"] + d[2] * v["ddphi"] ** 2
+            self.assertAlmostEqual(
+                lhs / (bp[0] * v["ddphi"] + bp[1] * v["dH"] + b[1] * v["ddH"] + bp[2]), 1, delta=1e-10
+            )
+            # dp0 + dp1 phi''' = d/dtau(d0 + d1 phi'' + d2 phi''^2) where the designer equation holds, cp1 = cp1' = 0
+            # (G4p and G4pp enter cp1 and cp1' linearly)
+            c0, c1 = (call("backeq", {**v, "G4p": x})[0] for x in (0.0, 1.0))
+            v["G4p"] = -c0 / (c1 - c0)
+            c0, c1 = (call("backeq_p", {**v, "G4pp": x})[0] for x in (0.0, 1.0))
+            v["G4pp"] = -c0 / (c1 - c0)
+
+            def poly(w):
+                dd = call("designer", w)
+                return dd[0] + dd[1] * w["ddphi"] + dd[2] * w["ddphi"] ** 2
+
+            dp = call("designer_p", v)
+            self.assertAlmostEqual(
+                (dp[0] + dp[1] * v["dddphi"]) / ((poly(shifted(v, 1)) - poly(shifted(v, -1))) / 2e-6), 1, delta=1e-6
+            )
+
     def test_horava_domain(self):
         # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
         # the GR point (arXiv:1508.01787 Sec. 2.4)

@@ -9,7 +9,11 @@ repos:
         exclude_types:
           - python
       - id: check-added-large-files
-        exclude: ^docs/changelog/hyperspherical_bessels\.pdf$
+        # EFTCAMB MOD START: the generated Horndeski perturbation coefficients are ~1.4 MB of Fortran
+        exclude: ^(docs/changelog/hyperspherical_bessels\.pdf|fortran/eftcamb/08f_full_models/008p0_Horndeski_perturbation_coefficients\.f90)$
+        # original code:
+        # exclude: ^docs/changelog/hyperspherical_bessels\.pdf$
+        # EFTCAMB MOD END
       - id: check-merge-conflict
 
   - repo: https://github.com/asottile/pyupgrade

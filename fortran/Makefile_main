@@ -200,7 +200,7 @@ camblib.so: $(CAMBOBJ)
 
 # EFTCAMB MOD START: add EFTCAMB files to CAMB library
 libcambobj:
-    LIBCAMBOBJ = $(patsubst %,$(DLL_DIR)/%.o,$(SOURCEFILES)) $(EFT_SOJ) $(EFT_CSOJ)
+    LIBCAMBOBJ = $(patsubst %,$(DLL_DIR)/%.o,$(SOURCEFILES)) $(EFT_SOJ)
 # EFTCAMB MOD END
 
 #cannot link the .a library, or the linker will strip out some things we might need

@@ -314,7 +314,15 @@
 	constants.o \
 	massive_neutrinos.o \
 	02_equispaced_interpolation_linear_1D.o \
-	02_root_finding.o
+	02_root_finding.o \
+	008p0_Horndeski_coefficients.o \
+	008p0_Horndeski_perturbation_coefficients.o
+
+008p0_Horndeski_coefficients.o :  \
+	constants.o
+
+008p0_Horndeski_perturbation_coefficients.o :  \
+	constants.o
 
 008p5_Beyond_Horndeski.o :  \
 	config.o \
@@ -874,7 +882,15 @@ $(DLL_DIR)/008p0_Horndeski.o :  \
 	$(DLL_DIR)/constants.o \
 	$(DLL_DIR)/massive_neutrinos.o \
 	$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o \
-	$(DLL_DIR)/02_root_finding.o
+	$(DLL_DIR)/02_root_finding.o \
+	$(DLL_DIR)/008p0_Horndeski_coefficients.o \
+	$(DLL_DIR)/008p0_Horndeski_perturbation_coefficients.o
+
+$(DLL_DIR)/008p0_Horndeski_coefficients.o :  \
+	$(DLL_DIR)/constants.o
+
+$(DLL_DIR)/008p0_Horndeski_perturbation_coefficients.o :  \
+	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/008p5_Beyond_Horndeski.o :  \
 	$(DLL_DIR)/config.o \

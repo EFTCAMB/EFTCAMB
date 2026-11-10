@@ -12,7 +12,6 @@ This folder contains the H-EFTCAMB code.
 Before installation, make sure you have the following dependencies installed:
 
   - gfortran
-  - gcc
   - lapack
 
 By default, the blas and lapack library is linked by ``-lblas -llapack``. If a custom library is used, change the variables ``BLASFLAG`` and ``LAPACK_FLAG`` in ``fortran/Makefile`` to point to your local blas and lapack library. The python wrapper further requires the following python packages:
@@ -25,7 +24,7 @@ By default, the blas and lapack library is linked by ``-lblas -llapack``. If a c
 
 For example, using conda, you can create a new environment and install the required packages with the following command:
 
-    conda create -n HEFTCAMB_env gfortran gcc lapack numpy python sympy scipy packaging -c conda-forge
+    conda create -n HEFTCAMB_env gfortran lapack numpy python sympy scipy packaging -c conda-forge
 
 Clone the H-EFTCAMB code using
 
@@ -45,11 +44,11 @@ import camb
 ```
 
 **Note for Mac Users:**
-If you're using a Mac with an Apple Silicon chip (e.g., M1, M2), make sure you install the appropriate version of fortran and C compilers for your architecture (arm64), for example:
+If you're using a Mac with an Apple Silicon chip (e.g., M1, M2), make sure you install the appropriate version of the fortran compiler for your architecture (arm64), for example:
 
-    conda create -n HEFTCAMB_env gfortran_osx-arm64 clang_osx-arm64 lapack numpy python sympy scipy packaging -c conda-forge
+    conda create -n HEFTCAMB_env gfortran_osx-arm64 lapack numpy python sympy scipy packaging -c conda-forge
 
-and set the environment variable ``CC`` to point to the correct C compiler before installation. You can check the versions by typing `gfortran -v` and `clang -v`. Make sure that your python3 is compiled with the same C compiler.
+You can check the version by typing `gfortran -v`.
 
 
 ### 2. Documentation:
