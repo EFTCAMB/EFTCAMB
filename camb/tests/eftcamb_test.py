@@ -344,6 +344,21 @@ class EFTCAMBTest(unittest.TestCase):
                 cp = self.read(model, "EFTw0 = -0.9\nEFT_wDE_prior = T")
                 self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
 
+    def test_no_kinetic_term_refused(self):
+        # a pi field with no kinetic term (A = 0) and a sourced equation is refused, not set to zero
+        no_kinetic = "PureEFTmodelGamma1 = 0"
+        with self.assertRaisesRegex(CAMBError, r"no kinetic term \(A = 0\) at a ="):
+            camb.get_results(self.read("2_PEFT_gamma3_lin_1", no_kinetic))
+        # without the stability check the evolution refuses it
+        with self.assertRaisesRegex(CAMBError, r"no kinetic term \(A = 0\) but a sourced equation"):
+            camb.get_results(self.read("2_PEFT_gamma3_lin_1", no_kinetic + "\nEFTCAMB_skip_stability = T"))
+        # with a kinetic term the model runs
+        self.assertGreater(camb.get_results(self.read("2_PEFT_gamma3_lin_1")).get_sigma8_0(), 0)
+        # GR has no pi kinetic term either, and an empty pi equation: pi = 0 (here evolved, skipping the return to GR)
+        sigma8 = camb.get_results(self.read("2_PEFT_wDE_LCDM_1")).get_sigma8_0()
+        sigma8_evolved = camb.get_results(self.read("2_PEFT_wDE_LCDM_1", "EFTCAMB_skip_RGR = T")).get_sigma8_0()
+        self.assertAlmostEqual(sigma8_evolved / sigma8, 1, delta=1e-4)
+
     def theta_ini(self, model, theta_line):
         # the model ini with hubble removed from its DEFAULT chain and a theta input instead
         def copy(path):

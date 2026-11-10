@@ -2793,6 +2793,8 @@
     real(dl) vx_source_00, vx_source_0i, vx_source_ij, vx_source_ij_dot, dp_DE, dp_matter
     ! polarization second derivatives
     real(dl) :: pigddot, E2ddot
+    ! message of a pi equation without kinetic term
+    character(len=160) :: eft_message
     ! EFTCAMB MOD END.
 
     k = EV%k_buf
@@ -3330,22 +3332,21 @@
             ! compute pi field equation factors:
             call CP%EFTCAMB%model%compute_pi_factors(a, CP%eft_par_cache, EV%eft_cache)
             ! use them:
-            ! strategies to adopt if the theory does not propagate an additional dof
+            ! no pi kinetic term (A = 0): pi = 0 solves the pi equation only when the equation is empty (a GR model,
+            ! e.g. with EFTCAMB_skip_RGR = T). Otherwise pi is an auxiliary field whose constraint EFTCAMB does not
+            ! solve: the stability check refuses such models, this guards EFTCAMB_skip_stability = T.
             if ((EV%eft_cache%EFTpiA1 + k2*EV%eft_cache%EFTpiA2) == 0._dl) then
-                if ((EV%eft_cache%EFTpiB1 + k2*EV%eft_cache%EFTpiB2) == 0._dl) then
-                    vq = 0._dl
-                    ay(EV%w_ix) = 0._dl
-                    ay(EV%w_ix + 1) = 0._dl
-                    ayprime(EV%w_ix) = 0._dl
-                    ayprime(EV%w_ix + 1) = 0._dl
-                else
-                    vq = -(EV%eft_cache%EFTpiC + k2*EV%eft_cache%EFTpiD1 + k2**2*EV%eft_cache%EFTpiD2)*clxq/ &
-                        (EV%eft_cache%EFTpiB1 + k2*EV%eft_cache%EFTpiB2) - &
-                        CP%eft_par_cache%h0_Mpc*EV%eft_cache%EFTpiE/(EV%eft_cache%EFTpiB1 + k2*EV%eft_cache%EFTpiB2)
-                    ay(EV%w_ix + 1) = vq
-                    ayprime(EV%w_ix) = vq
-                    ayprime(EV%w_ix + 1) = 0._dl
+                if ((EV%eft_cache%EFTpiB1 + k2*EV%eft_cache%EFTpiB2) /= 0._dl .or. EV%eft_cache%EFTpiE /= 0._dl .or. &
+                    (EV%eft_cache%EFTpiC + k2*EV%eft_cache%EFTpiD1 + k2**2*EV%eft_cache%EFTpiD2) /= 0._dl) then
+                    write(eft_message, '(a,es10.3,a,es10.3)') &
+                        'EFTCAMB: the pi field has no kinetic term (A = 0) but a sourced equation at a =', a, ', k =', k
+                    call GlobalError(trim(eft_message), error_evolution)
                 end if
+                vq = 0._dl
+                ay(EV%w_ix) = 0._dl
+                ay(EV%w_ix + 1) = 0._dl
+                ayprime(EV%w_ix) = 0._dl
+                ayprime(EV%w_ix + 1) = 0._dl
             else
                 ayprime(EV%w_ix) = EV%eft_cache%pidot
                 ayprime(EV%w_ix + 1) = -(EV%eft_cache%EFTpiB1 + k2*EV%eft_cache%EFTpiB2)/ &

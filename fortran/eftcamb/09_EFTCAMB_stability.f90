@@ -45,6 +45,8 @@
     ! storage for some utility values that needs to be stored for the stability check.
     real(dl), save :: PastA1 = 0._dl
     real(dl), save :: PastAT = 0._dl
+    !< sign of the pi kinetic coefficient A (k -> 0) at the previous sampled scale factor after the turn-on.
+    real(dl), save :: PastAsign = 0._dl
 
     contains
 
@@ -184,7 +186,8 @@
     integer  :: ind_max, ind
     real(dl) :: test_dtauda, thr, kinetic_scale, gradient_scale
     real(dl), external :: dtauda
-    character(len=80) :: message
+    character(len=160) :: message
+    real(dl) :: A_sign
 
     ! Stability check initialization
     EFTTestStability = .true.
@@ -223,6 +226,31 @@
         EFTTestStability = .false.
         if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a)') '   Model has Nan in the timestep cache'
         return
+    end if
+
+    ! 2b) where the EFT perturbations are evolved and the model is not GR, the pi equation needs a kinetic term:
+    !     A = A1 + k^2 A2 must not vanish, nor change sign in k (0 < k <= k_max) or in time. Without one pi is not
+    !     dynamical and EFTCAMB does not solve its constraint. This is a limit of the solver, enforced whatever the
+    !     stability flags. A negative A at every k and time is a ghost, which is left to the ghost checks.
+    if (a >= input_EFTCAMB%EFTCAMB_pert_turn_on) then
+        A_sign = 0._dl
+        if (EFTPiHasKineticTerm(a, k_max, params_cache, eft_cache, max(thr, 1.e-12_dl), A_sign)) then
+            ! a sign change in time between two sampled scale factors:
+            if (A_sign*PastAsign < 0._dl) A_sign = 0._dl
+            PastAsign = A_sign
+        end if
+        if (A_sign == 0._dl) then
+            if (.not. EFTCAMBReturnToGR_is_GR(a, input_EFTCAMB%model, params_cache, &
+                input_EFTCAMB%EFTCAMB_GR_threshold)) then
+                EFTTestStability = .false.
+                write(message, '(a,es10.3,a)') 'EFTCAMB: the pi field has no kinetic term (A = 0) at a =', a, &
+                    ': EFTCAMB cannot evolve it, give it one (e.g. Gamma1, alpha_K)'
+                call GlobalError(trim(message), 1)
+                if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a,es10.3)') &
+                    '   No pi kinetic term: A1 + k^2 A2 vanishes or changes sign at a =', a
+                return
+            end if
+        end if
     end if
 
     ! 3) enforce ghost mathematical stability:
@@ -442,6 +470,47 @@
     end function EFTTestStability
 
     ! ---------------------------------------------------------------------------------------------
+    !> Function that tells whether the pi field equation has a kinetic term at every 0 < k <= k_max: A = A1 + k^2 A2
+    !! does not vanish (relative to the magnitude of its terms, see compute_pi_factors) nor change sign in k.
+    function EFTPiHasKineticTerm(a, k_max, params_cache, eft_cache, eps, A_sign)
+
+    implicit none
+
+    real(dl), intent(in) :: a                     !< the input scale factor.
+    real(dl), intent(in) :: k_max                 !< the maximum k mode of the stability check.
+    type(TEFTCAMB_parameter_cache), intent(in) :: params_cache !< the EFTCAMB parameter cache.
+    type(TEFTCAMB_timestep_cache), intent(in)  :: eft_cache    !< the EFTCAMB timestep cache, with the pi factors.
+    real(dl), intent(in) :: eps                   !< relative floor below which A counts as zero.
+    real(dl), intent(out) :: A_sign               !< the sign of A (at every k) when it has one, 0 otherwise.
+    logical :: EFTPiHasKineticTerm
+
+    real(dl) :: A1, A2, scale1, A_max, sign0
+
+    A1 = eft_cache%EFTpiA1
+    A2 = eft_cache%EFTpiA2
+    ! magnitude of the terms of A1: c, gamma1 and the mixing with the metric (Omega', gamma2):
+    scale1 = abs(eft_cache%EFTc) + 2._dl*a**2*params_cache%h0_Mpc**2*abs(eft_cache%EFTGamma1V) + &
+        abs(1.5_dl*a**2*(eft_cache%adotoa*eft_cache%EFTOmegaP + params_cache%h0_Mpc*eft_cache%EFTGamma2V)**2/ &
+        (2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V))
+    ! sign of A for k -> 0 (A2 k^2 when A1 vanishes):
+    if (abs(A1) > eps*scale1) then
+        sign0 = sign(1._dl, A1)
+    else if (A2 /= 0._dl) then
+        sign0 = sign(1._dl, A2)
+    else
+        A_sign = 0._dl
+        EFTPiHasKineticTerm = .false.
+        return
+    end if
+    ! A is linear in k^2: it vanishes or changes sign in (0, k_max] only if it does so at k_max:
+    A_max = A1 + k_max**2*A2
+    EFTPiHasKineticTerm = abs(A_max) > eps*(scale1 + k_max**2*abs(A2)) .and. sign0*A_max > 0._dl
+    A_sign = 0._dl
+    if (EFTPiHasKineticTerm) A_sign = sign0
+
+    end function EFTPiHasKineticTerm
+
+    ! ---------------------------------------------------------------------------------------------
     !> Subroutine that restores the values stored in the module to the default.
     !! Needed for successive calls.
     subroutine EFTStability_cleanup
@@ -450,6 +519,7 @@
 
     PastA1 = 0._dl
     PastAT = 0._dl
+    PastAsign = 0._dl
 
     end subroutine EFTStability_cleanup
 

@@ -37,7 +37,7 @@
 
     private
 
-    public EFTCAMBReturnToGR_feedback, EFTCAMBReturnToGR
+    public EFTCAMBReturnToGR_feedback, EFTCAMBReturnToGR, EFTCAMBReturnToGR_is_GR
 
     !< number of points to sample logaritmically the time in the return to GR module.
     integer, parameter :: EFT_RGR_num_points = 1000
@@ -151,8 +151,7 @@
     !< input RGR threshold. The threshold for an EFT functions to have reached its GR value.
     real(dl), intent(in)  :: RGR_threshold
 
-    real(dl) :: eft_functions(29)
-    real(dl) :: a_initial, a_final, log_a_initial, log_a_final, log_a_used, a_used, qs_deviation
+    real(dl) :: a_initial, a_final, log_a_initial, log_a_final, log_a_used, a_used
     integer  :: i
 
     ! initialize:
@@ -181,14 +180,8 @@
         ! initialize:
         log_a_used = log_a_initial + real(i - 1)/real(EFT_RGR_num_points - 1)*(log_a_final - log_a_initial)
         a_used = 10._dl**log_a_used
-        eft_functions = 0._dl
-        ! compute RGR functions:
-        call EFTCAMBReturnToGR_functions(a_used, input_model, params_cache, eft_functions)
-
-        ! check if above threshold (eft_functions(3), the observable-based quasi-static criterion, has its own):
-        qs_deviation = eft_functions(3)
-        eft_functions(3) = 0._dl
-        if (any(eft_functions - RGR_threshold > 0._dl) .or. qs_deviation > EFT_RGR_qs_threshold) then
+        ! the first scale factor at which the model is not GR:
+        if (.not. EFTCAMBReturnToGR_is_GR(a_used, input_model, params_cache, RGR_threshold)) then
             RGR_time = a_used
             return
         end if
@@ -198,6 +191,32 @@
     RGR_time = EFT_RGR_never_on
 
     end subroutine EFTCAMBReturnToGR
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that tells whether the model is GR at the scale factor a, with the return to GR criterion: every
+    !! EFT function within RGR_threshold of its GR value, and the quasi-static mu and Sigma at EFT_RGR_kmax within
+    !! EFT_RGR_qs_threshold of 1.
+    function EFTCAMBReturnToGR_is_GR(a, input_model, params_cache, RGR_threshold)
+
+    implicit none
+
+    real(dl), intent(in) :: a                  !< scale factor at which the model is tested.
+    class(EFTCAMB_model), intent(in) :: input_model  !< the EFTCAMB model.
+    type(TEFTCAMB_parameter_cache)   :: params_cache !< a EFTCAMB parameter cache containing cosmological parameters.
+    real(dl), intent(in) :: RGR_threshold      !< the threshold for an EFT function to have reached its GR value.
+    logical :: EFTCAMBReturnToGR_is_GR         !< true if the model is GR at a.
+
+    real(dl) :: eft_functions(29), qs_deviation
+
+    eft_functions = 0._dl
+    call EFTCAMBReturnToGR_functions(a, input_model, params_cache, eft_functions)
+    ! eft_functions(3), the observable-based quasi-static criterion, has its own threshold:
+    qs_deviation = eft_functions(3)
+    eft_functions(3) = 0._dl
+    EFTCAMBReturnToGR_is_GR = .not. (any(eft_functions - RGR_threshold > 0._dl) .or. &
+        qs_deviation > EFT_RGR_qs_threshold)
+
+    end function EFTCAMBReturnToGR_is_GR
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the EFT functions as we need them for the RGR function.
