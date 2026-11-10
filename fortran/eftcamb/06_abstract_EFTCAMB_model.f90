@@ -985,9 +985,9 @@
     end subroutine EFTCAMBModelComputeMassFactors
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the quasi-static expression of mu (closed form valid up to Horndeski).
-    !! The numerator and the denominator vanish together when pi does not couple to the metric
-    !! (Omega' = c = Gamma2 = Gamma5 = 0): in that case the GR value mu = 1 is returned instead of 0/0.
+    !> Subroutine that computes the quasi-static expression of mu, from the general quasi-static form
+    !! (1606.05339 App. A, the same as QS_mu_gen). The numerator and the denominator vanish together when pi
+    !! does not couple to the metric: in that case the GR value mu = 1 is returned instead of 0/0.
     subroutine EFTCAMBModelComputeQSMu(self, a, k, eft_par_cache, eft_cache)
 
     implicit none
@@ -1000,9 +1000,12 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: num, den, den_scale
+    real(dl) :: num, den, den_scale, slip_num, slip_den, slip_den_scale
 
-    call EFTCAMBQSMuTerms(a, k, eft_par_cache, eft_cache, num, den, den_scale)
+    ! general quasi-static form (1606.05339 App. A). The former closed form had a wrong mass term (designer
+    ! f(R): 4(Hddot - 3H^3) instead of Hddot - 2H^3) and no gamma3, gamma4, gamma6.
+    call EFTCAMBQSGeneralTerms(a, k, eft_par_cache, eft_cache, num, den, den_scale, &
+        slip_num, slip_den, slip_den_scale)
     if (EFTCAMBQSDegenerate(den, den_scale)) then
         eft_cache%QS_mu = 1._dl
     else
@@ -1013,9 +1016,10 @@
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the quasi-static expression of Sigma (lensing response).
-    !! Sigma = mu (1 + gamma)/2 with mu the closed form quasi-static mu and gamma = Phi/Psi the
-    !! quasi-static gravitational slip, computed from the same quasi-static coefficients used by
-    !! EFTCAMBModelComputeQSMuSigma. A degenerate slip (0/0, no coupling of pi to the metric) is set to 1.
+    !! Sigma = mu (1 + gamma)/2 with mu the quasi-static mu and gamma = Phi/Psi the quasi-static
+    !! gravitational slip, both from the general quasi-static form used by EFTCAMBModelComputeQSMuSigma
+    !! (the same as QS_sigma_gen). A degenerate ratio (0/0, no coupling of pi to the metric) is set to its GR
+    !! value.
     subroutine EFTCAMBModelComputeQSSigma(self, a, k, eft_par_cache, eft_cache)
 
     implicit none
@@ -1028,19 +1032,17 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: num, den, den_scale, mu, gamma
+    real(dl) :: mu, gamma
     real(dl) :: mu_num, mu_den, mu_den_scale, slip_num, slip_den, slip_den_scale
 
-    ! quasi-static mu (closed form):
-    call EFTCAMBQSMuTerms(a, k, eft_par_cache, eft_cache, num, den, den_scale)
-    if (EFTCAMBQSDegenerate(den, den_scale)) then
-        mu = 1._dl
-    else
-        mu = num/den
-    end if
-    ! quasi-static slip:
+    ! quasi-static mu and slip (general form):
     call EFTCAMBQSGeneralTerms(a, k, eft_par_cache, eft_cache, mu_num, mu_den, mu_den_scale, &
         slip_num, slip_den, slip_den_scale)
+    if (EFTCAMBQSDegenerate(mu_den, mu_den_scale)) then
+        mu = 1._dl
+    else
+        mu = mu_num/mu_den
+    end if
     if (EFTCAMBQSDegenerate(slip_den, slip_den_scale)) then
         gamma = 1._dl
     else
@@ -1103,58 +1105,6 @@
     EFTCAMBQSDegenerate = .not. (abs(den) > QS_relative_tolerance*den_scale)
 
     end function EFTCAMBQSDegenerate
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes numerator and denominator of the closed form quasi-static mu,
-    !! together with the sum of the magnitudes of the terms of the denominator.
-    subroutine EFTCAMBQSMuTerms(a, k, eft_par_cache, eft_cache, num, den, den_scale)
-
-    implicit none
-
-    real(dl), intent(in)                          :: a             !< the input scale factor.
-    real(dl), intent(in)                          :: k             !< the input scale.
-    !< the EFTCAMB parameter cache that contains all the physical parameters.
-    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
-    !< the EFTCAMB timestep cache that contains all the physical values.
-    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
-    real(dl), intent(out) :: num        !< numerator of mu
-    real(dl), intent(out) :: den        !< denominator of mu
-    real(dl), intent(out) :: den_scale  !< sum of the magnitudes of the terms of the denominator
-
-    real(dl) :: k2, H, Hd, Hdd, h0, opO, OP, c, G2, G2P, G5, G5P, X, Y, d1, d2, d3, d4, d5
-
-    k2 = k**2
-    H = eft_cache%adotoa
-    Hd = eft_cache%Hdot
-    Hdd = eft_cache%Hdotdot
-    h0 = eft_par_cache%h0_Mpc
-    opO = 1._dl + eft_cache%EFTOmegaV
-    OP = eft_cache%EFTOmegaP
-    c = eft_cache%EFTc
-    G2 = eft_cache%EFTGamma2V
-    G2P = eft_cache%EFTGamma2P
-    G5 = eft_cache%EFTGamma5V
-    G5P = eft_cache%EFTGamma5P
-
-    num = 2._dl*(2._dl*opO*c*(k2 + 3._dl*H**2 - 3._dl*Hd) + &
-        a*(-36._dl*H**4*opO*OP - 3._dl*H**3*h0*opO*(G2 + a*G2P) + &
-        2._dl*k2*H**2*(2._dl*G5*OP + a*OP**2 + 2._dl*(opO + a*OP)*G5P) + &
-        opO*(4._dl*k2*G5*Hd + 3._dl*h0*G2*Hdd) - &
-        H*opO*(h0*(G2*(k2 + 3._dl*Hd) + a*(k2 - 3._dl*Hd)*G2P) - 12._dl*OP*Hdd)))
-
-    X = opO + 2._dl*G5
-    Y = a*h0*G2 + H*(-4._dl*G5 + a*OP)
-    d1 = 2._dl*a*k2*H*X*OP*Y
-    d2 = -k2*opO*Y**2
-    d3 = 2._dl*k2*H*X*Y*(2._dl*G5 + a*(OP + 2._dl*G5P))
-    d4 = 2._dl*k2*X**2*(2._dl*c - a*(-4._dl*G5*Hd + H*h0*(G2 + a*G2P) - 4._dl*H**2*G5P))
-    d5 = 6._dl*X**2*(2._dl*c*(H**2 - Hd) - a*H*h0*(H**2 - Hd)*(3._dl*G2 + a*G2P) + &
-        4._dl*a*H*OP*(-3._dl*H**3 + Hdd) + a*h0*G2*(2._dl*H**3 - 4._dl*H*Hd + Hdd))
-
-    den = d1 + d2 + d3 + d4 + d5
-    den_scale = abs(d1) + abs(d2) + abs(d3) + abs(d4) + abs(d5)
-
-    end subroutine EFTCAMBQSMuTerms
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes numerators and denominators of the general quasi-static mu and

@@ -217,6 +217,18 @@ class EFTCAMBTest(unittest.TestCase):
         for field in ("a", "tau", "adotoa", "pi"):
             np.testing.assert_array_equal(ev[field][:, order], ev_sorted[field])
 
+    def test_qs_outputs_general_form(self):
+        # QS_mu and QS_sigma use the general quasi-static form (the former closed form was 12% off for f(R), and
+        # ignored gamma3): they equal QS_mu_gen and QS_sigma_gen
+        for model in ("4_Des_F_R_LCDM_1", "2_PEFT_gamma3_lin_1"):
+            with self.subTest(model=model):
+                cp = self.read(model)
+                res = camb.get_results(cp)
+                _, ev = cp.EFTCAMB.get_scale_evolution(res, [0.005, 0.5, 2.0], [0.1, 0.5, 1.0])
+                np.testing.assert_array_equal(ev["QS_mu"], ev["QS_mu_gen"])
+                np.testing.assert_array_equal(ev["QS_sigma"], ev["QS_sigma_gen"])
+                self.assertTrue(np.all(ev["QS_mu"] != 1))
+
     def test_parametrization_derivatives(self):
         # analytic derivatives returned by get_eft_functions vs finite differences of the lower ones
         checks = {
