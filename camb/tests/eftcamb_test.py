@@ -436,6 +436,17 @@ class EFTCAMBTest(unittest.TestCase):
         cp = self.read("2_PEFT_wDE_LCDM_1", olg + "3\nOLOmega0 = 0.05\nOLOmegaExp = 1.0")
         self.assertAlmostEqual(camb.get_results(cp).hubble_parameter(0) / cp.H0, 1, delta=1e-7)
 
+    def test_glpv_domain_floor(self):
+        # gamma6 and gamma3 + gamma4 enter the dispersion relation times (k/aH)^2 ~ 1e9: only roundoff counts as GLPV
+        # (the physical floor 1e-8 let gamma3 + gamma4 = -1e-9, with a k^4 instability above 2.2/Mpc, pass)
+        model = "PureEFTHorndeski = F\nPureEFTmodelGamma"
+        for extra in ("3 = 1\nEFTGamma30 = -1e-9", "6 = 1\nEFTGamma60 = -1e-9"):
+            with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, "theory unstable"):
+                camb.get_results(self.read("2_PEFT_wDE_LCDM_1", model + extra))
+        self.assertGreater(
+            camb.get_results(self.read("2_PEFT_wDE_LCDM_1", model + "3 = 1\nEFTGamma30 = -1e-13")).get_sigma8_0(), 0
+        )
+
     def test_fR_gr_limit(self):
         # designer f(R) with B0 = 0 is LCDM: the return to GR never switches it on (the interpolation error of an
         # a^2-weighted Lambda table used to switch it on at a = 0.099, then the run failed)

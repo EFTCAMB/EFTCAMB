@@ -188,6 +188,7 @@
     real(dl) :: EFT_instability_rate, tempk, temp1, temp2, temp3, temp4, temp5
     integer  :: ind_max, ind
     real(dl) :: test_dtauda, thr, kinetic_scale, gradient_scale
+    real(dl), parameter :: domain_eps = 1.e-12_dl   ! roundoff floor of the GLPV domain test
     real(dl), external :: dtauda
     character(len=160) :: message
     real(dl) :: A_sign, A_margin, A_touch, a_zero, eom_G00, eom_G00_scale
@@ -389,9 +390,11 @@
     ! 5) enforce ghost viability:
     if (input_EFTCAMB%EFT_ghost_stability) then
 
-        ! the present conditions extend up to Horndeski. Enforce that (up to the numerical floor):
-        if (abs(eft_cache%EFTGamma6V) > thr .or. abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
-            thr*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
+        ! the present conditions extend up to Horndeski. Enforce that up to roundoff (domain_eps), not up to the
+        ! physical floor thr: gamma6 and gamma3 + gamma4 enter the dispersion relation times (k/(aH))^2 ~ 1e9
+        if (abs(eft_cache%EFTGamma6V) > domain_eps*(1._dl + abs(eft_cache%EFTOmegaV)) .or. &
+            abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
+            domain_eps*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
             if (input_EFTCAMB%EFTCAMB_feedback_level > 0) then
                 write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
                 write(*, '(a)') '      It will be added in a future release.'
@@ -428,9 +431,10 @@
     ! 6) enforce gradient viability:
     if (input_EFTCAMB%EFT_gradient_stability) then
 
-        ! the present conditions extend up to Horndeski. Enforce that (up to the numerical floor):
-        if (abs(eft_cache%EFTGamma6V) > thr .or. abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
-            thr*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
+        ! the present conditions extend up to Horndeski. Enforce that up to roundoff (domain_eps), as above:
+        if (abs(eft_cache%EFTGamma6V) > domain_eps*(1._dl + abs(eft_cache%EFTOmegaV)) .or. &
+            abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
+            domain_eps*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
             if (input_EFTCAMB%EFTCAMB_feedback_level > 0) then
                 write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
                 write(*, '(a)') '      It will be added in a future release.'
