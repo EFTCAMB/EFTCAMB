@@ -485,6 +485,20 @@ class EFTCAMBTest(unittest.TestCase):
         )
         self.assertGreater(camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model)).get_sigma8_0(), 0)
 
+    def test_3p1_dust_ghost(self):
+        # with CDM the 3+1 scalar is a ghost at every k for sigma1 > 1 (alpha_L < 0): the model's own test used the
+        # vacuum conditions and accepted this one (sigma8 = 5.7e8); sigma1 < 1 still runs
+        model = (
+            "EFTflag = 3\nDesignerEFTmodel = 3\nEFTwDE = 1\nEFTw0 = -0.95\nDesigner3p1LuminalGW = T\n"
+            "Designer3p1modelsigma1 = 1\nDesigner3p1sigma10 = 1.0\nDesigner3p1modelsigma1_ODE = 2\n"
+            "Designer3p1modelrho1N = 0\nDesigner3p1modelrho2 = 1\nDesigner3p1rho20 = 1.e-3\n"
+            "EFT_ghost_stability = F\nEFT_gradient_stability = F\nEFT_additional_priors = T\n"
+        )
+        with self.assertRaisesRegex(CAMBError, "theory unstable"):
+            camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model + "Designer3p1sigma1_ODE0 = 1.e-7"))
+        res = camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model + "Designer3p1sigma1_ODE0 = -1.e-7"))
+        self.assertGreater(res.get_sigma8_0(), 0)
+
     def test_horndeski_coefficient_identities(self):
         # the generated Horndeski background coefficients are conformal-time derivatives of each other: checked at
         # random inputs with central differences along a' = a^2 H, X = dphi^2/(2 a^2), dG/dtau = G_phi phi' + G_X X'

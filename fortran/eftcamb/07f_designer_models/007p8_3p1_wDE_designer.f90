@@ -1580,7 +1580,7 @@
     real(dl) :: Ode, dOde
     real(dl) :: sigma1, dsigma1, rho1, drho1, rho1N, drho1N, rho2, drho2
     real(dl) :: dadt
-    real(dl) :: aT, aL, aLt, aH, aHt, b3, b3t, B0, B01, B02, B03, B2, B21, B22, B23, B4, Azz, Bzz
+    real(dl) :: aT, aL, aLt, aH, aHt, b3, b3t, B0, B01, B02, B03, B2, B21, B22, B23, B4, Bzz
 
     EFTCAMBDesigner3p1AdditionalModelStability = .true.
 
@@ -1643,12 +1643,12 @@
             H = H/a
             Ht = Ht/a/a - H**2
 
-            ! custom ghost stability for this beyond GLPV model. Azz is proportional to b3 = rho2/sigma1: for rho2 = 0
-            ! (GLPV/Horndeski limit, e.g. the GR point) it vanishes identically and there is no extra kinetic term to
-            ! test (the scalar is tested by the general ghost condition), so the degenerate case is not a ghost.
-            if (self%Designer3p1GhostStability .and. b3 /= 0._dl) then
-                Azz = 6._dl*(1._dl + aL)*b3*k2/(6._dl*H**2*(1._dl + aL) + aL*b3*k2)
-                if (Azz <= 0._dl) then
+            ! custom ghost stability for this beyond GLPV model. The vacuum A_zeta of arXiv:2508.01378 (Sec. IV-C)
+            ! misses the alpha_L < 0 ghost below its cut-off. With pressureless matter (CDM) the scalar kinetic matrix
+            ! is positive definite at every k iff sigma1 <= 1 (alpha_L >= 0) and rho2 >= 0 (b3 >= 0); this holds in
+            ! the GLPV/Horndeski limit rho2 = 0 (b3 -> 0, e.g. the GR point) too, and implies Azz >= 0.
+            if (self%Designer3p1GhostStability) then
+                if (aL < 0._dl .or. b3 < 0._dl) then
                     EFTCAMBDesigner3p1AdditionalModelStability = .false.
                     return
                 end if
@@ -1667,6 +1667,8 @@
                 B2 = B23*Ht + B22*H**2 + B21*H
                 B4 = 2._dl*aL**2*b3*(2._dl*(1._dl + aH)**2 - b3*(1._dl + aT))
                 Bzz = (B0 + B2*k2 + B4*k4)/(6._dl*H**2*(1._dl + aL) + aL*b3*k2)**2
+                ! k -> infinity, beyond the sampled k: c_s^2 -> aL (2 (1 + aH)^2 - b3 (1 + aT))/(3 b3 (1 + aL)) >= 0
+                if (b3 > 0._dl .and. 2._dl*(1._dl + aH)**2 - b3*(1._dl + aT) < 0._dl) Bzz = -1._dl
                 if (Bzz < 0._dl) then
                     EFTCAMBDesigner3p1AdditionalModelStability = .false.
                     return
