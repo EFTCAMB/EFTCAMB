@@ -542,7 +542,7 @@
     if (self%RPHwDE /= 0) write(*, '(a,I3)') '   RPHwDE             =', self%RPHwDE
     if (self%RPHusealphaM) then
         if (self%RPHalphaMmodel /= 0) write(*, '(a,I3)') '   RPHalphaMmodel      =', self%RPHalphaMmodel
-        if (self%RPHalphaMmodel /= 0) write(*, '(a,I3)') '   RPH_M0              =', self%RPH_M0
+        write(*, '(a,E13.4)') '   RPH_M0              =', self%RPH_M0
     else
         if (self%RPHmassPmodel /= 0) write(*, '(a,I3)') '   RPHmassPmodel      =', self%RPHmassPmodel
     end if

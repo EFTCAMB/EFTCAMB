@@ -10,6 +10,7 @@ import os
 import pickle
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -358,6 +359,29 @@ class EFTCAMBTest(unittest.TestCase):
         sigma8 = camb.get_results(self.read("2_PEFT_wDE_LCDM_1")).get_sigma8_0()
         sigma8_evolved = camb.get_results(self.read("2_PEFT_wDE_LCDM_1", "EFTCAMB_skip_RGR = T")).get_sigma8_0()
         self.assertAlmostEqual(sigma8_evolved / sigma8, 1, delta=1e-4)
+
+    def test_rph_alphaM_feedback(self):
+        # the feedback of an RPH alpha_M(a) model prints the real RPH_M0 (an integer format aborted the process):
+        # run it in a subprocess, so that an abort fails the test instead of the test runner
+        # (at the default feedback level: the fast settings switch the feedback off)
+        ini = os.path.join(self.tmp, "rph_alphaM.ini")
+        with open(ini, "w") as f:
+            f.write(f"DEFAULT({os.path.join(PARAMS, '3_RPH_MB_OmegaDE_1.ini')})\n")
+            f.write("RPHalphaMmodel = 1\nRPHalphaM0 = 0.01\nRPHalphaMmodel_ODE = 0\n")
+        code = (
+            f"import camb; cp = camb.read_ini({ini!r}); cp.EFTCAMB.feedback(print_params=True); print('process alive')"
+        )
+        r = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            timeout=300,
+            check=False,
+            env=dict(os.environ, PYTHONPATH=ROOT, OMP_NUM_THREADS="1"),
+        )
+        self.assertEqual(r.returncode, 0, r.stderr[-500:])
+        self.assertIn("RPH_M0", r.stdout)
+        self.assertIn("process alive", r.stdout)
 
     def theta_ini(self, model, theta_line):
         # the model ini with hubble removed from its DEFAULT chain and a theta input instead
