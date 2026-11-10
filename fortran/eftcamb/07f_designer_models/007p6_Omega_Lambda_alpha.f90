@@ -78,8 +78,8 @@
 
         ! some parameters:
         !< Number of points sampled by the background solver code.
-        integer  :: interpolation_num_points = 2100
-        real(dl) :: x_initial = log(10._dl**(-9._dl))     !< log(a start)
+        integer  :: interpolation_num_points = 25000
+        real(dl) :: x_initial = log(10._dl**(-11._dl))    !< log(a start)
         real(dl) :: x_final = 0.0_dl                    !< log(a final)
 
     contains
@@ -277,8 +277,8 @@
     call self%OL_Braiding%init_from_file  (Ini, eft_error)
     call self%OL_Tensor%init_from_file    (Ini, eft_error)
     ! read precision parameters
-    self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 2100)
-    self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-9))
+    self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 25000)
+    self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-11))
     self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
 
     end subroutine EFTCAMBOLInitModelParametersFromFile
@@ -584,7 +584,10 @@
     eft_cache%EFTc = self%EFTc%value(x, index=ind, coeff=mu)
     eft_cache%EFTcdot = self%EFTc%first_derivative(x, index=ind, coeff=mu)
 
-    eft_cache%EFTLambda = self%EFTLambda%value(x, index=ind, coeff=mu)
+    ! Lambda is known analytically (arXiv:1703.05297 App. A: Lambda = Lambda_0 (1 + lambda~)): no table error
+    omega_m = eft_par_cache%omegac + eft_par_cache%omegab + eft_par_cache%omegan + eft_par_cache%omegag &
+        + eft_par_cache%omegar
+    eft_cache%EFTLambda = -3._dl*eft_par_cache%h0_Mpc**2*(1._dl - omega_m)*(1._dl + self%OL_Lambda%value(a))*a**2
     eft_cache%EFTLambdadot = self%EFTLambda%first_derivative(x, index=ind, coeff=mu)
 
     end subroutine EFTCAMBOLBackgroundEFTFunctions
@@ -640,6 +643,7 @@
     eft_cache%EFTGamma4P = -eft_cache%EFTGamma3P
     eft_cache%EFTGamma4PP = +(1._dl + OL_PM_V)*OL_AT_PP + OL_PM_PP*OL_AT_V &
         + 2._dl*OL_PM_P*OL_AT_P
+    eft_cache%EFTGamma3PP = -eft_cache%EFTGamma4PP
     eft_cache%EFTGamma5V = +0.5_dl*eft_cache%EFTGamma3V
     eft_cache%EFTGamma5P = +0.5_dl*eft_cache%EFTGamma3P
     eft_cache%EFTGamma6V = 0._dl
@@ -726,16 +730,15 @@
     ! background quantities that are shared among the derivs and output routines:
     real(dl) :: a, a2, grhob_t, grhoc_t, grhor_t, grhog_t, grhonu_tot, gpinu_tot
     real(dl) :: grhonu, gpinu, grhormass_t, grho_matter, gpres_matter, grho_m_temp
-    real(dl) :: H2, Hdot, omega_m
+    real(dl) :: H2, Hdot, omega_m, yGR, yGRp, OL_source
     real(dl) :: EFTOmega, EFTOmegaP, EFTOmegaPP
     real(dl) :: omega_r_t, omega_m_t, omega_phi_t, omega_nu_t, omega_tot_t
     integer  :: nu_i
 
     ! other quantities:
-    real(dl) :: y1, y2
 
-    ! Set initial conditions:
-    y(1) = params_cache%h0_Mpc**2
+    ! Set initial conditions: y(1) = Hc^2 - yGR (deviation from the LCDM solution of the same matter), 0 today
+    y(1) = 0._dl
 
     ! set omega_m, notice compatibility with CAMB neglecting radiation
     omega_m = &
@@ -746,7 +749,7 @@
     ! set-up the relative and absolute tollerances:
     itol = 1
     rtol = 1.d-14
-    atol = 1.d-16
+    atol = 1.d-16*params_cache%h0_Mpc**2
 
     ! initialize task to do:
     itask = 1
@@ -792,73 +795,26 @@
             ! solve the system:
             call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
                 jacobian, JacobianMode)
-            ! check istate for LSODA good completion:
+            ! check istate for LSODA good completion (excessive work included: the background is singular):
             if (istate < 0) then
-                if (istate == -1) then
-                    if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                    istate = 1
-                else
-                    success = .false.
-                    if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
-                    deallocate(rwork, iwork)
-                    return
-                end if
+                success = .false.
+                if (feedback_level > 1) write(*, '(a,I3,a,E13.4)') '   OL background: DLSODA failed with code', &
+                    istate, ' at a =', exp(t2)
+                deallocate(rwork, iwork)
+                return
             end if
-            ! compute output EFT functions if needed:
+            ! compute output EFT functions:
             call output(num_eq, i - 1, t2, y)
-        end do
-    end if
-    ! solve forward:
-    if (.false.) then
-        ! first guess for initial conditions in the GR limit:
-        t1 = self%EFTc%x(1)
-        y = 0._dl
-        call output(num_eq, 1, t1, y)
-        y = (+grho_matter/3._dl + params_cache%h0_Mpc**2*(1._dl - omega_m)*(1._dl + self%OL_Lambda%value(a))*a2)/ &
-            (1._dl + EFTOmega + a*EFTOmegaP)
-        ! try to bracket the root for the initial condition search:
-        y1 = y(1)*0.9_dl
-        y2 = y(1)*1.1_dl
-        call zbrac(dummy_solve, y1, y2, success, params_cache%h0_Mpc**2)
-        if (.not. success) then
-            if (feedback_level > 1) write(*, '(a)') '   FAILURE in solution bracketing'
-            return
-        end if
-        ! get the initial condition:
-        y1 = zbrent(dummy_solve, y(1)*0.9_dl, y(1)*1.1_dl, 1.d-8, params_cache%h0_Mpc**2, success)
-        if (.not. success) then
-            if (feedback_level > 1) write(*, '(a)') '   FAILURE in initial condition finding'
-            return
-        end if
-        ! now store solution:
-        istate = 1
-        t1 = self%EFTc%x(1)
-        y = y1
-        call output(num_eq, 1, t1, y)
-        ! solve the equations:
-        do i = 2, self%EFTc%num_points
-            ! set the time step:
-            t1 = self%EFTc%x(i - 1)
-            t2 = self%EFTc%x(i)
-            ! solve the system:
-            call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-                jacobian, JacobianMode)
-            ! check istate for LSODA good completion:
-            if (istate < 0) then
-                if (istate == -1) then
-                    if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                    istate = 1
-                else
-                    success = .false.
-                    if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
-                    return
-                end if
+            ! the background must exist: H^2 > 0 and a regular y equation (1 + Omega + a Omega'/2 > 0)
+            if (.not. (yGR + y(1) > 0._dl) .or. .not. (1._dl + EFTOmega + 0.5_dl*a*EFTOmegaP > 0._dl)) then
+                success = .false.
+                if (feedback_level > 1) write(*, '(a,E13.4)') &
+                    '   OL background does not exist (H^2 <= 0 or 1 + Omega + a Omega''/2 <= 0) at a =', exp(t2)
+                deallocate(rwork, iwork)
+                return
             end if
-            ! compute output EFT functions if needed:
-            call output(num_eq, i, t2, y)
         end do
     end if
-
     ! return:
     success = .true.
     deallocate(rwork, iwork)
@@ -866,40 +822,6 @@
     return
 
     contains
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine is wrapping the solver for the initial condition search:
-    function dummy_solve(y_ini)
-
-    implicit none
-
-    real(dl), intent(in) :: y_ini        !< initial condition (in this case the initial condition is a scalar)
-    real(dl)             :: dummy_solve  !< the value of y(0)=H0^2
-
-    real(dl) :: y_temp(num_eq)
-
-    ! reset the solver (warning, this is working in shared memory with the main subroutine, the other solver options are there)
-    istate = 1
-    t1 = self%EFTc%x(1)
-    t2 = self%EFTc%x(self%EFTc%num_points)
-    y_temp = y_ini
-    call DLSODA (derivs, num_eq, y_temp, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-        jacobian, JacobianMode)
-    ! check istate for LSODA good completion:
-    if (istate < 0) then
-        if (istate == -1) then
-            if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-        else
-            success = .false.
-            if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
-            ! define the function result on the failure path too:
-            dummy_solve = y_temp(1)
-            return
-        end if
-    end if
-    dummy_solve = y_temp(1)
-
-    end function dummy_solve
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes y' given y for the background of 5e
@@ -957,10 +879,15 @@
     ! 4) Compute the equations of motion:
     coeff_1 = 1._dl + EFTOmega + 0.5_dl*a*EFTOmegaP
     coeff_2 = 1._dl + EFTOmega + 2._dl*a*EFTOmegaP + a2*EFTOmegaPP
-    coeff_3 = gpres_matter - 3._dl*params_cache%h0_Mpc**2*(1._dl - omega_m)*(1._dl + self%OL_Lambda%value(a))*a2
+    ! y(1) = Hc^2 - yGR, yGR = LCDM solution of the same matter (exact by continuity: yGR' + yGR + (P_m + Lambda_0)
+    ! a^2 = 0), so the source vanishes identically at the GR point (Omega = lambda~ = 0):
+    yGR = (grho_matter + 3._dl*params_cache%h0_Mpc**2*(1._dl - omega_m)*a2)/3._dl
+    yGRp = -(grho_matter + 3._dl*gpres_matter)/3._dl + 2._dl*params_cache%h0_Mpc**2*(1._dl - omega_m)*a2
+    OL_source = (coeff_2 - 1._dl)*yGR + (coeff_1 - 1._dl)*yGRp &
+        - 3._dl*params_cache%h0_Mpc**2*(1._dl - omega_m)*self%OL_Lambda%value(a)*a2
 
     ! 5) Compute the equations of motion:
-    ydot(1) = 1._dl/(coeff_1)*(-coeff_2*y(1) - coeff_3)
+    ydot(1) = -(coeff_2*y(1) + OL_source)/coeff_1
 
     end subroutine derivs
 
@@ -1013,9 +940,10 @@
     call derivs(num_eq, x, y, ydot)
 
     ! 2) compute c and Lambda:
-    adotoa2 = y(1)
-    self%EFTc%y(ind) = +1.5_dl*(1._dl + EFTOmega + a*EFTOmegaP)*adotoa2 - 0.5_dl*(grho_matter) - &
-        1.5_dl*params_cache%h0_Mpc**2*(1._dl - omega_m)*(1._dl + self%OL_Lambda%value(a))*a2
+    adotoa2 = yGR + y(1)
+    ! c of arXiv:1703.05297 eq. (cConstraint) with the LCDM part cancelled analytically:
+    self%EFTc%y(ind) = +1.5_dl*(EFTOmega + a*EFTOmegaP)*yGR + 1.5_dl*(1._dl + EFTOmega + a*EFTOmegaP)*y(1) &
+        - 1.5_dl*params_cache%h0_Mpc**2*(1._dl - omega_m)*self%OL_Lambda%value(a)*a2
     self%EFTLambda%y(ind) = -3._dl*params_cache%h0_Mpc**2*(1._dl - omega_m)*(1._dl + self%OL_Lambda%value(a))*a2
 
     ! 3) compute cdot:
@@ -1024,16 +952,14 @@
         return
     end if
 
-    adotoa = sqrt(y(1))
-    Hdot = 0.5_dl*ydot(1)
+    adotoa = sqrt(adotoa2)
+    Hdot = 0.5_dl*(yGRp + ydot(1))
 
-    self%EFTc%yp(ind) = +3._dl*adotoa*( &
-        -(1._dl + EFTOmega - 0.5_dl*a2*EFTOmegaPP)*adotoa2 &
-        + (1._dl + EFTOmega + a*EFTOmegaP)*Hdot &
-        + 0.5_dl*(grho_matter + gpres_matter) &
-        - 0.5_dl*a**3*params_cache%h0_Mpc**2*(1._dl - omega_m)*self%OL_Lambda%first_derivative(a))
     self%EFTLambda%yp(ind) = &
         -3._dl*params_cache%h0_Mpc**2*adotoa*(1._dl - omega_m)*(self%OL_Lambda%first_derivative(a))*a**3
+    ! cdot from the background pi equation (Bianchi identity), zero at the GR point:
+    self%EFTc%yp(ind) = -3._dl*adotoa*self%EFTc%y(ind) + 1.5_dl*a*adotoa*EFTOmegaP*(adotoa2 + Hdot) &
+        + 0.5_dl*self%EFTLambda%yp(ind)
 
     ! 4) compute auxiliary quantities:
     w_DE = (-2._dl*Hdot - adotoa2 - gpres_matter)/(3._dl*adotoa2 - grho_matter)

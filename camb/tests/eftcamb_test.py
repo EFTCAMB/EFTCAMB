@@ -421,6 +421,21 @@ class EFTCAMBTest(unittest.TestCase):
         with self.assertRaises(CAMBError):
             camb.get_results(self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = 2.0\nExtendedGalileon_q = 1.0"))
 
+    def test_omega_lambda_backgrounds(self):
+        # OL gamma / OL alpha integrate the deviation from the LCDM solution of the same matter from a = 1 (no
+        # shooting, no dust mode): the GR points (refused before) are the Pure EFT LCDM, and H(z = 0) = H0
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1")).get_sigma8_0()
+        olg = "EFTflag = 2\nAltParEFTmodel = 2\nOLLambdamodel = 0\nOLGamma1model = 0\nOLGamma2model = 0\n"
+        olg += "OLGamma3model = 0\nOLOmegamodel = "
+        ola = "EFTflag = 2\nAltParEFTmodel = 3\nOLLambdamodel = 0\nOLmassPmodel = 0\nOLkineticitymodel = 0\n"
+        ola += "OLbraidingmodel = 0\nOLtensormodel = 0"
+        for extra in (olg + "0", ola):
+            with self.subTest(extra=extra):
+                res = camb.get_results(self.read("2_PEFT_wDE_LCDM_1", extra))
+                self.assertAlmostEqual(res.get_sigma8_0() / lcdm, 1, delta=1e-10)
+        cp = self.read("2_PEFT_wDE_LCDM_1", olg + "3\nOLOmega0 = 0.05\nOLOmegaExp = 1.0")
+        self.assertAlmostEqual(camb.get_results(cp).hubble_parameter(0) / cp.H0, 1, delta=1e-7)
+
     def test_fR_gr_limit(self):
         # designer f(R) with B0 = 0 is LCDM: the return to GR never switches it on (the interpolation error of an
         # a^2-weighted Lambda table used to switch it on at a = 0.099, then the run failed)
