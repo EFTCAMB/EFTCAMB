@@ -1458,6 +1458,8 @@
         G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx
     real(dl) :: last_alphaB
     real(dl) :: x_min, delta_x, mu
+    real(dl) :: fx_cp1, fx_ch1, fx_cs1, fx_cp2, fx_ch2, fx_cs2, fx_cs1r, fx_d1, fx_d2, fx_d3, fx_d4, fx_d5
+    real(dl) :: fx_cp1p, fx_ch1p, fx_cs1p, fx_cs1pr, fx_nrm, fx_nrmdot, fx_rpv, fx_rpvdot
     integer  :: ind
 
     ! some feedback:
@@ -1686,54 +1688,6 @@
         RPH_AB_V = -0.5_dl*RPH_AB_V
         RPH_AB_P = -0.5_dl*RPH_AB_P
 
-        ! 2) compute the EFT functions:
-        ! NOTE: we abuse notation and store directly the a (or conformal time for Lambda and c) derivative to yp, ypp, yppp. NOT wrt x!
-        self%EFTomega%y(i) = RPH_PM_V + RPH_AT_V*(1._dl + RPH_PM_V)
-        self%EFTomega%yp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_P + (1._dl + RPH_AT_V)*RPH_PM_P
-        self%EFTomega%ypp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_PP + 2._dl*RPH_PM_P*RPH_AT_P + (1._dl + RPH_AT_V)*RPH_PM_PP
-        self%EFTomega%yppp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_PPP + 3._dl*RPH_PM_PP*RPH_AT_P + 3._dl*RPH_PM_P*RPH_AT_PP &
-            + (1._dl + RPH_AT_V)*RPH_PM_PPP
-        self%EFTc%y(i) = (adotoa**2 - cHdot)*(self%EFTomega%y(i) + 0.5_dl*a*self%EFTomega%yp(i)) &
-            - 0.5_dl*(a*adotoa)**2*self%EFTomega%ypp(i) &
-            + 0.5_dl*a*a*(rhov + presv)
-        self%EFTlambda%y(i) = -self%EFTomega%y(i)*(2._dl*cHdot + adotoa**2) &
-            - a*self%EFTomega%yp(i)*(2._dl*adotoa**2 + cHdot) &
-            - (a*adotoa)**2*self%EFTomega%ypp(i) &
-            + a*a*presv
-        self%EFTc%yp(i) = +0.5_dl*a*a*(rhovdot + presvdot) &
-            - self%EFTomega%y(i)*(cHdotdot - 4._dl*adotoa*cHdot + 2._dl*adotoa**3) &
-            + 0.5_dl*a*self%EFTomega%yp(i)*(-cHdotdot + adotoa*cHdot + adotoa**3) &
-            + 0.5_dl*a**2*adotoa*self%EFTomega%ypp(i)*(adotoa**2 - 3._dl*cHdot) &
-            - 0.5_dl*(a*adotoa)**3*self%EFTomega%yppp(i)
-        self%EFTlambda%yp(i) = -2._dl*self%EFTomega%y(i)*(cHdotdot - adotoa*cHdot - adotoa**3) &
-            - a*self%EFTomega%yp(i)*(+cHdotdot + 5._dl*adotoa*cHdot - adotoa**3) &
-            - a**2*self%EFTomega%ypp(i)*adotoa*(+2._dl*adotoa**2 + 3._dl*cHdot) &
-            - (a*adotoa)**3*self%EFTomega%yppp(i) &
-            + a*a*presvdot
-        self%EFTgamma1%y(i) = 0.25_dl*(RPH_AK_V*(1._dl + RPH_PM_V)*adotoa**2 &
-            - 2._dl*self%EFTc%y(i))/(params_cache%h0_Mpc**2*a**2)
-        self%EFTgamma1%yp(i) = -0.5_dl*(RPH_AK_V*(1._dl + RPH_PM_V)*adotoa**2 &
-            - 2._dl*self%EFTc%y(i))/(params_cache%h0_Mpc**2*a**3) &
-            + 0.25_dl*(RPH_AK_P*(1._dl + RPH_PM_V)*adotoa**2 &
-            + RPH_AK_V*RPH_PM_P*adotoa**2 &
-            + 2._dl*RPH_AK_V*(1._dl + RPH_PM_V)*cHdot/a &
-            - 4._dl*self%EFTc%y(i)/a - 2._dl*self%EFTc%yp(i)/a/adotoa)/(params_cache%h0_Mpc**2*a**2)
-        self%EFTgamma2%y(i) = (+2._dl*RPH_AB_V*(1._dl + RPH_PM_V) &
-            - a*self%EFTomega%yp(i))*adotoa/(params_cache%h0_Mpc*a)
-        self%EFTgamma2%yp(i) = -(+2._dl*RPH_AB_V*(1._dl + RPH_PM_V) &
-            - a*self%EFTomega%yp(i))*adotoa/(params_cache%h0_Mpc*a**2) &
-            - (-2._dl*(1._dl + RPH_PM_V)*(RPH_AB_P*adotoa**2 &
-            + RPH_AB_V*cHdot/a) &
-            - 2._dl*RPH_AB_V*adotoa**2*RPH_PM_P &
-            + self%EFTomega%yp(i)*(adotoa**2 + cHdot) &
-            + a*adotoa**2*self%EFTomega%ypp(i))/(params_cache%h0_Mpc*a*adotoa)
-        self%EFTgamma3%y(i) = -RPH_AT_V*(1._dl + RPH_PM_V)
-        self%EFTgamma3%yp(i) = -RPH_PM_P*RPH_AT_V - (1._dl + RPH_PM_V)*RPH_AT_P
-        self%EFTgamma3%ypp(i) = -(1._dl + RPH_PM_V)*RPH_AT_PP - RPH_PM_PP*RPH_AT_V - 2._dl*RPH_PM_P*RPH_AT_P
-
-        ! write(*,*) a, self%EFTlambda%y(i), self%EFTlambda%yp(i), self%EFTc%y(i), self%EFTc%yp(i)
-        ! write(*,*) a, self%EFTgamma1%y(i), self%EFTgamma1%yp(i), self%EFTgamma2%y(i), self%EFTgamma2%yp(i), self%EFTgamma3%y(i), self%EFTgamma3%yp(i), self%EFTgamma3%ypp(i), 4._dl*self%model_params(1)*dphi/a/params_cache%h0_Mpc
-
         ! 3) compute the lagrangian functions and check positivity bounds if needed
         call self%horndeski_lagrangian_coefficients(params_cache, a, phi, 0.5_dl*(dphi/a)**2, G2, G2p, G2x, G2pp, &
             G2px, G2xx, G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4, G4p, &
@@ -1806,6 +1760,84 @@
                 return
             end if
         end if
+
+        ! rho_DE + p_DE and its conformal derivative, without subtracting matter from the total (which made the GR
+        ! limit noise): the background equation is N (sum E_i + sum P_i + rho_m + p_m) = 0 (arXiv:1105.5723);
+        ! G4 -> G4 - 1/2 removes its GR part (2 Hdot) exactly, and N is the coefficient of rho_m + p_m.
+        call horndeski_backeq_coefficients(a, H, dphi, 0._dl, G2, G2p, G2x, G2pp, G2px, G2xx, G2ppp, G2ppx, &
+            G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4 - 0.5_dl, G4p, G4x, G4pp, &
+            G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, G5p, G5x, &
+            G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, fx_cp1, &
+            fx_ch1, fx_cs1, fx_cp2, fx_ch2, fx_cs2)
+        call horndeski_backeq_coefficients(a, H, dphi, rhom + presm, G2, G2p, G2x, G2pp, G2px, G2xx, G2ppp, &
+            G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4 - 0.5_dl, G4p, &
+            G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, &
+            G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, &
+            fx_d1, fx_d2, fx_cs1r, fx_d3, fx_d4, fx_d5)
+        fx_nrm = (fx_cs1r - fx_cs1)/(rhom + presm)
+        fx_rpv = (fx_cp1*ddphi + fx_ch1*Hdot + fx_cs1)/fx_nrm
+        call horndeski_backeq_coefficients_p(a, H, Hdot, dphi, ddphi, 0._dl, 0._dl, G2, G2p, G2x, G2pp, G2px, &
+            G2xx, G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4 - &
+            0.5_dl, G4p, G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, &
+            G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, &
+            G5pxxx, G5xxxx, fx_cp1p, fx_ch1p, fx_cs1p, fx_d1, fx_d2, fx_d3)
+        call horndeski_backeq_coefficients_p(a, H, Hdot, dphi, ddphi, rhom + presm, 0._dl, G2, G2p, G2x, G2pp, &
+            G2px, G2xx, G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4 &
+            - 0.5_dl, G4p, G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, &
+            G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, &
+            G5pxxx, G5xxxx, fx_d1, fx_d2, fx_cs1pr, fx_d3, fx_d4, fx_d5)
+        fx_nrmdot = (fx_cs1pr - fx_cs1p)/(rhom + presm)
+        fx_rpvdot = (fx_cp1p*ddphi + fx_cp1*dddphi + fx_ch1p*Hdot + fx_ch1*Hdotdot + fx_cs1p &
+            - fx_nrmdot*fx_rpv)/fx_nrm
+
+        ! 2) compute the EFT functions:
+        ! NOTE: we abuse notation and store directly the a (or conformal time for Lambda and c) derivative to yp, ypp, yppp. NOT wrt x!
+        self%EFTomega%y(i) = RPH_PM_V + RPH_AT_V*(1._dl + RPH_PM_V)
+        self%EFTomega%yp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_P + (1._dl + RPH_AT_V)*RPH_PM_P
+        self%EFTomega%ypp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_PP + 2._dl*RPH_PM_P*RPH_AT_P + (1._dl + RPH_AT_V)*RPH_PM_PP
+        self%EFTomega%yppp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_PPP + 3._dl*RPH_PM_PP*RPH_AT_P + 3._dl*RPH_PM_P*RPH_AT_PP &
+            + (1._dl + RPH_AT_V)*RPH_PM_PPP
+        self%EFTc%y(i) = (adotoa**2 - cHdot)*(self%EFTomega%y(i) + 0.5_dl*a*self%EFTomega%yp(i)) &
+            - 0.5_dl*(a*adotoa)**2*self%EFTomega%ypp(i) &
+            + 0.5_dl*a*a*fx_rpv
+        self%EFTlambda%y(i) = -self%EFTomega%y(i)*(2._dl*cHdot + adotoa**2) &
+            - a*self%EFTomega%yp(i)*(2._dl*adotoa**2 + cHdot) &
+            - (a*adotoa)**2*self%EFTomega%ypp(i) &
+            + a*a*presv
+        self%EFTc%yp(i) = +0.5_dl*a*a*fx_rpvdot &
+            - self%EFTomega%y(i)*(cHdotdot - 4._dl*adotoa*cHdot + 2._dl*adotoa**3) &
+            + 0.5_dl*a*self%EFTomega%yp(i)*(-cHdotdot + adotoa*cHdot + adotoa**3) &
+            + 0.5_dl*a**2*adotoa*self%EFTomega%ypp(i)*(adotoa**2 - 3._dl*cHdot) &
+            - 0.5_dl*(a*adotoa)**3*self%EFTomega%yppp(i)
+        self%EFTlambda%yp(i) = -2._dl*self%EFTomega%y(i)*(cHdotdot - adotoa*cHdot - adotoa**3) &
+            - a*self%EFTomega%yp(i)*(+cHdotdot + 5._dl*adotoa*cHdot - adotoa**3) &
+            - a**2*self%EFTomega%ypp(i)*adotoa*(+2._dl*adotoa**2 + 3._dl*cHdot) &
+            - (a*adotoa)**3*self%EFTomega%yppp(i) &
+            + a*a*presvdot
+        self%EFTgamma1%y(i) = 0.25_dl*(RPH_AK_V*(1._dl + RPH_PM_V)*adotoa**2 &
+            - 2._dl*self%EFTc%y(i))/(params_cache%h0_Mpc**2*a**2)
+        self%EFTgamma1%yp(i) = -0.5_dl*(RPH_AK_V*(1._dl + RPH_PM_V)*adotoa**2 &
+            - 2._dl*self%EFTc%y(i))/(params_cache%h0_Mpc**2*a**3) &
+            + 0.25_dl*(RPH_AK_P*(1._dl + RPH_PM_V)*adotoa**2 &
+            + RPH_AK_V*RPH_PM_P*adotoa**2 &
+            + 2._dl*RPH_AK_V*(1._dl + RPH_PM_V)*cHdot/a &
+            - 4._dl*self%EFTc%y(i)/a - 2._dl*self%EFTc%yp(i)/a/adotoa)/(params_cache%h0_Mpc**2*a**2)
+        self%EFTgamma2%y(i) = (+2._dl*RPH_AB_V*(1._dl + RPH_PM_V) &
+            - a*self%EFTomega%yp(i))*adotoa/(params_cache%h0_Mpc*a)
+        self%EFTgamma2%yp(i) = -(+2._dl*RPH_AB_V*(1._dl + RPH_PM_V) &
+            - a*self%EFTomega%yp(i))*adotoa/(params_cache%h0_Mpc*a**2) &
+            - (-2._dl*(1._dl + RPH_PM_V)*(RPH_AB_P*adotoa**2 &
+            + RPH_AB_V*cHdot/a) &
+            - 2._dl*RPH_AB_V*adotoa**2*RPH_PM_P &
+            + self%EFTomega%yp(i)*(adotoa**2 + cHdot) &
+            + a*adotoa**2*self%EFTomega%ypp(i))/(params_cache%h0_Mpc*a*adotoa)
+        self%EFTgamma3%y(i) = -RPH_AT_V*(1._dl + RPH_PM_V)
+        self%EFTgamma3%yp(i) = -RPH_PM_P*RPH_AT_V - (1._dl + RPH_PM_V)*RPH_AT_P
+        self%EFTgamma3%ypp(i) = -(1._dl + RPH_PM_V)*RPH_AT_PP - RPH_PM_PP*RPH_AT_V - 2._dl*RPH_PM_P*RPH_AT_P
+
+        ! write(*,*) a, self%EFTlambda%y(i), self%EFTlambda%yp(i), self%EFTc%y(i), self%EFTc%yp(i)
+        ! write(*,*) a, self%EFTgamma1%y(i), self%EFTgamma1%yp(i), self%EFTgamma2%y(i), self%EFTgamma2%yp(i), self%EFTgamma3%y(i), self%EFTgamma3%yp(i), self%EFTgamma3%ypp(i), 4._dl*self%model_params(1)*dphi/a/params_cache%h0_Mpc
+
 
         ! if ( a>0.1 ) write(*,*) self%phi%y(i), (2._dl*G4 - 1._dl)/self%phi%y(i)**2, self%free_c0%value(self%phi%y(i))*Exp(self%phi%y(i)), self%EFTomega%y(i)/self%phi%y(i)**2
 

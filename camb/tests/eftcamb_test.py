@@ -527,6 +527,21 @@ class EFTCAMBTest(unittest.TestCase):
                 (dp[0] + dp[1] * v["dddphi"]) / ((poly(shifted(v, 1)) - poly(shifted(v, -1))) / 2e-6), 1, delta=1e-6
             )
 
+    def test_horndeski_gr_limit(self):
+        # LCDM written as Horndeski (G2 = const, G4 = 1/2): rho_DE + p_DE comes from the background equation without
+        # subtracting matter, so c and gamma1 are exactly 0 (they were noise up to 1e-4 and the pi path aborted)
+        model = "Horndeski_freefunc3_model = 0\nHorndeskic00 = 1.1653675624178562e-07\n"
+        model += "Horndeskic01 = 0\nEFTCAMB_skip_RGR = F"
+        a = np.logspace(-4, 0, 9)
+        sigma8 = {}
+        for dphi in ("T", "F"):
+            cp = self.read("5_hdsk_TG_1", f"{model}\nEFTCAMB_evolve_delta_phi = {dphi}")
+            res = camb.get_results(cp)
+            ev = cp.EFTCAMB.get_scale_evolution(res, [0.05], a)[1][0]
+            self.assertFalse(np.any(ev["EFTc"]) or np.any(ev["EFTGamma1V"]))
+            sigma8[dphi] = res.get_sigma8_0()
+        self.assertAlmostEqual(sigma8["F"] / sigma8["T"], 1, delta=1e-12)
+
     def test_horava_domain(self):
         # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
         # the GR point (arXiv:1508.01787 Sec. 2.4)
