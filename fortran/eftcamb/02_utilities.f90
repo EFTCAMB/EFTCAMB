@@ -41,7 +41,7 @@
 
     ! real number that gets represented as a Nan:
     !< there are situations where we need to initialize a variable to Nan...
-    real(dl), parameter :: double_NaN = transfer([real(Z'00000000'), real(Z'7FF80000')], 1.0_8)
+    real(dl), parameter :: double_NaN = transfer(9221120237041090560_8, 1.0_dl)  ! 0x7FF8000000000000
 
     contains
 

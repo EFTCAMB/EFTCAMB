@@ -669,7 +669,8 @@
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that solves the 5e background equations.
-    subroutine EFTCAMB5eSolveBackgroundEquations(self, params_cache, phi_ini, phidot_ini, H02, only_solve, success)
+    subroutine EFTCAMB5eSolveBackgroundEquations(self, params_cache, phi_ini, phidot_ini, H02, only_solve, success, &
+        omega_phi_ini)
 
     implicit none
 
@@ -684,6 +685,7 @@
     !< logical flag that tells the code wether to compute only the solution or also the EFT functions.
     logical, optional                          :: only_solve
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
+    real(dl), intent(out), optional            :: omega_phi_ini !< field energy fraction at the initial time
     logical :: only_solve_temp
 
     integer, parameter :: num_eq = 2   !<  Number of equations
@@ -726,6 +728,10 @@
             6._dl*(1._dl - omega_m)*a2*params_cache%h0_Mpc**2*self%quintessence_potential(phi_ini, deriv=0))
     else
         y(2) = phidot_ini
+    end if
+    if (present(omega_phi_ini)) then
+        call derivs(num_eq, t1, y, ydot)
+        omega_phi_ini = 1._dl - grho_matter/(3._dl*H2)
     end if
 
     ! now set output vaue:
@@ -1027,105 +1033,105 @@
     real(dl), intent(out) :: phi_ini
     logical, intent(out)  :: success        !< whether the calculation ended correctly or not
 
-    real(dl) :: H0_wanted, H0_temp_1, H0_temp_2, phi_temp, tol, min_field, min_search, phi_exp
-    integer  :: ind, num_search
+    real(dl) :: H0_wanted, tol, min_field, min_search, phi_exp, phi_a, phi_b, f_a, f_b, bound, H0_found
+    integer  :: ind, num_search, side
+    logical  :: root_ok
 
     success = .false.
+    phi_ini = 0._dl
 
-    ! absolute tollerance in the H0 solution:
+    ! absolute tolerance on the field value in the root finder (zbrent x tolerance):
     tol = 1.d-12
     ! other algorithm variables:
     min_field = 1.d-16
     min_search = 1.d-10
-    num_search = 20
+    num_search = 60
     ! copy the desired value, notice that we are solving for the squared Hubble constant:
     H0_wanted = params_cache%h0_Mpc**2
 
-    ! 2) look for the root on the positive side:
-    phi_temp = min_field
-    H0_temp_1 = helperH0(phi_temp)
-
-    ! do we already have the solution:
-    if (abs(H0_temp_1 - H0_wanted) <= tol) then
-        phi_ini = phi_temp
-        success = .true.
-        return
-    end if
-    ! bracket the root:
-    do ind = 1, num_search
-        phi_exp = log10(min_search) + real(ind - 1)/real(num_search - 1)*(log10(self%field_max) - log10(min_search))
-        phi_temp = 10._dl**phi_exp
-        H0_temp_2 = helperH0(phi_temp)
-        if ((H0_temp_1 - H0_wanted)*(H0_temp_2 - H0_wanted) <= 0._dl) exit
+    ! scan each side of the field axis outwards on a log grid and bracket the root between adjacent points
+    ! where the background exists (finite H0^2); points where the background fails are skipped. Only a physical
+    ! root is returned (see physical_root); otherwise the scan goes on.
+    do side = 1, 2
+        if (side == 1) then
+            phi_a = min_field
+            bound = self%field_max
+        else
+            phi_a = -min_field
+            bound = abs(self%field_min)
+        end if
+        f_a = helperH0(phi_a) - H0_wanted
+        if (is_finite(f_a) .and. abs(f_a) <= 1.d-10*H0_wanted) then
+            if (physical_root(phi_a)) then
+                phi_ini = phi_a
+                success = .true.
+                exit
+            end if
+        end if
+        do ind = 1, num_search
+            phi_exp = log10(min_search) + real(ind - 1)/real(num_search - 1)*(log10(bound) - log10(min_search))
+            phi_b = sign(10._dl**phi_exp, phi_a)
+            f_b = helperH0(phi_b) - H0_wanted
+            if (is_finite(f_a) .and. is_finite(f_b) .and. f_a*f_b <= 0._dl) then
+                phi_ini = zbrent(helperH0, phi_a, phi_b, tol, H0_wanted, root_ok)
+                if (root_ok) root_ok = physical_root(phi_ini)
+                if (root_ok) then
+                    success = .true.
+                    exit
+                end if
+            end if
+            phi_a = phi_b
+            f_a = f_b
+        end do
+        if (success) exit
+        if (feedback_level > 1) then
+            if (side == 1) write(*, '(a)') '   right side solution not found'
+            if (side == 2) write(*, '(a)') '   left side solution not found'
+        end if
     end do
-    ! call the root finder:
-    phi_ini = zbrent(helperH0, min_field, phi_temp, tol, H0_wanted, success)
-    if (success) then
-        if (feedback_level > 2) then
-            write(*, *) '  H0 given:', sqrt(H0_wanted)*(c/1000._dl)
-            write(*, *) '  H0 found:', sqrt(helperH0(phi_ini))*(c/1000._dl)
-        end if
-        return
-    else if (.not. success) then
-        if (feedback_level > 1) write(*, '(a)') '   right side solution not found'
-    end if
 
-    ! 3) look for the root on the negative side:
-    phi_temp = -min_field
-    H0_temp_1 = helperH0(phi_temp)
-    ! do we already have the solution:
-    if (abs(H0_temp_1 - H0_wanted) <= tol) then
-        phi_ini = phi_temp
-        success = .true.
-        return
+    if (success .and. feedback_level > 2) then
+        H0_found = helperH0(phi_ini)
+        write(*, *) '  H0 given:', sqrt(H0_wanted)*(c/1000._dl)
+        write(*, *) '  H0 found:', sqrt(abs(H0_found))*(c/1000._dl)
     end if
-    ! bracket the root:
-    do ind = 1, num_search
-        phi_exp = &
-            log10(min_search) + real(ind - 1)/real(num_search - 1)*(log10(abs(self%field_min)) - log10(min_search))
-        phi_temp = -10._dl**phi_exp
-        H0_temp_2 = helperH0(phi_temp)
-        if ((H0_temp_1 - H0_wanted)*(H0_temp_2 - H0_wanted) <= 0._dl) exit
-    end do
-    ! call the root finder:
-    phi_ini = zbrent(helperH0, -min_field, phi_temp, tol, H0_wanted, success)
-    if (success) then
-        if (feedback_level > 2) then
-            write(*, *) 'H0 given:', sqrt(H0_wanted)*(c/1000._dl)
-            write(*, *) 'H0 found:', sqrt(helperH0(phi_ini))*(c/1000._dl)
-        end if
-        return
-    else if (.not. success) then
-        if (feedback_level > 1) write(*, '(a)') '   left side solution not found'
-    end if
-
-    ! 4) look in between:
-    phi_ini = zbrent(helperH0, -min_field, +min_field, tol, H0_wanted, success)
-    if (success) then
-        if (feedback_level > 2) then
-            write(*, *) 'H0 given:', sqrt(H0_wanted)*(c/1000._dl)
-            write(*, *) 'H0 found:', sqrt(helperH0(phi_ini))*(c/1000._dl)
-        end if
-        return
-    else if (.not. success) then
-        if (feedback_level > 1) write(*, '(a)') '   center solution not found'
-    end if
-
-    ! 5) in case of failure:
-    if (.not. success) then
-        if (feedback_level > 1) write(*, '(a)') '   initial condition not found'
-        return
-    end if
+    if (.not. success .and. feedback_level > 1) write(*, '(a)') '   initial condition not found'
 
     contains
 
-    ! small interface function to feed the root finder:
-    function helperH0(phi_ini)
+    ! small interface function to feed the root finder (own success flag, NaN when the background fails):
+    function helperH0(phi_temp)
     implicit none
-    real(dl) :: phi_ini, helperH0
-    call self%solve_background_equations(params_cache, phi_ini, phidot_ini=self%phidot_ini, H02=helperH0, &
-        only_solve=.true., success=success)
+    real(dl) :: phi_temp, helperH0
+    logical  :: ok
+    call self%solve_background_equations(params_cache, phi_temp, phidot_ini=self%phidot_ini, H02=helperH0, &
+        only_solve=.true., success=ok)
+    if (.not. ok .or. .not. (helperH0 > 0._dl)) helperH0 = double_NaN
     end function helperH0
+
+    ! a root is physical if its background exists and reproduces H0, and the field is subdominant at the initial
+    ! time, Omega_phi(a_ini) < 1/2, as the initial conditions (drag included) assume. This rejects, e.g., the
+    ! scaling-attractor branch of a steep exponential, which matches H0 with no radiation or matter era.
+    logical function physical_root(phi_temp)
+    implicit none
+    real(dl), intent(in) :: phi_temp
+    real(dl) :: H02_temp, omega_ini
+    logical  :: ok
+    call self%solve_background_equations(params_cache, phi_temp, phidot_ini=self%phidot_ini, H02=H02_temp, &
+        only_solve=.true., success=ok, omega_phi_ini=omega_ini)
+    physical_root = ok .and. is_finite(H02_temp) .and. abs(H02_temp/H0_wanted - 1._dl) <= 1.d-8
+    if (physical_root .and. .not. (omega_ini < 0.5_dl)) then
+        physical_root = .false.
+        if (feedback_level > 0) write(*, '(a,ES11.4,a,ES10.3)') '   H0 root at phi_ini =', phi_temp, &
+            ' rejected: Omega_phi(a_ini) =', omega_ini
+    end if
+    end function physical_root
+
+    logical function is_finite(x)
+    implicit none
+    real(dl), intent(in) :: x
+    is_finite = (x == x) .and. (abs(x) <= huge(x))
+    end function is_finite
 
     end subroutine EFTCAMB5eFindInitialConditions
 

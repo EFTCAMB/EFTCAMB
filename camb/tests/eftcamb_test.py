@@ -388,6 +388,20 @@ class EFTCAMBTest(unittest.TestCase):
         h0 = cp.H0 / 299792.458  # H0 in 1/Mpc
         np.testing.assert_allclose(c / (c + 2 * h0**2 * a**2 * gamma1), 0.86, rtol=1e-7)
 
+    def test_quintessence_h0_shooting(self):
+        # the H0 shooting returns a root that reproduces H0 (with drag, p = 1 returned H0 3.4% off; without drag it was
+        # refused), the same model with and without drag, and refuses a steep exponential whose only root starts
+        # scalar dominated (Omega_phi(a_ini) = 1: no radiation or matter era)
+        sigma8 = []
+        for drag in ("T", "F"):
+            cp = self.read("5_quint_quadratic", f"p = 1.0\ndrag_initial_conditions = {drag}")
+            res = camb.get_results(cp)
+            self.assertAlmostEqual(res.hubble_parameter(0) / cp.H0, 1, delta=1e-6)
+            sigma8.append(res.get_sigma8_0())
+        self.assertAlmostEqual(sigma8[0] / sigma8[1], 1, delta=1e-7)
+        with self.assertRaisesRegex(CAMBError, "background solver failed"):
+            camb.get_results(self.read("5_quint_exponential", "EFT_lambda = 2.2"))
+
     def test_fR_gr_limit(self):
         # designer f(R) with B0 = 0 is LCDM: the return to GR never switches it on (the interpolation error of an
         # a^2-weighted Lambda table used to switch it on at a = 0.099, then the run failed)
