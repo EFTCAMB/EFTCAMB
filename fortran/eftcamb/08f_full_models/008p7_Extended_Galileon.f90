@@ -592,12 +592,17 @@
 
     EFTCAMBExtendedGalileonAdditionalModelStability = .true.
 
-    ! mass condition
-    if ((self%S + 0.02_dl)*self%ExtendedGalileon_q < 0.5_dl) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
+    ! mass condition: (S + 0.02) q < 0.5 is an empirical fit to the optional beta = 1 mass boundary of
+    ! arXiv:1912.07586 Fig. 2, not a viability condition. It refused 31 of 46 viable grid points (most of the
+    ! data-preferred region, and S = 0 for q < 25), so it is off: the tachyonic (mass) condition is left to the
+    ! general mass check. The original line:
+    ! if ((self%S + 0.02_dl)*self%ExtendedGalileon_q < 0.5_dl) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
 
-    ! Strong Coupling
-    if ((self%ExtendedGalileon_q*self%S - 1.)/(2.*self%ExtendedGalileon_q*(1. + self%S/2.)) > &
-        0.) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
+    ! No strong coupling at early times (arXiv:1811.10885 sec. 3, arXiv:1912.07586 sec. III B): the exponent of
+    ! Q_s ~ Omega_phi^((q S - 1)/(q (2 + S))) must not be positive. No ghost (S > 0) and no gradient instability
+    ! (q (3 + 2 S) >= 1) are enforced by the general stability checks.
+    if ((self%ExtendedGalileon_q*self%S - 1._dl)/(2._dl*self%ExtendedGalileon_q*(1._dl + self%S/2._dl)) > &
+        0._dl) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
 
     end function EFTCAMBExtendedGalileonAdditionalModelStability
 

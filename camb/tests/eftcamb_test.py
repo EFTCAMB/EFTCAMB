@@ -409,6 +409,18 @@ class EFTCAMBTest(unittest.TestCase):
                 cp = self.read("5_scg", extra)
                 self.assertAlmostEqual(camb.get_results(cp).hubble_parameter(0) / cp.H0, 1, delta=1e-5)
 
+    def test_extended_galileon_prior(self):
+        # the empirical (S + 0.02) q < 0.5 line (a fit to the optional mass cut of arXiv:1912.07586) refused these
+        # viable models; the strong-coupling prior still refuses q S > 1
+        model = "EFTflag = 4\nFullMappingEFTmodel = 7\nEFT_ghost_stability = T\nEFT_gradient_stability = T\n"
+        model += "EFT_additional_priors = T\nEFTCAMB_stability_threshold = 0.0\n"
+        for s, q in (("0.05", "1.0"), ("1.0", "0.35")):
+            with self.subTest(S=s, q=q):
+                cp = self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = {s}\nExtendedGalileon_q = {q}")
+                self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
+        with self.assertRaises(CAMBError):
+            camb.get_results(self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = 2.0\nExtendedGalileon_q = 1.0"))
+
     def test_fR_gr_limit(self):
         # designer f(R) with B0 = 0 is LCDM: the return to GR never switches it on (the interpolation error of an
         # a^2-weighted Lambda table used to switch it on at a = 0.099, then the run failed)
