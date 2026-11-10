@@ -1660,7 +1660,9 @@
                 B03 = -72._dl*(1._dl + aL)**2*(1._dl + aH)
                 B0 = (B03*Ht + B02*H**2 + B01*H)*H**2
                 B21 = 12._dl*(1._dl + aL)*(aHt*aL*b3 - (1._dl + aH)*(b3*aLt + aL*b3t))
-                B22 = 24._dl*aL*(1._dl + aL)*((1._dl + aH)**2 + b3*(1.5_dl*aH - aT))
+                ! arXiv:2508.01378 App. D (and its latest TeX) misses + b3/2 in B22: re-derived from the paper's action,
+                ! and confirmed by the de Sitter evolution to 1e-11
+                B22 = 24._dl*aL*(1._dl + aL)*((1._dl + aH)**2 + b3*(1.5_dl*aH - aT + 0.5_dl))
                 B23 = 12._dl*b3*aL*(1._dl + aL)*(1._dl + aH)
                 B2 = B23*Ht + B22*H**2 + B21*H
                 B4 = 2._dl*aL**2*b3*(2._dl*(1._dl + aH)**2 - b3*(1._dl + aT))

@@ -370,6 +370,17 @@ class EFTCAMBTest(unittest.TestCase):
                 self.assertGreater(res.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1)
                 self.assertAlmostEqual(res.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=1e-12)
 
+    def test_3p1_b22(self):
+        # 3+1 designer gradient test with the corrected B22 (+ b3/2, missing in arXiv:2508.01378 App. D): this healthy
+        # model was refused by the model's own gradient test
+        model = (
+            "EFTflag = 3\nDesignerEFTmodel = 3\nEFTwDE = 1\nEFTw0 = -0.95\nDesigner3p1LuminalGW = T\n"
+            "Designer3p1modelsigma1 = 1\nDesigner3p1sigma10 = 1.0\nDesigner3p1modelsigma1_ODE = 2\n"
+            "Designer3p1sigma1_ODE0 = -0.5\nDesigner3p1modelrho1N = 0\nDesigner3p1modelrho2 = 1\nDesigner3p1rho20 = 1.0\n"
+            "EFT_ghost_stability = F\nEFT_gradient_stability = F\nEFT_additional_priors = T"
+        )
+        self.assertGreater(camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model)).get_sigma8_0(), 0)
+
     def test_horava_domain(self):
         # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
         # the GR point (arXiv:1508.01787 Sec. 2.4)
