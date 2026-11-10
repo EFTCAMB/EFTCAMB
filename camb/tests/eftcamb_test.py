@@ -360,6 +360,16 @@ class EFTCAMBTest(unittest.TestCase):
                 cp = self.read("5_ADE_1", extra)
                 self.assertAlmostEqual(camb.get_background(cp).hubble_parameter(0.0) / cp.H0, 1, delta=1e-9)
 
+    def test_fR_gr_limit(self):
+        # designer f(R) with B0 = 0 is LCDM: the return to GR never switches it on (the interpolation error of an
+        # a^2-weighted Lambda table used to switch it on at a = 0.099, then the run failed)
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1"))
+        for b0 in ("0.0", "1.e-10"):
+            with self.subTest(B0=b0):
+                res = camb.get_results(self.read("4_Des_F_R_LCDM_1", f"EFTB0 = {b0}"))
+                self.assertGreater(res.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1)
+                self.assertAlmostEqual(res.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=1e-12)
+
     def test_horava_domain(self):
         # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
         # the GR point (arXiv:1508.01787 Sec. 2.4)

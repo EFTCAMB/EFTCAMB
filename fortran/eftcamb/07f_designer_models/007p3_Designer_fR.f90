@@ -730,7 +730,9 @@
         + 12._dl*EFunction**2*(EFunPrime2*(-2._dl*Edepp + 4._dl*Edep - ydot(1)) &
         + EFunPrime*(-8._dl*Edepp + 16._dl*Edep + ydot(1))) &
         + 3._dl*EFunPrime**2*(EFunPrime*(ydot(1) - 4._dl*(6._dl*Ede + y(1))) - EFunPrime2*(6._dl*Ede + y(1))))
-    self%EFTLambda%y(ind) = 0.5_dl*params_cache%h0_Mpc**2*(y(1) - f_sub_R*Ricci)*exp(x)**2
+    ! tabulate Lambda/m0^2, not Lambda a^2/m0^2 = O(a^2): the linear interpolation of the a^2 factor on the x grid has
+    ! a relative error up to cosh(dx) - 1 = 4.7e-6, which the return-to-GR test reads as a deviation from LCDM.
+    self%EFTLambda%y(ind) = 0.5_dl*params_cache%h0_Mpc**2*(y(1) - f_sub_R*Ricci)
     self%EFTLambda%yp(ind) = &
         -1.5_dl*params_cache%h0_Mpc**3*sqrt(EFunction)*(exp(x)**4*self%EFTOmega%yp(ind)*(4._dl*EFunction + EFunPrime))
 
@@ -1042,7 +1044,7 @@
     eft_cache%EFTOmegaPP = self%EFTOmega%second_derivative(x, index=ind, coeff=mu)
     eft_cache%EFTOmegaPPP = self%EFTOmega%third_derivative(x, index=ind, coeff=mu)
     eft_cache%EFTc = 0._dl
-    eft_cache%EFTLambda = self%EFTLambda%value(x, index=ind, coeff=mu)
+    eft_cache%EFTLambda = a*a*self%EFTLambda%value(x, index=ind, coeff=mu)
     eft_cache%EFTcdot = 0._dl
     eft_cache%EFTLambdadot = self%EFTLambda%first_derivative(x, index=ind, coeff=mu)
 
