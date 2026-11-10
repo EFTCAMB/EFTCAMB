@@ -312,6 +312,27 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertNotIn(warning, blocks[1])
         self.assertNotIn(warning, blocks[2])
 
+    def test_3p1_gamma2_cosmic_time(self):
+        # 3+1 designer: H0 gamma2 = -d rho1/dt with cosmic time, so the model has no braiding (alpha_B = 0:
+        # a (H Omega' + H0 gamma2) = 0) and the near-GR model is close to GR (it had a spurious braiding before)
+        model = (
+            "EFTflag = 3\nDesignerEFTmodel = 3\nEFTwDE = 0\nDesigner3p1LuminalGW = T\nDesigner3p1modelsigma1 = 1\n"
+            "Designer3p1sigma10 = 1.0\nDesigner3p1modelsigma1_ODE = 2\nDesigner3p1sigma1_ODE0 = -1.e-4\n"
+            "Designer3p1modelrho1N = 0\nDesigner3p1modelrho2 = 1\nDesigner3p1rho20 = 1.e-4\n"
+            "EFT_ghost_stability = F\nEFT_gradient_stability = F"
+        )
+        cp = self.read("2_PEFT_wDE_wCDM_1", model)
+        res = camb.get_results(cp)
+        h0 = res.Params.H0 / 299792.458
+        e = cp.EFTCAMB.get_scale_evolution(res, [0.05], [0.1, 0.5, 0.9])[1][0]
+        braiding = e["a"] * (e["adotoa"] * e["EFTOmegaP"] + h0 * e["EFTGamma2V"])
+        parts = np.abs(e["a"] * e["adotoa"] * e["EFTOmegaP"]) + np.abs(e["a"] * h0 * e["EFTGamma2V"])
+        self.assertTrue(np.all(parts > 0))
+        np.testing.assert_array_less(np.abs(braiding), 1e-10 * parts)
+        tt = res.get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"][2:601, 0]
+        tt_gr = camb.get_results(self.read("1_EFT_GR")).get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"]
+        np.testing.assert_allclose(tt, tt_gr[2:601, 0], rtol=1e-3)
+
     def test_horava_domain(self):
         # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
         # the GR point (arXiv:1508.01787 Sec. 2.4)

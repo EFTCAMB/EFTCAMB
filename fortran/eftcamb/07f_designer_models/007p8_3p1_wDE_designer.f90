@@ -1296,7 +1296,7 @@
     real(dl) :: Ode, dOde, d2Ode, d3Ode, d4Ode
     real(dl) :: sigma1, dsigma1, d2sigma1, d3sigma1, d4sigma1, rho1, drho1, d2rho1, d3rho1, d4rho1, rho1N, drho1N, &
         rho2, drho2
-    real(dl) :: at, dat, d2at, d3at
+    real(dl) :: at, dat, d2at, d3at, bt, dbt, d2bt, d3bt
 
     grhom = eft_cache%grhob_t + eft_cache%grhoc_t
     grhor = eft_cache%grhor_t + eft_cache%grhog_t
@@ -1432,10 +1432,16 @@
     eft_cache%EFTGamma1P = -0.5_dl*(eft_cache%EFTcdot/at)/(a*eft_par_cache%h0_Mpc)**2
     eft_cache%EFTGamma1PP = &
         -0.5_dl*(eft_cache%EFTcdotdot/at**2 - eft_cache%EFTcdot*dat/at**2)/(a*eft_par_cache%h0_Mpc)**2
-    eft_cache%EFTGamma2V = -(drho1*at)/eft_par_cache%h0_Mpc
-    eft_cache%EFTGamma2P = -(at*d2rho1 + dat*drho1)/eft_par_cache%h0_Mpc
-    eft_cache%EFTGamma2PP = -(at*d3rho1 + 2._dl*d2rho1*dat + d2at*drho1)/eft_par_cache%h0_Mpc
-    eft_cache%EFTGamma2PPP = -(3._dl*d2at*d2rho1 + at*d4rho1 + 3._dl*d3rho1*dat + d3at*drho1)/eft_par_cache%h0_Mpc
+    ! gamma2 = Mb1^3/(m0^2 H0) = -(d rho1/dt)/H0 with COSMIC time: d rho1/dt = adotoa d rho1/da = (at/a) d rho1/da
+    ! (arXiv:2508.01378 App. C: Mb1^3 = -2 rho1dot, M_Pl^2/2 = 1). bt = at/a = adotoa and its a-derivatives:
+    bt = at/a
+    dbt = dat/a - at/a**2
+    d2bt = d2at/a - 2._dl*dat/a**2 + 2._dl*at/a**3
+    d3bt = d3at/a - 3._dl*d2at/a**2 + 6._dl*dat/a**3 - 6._dl*at/a**4
+    eft_cache%EFTGamma2V = -(drho1*bt)/eft_par_cache%h0_Mpc
+    eft_cache%EFTGamma2P = -(bt*d2rho1 + dbt*drho1)/eft_par_cache%h0_Mpc
+    eft_cache%EFTGamma2PP = -(bt*d3rho1 + 2._dl*d2rho1*dbt + d2bt*drho1)/eft_par_cache%h0_Mpc
+    eft_cache%EFTGamma2PPP = -(3._dl*d2bt*d2rho1 + bt*d4rho1 + 3._dl*d3rho1*dbt + d3bt*drho1)/eft_par_cache%h0_Mpc
     eft_cache%EFTGamma3V = 1._dl/3._dl*sigma1 - rho1 + 2._dl/3._dl
     eft_cache%EFTGamma3P = 1._dl/3._dl*dsigma1 - drho1
     eft_cache%EFTGamma3PP = 1._dl/3._dl*d2sigma1 - d2rho1
