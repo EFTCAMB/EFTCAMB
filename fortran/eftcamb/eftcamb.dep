@@ -191,8 +191,7 @@
 	04p1_parametrizations_1D_allocator.o \
 	06p2_abstract_EFTCAMB_designer.o \
 	constants.o \
-	massive_neutrinos.o \
-	02_equispaced_interpolation_linear_1D.o
+	massive_neutrinos.o
 
 007p7_ShiftSym_alphaB.o :  \
 	config.o \
@@ -751,8 +750,7 @@ $(DLL_DIR)/007p1_Pure_EFT_std.o :  \
 	$(DLL_DIR)/04p1_parametrizations_1D_allocator.o \
 	$(DLL_DIR)/06p2_abstract_EFTCAMB_designer.o \
 	$(DLL_DIR)/constants.o \
-	$(DLL_DIR)/massive_neutrinos.o \
-	$(DLL_DIR)/02_equispaced_interpolation_linear_1D.o
+	$(DLL_DIR)/massive_neutrinos.o
 
 $(DLL_DIR)/007p7_ShiftSym_alphaB.o :  \
 	$(DLL_DIR)/config.o \

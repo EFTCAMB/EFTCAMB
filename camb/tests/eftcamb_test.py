@@ -274,6 +274,50 @@ class EFTCAMBTest(unittest.TestCase):
         # the interpreter is still usable
         self.assertGreater(camb.get_results(self.read("2_PEFT_Omega_const_1")).get_sigma8_0(), 0)
 
+    def test_beyond_today_refused(self):
+        # EFT results stop today (a = 1): requests with z < 0, a > 1 or eta > tau0 are refused
+        res = camb.get_results(self.read("2_PEFT_wDE_wCDM_1"))
+        eft = res.Params.EFTCAMB
+        requests = {
+            "hubble_parameter": lambda: res.hubble_parameter(-0.1),
+            "angular_diameter_distance": lambda: res.angular_diameter_distance([0.5, -0.1]),
+            "angular_diameter_distance2": lambda: res.angular_diameter_distance2(-0.1, 1.0),
+            "comoving_radial_distance": lambda: res.comoving_radial_distance(np.array([-0.1, 1.0])),
+            "luminosity_distance": lambda: res.luminosity_distance(-0.1),
+            "conformal_time": lambda: res.conformal_time(-0.1),
+            "sound_horizon": lambda: res.sound_horizon(-0.1),
+            "physical_time": lambda: res.physical_time(-0.1),
+            "conformal_time_a1_a2": lambda: res.conformal_time_a1_a2(0.5, 1.2),
+            "get_background_densities": lambda: res.get_background_densities(1.5),
+            "get_dark_energy_rho_w": lambda: res.get_dark_energy_rho_w(1.5),
+            "get_Omega": lambda: res.get_Omega("de", -0.1),
+            "get_background_redshift_evolution": lambda: res.get_background_redshift_evolution([-0.1]),
+            "get_background_time_evolution": lambda: res.get_background_time_evolution([res.tau0 * 1.01]),
+            "redshift_at_comoving_radial_distance": lambda: res.redshift_at_comoving_radial_distance(-10.0),
+            "get_redshift_evolution": lambda: res.get_redshift_evolution(0.1, [-0.1]),
+            "get_eft_functions": lambda: eft.get_eft_functions(res, [0.5, 1.2]),
+            "get_evolution": lambda: eft.get_evolution(res, 0.1, [100.0, res.tau0 * 1.01]),
+        }
+        for name, request in requests.items():
+            with self.subTest(request=name), self.assertRaises(CAMBValueError):
+                request()
+        # today is allowed
+        self.assertAlmostEqual(res.hubble_parameter(0.0) / res.Params.H0, 1, delta=1e-6)
+        self.assertAlmostEqual(res.get_dark_energy_rho_w(1.0)[0], 1, delta=1e-6)
+        self.assertEqual(eft.get_eft_functions(res, [0.5, 1.0])[1].shape, (2,))
+        # z_outputs are refused by the Fortran parameter check
+        with self.assertRaises(CAMBError):
+            res.get_BAO([0.5, -0.1], res.Params)
+        # plain CAMB is not restricted
+        self.assertGreater(camb.get_background(camb.set_params(H0=67.0)).hubble_parameter(-0.1), 0)
+        # a = 1 through conformal times: conformal_time(z = 0) of RPH exceeds tau0 by ~2e-8 for this array
+        cp = self.read("3_RPH_KT_power_1")
+        res = camb.get_results(cp)
+        a = np.array([0.05, 0.1, 0.3, 0.6, 1.0])
+        self.assertGreater(res.conformal_time(1 / a - 1)[-1], res.tau0)
+        self.assertEqual(cp.EFTCAMB.get_scale_evolution(res, [0.05, 0.5], a)[1].shape, (2, 5))
+        self.assertEqual(res.get_background_redshift_evolution(1 / a - 1, format="array").shape[0], 5)
+
     def theta_ini(self, model, theta_line):
         # the model ini with hubble removed from its DEFAULT chain and a theta input instead
         def copy(path):

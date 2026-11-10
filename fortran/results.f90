@@ -601,6 +601,15 @@
                 if (present(error)) error = global_error_flag
                 return
             end if
+            ! the EFT background, return to GR and stability checks stop today (a = 1):
+            if (allocated(this%CP%z_outputs)) then
+                if (any(this%CP%z_outputs < 0)) then
+                    call GlobalError('EFTCAMB: results beyond today (a > 1, z < 0) are not supported: ' // &
+                        'z_outputs must be non-negative', error_unsupported_params)
+                    if (present(error)) error = global_error_flag
+                    return
+                end if
+            end if
         end if
         if (this%CP%EFTCAMB%EFTflag /= 0) then
             ! 0) make some noise if nonlinear is on

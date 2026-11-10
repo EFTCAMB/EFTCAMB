@@ -563,6 +563,8 @@ class EFTCAMB(F2003Class):
         k = np.asfortranarray(k)
         # digest the input time array:
         times = np.asarray(np.atleast_1d(eta), dtype=np.float64)
+        # the EFT results stop today (eta = tau0):
+        camb_results._check_eft_today(eta=times)
         # the Fortran integration needs increasing times: sort them and restore the caller's order on output
         indices = np.argsort(times)
         sorted_times = np.asfortranarray(times[indices])

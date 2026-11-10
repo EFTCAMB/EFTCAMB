@@ -35,7 +35,6 @@
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_parametrizations_1D
     use EFTCAMB_abstract_model_designer
-    use equispaced_linear_interpolation_1D
     use MassiveNu
 
     implicit none
@@ -75,9 +74,6 @@
         ! flag deciding whether computes Omega_DE
         logical :: PureEFTOmegaDE
 
-        ! DE energy density from wDE integration
-        type(equispaced_linear_interpolate_function_1D) :: rhov_t
-
         ! the pure EFT functions:
         class(parametrized_function_1D), allocatable :: PureEFTOmega    !< The pure EFT function Omega.
         class(parametrized_function_1D), allocatable :: PureEFTwDE      !< The pure EFT function w_DE.
@@ -97,12 +93,6 @@
         class(parametrized_function_1D), allocatable :: PureEFTGamma5_ODE   !< The pure EFT function Gamma5.
         class(parametrized_function_1D), allocatable :: PureEFTGamma6_ODE   !< The pure EFT function Gamma6.
 
-        ! background solver parameters:
-        !< Number of points sampled by the designer code.
-        integer  :: designer_num_points = 6000
-        real(dl) :: x_initial = log(10._dl**(-8))               !< log(a start)
-        real(dl) :: x_final = 0.0_dl                          !< log(a final)
-
     contains
 
     ! initialization of the model:
@@ -118,8 +108,6 @@
     ! background solver:
     !< subroutine that initializes the background.
     procedure :: initialize_background => EFTCAMBPureEFTstdInitBackground
-    !< subroutine that solves the for Mp.
-    procedure :: solve_designer_equations => EFTCAMBPureEFTstdSolveDesignerEquations
 
     ! utility functions:
     !< subroutine that computes the number of parameters of the model.
@@ -181,10 +169,6 @@
     self%PureEFTmodelGamma6_ODE = Ini%Read_Int('PureEFTmodelGamma6_ODE', 0)
     ! read the Horndeski flag:
     self%PureEFTHorndeski = Ini%Read_Logical('PureEFTHorndeski', .false.)
-    ! read precision parameters
-    self%designer_num_points = Ini%Read_Int('model_background_num_points', 6000)
-    self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
 
     end subroutine EFTCAMBPureEFTstdReadModelSelectionFromFile
 
@@ -350,6 +334,8 @@
         num_params_temp = num_params_temp + 1
     end do
     call self%PureEFTwDE%init_parameters(temp)
+    ! w_DE integral of parametrizations without a closed form, for the new parameters:
+    call self%PureEFTwDE%tabulate_numerical_integral()
     deallocate(temp)
     ! then gamma1:
     num_params_function = self%PureEFTGamma1%parameter_number
@@ -502,6 +488,8 @@
 
     call self%PureEFTOmega%init_from_file (Ini, eft_error)
     call self%PureEFTwDE%init_from_file   (Ini, eft_error)
+    ! w_DE integral of parametrizations without a closed form, for the new parameters:
+    call self%PureEFTwDE%tabulate_numerical_integral()
     call self%PureEFTGamma1%init_from_file(Ini, eft_error)
     call self%PureEFTGamma2%init_from_file(Ini, eft_error)
     call self%PureEFTGamma3%init_from_file(Ini, eft_error)
@@ -1121,183 +1109,11 @@
         write(*, '(a)')
     end if
 
-    call self%rhov_t%initialize(self%designer_num_points, self%x_initial, self%x_final)
-
+    ! the dark energy density comes from the w_DE parametrization integral (closed form or tabulated numerical
+    ! integral, see compute_adotoa): no background equation to solve.
     success = .true.
-    ! solve the background equations and store the solution:
-    call self%solve_designer_equations(params_cache, success=success, feedback_level=feedback_level)
 
     end subroutine EFTCAMBPureEFTstdInitBackground
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that solves for M by integrating apha_M
-    subroutine EFTCAMBPureEFTstdSolveDesignerEquations(self, params_cache, success, feedback_level)
-
-    implicit none
-
-    class(EFTCAMB_std_pure_EFT)                :: self          !< the base class.
-    !< a EFTCAMB parameter cache containing cosmological parameters.
-    type(TEFTCAMB_parameter_cache), intent(in) :: params_cache
-    logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
-    integer, intent(in)                        :: feedback_level   !< whether be noisy
-
-    integer, parameter :: num_eq = 1   !<  Number of equations
-    real(dl) :: y(num_eq), ydot(num_eq)
-
-    real(dl) :: grhom0, grhor0, grhov0
-
-    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2
-    real(dl), allocatable :: rwork(:)
-    integer, allocatable :: iwork(:)
-
-    ! 1) Cosmological parameters:
-    grhom0 = params_cache%grhob + params_cache%grhoc
-    grhor0 = 3._dl*params_cache%h0_Mpc**2*(params_cache%omegag + params_cache%omegar)
-    grhov0 = params_cache%grhov
-
-    ! 2) Initial values
-    y(1) = 1._dl
-    success = .true.
-
-    ! 3) Initialize DLSODA:
-    ! set-up the relative and absolute tollerances:
-    itol = 1
-    rtol = 1.d-12
-    atol = 1.d-16
-    ! initialize task to do:
-    itask = 1
-    istate = 1
-    iopt = 1
-    ! initialize the work space:
-    LRN = 20 + 16*num_eq
-    LRS = 22 + 9*num_eq + num_eq**2
-    LRW = max(LRN, LRS)
-    LIS = 20 + num_eq
-    LIN = 20
-    LIW = max(LIS, LIN)
-    ! allocate the arrays:
-    allocate(rwork(LRW))
-    allocate(iwork(LIW))
-    ! optional lsoda input:
-    rwork(5) = 0._dl  ! the step size to be attempted on the first step. The default value is determined by the solver.
-    rwork(6) = 0._dl  ! the maximum absolute step size allowed. The default value is infinite.
-    rwork(7) = 0._dl  ! the minimum absolute step size allowed. The default value is 0.
-    ! flag to generate extra printing at method switches. IXPR = 0 means no extra printing (the default). IXPR = 1 means print data on each switch.
-    iwork(5) = 0
-    ! maximum number of (internally defined) steps allowed during one call to the solver. The default value is 500.
-    iwork(6) = 100
-    ! maximum number of messages printed (per problem) warning that T + H = T on a step (H = step size). This must be positive to result in a non-default value.  The default value is 10.
-    iwork(7) = 0
-    iwork(8) = 0      ! the maximum order to be allowed for the nonstiff (Adams) method.  the default value is 12.
-    iwork(9) = 0      ! the maximum order to be allowed for the stiff (BDF) method.  The default value is 5.
-    ! additional lsoda stuff:
-    call XSETF(0) ! suppress odepack printing
-    ! Jacobian mode: 1=fullJacobian, 2=not provided
-    JacobianMode = 2
-
-    ! initial time:
-    t1 = self%rhov_t%x(self%designer_num_points)
-    ! store initial step:
-    call output(num_eq, self%designer_num_points, t1, y)
-    ! solve the equations:
-    do i = self%designer_num_points, 2, -1
-        ! set the time step:
-        t1 = self%rhov_t%x(i)
-        t2 = self%rhov_t%x(i - 1)
-        ! solve the system:
-        call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-            jacobian, JacobianMode)
-        ! check istate for LSODA good completion:
-        if (istate < 0) then
-            if (istate == -1) then
-                if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                istate = 1
-            else
-                success = .false.
-                write(*, *) 'DLSODA failed with code:', istate
-                return
-            end if
-        end if
-        ! compute output functions if needed:
-        call output(num_eq, i - 1, t2, y)
-    end do
-
-    return
-
-    contains
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes y' given y
-    subroutine derivs(num_eq, x, y, ydot)
-
-    implicit none
-
-    integer, intent(in)                     :: num_eq !< number of equations in the ODE system
-    real(dl), intent(in)                    :: x      !< time at which the derivatives of the system are computed
-    real(dl), intent(in), dimension(num_eq) :: y      !< input status of the system
-    real(dl), intent(out), dimension(num_eq) :: ydot   !< value of the derivative at time x
-
-    real(dl) :: a
-    real(dl) :: grhor, grhom, grhov, grhon
-    real(dl) :: grhonu, gpinu, grhormass_t
-    integer  :: nu_i
-
-    a = exp(x)
-
-    grhom = grhom0/a
-    grhor = grhor0/a**2
-    grhov = grhov0*y(1)*a**2
-    grhon = 0._dl
-    if (params_cache%Num_Nu_Massive /= 0) then
-        do nu_i = 1, params_cache%Nu_mass_eigenstates
-            grhonu = 0._dl
-            gpinu = 0._dl
-            grhormass_t = params_cache%grhormass(nu_i)/a**2
-            call ThermalNuBackground%rho_P(a*params_cache%nu_masses(nu_i), grhonu, gpinu)
-            grhon = grhon + grhormass_t*grhonu
-        end do
-    end if
-
-    ydot(1) = -3._dl*(1._dl + self%PureEFTwDE%value(a))*y(1)
-
-    end subroutine derivs
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the Jacobian of the system. Now a dummy function.
-    !! Implementing it might increase performances.
-    subroutine jacobian(num_eq, x, y, ml, mu, pd, nrowpd)
-
-    implicit none
-
-    integer                     :: num_eq !< number of components of the Jacobian
-    integer                     :: ml     !< ignored
-    integer                     :: mu     !< ignored
-    integer                     :: nrowpd !< ignored
-    real(dl)                    :: x      !< time at which the Jacobian is computed
-    real(dl), dimension(num_eq) :: y      !< input status of the system
-    real(dl), dimension(nrowpd, num_eq) :: pd    !< output Jacobian
-
-    end subroutine jacobian
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that takes the solution of the background DGP equations and stores the values of the EFT functions.
-    subroutine output(num_eq, ind, x, y)
-
-    implicit none
-
-    integer, intent(in)                     :: num_eq !< number of equations in the ODE system.
-    integer, intent(in)                     :: ind    !< index of the EFT functions interpolation tables to fill.
-    real(dl), intent(in)                    :: x      !< time at which the derivatives of the system are computed.
-    real(dl), intent(in), dimension(num_eq) :: y      !< input status of the system.
-
-    real(dl) :: a
-
-    self%rhov_t%y(ind) = grhov0*y(1)
-
-    end subroutine output
-
-    end subroutine EFTCAMBPureEFTstdSolveDesignerEquations
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the value of the background EFT functions at a given time.
@@ -1624,16 +1440,7 @@
 
     real(dl) :: temp
 
-    real(dl) :: x, mu
-    integer  :: ind
-
-    x = log(a)
-    if (x < self%rhov_t%x_initial) then
-        temp = eft_cache%grhoa2 + a**4*self%rhov_t%y(1)
-    else
-        call self%rhov_t%precompute(x, ind, mu)
-        temp = eft_cache%grhoa2 + a**4*self%rhov_t%value(x, index=ind, coeff=mu)
-    end if
+    temp = eft_cache%grhoa2 + eft_par_cache%grhov*a*a*self%PureEFTwDE%integral(a)
     EFTCAMBPureEFTstdComputeDtauda = sqrt(3._dl/temp)
 
     end function EFTCAMBPureEFTstdComputeDtauda
@@ -1651,16 +1458,7 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: x, mu
-    integer  :: ind
-
-    x = log(a)
-    if (x < self%rhov_t%x_initial) then
-        eft_cache%grhov_t = a**2*self%rhov_t%y(1)
-    else
-        call self%rhov_t%precompute(x, ind, mu)
-        eft_cache%grhov_t = a**2*self%rhov_t%value(x, index=ind, coeff=mu)
-    end if
+    eft_cache%grhov_t = eft_par_cache%grhov*self%PureEFTwDE%integral(a)
     eft_cache%adotoa = sqrt((eft_cache%grhom_t + eft_cache%grhov_t)/3._dl)
 
     end subroutine EFTCAMBPureEFTstdComputeAdotoa
