@@ -318,6 +318,32 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertEqual(cp.EFTCAMB.get_scale_evolution(res, [0.05, 0.5], a)[1].shape, (2, 5))
         self.assertEqual(res.get_background_redshift_evolution(1 / a - 1, format="array").shape[0], 5)
 
+    def test_wDE_prior(self):
+        # the phenomenological prior w_DE <= -1/3 is off by default and refuses with its own message when selected
+        for model in ("2_PEFT_wDE_wCDM_1", "4_Des_mc5e_wCDM_1"):
+            with self.subTest(model=model):
+                cp = self.read(model, "EFTw0 = -0.3")
+                self.assertFalse(cp.EFTCAMB.EFT_wDE_prior)
+                self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
+                cp = self.read(model, "EFTw0 = -0.3\nEFT_wDE_prior = T")
+                # the fields next to the new flag keep their values (ctypes layout)
+                self.assertTrue(cp.EFTCAMB.EFT_wDE_prior)
+                self.assertTrue(cp.EFTCAMB.EFT_additional_priors)
+                self.assertFalse(cp.EFTCAMB.EFT_positivity_bounds)
+                with self.assertRaisesRegex(CAMBError, "w_DE > -1/3 at a = .*EFT_wDE_prior"):
+                    camb.get_results(cp)
+                # the ini round trip keeps the flag
+                name = os.path.join(self.tmp, f"written_{model}.ini")
+                cp.write_ini(name)
+                self.assertTrue(camb.read_ini(name).EFTCAMB.EFT_wDE_prior)
+                # set_params selects it too
+                eft = {**cp.EFTCAMB.read_parameters(), "EFTw0": -0.3}
+                with self.assertRaisesRegex(CAMBError, "EFT_wDE_prior"):
+                    camb.get_results(camb.set_params(H0=67.0, lmax=600, **eft))
+                # an accelerating w_DE passes the prior
+                cp = self.read(model, "EFTw0 = -0.9\nEFT_wDE_prior = T")
+                self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
+
     def theta_ini(self, model, theta_line):
         # the model ini with hubble removed from its DEFAULT chain and a theta input instead
         def copy(path):

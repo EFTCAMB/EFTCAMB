@@ -246,6 +246,11 @@ class EFTCAMB(F2003Class):
             c_bool,
             "Flag that extablishes whether to use additional priors that are related to the specific model. Each model has the possibility of implementing their own additional stability requirements.",
         ),
+        (
+            "EFT_wDE_prior",
+            c_bool,
+            "Flag that decides whether to enforce the phenomenological prior w_DE <= -1/3 (models with a w_DE parametrization: pure EFT, mc quintessence, RPH, designer f(R), 3+1). Off by default.",
+        ),
         # Positvity bounds flags
         (
             "EFT_positivity_bounds",

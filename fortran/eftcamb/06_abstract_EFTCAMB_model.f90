@@ -136,6 +136,8 @@
     ! stability procedures:
     !< function that computes model specific stability requirements.
     procedure :: additional_model_stability => EFTCAMBModelAdditionalModelStability
+    !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
+    procedure :: wDE_prior => EFTCAMBModelwDEPrior
     ! positivity bounds:
     !< function that computes the positivity bounds. See thesis Dani de Boe for details.
     procedure :: compute_positivity_bounds => EFTCAMBModelPositivityBounds
@@ -1234,6 +1236,26 @@
     EFTCAMBModelAdditionalModelStability = .true.
 
     end function EFTCAMBModelAdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that tests the phenomenological prior w_DE <= -1/3, enforced when EFT_wDE_prior = T.
+    !! Models with a w_DE parametrization override it; the others have nothing to test.
+    function EFTCAMBModelwDEPrior(self, a, eft_par_cache, eft_cache)
+
+    implicit none
+
+    class(EFTCAMB_model)                          :: self          !< the base class
+    real(dl), intent(in)                          :: a             !< the input scale factor.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+
+    logical :: EFTCAMBModelwDEPrior !< true if the prior is met (or the model has no w_DE parametrization).
+
+    EFTCAMBModelwDEPrior = .true.
+
+    end function EFTCAMBModelwDEPrior
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the LHS of positivity bounds. For details refer to the master thesis of Dani de Boe.

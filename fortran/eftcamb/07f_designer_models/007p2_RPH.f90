@@ -155,8 +155,8 @@
     !< subroutine that computes the two derivatives wrt conformal time of H.
     procedure :: compute_H_derivs => EFTCAMBRPHComputeHubbleDer
     ! stability procedures:
-    !< function that computes model specific stability requirements.
-    procedure :: additional_model_stability => EFTCAMBRPHAdditionalModelStability
+    !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
+    procedure :: wDE_prior => EFTCAMBRPHwDEPrior
 
     end type EFTCAMB_RPH
 
@@ -1905,8 +1905,8 @@
     end subroutine EFTCAMBRPHComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that computes model specific stability requirements.
-    function EFTCAMBRPHAdditionalModelStability(self, a, eft_par_cache, eft_cache)
+    !> Function that tests the phenomenological prior w_DE <= -1/3, enforced when EFT_wDE_prior = T.
+    function EFTCAMBRPHwDEPrior(self, a, eft_par_cache, eft_cache)
 
     implicit none
 
@@ -1917,13 +1917,12 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
-    logical :: EFTCAMBRPHAdditionalModelStability
+    logical :: EFTCAMBRPHwDEPrior !< true if w_DE <= -1/3 at a.
 
-    EFTCAMBRPHAdditionalModelStability = .true.
-    if (self%RPH_wDE%value(a) > -1._dl/3._dl) EFTCAMBRPHAdditionalModelStability = .false.
+    EFTCAMBRPHwDEPrior = .true.
+    if (self%RPH_wDE%value(a) > -1._dl/3._dl) EFTCAMBRPHwDEPrior = .false.
 
-    end function EFTCAMBRPHAdditionalModelStability
+    end function EFTCAMBRPHwDEPrior
 
     ! ---------------------------------------------------------------------------------------------
 

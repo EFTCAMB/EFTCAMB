@@ -116,8 +116,8 @@
     procedure :: compute_H_derivs => EFTCAMBDesignerFRComputeHubbleDer
 
     ! stability procedures:
-    !< function that computes model specific stability requirements.
-    procedure :: additional_model_stability => EFTCAMBDesignerFRAdditionalModelStability
+    !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
+    procedure :: wDE_prior => EFTCAMBDesignerFRwDEPrior
 
     end type EFTCAMB_fR_designer
 
@@ -1162,8 +1162,8 @@
     end subroutine EFTCAMBDesignerFRComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that computes model specific stability requirements.
-    function EFTCAMBDesignerFRAdditionalModelStability(self, a, eft_par_cache, eft_cache)
+    !> Function that tests the phenomenological prior w_DE <= -1/3, enforced when EFT_wDE_prior = T.
+    function EFTCAMBDesignerFRwDEPrior(self, a, eft_par_cache, eft_cache)
 
     implicit none
 
@@ -1174,13 +1174,12 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
-    logical :: EFTCAMBDesignerFRAdditionalModelStability
+    logical :: EFTCAMBDesignerFRwDEPrior !< true if w_DE <= -1/3 at a.
 
-    EFTCAMBDesignerFRAdditionalModelStability = .true.
-    if (self%DesfRwDE%value(a) > -1._dl/3._dl) EFTCAMBDesignerFRAdditionalModelStability = .false.
+    EFTCAMBDesignerFRwDEPrior = .true.
+    if (self%DesfRwDE%value(a) > -1._dl/3._dl) EFTCAMBDesignerFRwDEPrior = .false.
 
-    end function EFTCAMBDesignerFRAdditionalModelStability
+    end function EFTCAMBDesignerFRwDEPrior
 
     ! ---------------------------------------------------------------------------------------------
 

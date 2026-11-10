@@ -25,6 +25,7 @@
     module EFTCAMB_stability
 
     use precision
+    use config, only: GlobalError
     use EFT_def
     use EFTCAMB_cache
     use EFTCAMB_abstract_model
@@ -183,6 +184,7 @@
     integer  :: ind_max, ind
     real(dl) :: test_dtauda, thr, kinetic_scale, gradient_scale
     real(dl), external :: dtauda
+    character(len=80) :: message
 
     ! Stability check initialization
     EFTTestStability = .true.
@@ -405,6 +407,17 @@
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a)') '   Model specific stability criteria are not met'
+        end if
+    end if
+
+    ! 8b) optional phenomenological prior w_DE <= -1/3, with its own refusal message:
+    if (input_EFTCAMB%EFT_wDE_prior) then
+        if (.not. input_EFTCAMB%model%wDE_prior(a, params_cache, eft_cache)) then
+            EFTTestStability = .false.
+            write(message, '(a,es10.3,a)') 'EFTCAMB: w_DE > -1/3 at a =', a, ', refused by EFT_wDE_prior'
+            call GlobalError(trim(message), 1)
+            if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a,es10.3)') &
+                '   w_DE prior violated: w_DE > -1/3 at a =', a
         end if
     end if
 

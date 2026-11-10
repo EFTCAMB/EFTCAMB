@@ -159,6 +159,8 @@
     ! stability procedures:
     !< function that computes model specific stability requirements.
     procedure :: additional_model_stability => EFTCAMBDesigner3p1AdditionalModelStability
+    !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
+    procedure :: wDE_prior => EFTCAMBDesigner3p1wDEPrior
 
     end type EFTCAMB_full3p1_wDE
 
@@ -1576,11 +1578,6 @@
 
     EFTCAMBDesigner3p1AdditionalModelStability = .true.
 
-    if (self%Designer3p1wDE%value(a) > -1._dl/3._dl) then
-        EFTCAMBDesigner3p1AdditionalModelStability = .false.
-        return
-    end if
-
     if (self%Designer3p1GhostStability .or. self%Designer3p1GradientStability) then
 
         lgkmin = log10(self%Designer3p1Stability_kmin/a)
@@ -1673,6 +1670,26 @@
     end if
 
     end function EFTCAMBDesigner3p1AdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that tests the phenomenological prior w_DE <= -1/3, enforced when EFT_wDE_prior = T.
+    function EFTCAMBDesigner3p1wDEPrior(self, a, eft_par_cache, eft_cache)
+
+    implicit none
+
+    class(EFTCAMB_full3p1_wDE) :: self          !< the base class
+    real(dl), intent(in)       :: a             !< the input scale factor.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+
+    logical :: EFTCAMBDesigner3p1wDEPrior !< true if w_DE <= -1/3 at a.
+
+    EFTCAMBDesigner3p1wDEPrior = .true.
+    if (self%Designer3p1wDE%value(a) > -1._dl/3._dl) EFTCAMBDesigner3p1wDEPrior = .false.
+
+    end function EFTCAMBDesigner3p1wDEPrior
 
     ! ---------------------------------------------------------------------------------------------
 

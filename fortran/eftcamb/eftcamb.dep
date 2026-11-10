@@ -61,6 +61,7 @@
 	constants.o
 
 09_EFTCAMB_stability.o :  \
+	config.o \
 	06_abstract_EFTCAMB_model.o \
 	03_abstract_EFTCAMB_cache.o \
 	01_EFT_def.o \
@@ -620,6 +621,7 @@ $(DLL_DIR)/02_utilities.o :  \
 	$(DLL_DIR)/constants.o
 
 $(DLL_DIR)/09_EFTCAMB_stability.o :  \
+	$(DLL_DIR)/config.o \
 	$(DLL_DIR)/06_abstract_EFTCAMB_model.o \
 	$(DLL_DIR)/03_abstract_EFTCAMB_cache.o \
 	$(DLL_DIR)/01_EFT_def.o \

@@ -93,6 +93,9 @@
         !
         !< Flag that extablishes whether to use additional priors that are related to the specific model. Each model has the possibility of implementing their own additional stability requirements.
         logical  :: EFT_additional_priors = .true.
+        !< Flag that decides whether to enforce the phenomenological prior w_DE <= -1/3 (models with a w_DE
+        !! parametrization: pure EFT, mc quintessence, RPH, designer f(R), 3+1). Off by default.
+        logical  :: EFT_wDE_prior = .false.
 
         ! Positvity bounds flags
         !< Flag that decides whether to enforce the positivity bounds. Works up to Horndeski and for EFTFLAG=1 and (Omega,Lambda)-models.
@@ -227,6 +230,8 @@
 
     ! model specific priors:
     self%EFT_additional_priors = Ini%Read_Logical('EFT_additional_priors', .true.)
+    ! phenomenological prior w_DE <= -1/3:
+    self%EFT_wDE_prior = Ini%Read_Logical('EFT_wDE_prior', .false.)
 
     ! ) positivity bounds:
     self%EFT_positivity_bounds = Ini%Read_Logical('EFT_positivity_bounds', .false.)
@@ -463,6 +468,7 @@
     write(*, *) ' Mass stability         = ', self%EFT_mass_stability
     write(*, '(a,E12.5)') '  Mass stability rate    = ', self%EFT_mass_stability_rate
     write(*, *) ' Additional priors      = ', self%EFT_additional_priors
+    write(*, *) ' w_DE <= -1/3 prior     = ', self%EFT_wDE_prior
     write(*, *) ' Positivity bounds      = ', self%EFT_positivity_bounds
     write(*, *) ' Minkowski limit      = ', self%EFT_minkowski_limit
     if (self%EFT_positivity_bounds) then
