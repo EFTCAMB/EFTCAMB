@@ -459,7 +459,7 @@
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
 
     integer  :: i, nu_i
-    real(dl) :: wf, ac, grho_ac, grho_ADE, grho_ADEp, wADE, wADE_p
+    real(dl) :: wf, ac, grho_ac, grho_ADE, grho_ADEp, wADE, wADE_p, rhoADE_ratio_today, fratio
     real(dl) :: grhom, grhorad, grhov, wADEtot, wADEtot_first, omegac, k, cs, cs_p
     real(dl) :: a, adotoa, Hdot, Hdotdot, adotoaLCDM, h0_Mpc, grhormass_t, rhonu_tot, presnu_tot, rhonu, presnu, &
         adotoaNoNu, grhormass_ac, rhonu_ac, presnu_ac, presnudot, presnudotdot, presnudot_tot, presnudotdot_tot
@@ -499,20 +499,26 @@
         end do
     end if
 
-    grho_ac = (self%f_ac/(1._dl - self%f_ac))*(grhorad/ac**4 + grhom/ac**3 + params_cache%grhov + rhonu_ac/ac**2)
-
-    ! ensures flatness (very small correction)
-    grhov = 3._dl*params_cache%h0_Mpc**2 - 2._dl*grho_ac/(1._dl + (1._dl/ac)**(3._dl + 3._dl*self%wf)) - grhorad - &
-        grhom - rhonu_tot
-
-    h0_Mpc = params_cache%h0_Mpc
-
     ! 2) Initialize dqage:
     ! set-up the relative and absolute tollerances:
     rtol = 1.d-12
     atol = 1.d-16
     key = 2
     limit = 100
+
+    ! 3) Close flatness: rho_ADE(1)/rho_ADE(a_c) = exp(-3 int_{a_c}^1 (1+w) dln a) for the input p, with the same
+    ! quadrature as the table (arXiv:1905.12618 eq. 1; the former closed form 2/(1 + a_c^-3(1+w_f)) holds for p = 1
+    ! only). f_ac = rho_ADE(a_c)/rho_tot(a_c), with rho_tot including the cosmological constant that makes the universe
+    ! flat today, grhov = 3 H0^2 - rho_rad - rho_m - rho_nu - rho_ADE(1): a linear system for grho_ac, solved exactly.
+    call dqage(integrand, ac, 1._dl, atol, rtol, key, limit, result, abserr, neval, ier, alist, blist, rlist, elist, &
+        iord, last)
+    rhoADE_ratio_today = exp(-3._dl*result)
+    fratio = self%f_ac/(1._dl - self%f_ac)
+    grhov = 3._dl*params_cache%h0_Mpc**2 - grhorad - grhom - rhonu_tot
+    grho_ac = fratio*(grhorad/ac**4 + grhom/ac**3 + rhonu_ac/ac**2 + grhov)/(1._dl + fratio*rhoADE_ratio_today)
+    grhov = grhov - rhoADE_ratio_today*grho_ac
+
+    h0_Mpc = params_cache%h0_Mpc
 
     t1 = self%EFTLambda%x(1)
     call output(1, t1)

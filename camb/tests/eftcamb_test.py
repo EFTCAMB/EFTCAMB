@@ -348,6 +348,18 @@ class EFTCAMBTest(unittest.TestCase):
         h_eft = cp.EFTCAMB.get_eft_functions(res, a)[1]["adotoa"]
         np.testing.assert_allclose(h_eft, a * res.h_of_z(1 / a - 1), rtol=1e-5)
 
+    def test_ade_flatness(self):
+        # ADE closes flatness with the continuity integral for the input p (the p = 1 closed form gave H(z = 0) 2.5% off
+        # for p = 1/2, w_f = 0)
+        for extra in (
+            "wf = 0.0\nLog_ac = -3.5\nf_ac = 0.1\np = 0.5",
+            "wf = 0.1\nLog_ac = -3.5\nf_ac = 0.1\np = 0.5",
+            "",
+        ):
+            with self.subTest(extra=extra):
+                cp = self.read("5_ADE_1", extra)
+                self.assertAlmostEqual(camb.get_background(cp).hubble_parameter(0.0) / cp.H0, 1, delta=1e-9)
+
     def test_horava_domain(self):
         # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
         # the GR point (arXiv:1508.01787 Sec. 2.4)
