@@ -520,10 +520,16 @@
 
     EFTCAMBHoravaAdditionalModelStability = .true.
 
-    if (self%Horava_lambda > -2._dl/3._dl .and. self%Horava_lambda < 0._dl) then
+    ! GR point: every EFT function vanishes.
+    if (self%Horava_lambda == 0._dl .and. self%Horava_xi == 0._dl .and. self%Horava_eta == 0._dl) return
+    ! arXiv:1508.01787 Sec. 2.4 (code variables lambda = lambda_p - 1, xi = xi_p - 1): scalar no-ghost and c_s^2 > 0
+    ! need (3 lambda + 2)/lambda > 0 and 0 < eta < 2 xi + 2 (also A_T, D_T > 0). The lambda < -2/3 branch has
+    ! G_cosmo/G_N = (2 + 2 xi - eta)/(3 lambda + 2) <= 0: no expanding background. lambda = 0 (c_s^2 = 0) is kept.
+    ! eta = 0 makes pi auxiliary (A = B = 0) and eta = 2 xi + 2 makes 1/(16 pi G_H) = m0^2/(2 + 2 xi - eta) infinite.
+    if (self%Horava_lambda < 0._dl) then
         EFTCAMBHoravaAdditionalModelStability = .false.
     end if
-    if (self%Horava_eta < 0._dl .or. self%Horava_eta > 2._dl*self%Horava_xi + 2._dl) then
+    if (self%Horava_eta <= 0._dl .or. self%Horava_eta >= 2._dl*self%Horava_xi + 2._dl) then
         EFTCAMBHoravaAdditionalModelStability = .false.
     end if
 

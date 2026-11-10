@@ -255,6 +255,25 @@ class EFTCAMBTest(unittest.TestCase):
         )
         self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
 
+    def test_horava_domain(self):
+        # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
+        # the GR point (arXiv:1508.01787 Sec. 2.4)
+        for label, extra in (
+            ("eta = 0", "Horava_eta = 0"),
+            ("eta = 2 + 2 xi", "Horava_eta = 1.998"),
+            ("lambda = -2/3", "Horava_lambda = -0.6666666666666666"),
+            ("lambda = -1", "Horava_lambda = -1"),
+            ("lambda = -0.1", "Horava_lambda = -0.1"),
+        ):
+            with self.subTest(refused=label), self.assertRaises(CAMBError):
+                camb.get_results(self.read("5_Horava_eta_3", extra))
+        for label, extra in (
+            ("GR point", "Horava_eta = 0\nHorava_lambda = 0\nHorava_xi = 0"),
+            ("lambda = 0", "Horava_lambda = 0"),
+        ):
+            with self.subTest(accepted=label):
+                self.assertGreater(camb.get_results(self.read("5_Horava_eta_3", extra)).get_sigma8_0(), 0)
+
     def test_parametrization_derivatives(self):
         # analytic derivatives returned by get_eft_functions vs finite differences of the lower ones
         checks = {
