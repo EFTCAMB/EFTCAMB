@@ -268,6 +268,20 @@ class EFTCAMBTest(unittest.TestCase):
         cp = self.read("2_PEFT_wDE_wCDM_1", model + "Shift_Symmetric_alphaB0 = 1.98")
         self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
 
+    def test_wde_touch_refused(self):
+        # quintessence with w_DE touching -1 at one time after the turn-on: the pi kinetic term A = c vanishes there.
+        # The touch falls between the sampled scale factors: it is refused cleanly (it used to crash the evolution),
+        # while near-touch models and the exact LCDM limit run
+        touch = "EFTwa = 0.3\nEFTwat = 0.8\nEFTw0 = "
+        with self.assertRaisesRegex(CAMBError, r"vanishes \(A = 0\) at a = 8\.000E-01"):
+            camb.get_results(self.read("4_Des_mc5e_turning_point_1", touch + "-1.0"))
+        for model, extra in (
+            ("4_Des_mc5e_turning_point_1", touch + "-0.999999999999"),
+            ("4_Des_mc5e_wCDM_1", "EFTw0 = -1.0"),
+        ):
+            with self.subTest(model=model, extra=extra):
+                self.assertGreater(camb.get_results(self.read(model, extra)).get_sigma8_0(), 0)
+
     def test_horava_domain(self):
         # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
         # the GR point (arXiv:1508.01787 Sec. 2.4)

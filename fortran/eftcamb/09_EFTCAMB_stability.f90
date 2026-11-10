@@ -47,6 +47,9 @@
     real(dl), save :: PastAT = 0._dl
     !< sign of the pi kinetic coefficient A (k -> 0) at the previous sampled scale factor after the turn-on.
     real(dl), save :: PastAsign = 0._dl
+    !< the two previous sampled scale factors after the turn-on and the margin of A there (its value closest to zero
+    !! in k, times its sign), to bracket a local minimum of A where it may touch zero between two samples.
+    real(dl), save :: PastAa(2) = 0._dl, PastAm(2) = 0._dl
 
     contains
 
@@ -187,7 +190,7 @@
     real(dl) :: test_dtauda, thr, kinetic_scale, gradient_scale
     real(dl), external :: dtauda
     character(len=160) :: message
-    real(dl) :: A_sign, eom_G00, eom_G00_scale
+    real(dl) :: A_sign, A_margin, A_touch, a_zero, eom_G00, eom_G00_scale
 
     ! Stability check initialization
     EFTTestStability = .true.
@@ -234,20 +237,43 @@
     !     stability flags. A negative A at every k and time is a ghost, which is left to the ghost checks.
     if (a >= input_EFTCAMB%EFTCAMB_pert_turn_on) then
         A_sign = 0._dl
-        if (EFTPiHasKineticTerm(a, k_max, params_cache, eft_cache, max(thr, 1.e-12_dl), A_sign)) then
+        A_touch = 1._dl
+        a_zero = a
+        if (EFTPiHasKineticTerm(a, k_max, params_cache, eft_cache, max(thr, 1.e-12_dl), A_sign, A_margin)) then
             ! a sign change in time between two sampled scale factors:
             if (A_sign*PastAsign < 0._dl) A_sign = 0._dl
             PastAsign = A_sign
         end if
+        ! A touching zero at an isolated time between two samples (e.g. w_DE = -1 at one time in quintessence, where
+        ! A = c): the samples bracket a local minimum of A, which is refined. A minimum below 1e-10 of the bracketing
+        ! values is a zero; near-touch models (1 + w_min >~ 1e-16) are kept.
+        if (A_sign /= 0._dl) then
+            if (PastAm(2) > 0._dl .and. PastAm(1) > PastAm(2) .and. A_margin > PastAm(2)) then
+                A_touch = EFTPiKineticMinimum(min(PastAa(1), a), max(PastAa(1), a), A_sign, k_max, &
+                    max(thr, 1.e-12_dl), input_EFTCAMB, params_cache, a_zero)/max(PastAm(1), A_margin)
+                if (A_touch <= 1.e-10_dl) A_sign = 0._dl
+            end if
+            PastAa(1) = PastAa(2)
+            PastAm(1) = PastAm(2)
+            PastAa(2) = a
+            PastAm(2) = A_margin
+        else
+            PastAm = 0._dl
+        end if
         if (A_sign == 0._dl) then
-            if (.not. EFTCAMBReturnToGR_is_GR(a, input_EFTCAMB%model, params_cache, &
+            if (.not. EFTCAMBReturnToGR_is_GR(a_zero, input_EFTCAMB%model, params_cache, &
                 input_EFTCAMB%EFTCAMB_GR_threshold)) then
                 EFTTestStability = .false.
-                write(message, '(a,es10.3,a)') 'EFTCAMB: the pi field has no kinetic term (A = 0) at a =', a, &
-                    ': EFTCAMB cannot evolve it, give it one (e.g. Gamma1, alpha_K)'
+                if (A_touch <= 1.e-10_dl) then
+                    write(message, '(a,es10.3,a)') 'EFTCAMB: the pi kinetic term vanishes (A = 0) at a =', a_zero, &
+                        ' (e.g. w_DE touching -1): EFTCAMB cannot evolve through it'
+                else
+                    write(message, '(a,es10.3,a)') 'EFTCAMB: the pi field has no kinetic term (A = 0) at a =', a, &
+                        ': EFTCAMB cannot evolve it, give it one (e.g. Gamma1, alpha_K)'
+                end if
                 call GlobalError(trim(message), 1)
                 if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a,es10.3)') &
-                    '   No pi kinetic term: A1 + k^2 A2 vanishes or changes sign at a =', a
+                    '   No pi kinetic term: A1 + k^2 A2 vanishes or changes sign at a =', a_zero
                 return
             end if
         end if
@@ -495,7 +521,7 @@
     ! ---------------------------------------------------------------------------------------------
     !> Function that tells whether the pi field equation has a kinetic term at every 0 < k <= k_max: A = A1 + k^2 A2
     !! does not vanish (relative to the magnitude of its terms, see compute_pi_factors) nor change sign in k.
-    function EFTPiHasKineticTerm(a, k_max, params_cache, eft_cache, eps, A_sign)
+    function EFTPiHasKineticTerm(a, k_max, params_cache, eft_cache, eps, A_sign, A_margin)
 
     implicit none
 
@@ -505,9 +531,11 @@
     type(TEFTCAMB_timestep_cache), intent(in)  :: eft_cache    !< the EFTCAMB timestep cache, with the pi factors.
     real(dl), intent(in) :: eps                   !< relative floor below which A counts as zero.
     real(dl), intent(out) :: A_sign               !< the sign of A (at every k) when it has one, 0 otherwise.
+    real(dl), intent(out) :: A_margin             !< min over 0 < k <= k_max of A_sign*A (0 without a kinetic term).
     logical :: EFTPiHasKineticTerm
 
     real(dl) :: A1, A2, scale1, A_max, sign0
+    logical  :: A1_zero
 
     A1 = eft_cache%EFTpiA1
     A2 = eft_cache%EFTpiA2
@@ -516,12 +544,15 @@
         abs(1.5_dl*a**2*(eft_cache%adotoa*eft_cache%EFTOmegaP + params_cache%h0_Mpc*eft_cache%EFTGamma2V)**2/ &
         (2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V))
     ! sign of A for k -> 0 (A2 k^2 when A1 vanishes):
+    A1_zero = .false.
     if (abs(A1) > eps*scale1) then
         sign0 = sign(1._dl, A1)
     else if (A2 /= 0._dl) then
         sign0 = sign(1._dl, A2)
+        A1_zero = .true.
     else
         A_sign = 0._dl
+        A_margin = 0._dl
         EFTPiHasKineticTerm = .false.
         return
     end if
@@ -529,9 +560,86 @@
     A_max = A1 + k_max**2*A2
     EFTPiHasKineticTerm = abs(A_max) > eps*(scale1 + k_max**2*abs(A2)) .and. sign0*A_max > 0._dl
     A_sign = 0._dl
-    if (EFTPiHasKineticTerm) A_sign = sign0
+    A_margin = 0._dl
+    if (EFTPiHasKineticTerm) then
+        A_sign = sign0
+        ! with A1 = 0 (up to the floor: roundoff of either sign) A = A2 k^2 vanishes only at k = 0, which is allowed:
+        ! the margin is the value at k_max
+        if (A1_zero) then
+            A_margin = sign0*A_max
+        else
+            A_margin = min(sign0*A1, sign0*A_max)
+        end if
+    end if
 
     end function EFTPiHasKineticTerm
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the minimum over [a_lo, a_hi] (golden-section search) of the margin of the pi kinetic
+    !! coefficient (as in EFTPiHasKineticTerm: 0 where A has no kinetic term or the other sign), and where it is
+    !! reached.
+    function EFTPiKineticMinimum(a_lo, a_hi, A_sign, k_max, eps, input_EFTCAMB, params_cache, a_min)
+
+    implicit none
+
+    real(dl), intent(in)       :: a_lo, a_hi    !< the scale factor interval.
+    real(dl), intent(in)       :: A_sign        !< the sign of A in the interval.
+    real(dl), intent(in)       :: k_max         !< the maximum k mode of the stability check.
+    real(dl), intent(in)       :: eps           !< relative floor below which A counts as zero.
+    type(TEFTCAMB), intent(in) :: input_EFTCAMB !< the EFTCAMB object.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: params_cache !< the EFTCAMB parameter cache.
+    real(dl), intent(out)      :: a_min         !< the scale factor of the minimum.
+    real(dl) :: EFTPiKineticMinimum
+
+    real(dl), parameter :: golden = 0.6180339887498949_dl
+    type(TEFTCAMB_timestep_cache) :: cache
+    real(dl) :: lo, hi, x1, x2, f1, f2
+    integer  :: i
+
+    lo = a_lo
+    hi = a_hi
+    x1 = hi - golden*(hi - lo)
+    x2 = lo + golden*(hi - lo)
+    f1 = margin(x1)
+    f2 = margin(x2)
+    do i = 1, 200
+        if (hi - lo <= 1.e-15_dl*hi) exit
+        if (f1 < f2) then
+            hi = x2
+            x2 = x1
+            f2 = f1
+            x1 = hi - golden*(hi - lo)
+            f1 = margin(x1)
+        else
+            lo = x1
+            x1 = x2
+            f1 = f2
+            x2 = lo + golden*(hi - lo)
+            f2 = margin(x2)
+        end if
+    end do
+    if (f1 < f2) then
+        a_min = x1
+        EFTPiKineticMinimum = f1
+    else
+        a_min = x2
+        EFTPiKineticMinimum = f2
+    end if
+
+    contains
+
+    real(dl) function margin(x)
+    real(dl), intent(in) :: x
+    real(dl) :: x_sign, x_margin
+    call cache%initialize()
+    call EFTStabilityComputation(x, input_EFTCAMB, input_EFTCAMB%model, params_cache, cache)
+    margin = 0._dl
+    if (EFTPiHasKineticTerm(x, k_max, params_cache, cache, eps, x_sign, x_margin)) then
+        if (x_sign == A_sign) margin = x_margin
+    end if
+    end function margin
+
+    end function EFTPiKineticMinimum
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that restores the values stored in the module to the default.
@@ -543,6 +651,8 @@
     PastA1 = 0._dl
     PastAT = 0._dl
     PastAsign = 0._dl
+    PastAa = 0._dl
+    PastAm = 0._dl
 
     end subroutine EFTStability_cleanup
 
