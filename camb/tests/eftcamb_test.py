@@ -383,6 +383,19 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertIn("RPH_M0", r.stdout)
         self.assertIn("process alive", r.stdout)
 
+    def test_rph_wde_normalisation(self):
+        # RPH with w_DE != -1: rho_DE(a = 1) = 3 H0^2 Omega_DE, so H(z = 0) = H0, with both integration branches
+        z = np.array([0.0, 0.5, 2.0, 10.0])
+        for wde in ("RPHwDE = 1\nRPHw0 = -0.9", "RPHwDE = 2\nRPHw0 = -0.9\nRPHwa = 0.1"):
+            with self.subTest(wde=wde):
+                cp = self.read("3_RPH_MK_const_1", wde)
+                h = camb.get_background(cp).hubble_parameter(z)
+                self.assertAlmostEqual(h[0] / cp.H0, 1, delta=1e-9)
+                h_today = camb.get_background(
+                    self.read("3_RPH_MK_const_1", wde + "\nRPHintegratefromtoday = T")
+                ).hubble_parameter(z)
+                np.testing.assert_allclose(h, h_today, rtol=1e-9)
+
     def theta_ini(self, model, theta_line):
         # the model ini with hubble removed from its DEFAULT chain and a theta input instead
         def copy(path):

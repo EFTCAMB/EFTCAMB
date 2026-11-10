@@ -1103,23 +1103,29 @@
             call output(num_eq, i - 1, t2, y)
         end do
     else
-        ! first integrate DE to find initial condition
-        t1 = self%rhov_t%x(1)
-        t2 = self%rhov_t%x(self%designer_num_points)
-        call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-            jacobian, JacobianMode)
-        if (istate < 0) then
-            if (istate == -1) then
-                if (feedback_level > 1) write(*, *) 'w_DE integration: DLSODA excessive work'
-                istate = 1
-            else
-                success = .false.
-                write(*, *) 'w_DE integration: DLSODA failed with code:', istate
-                return
-            end if
-        end if
-        ! set the initial condition again
-        y(1) = 1._dl/y(1) ! ensuring that rhov_t/rhov_0 = 1 at a=1
+        ! first integrate DE backward from a = 1 (rhov_t/rhov_0 = 1) to the initial time to find the initial
+        ! condition. One DLSODA call over the whole range returns after iwork(6) = 100 internal steps (istate = -1)
+        ! far from the end point for any w_DE /= -1, so integrate on the table grid and continue after
+        ! excessive-work returns until each step is complete.
+        do i = self%designer_num_points, 2, -1
+            t1 = self%rhov_t%x(i)
+            t2 = self%rhov_t%x(i - 1)
+            do
+                call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+                    LIW, jacobian, JacobianMode)
+                if (istate == -1) then
+                    istate = 2
+                    cycle
+                else if (istate < 0) then
+                    success = .false.
+                    write(*, *) 'w_DE integration: DLSODA failed with code:', istate
+                    return
+                end if
+                exit
+            end do
+        end do
+        istate = 1
+        ! set the initial condition again: y(1) = rhov_t(a_ini)/rhov_0 from the backward integration
         if (self%RPHusealphaM) y(2) = log(1._dl + self%RPH_M0)
 
         ! reinitialize DLSODA
