@@ -301,6 +301,7 @@
 
     ! call boundary conditions lookup:
     call self%find_initial_conditions(params_cache, feedback_level, A_ini, success)
+    if (.not. success) return
 
     ! solve the background equations and store the solution:
     call self%solve_designer_equations(params_cache, A_ini, B0, only_B0=.false., success=success, &
@@ -340,6 +341,7 @@
     integer, allocatable :: iwork(:)
 
     ! digedt the input:
+    success = .true.
     only_B0_temp = .false.
     if (present(only_B0)) only_B0_temp = only_B0
 
@@ -829,6 +831,7 @@
     end do
     if ((BTemp1 - self%B0)*(BTemp3 - self%B0) < 0 .and. (BTemp2 - self%B0)*(BTemp4 - self%B0) < 0) then
         if (feedback_level > 1) write(*, '(a)') '   FAILURE as the root seems to be on both sides'
+        success = .false.
         return
     end if
 
@@ -847,19 +850,22 @@
         end if
     else
         if (feedback_level > 1) write(*, '(a)') '   FAILURE the root was not on the right side nor the left one...'
+        success = .false.
         return
     end if
 
     if (feedback_level > 1) write(*, '(a,E13.4)') '   initial condition A  = ', realAp
 
-    ! 8) Check if the result found is compatible with the requested one. This is required only for debug.
+    ! 8) Check that the result found reproduces the requested B0:
     BTemp1 = DesFR_BfuncA(realAp)
     if (feedback_level > 1) then
         write(*, '(a,E13.4)') '   B0 found = ', BTemp1
         write(*, '(a,E13.4)') '   B0 given = ', self%B0
     end if
 
-    if (abs(BTemp1 - self%B0)/abs(self%B0) > 0.1_dl .and. abs(BTemp1 - self%B0) > 1.d-8 .and. .false.) then
+    ! the B0 shooting is ill-conditioned when the growing mode must cancel a large particular solution
+    ! (w_DE >~ -0.8): refuse a model whose B0 differs from the requested one
+    if (abs(BTemp1 - self%B0) > 1.d-4*abs(self%B0) + 1.d-12) then
         if (feedback_level > 1) write(*, &
             '(a)')  '   FAILURE designer code unable to find appropriate initial conditions'
         success = .false.

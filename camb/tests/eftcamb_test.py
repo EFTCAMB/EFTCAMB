@@ -457,6 +457,14 @@ class EFTCAMBTest(unittest.TestCase):
                 self.assertGreater(res.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1)
                 self.assertAlmostEqual(res.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=1e-12)
 
+    def test_fR_b0_shooting(self):
+        # the B0 shooting must reproduce the requested B0 (relative 1e-4), or the model is refused: w = -0.55, B0 = 1
+        # returned B(1) = 6.1e5; the near-correct w = -0.85, B0 = 1e-4 (9.3e-6 off) runs
+        with self.assertRaisesRegex(CAMBError, "background solver failed"):
+            camb.get_results(self.read("4_Des_F_R_wCDM_1", "EFTw0 = -0.55"))
+        res = camb.get_results(self.read("4_Des_F_R_wCDM_1", "EFTw0 = -0.85\nEFTB0 = 1e-4"))
+        self.assertGreater(res.get_sigma8_0(), 0)
+
     def test_3p1_b22(self):
         # 3+1 designer gradient test with the corrected B22 (+ b3/2, missing in arXiv:2508.01378 App. D): this healthy
         # model was refused by the model's own gradient test
