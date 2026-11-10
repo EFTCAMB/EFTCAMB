@@ -348,6 +348,22 @@ class EFTCAMBTest(unittest.TestCase):
         h_eft = cp.EFTCAMB.get_eft_functions(res, a)[1]["adotoa"]
         np.testing.assert_allclose(h_eft, a * res.h_of_z(1 / a - 1), rtol=1e-5)
 
+    def test_beyond_horndeski_lambda(self):
+        # Beyond Horndeski EFTLambda has the 3 x4/5 term (it had 6 x4/5): CAMB's H, from the EFT functions, equals
+        # the model H (they differed by -x4/10, 2.6e-4 for the PBFT19 BH1 benchmark)
+        for x40 in ("1.0", "100.0"):
+            with self.subTest(x40=x40):
+                x10 = "-0.1" if x40 == "1.0" else "-1.0"
+                model = (
+                    f"EFTflag = 4\nFullMappingEFTmodel = 5\nBeyond_Horndeski_x10 = {x10}\nBeyond_Horndeski_x30 = 1.0\n"
+                    f"Beyond_Horndeski_x40 = {x40}\nEFTCAMB_stability_threshold = 0.0"
+                )
+                cp = self.read("2_PEFT_wDE_wCDM_1", model)
+                res = camb.get_results(cp)
+                a = np.array([1e-4, 1e-2, 0.5, 1.0])
+                h_eft = cp.EFTCAMB.get_eft_functions(res, a)[1]["adotoa"]
+                np.testing.assert_allclose(h_eft, a * res.h_of_z(1 / a - 1), rtol=1e-12)
+
     def test_ade_flatness(self):
         # ADE closes flatness with the continuity integral for the input p (the p = 1 closed form gave H(z = 0) 2.5% off
         # for p = 1/2, w_f = 0)

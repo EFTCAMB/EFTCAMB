@@ -1049,12 +1049,14 @@
         (1._dl/10._dl)*(5._dl*(3._dl*x1p + x2p - epsilon*x3p - epsilon_p*x3) - 8._dl*epsilon_p*x4 - &
         x4p*(3._dl + 8._dl*epsilon)) + (x1p + x2p + x3p + x4p)*3._dl/2._dl)
 
+    ! Lambda/(m0^2 H^2) = 3 x1 + x2 - eps x3 + (16 eps^2 + 4 eps h + 4 eps') x4/5 (arXiv:1905.11364): the x4 term
+    ! below is 3 x4/5 (it was 6 x4/5, a spurious + 3 x4/5 H^2 that broke both Friedmann equations)
     eft_cache%EFTLambda = eft_cache%adotoa**2.* &
-        ((3._dl + h)*x4p/5._dl + 6._dl*x4/5._dl - x4p/5._dl + x4pp/5._dl + 3._dl*x1 + x2 - epsilon*x3 - &
+        ((3._dl + h)*x4p/5._dl + 3._dl*x4/5._dl - x4p/5._dl + x4pp/5._dl + 3._dl*x1 + x2 - epsilon*x3 - &
         (3._dl + 8._dl*epsilon)*x4/5._dl)
 
     eft_cache%EFTLambdadot = eft_cache%EFTLambda*(2._dl*eft_cache%Hdot/eft_cache%adotoa - 2._dl*eft_cache%adotoa) + &
-        eft_cache%adotoa**3*((3._dl + h)*x4pp/5._dl + hprime*x4p/5._dl + 6._dl*x4p/5._dl - x4pp/5._dl + x4ppp/5._dl + &
+        eft_cache%adotoa**3*((3._dl + h)*x4pp/5._dl + hprime*x4p/5._dl + 3._dl*x4p/5._dl - x4pp/5._dl + x4ppp/5._dl + &
         3._dl*x1p + x2p - epsilon_p*x3 - epsilon*x3p - (3._dl + 8._dl*epsilon)*x4p/5._dl - 8._dl*epsilon_p*x4/5._dl)
 
     if (x4 == 0._dl) then
