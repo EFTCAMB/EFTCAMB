@@ -229,6 +229,32 @@ class EFTCAMBTest(unittest.TestCase):
                 np.testing.assert_array_equal(ev["QS_sigma"], ev["QS_sigma_gen"])
                 self.assertTrue(np.all(ev["QS_mu"] != 1))
 
+    def test_shiftsym_derivatives(self):
+        # shift-symmetric alpha_B: EFTGamma2PP, EFTGamma2PPP and EFTLambdadotdot match finite differences of the
+        # lower derivatives (the cache holds a^2 Lambda and a^2 times its conformal-time derivatives)
+        model = "EFTflag = 2\nAltParEFTmodel = 4\nShift_Symmetric_alphaK0 = 1.0\n"
+        cp = self.read(
+            "2_PEFT_wDE_wCDM_1",
+            model + "EFTwDE = 1\nEFTw0 = -0.95\nShift_Symmetric_alphaB0 = 0.4\nShift_Symmetric_m = 1.0",
+        )
+        res = camb.get_results(cp)
+        for a0 in (0.3, 0.7, 0.95):
+            h = 1e-4 * a0
+            e = cp.EFTCAMB.get_scale_evolution(res, [0.1], [a0 - h, a0, a0 + h])[1][0]
+            H = e["adotoa"][1]
+            fd_g2pp = (e["EFTGamma2P"][2] - e["EFTGamma2P"][0]) / (2 * h)
+            fd_g2ppp = (e["EFTGamma2PP"][2] - e["EFTGamma2PP"][0]) / (2 * h)
+            fd_ldd = a0 * H * (e["EFTLambdadot"][2] - e["EFTLambdadot"][0]) / (2 * h) - 2 * H * e["EFTLambdadot"][1]
+            self.assertLess(abs(e["EFTGamma2PP"][1] - fd_g2pp), 1e-5 * abs(fd_g2pp))
+            self.assertLess(abs(e["EFTGamma2PPP"][1] - fd_g2ppp), 1e-5 * abs(fd_g2ppp))
+            self.assertLess(abs(e["EFTLambdadotdot"][1] - fd_ldd), 1e-6 * abs(e["EFTLambda"][1]) * H**2)
+        # with the exact derivatives the healthy m = 2 model passes the positivity bounds (it used to be refused)
+        cp = self.read(
+            "2_PEFT_wDE_wCDM_1",
+            model + "EFTwDE = 0\nShift_Symmetric_alphaB0 = 0.1\nShift_Symmetric_m = 2.0\nEFT_positivity_bounds = T",
+        )
+        self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
+
     def test_parametrization_derivatives(self):
         # analytic derivatives returned by get_eft_functions vs finite differences of the lower ones
         checks = {

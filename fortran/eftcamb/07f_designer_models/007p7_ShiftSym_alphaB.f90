@@ -466,23 +466,15 @@
         eft_cache%grhov_t*eft_cache%adotoa* &
         (a*self%ShiftSymwDE%first_derivative(a) - 3._dl*self%ShiftSymwDE%value(a)*(1._dl + self%ShiftSymwDE%value(a)))
 
-    eft_cache%EFTLambdadotdot = -eft_cache%EFTOmegaV* &
-        (2._dl*eft_cache%Hdotdotdot - 2._dl*eft_cache%Hdot**2._dl - 6._dl*eft_cache%adotoa*eft_cache%Hdotdot - &
-        2._dl*eft_cache%adotoa**2._dl*eft_cache%Hdot + 4._dl*eft_cache%adotoa**4._dl) - &
-        a*eft_cache%EFTOmegaP*(6._dl*eft_cache%adotoa*eft_cache%Hdotdot + eft_cache%adotoa**4._dl + &
-        5._dl*eft_cache%Hdot**2._dl + eft_cache%Hdotdotdot - 10._dl*eft_cache%adotoa**2._dl*eft_cache%Hdot) - &
-        a**2._dl*eft_cache%EFTOmegaPP* &
-        (11._dl*eft_cache%adotoa**2._dl*eft_cache%Hdot - eft_cache%adotoa**4._dl + &
-        4._dl*eft_cache%adotoa*eft_cache%Hdotdot + 3._dl*eft_cache%Hdot**2._dl) - &
-        a**3._dl*(3._dl*eft_cache%adotoa**4._dl + 6._dl*eft_cache%adotoa**2._dl*eft_cache%Hdot) - &
-        a**4._dl*eft_cache%adotoa**4._dl*eft_cache%EFTOmegaPPPP + &
-        eft_cache%Hdot*eft_cache%grhov_t* &
-        (a*self%ShiftSymwDE%first_derivative(a) - &
+    ! audit fix (7a-background-coeffs): Lambda a^2 = w grhov_t with Omega = 0 in this model, so
+    ! (d^2 Lambda/dtau^2) a^2 = grhov_t [Hdot (a w' - 3w(1+w)) + adotoa^2 (9w(1+w)^2 - 5a w' - 9a w w' + a^2 w'')]
+    eft_cache%EFTLambdadotdot = eft_cache%grhov_t*( &
+        eft_cache%Hdot*(a*self%ShiftSymwDE%first_derivative(a) - &
         3._dl*self%ShiftSymwDE%value(a)*(1._dl + self%ShiftSymwDE%value(a))) + &
-        eft_cache%adotoa**2._dl*eft_cache%grhov_t* &
-        (9._dl*self%ShiftSymwDE%value(a)*(1._dl + self%ShiftSymwDE%value(a)) - &
-        5._dl*a*self%ShiftSymwDE%first_derivative(a) + 18._dl*self%ShiftSymwDE%value(a)**2._dl + &
-        9._dl*self%ShiftSymwDE%value(a)**3._dl + a**2._dl*self%ShiftSymwDE%second_derivative(a))
+        eft_cache%adotoa**2*(9._dl*self%ShiftSymwDE%value(a)*(1._dl + self%ShiftSymwDE%value(a))**2 - &
+        5._dl*a*self%ShiftSymwDE%first_derivative(a) - &
+        9._dl*a*self%ShiftSymwDE%value(a)*self%ShiftSymwDE%first_derivative(a) + &
+        a**2*self%ShiftSymwDE%second_derivative(a)))
 
     end subroutine EFTCAMBShiftSymmetricBackgroundEFTFunctions
 
@@ -521,23 +513,27 @@
     RPH_PM_PP = 0._dl
     RPH_AT_PP = 0._dl
     RPH_AK_PP = 0._dl
-    RPH_AB_PP = -4._dl*self%SS_alphaB0/(a**2._dl*self%SS_m*eft_cache%adotoa**4._dl)* &
-        (a*eft_par_cache%h0_Mpc/eft_cache%adotoa)**(4._dl/self%SS_m)* &
-        ((self%SS_m - 4._dl)*eft_cache%adotoa**4._dl - (self%SS_m - 8._dl)*eft_cache%adotoa**2._dl*eft_cache%Hdot - &
-        2._dl*(2._dl + self%SS_m)*eft_cache%Hdot**2._dl + self%SS_m*eft_cache%adotoa*eft_cache%Hdotdot)
+    ! audit fix (7a-background-coeffs): exact a-derivatives of alphaB0 (a H0/adotoa)^(4/m)
+    RPH_AB_PP = 4._dl*RPH_AB_V/(a**2*eft_cache%adotoa**4*self%SS_m**2)* &
+        (2._dl*eft_cache%Hdot**2*self%SS_m + 4._dl*eft_cache%Hdot**2 + eft_cache%Hdot*eft_cache%adotoa**2*self%SS_m - &
+        8._dl*eft_cache%Hdot*eft_cache%adotoa**2 - eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m - &
+        eft_cache%adotoa**4*self%SS_m + 4._dl*eft_cache%adotoa**4)
 
     RPH_PM_PPP = 0._dl
     RPH_AT_PPP = 0._dl
     RPH_AK_PPP = 0._dl
-    RPH_AB_PPP = -4._dl*self%SS_alphaB0/(a**3._dl*self%SS_m**3._dl*eft_cache%adotoa**6._dl)* &
-        (a*eft_par_cache%h0_Mpc/eft_cache%adotoa)**(4._dl/self%SS_m)* &
-        (2._dl*(self%SS_m**2._dl - 6._dl*self%SS_m + 8._dl)*eft_cache%adotoa**6._dl - &
-        2._dl*(self%SS_m**2._dl - 12._dl*self%SS_m + 24._dl)*eft_cache%adotoa**4._dl*eft_cache%Hdot - &
-        8._dl*(self%SS_m + 3._dl*self%SS_m + 2._dl)*eft_cache%Hdot**3._dl + &
-        3._dl*(self%SS_m - 4._dl)*self%SS_m*eft_cache%adotoa**3._dl*eft_cache%Hdotdot + &
-        self%SS_m*(7._dl*self%SS_m + 12._dl)*eft_cache%adotoa*eft_cache%Hdot*eft_cache%Hdotdot - &
-        -6._dl*(2._dl*self%SS_m**2._dl - 2._dl*self%SS_m - 8._dl)*eft_cache%adotoa**2._dl*eft_cache%Hdot**2._dl - &
-        self%SS_m**2._dl*eft_cache%adotoa**2._dl*eft_cache%Hdotdotdot)
+    RPH_AB_PPP = 4._dl*RPH_AB_V/(a**3*eft_cache%adotoa**6*self%SS_m**3)*( &
+        -8._dl*eft_cache%Hdot**3*self%SS_m**2 - 24._dl*eft_cache%Hdot**3*self%SS_m - 16._dl*eft_cache%Hdot**3 &
+        - 6._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*self%SS_m**2 &
+        + 12._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*self%SS_m &
+        + 48._dl*eft_cache%Hdot**2*eft_cache%adotoa**2 &
+        + 7._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m**2 &
+        + 12._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m &
+        - 2._dl*eft_cache%Hdot*eft_cache%adotoa**4*self%SS_m**2 + 24._dl*eft_cache%Hdot*eft_cache%adotoa**4*self%SS_m &
+        - 48._dl*eft_cache%Hdot*eft_cache%adotoa**4 + 3._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*self%SS_m**2 &
+        - 12._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*self%SS_m &
+        - eft_cache%Hdotdotdot*eft_cache%adotoa**2*self%SS_m**2 &
+        + 2._dl*eft_cache%adotoa**6*self%SS_m**2 - 12._dl*eft_cache%adotoa**6*self%SS_m + 16._dl*eft_cache%adotoa**6)
 
     RPH_AT_PPPP = 0._dl
     RPH_PM_PPPP = 0._dl
@@ -560,34 +556,25 @@
         1._dl*RPH_AB_V*eft_cache%adotoa**2*RPH_PM_P + eft_cache%EFTOmegaP*(eft_cache%adotoa**2 + eft_cache%Hdot) + &
         a*eft_cache%adotoa**2*eft_cache%EFTOmegaPP)/(eft_par_cache%h0_Mpc*a*eft_cache%adotoa)
 
-    eft_cache%EFTGamma2PP = ((eft_cache%Hdot**2._dl - eft_cache%adotoa*eft_cache%Hdotdot)* &
-        ((1._dl + RPH_PM_V)*RPH_AB_V + a*eft_cache%EFTOmegaP) + &
-        eft_cache%adotoa**2._dl*eft_cache%Hdot* &
-        (RPH_AB_V*(3._dl*(1._dl + RPH_PM_V) - 2._dl*a*RPH_PM_P) + &
-        a*(eft_cache%EFTOmegaP - 2._dl*(1._dl + RPH_PM_V)*RPH_AB_P - 2._dl*a*eft_cache%EFTOmegaPP)) + &
-        eft_cache%adotoa**4._dl*(RPH_AB_V*(-2._dl*(1._dl + RPH_PM_V) + 2._dl*a*RPH_PM_P - a**2._dl*RPH_PM_PP) + &
-        a*(1._dl + RPH_PM_V)*(2._dl*RPH_AB_P - a*RPH_AB_PP)) - &
-        a*(2._dl*a*RPH_PM_P*RPH_AB_P - a**2._dl*eft_cache%EFTOmegaPPP))/ &
-        (a**3._dl*eft_par_cache%h0_Mpc*eft_cache%adotoa**3._dl)
+    ! audit fix (7a-background-coeffs): with M = Omega = 0, gamma2 = -RPH_AB_V adotoa/(H0 a); exact a-derivatives
+    eft_cache%EFTGamma2PP = RPH_AB_V*(self%SS_m - 4._dl)/(a**3*eft_cache%adotoa**3*eft_par_cache%h0_Mpc*self%SS_m**2)* &
+        (eft_cache%Hdot**2*self%SS_m + 4._dl*eft_cache%Hdot**2 + 3._dl*eft_cache%Hdot*eft_cache%adotoa**2*self%SS_m - &
+        8._dl*eft_cache%Hdot*eft_cache%adotoa**2 - eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m - &
+        2._dl*eft_cache%adotoa**4*self%SS_m + 4._dl*eft_cache%adotoa**4)
 
-    eft_cache%EFTGamma2PPP = ((-3._dl*eft_cache%Hdot**3._dl*-4._dl*eft_cache%adotoa*eft_cache%Hdot*eft_cache%Hdotdot)* &
-        ((1._dl + RPH_PM_V)*RPH_AB_V + a*eft_cache%EFTOmegaP) + &
-        eft_cache%adotoa**3._dl*eft_cache%Hdotdot* &
-        (RPH_AB_V*(6._dl*(1._dl + RPH_PM_V) - 3._dl*a*RPH_PM_V) + &
-        a*(3._dl*eft_cache%EFTOmegaP - 3._dl*(1._dl + RPH_PM_V)*RPH_AB_P - 3._dl*eft_cache%EFTOmegaPP*a)) - &
-        (RPH_AB_V*(6._dl*(1._dl + RPH_PM_V) - 3._dl*a*RPH_PM_V) + &
-        a*(3._dl*eft_cache%EFTOmegaP - 3._dl*(1._dl + RPH_PM_V)*RPH_AB_P - 3._dl*eft_cache%EFTOmegaPP*a))* &
-        eft_cache%adotoa**2._dl*eft_cache%Hdot**2._dl - &
-        eft_cache%adotoa**2._dl*eft_cache%Hdotdotdot*((1._dl + RPH_PM_V)*RPH_AB_V + a*eft_cache%EFTOmegaP) + &
-        eft_cache%adotoa**4._dl*eft_cache%Hdot* &
-        (RPH_AB_V*(-11._dl*(1._dl + RPH_PM_V) + 9._dl*a*RPH_PM_P - 3._dl*a**2._dl*RPH_PM_PP) + &
-        a*(-3._dl*a*(1._dl + RPH_PM_V)*RPH_AB_PP + 6._dl*a*RPH_PM_P*RPH_AB_P - 3._dl*a**2._dl*eft_cache%EFTOmegaPPP - &
-        2._dl*eft_cache%EFTOmegaP + 3._dl*a*eft_cache%EFTOmegaPP + 9._dl*(1._dl + RPH_PM_V)*RPH_AB_P)) + &
-        eft_cache%adotoa**6._dl*(RPH_AB_V* &
-        (6._dl*(1._dl + RPH_PM_V) - 6._dl*a*RPH_PM_P + 3._dl*a**2._dl*RPH_PM_PP - a**3._dl*RPH_PM_PPP) + &
-        a*(-6._dl*(1._dl + RPH_PM_V)*RPH_AB_P + 3._dl*a*(1._dl + RPH_PM_V)*RPH_AB_PP + 6._dl*a*RPH_PM_P*RPH_AB_P - &
-        3._dl*a**2._dl*(RPH_PM_PP*RPH_AB_P + RPH_PM_P*RPH_AB_PP) - a**2._dl*(1._dl + RPH_PM_V)*RPH_AB_PPP - &
-        -a**3._dl*eft_cache%EFTOmegaPPPP)))/(a**4._dl*eft_par_cache%h0_Mpc*eft_cache%adotoa**5._dl)
+    eft_cache%EFTGamma2PPP = -RPH_AB_V*(self%SS_m - 4._dl)/ &
+        (a**4*eft_cache%adotoa**5*eft_par_cache%h0_Mpc*self%SS_m**3)*( &
+        3._dl*eft_cache%Hdot**3*self%SS_m**2 + 16._dl*eft_cache%Hdot**3*self%SS_m + 16._dl*eft_cache%Hdot**3 &
+        + 6._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*self%SS_m**2 &
+        + 12._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*self%SS_m &
+        - 48._dl*eft_cache%Hdot**2*eft_cache%adotoa**2 &
+        - 4._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m**2 &
+        - 12._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m &
+        + 11._dl*eft_cache%Hdot*eft_cache%adotoa**4*self%SS_m**2 - 48._dl*eft_cache%Hdot*eft_cache%adotoa**4*self%SS_m &
+        + 48._dl*eft_cache%Hdot*eft_cache%adotoa**4 - 6._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*self%SS_m**2 &
+        + 12._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*self%SS_m &
+        + eft_cache%Hdotdotdot*eft_cache%adotoa**2*self%SS_m**2 &
+        - 6._dl*eft_cache%adotoa**6*self%SS_m**2 + 20._dl*eft_cache%adotoa**6*self%SS_m - 16._dl*eft_cache%adotoa**6)
 
     eft_cache%EFTGamma3V = -RPH_AT_V*(1._dl + RPH_PM_V)
     eft_cache%EFTGamma3P = -RPH_PM_P*RPH_AT_V - (1._dl + RPH_PM_V)*RPH_AT_P
