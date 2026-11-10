@@ -250,11 +250,7 @@
     call self%fun_y1%initialize      (self%designer_num_points, self%x_initial, self%x_final)
     call self%fun_y2%initialize      (self%designer_num_points, self%x_initial, self%x_final)
 
-    ! SP: check omegav
-    if (params_cache%omegav < 0.3_dl) then
-        success = .false.
-        return
-    end if
+    ! (an Omega_v >= 0.3 cut used to refuse here every model with less dark energy, without a message)
 
     ! Initial values of y2 used in the bisection algorithm
 
@@ -263,7 +259,26 @@
     y2_il = 0._dl
     y2_ir = self%SCG_y20 + (1._dl/2._dl)*self%SCG_y20
 
+    ! expand the right end of the bracket until Omega_DE today is overshot (tol < 0; tol decreases with y2_i):
+    ! the fixed bracket misses the solution for a later a_ini, a steeper second potential or a larger H0.
+    self%SCG_y20 = y2_ir
+    call self%solve_background(params_cache, tol_r, success=success)
+    j = 0
+    do while (success .and. tol_r > 0._dl .and. j < 100)
+        y2_i = y2_ir
+        y2_ir = 2._dl*y2_ir
+        self%SCG_y20 = y2_ir
+        call self%solve_background(params_cache, tol_r, success=success)
+        j = j + 1
+    end do
+    self%SCG_y20 = y2_i
+
     call self%solve_background(params_cache, tol, success=success)
+    if (IsNaN(tol)) then
+        call GlobalError('EFTCAMB error: Scaling Cubic background is NaN', error_unsupported_params)
+        success = .false.
+        return
+    end if
     i = 0
     do while (abs(tol) > 1.d-6)
         if (.not. success .or. i >= 200) then

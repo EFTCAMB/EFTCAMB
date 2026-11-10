@@ -402,6 +402,13 @@ class EFTCAMBTest(unittest.TestCase):
         with self.assertRaisesRegex(CAMBError, "background solver failed"):
             camb.get_results(self.read("5_quint_exponential", "EFT_lambda = 2.2"))
 
+    def test_scaling_cubic_shooting(self):
+        # the y2_i bracket expands until Omega_DE is overshot, and there is no Omega_v >= 0.3 cut: these were refused
+        for extra in ("Scaling_Cubic_beta2 = 3.0", "model_background_a_ini = 1e-5", "omch2 = 0.33", "hubble = 99.0"):
+            with self.subTest(extra=extra):
+                cp = self.read("5_scg", extra)
+                self.assertAlmostEqual(camb.get_results(cp).hubble_parameter(0) / cp.H0, 1, delta=1e-5)
+
     def test_fR_gr_limit(self):
         # designer f(R) with B0 = 0 is LCDM: the return to GR never switches it on (the interpolation error of an
         # a^2-weighted Lambda table used to switch it on at a = 0.099, then the run failed)
