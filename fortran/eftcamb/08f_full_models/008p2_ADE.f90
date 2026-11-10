@@ -459,7 +459,7 @@
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
 
     integer  :: i, nu_i
-    real(dl) :: wf, ac, grho_ac, grho_ADE, grho_ADEp, wADE, wADE_p, rhoADE_ratio_today, fratio
+    real(dl) :: wf, ac, grho_ac, grho_ADE, grho_ADEp, wADE, wADE_p, onepw, rhoADE_ratio_today, fratio
     real(dl) :: grhom, grhorad, grhov, wADEtot, wADEtot_first, omegac, k, cs, cs_p
     real(dl) :: a, adotoa, Hdot, Hdotdot, adotoaLCDM, h0_Mpc, grhormass_t, rhonu_tot, presnu_tot, rhonu, presnu, &
         adotoaNoNu, grhormass_ac, rhonu_ac, presnu_ac, presnudot, presnudotdot, presnudot_tot, presnudotdot_tot
@@ -555,7 +555,9 @@
     ! 1) convert x in a:
     a = exp(x)
 
-    wADE = (self%wf + 1._dl)/(1._dl + (ac/a)**((3._dl + 3._dl*self%wf)/self%p))**self%p - 1._dl
+    ! 1 + w_ADE is evaluated directly: 1 + (onepw - 1) is exactly 0 for onepw < 5.55e-17 (deep before a_c)
+    onepw = (self%wf + 1._dl)/(1._dl + (ac/a)**((3._dl + 3._dl*self%wf)/self%p))**self%p
+    wADE = onepw - 1._dl
 
     wADE_p = (1._dl/a)*3._dl*(1._dl + self%wf)**2*(ac/a)**(3._dl*(1._dl + self%wf)/self%p)/ &
         (1._dl + (ac/a)**(3._dl*(1._dl + self%wf)/self%p))**(1 + self%p)
@@ -659,10 +661,10 @@
     ! NB: The Planck mass is included in grhom
 
     self%EFTLambda%y(ind) = wADE*grho_ADE*a**2 - grhov*a**2
-    self%EFTLambda%yp(ind) = a**2*grho_ADE*adotoa*(a*wADE_p - 3._dl*wADE*(1._dl + wADE))
+    self%EFTLambda%yp(ind) = a**2*grho_ADE*adotoa*(a*wADE_p - 3._dl*wADE*onepw)
 
-    self%EFTc%y(ind) = 0.5_dl*a**2*(grho_ADE)*(1._dl + wADE)
-    self%EFTc%yp(ind) = (grho_ADE)*adotoa*(-3._dl*(wADE + 1._dl)**2 + a*wADE_p)*a**2/2._dl
+    self%EFTc%y(ind) = 0.5_dl*a**2*(grho_ADE)*onepw
+    self%EFTc%yp(ind) = (grho_ADE)*adotoa*(-3._dl*onepw**2 + a*wADE_p)*a**2/2._dl
 
     self%EFTgamma1%y(ind) = 1._dl/(4._dl*h0_Mpc**2*a**2)*2._dl*self%EFTc%y(ind)*((cs**-1) - 1._dl)
     self%EFTgamma1%yp(ind) = 1._dl/(4._dl*h0_Mpc**2)*2._dl*self%EFTc%yp(ind)/(adotoa*a**3)*((cs**-1) - 1._dl)
@@ -671,7 +673,7 @@
     if (DebugEFTCAMB) then
         inquire(unit=file_debug_1%unit, opened=is_open)
         if (is_open) then
-            write(file_debug_1%unit, '(20E15.5)') a, wADE + 1, wADE_p, grho_ADE*a**2/(3._dl*adotoa**2), grho_ADE, &
+            write(file_debug_1%unit, '(20E15.5)') a, onepw, wADE_p, grho_ADE*a**2/(3._dl*adotoa**2), grho_ADE, &
                 adotoa, Hdot, rhonu_tot*a**2/(3*adotoa**2), rhonu_ac
         end if
         inquire(unit=file_debug_2%unit, opened=is_open)

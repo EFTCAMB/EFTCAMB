@@ -376,6 +376,18 @@ class EFTCAMBTest(unittest.TestCase):
                 cp = self.read("5_ADE_1", extra)
                 self.assertAlmostEqual(camb.get_background(cp).hubble_parameter(0.0) / cp.H0, 1, delta=1e-9)
 
+    def test_ade_sound_speed(self):
+        # ADE evaluates 1 + w directly: 1 + (w - 1) rounded to exactly 0 deep before a_c, so c = gamma1 = 0 while c' and
+        # Lambda' were not, and this c_s^2 != 1 model was refused as having no pi kinetic term
+        a = np.logspace(-8, -6, 5)
+        cp = self.read("5_ADE_1", "cs2 = 0.86\nwf = 0.87\nLog_ac = -3.52\nf_ac = 0.086\np = 0.5")
+        res = camb.get_results(cp)
+        ev = cp.EFTCAMB.get_scale_evolution(res, [0.05], a)[1][0]
+        c, gamma1 = np.array(ev["EFTc"]), np.array(ev["EFTGamma1V"])
+        self.assertTrue(np.all(c > 0))
+        h0 = cp.H0 / 299792.458  # H0 in 1/Mpc
+        np.testing.assert_allclose(c / (c + 2 * h0**2 * a**2 * gamma1), 0.86, rtol=1e-7)
+
     def test_fR_gr_limit(self):
         # designer f(R) with B0 = 0 is LCDM: the return to GR never switches it on (the interpolation error of an
         # a^2-weighted Lambda table used to switch it on at a = 0.099, then the run failed)
