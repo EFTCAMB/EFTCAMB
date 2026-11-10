@@ -37,6 +37,7 @@
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_constant_parametrization_1D
     use equispaced_linear_interpolation_1D
+    use MassiveNu, only: ThermalNuBackground
 
     implicit none
 
@@ -115,6 +116,8 @@
     ! stability procedures:
     !< function that computes model specific stability requirements.
     procedure :: additional_model_stability => EFTCAMBBeyondHorndeskiAdditionalModelStability
+    !< subroutine that computes the matter content of the model background, including massive neutrinos.
+    procedure :: background_matter => EFTCAMBBeyondHorndeskiMatter
 
     end type EFTCAMB_Beyond_Horndeski
 
@@ -205,10 +208,13 @@
     real(dl) :: aj, xj, mu, x1, x2, x3, x4, OmegaRad
     real(dl) :: H2, H_0, grhom, grhorad, epsilon, h, w_DE, H2_LCDM
     integer  :: j, ind, i
+    real(dl) :: grho_tot, Ptil, dPtil, ddPtil
 
     grhom = params_cache%grhob + params_cache%grhoc
     grhorad = params_cache%grhornomass + params_cache%grhog
     OmegaDE_0 = 1._dl - params_cache%omegac - params_cache%omegab - params_cache%omegag - params_cache%omegar
+    ! massive neutrinos are part of the matter content (background_matter):
+    OmegaDE_0 = OmegaDE_0 - params_cache%omegan
     OmegaRad_0 = params_cache%omegag + params_cache%omegar
     OmegaM_0 = params_cache%omegac + params_cache%omegab
 
@@ -321,7 +327,8 @@
         call self%fun_x1%precompute(xj, ind, mu)
         OmegaDE_0 = self%fun_x1%value(xj, index=ind, coeff=mu) + self%fun_x2%value(xj, index=ind, coeff=mu) + &
             self%fun_x3%value(xj, index=ind, coeff=mu) + self%fun_x4%value(xj, index=ind, coeff=mu)
-        H_0 = sqrt((grhorad + grhom)/((1._dl - OmegaDE_0)*3._dl))
+        call self%background_matter(params_cache, 1._dl, grho_tot, Ptil, dPtil, ddPtil)
+        H_0 = sqrt(grho_tot/((1._dl - OmegaDE_0)*3._dl))
         OmegaRad_0 = grhorad/(3._dl*H_0**2)
         open(unit=111, action='write', file='evolution_x1.dat')
         open(unit=222, action='write', file='evolution_x2.dat')
@@ -344,9 +351,10 @@
             x4 = self%fun_x4%value(xj, index=ind, coeff=mu)
             OmegaDE = self%fun_x1%value(xj, index=ind, coeff=mu) + self%fun_x2%value(xj, index=ind, coeff=mu) + &
                 self%fun_x3%value(xj, index=ind, coeff=mu) + self%fun_x4%value(xj, index=ind, coeff=mu)
-            H2 = (grhorad/aj**4 + grhom/aj**3)/((1._dl - OmegaDE)*3._dl)
-            H2_LCDM = (grhorad/aj**4 + grhom/aj**3)/((1._dl - OmegaDE_0)*3._dl)
-            OmegaRad = (grhorad/aj**4)/(3._dl*(H2))
+            call self%background_matter(params_cache, aj, grho_tot, Ptil, dPtil, ddPtil)
+            H2 = grho_tot/((1._dl - OmegaDE)*3._dl)
+            H2_LCDM = grho_tot/((1._dl - OmegaDE_0)*3._dl)
+            OmegaRad = Ptil/H2
             epsilon = -((20._dl*(3._dl*x1 + 2._dl*x2) - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - &
                 x4*(36._dl*x1 + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))/ &
                 (5._dl*x3**2._dl + 20._dl*(x1 + 2._dl*x2 + x3) + 4._dl*(6._dl - x1 - 2._dl*x2 + 3._dl*x3)*x4 + &
@@ -377,7 +385,8 @@
 
     OmegaDE_0 = self%fun_x1%value(xj, index=ind, coeff=mu) + self%fun_x2%value(xj, index=ind, coeff=mu) + &
         self%fun_x3%value(xj, index=ind, coeff=mu) + self%fun_x4%value(xj, index=ind, coeff=mu)
-    H_0 = sqrt((grhorad + grhom)/((1._dl - OmegaDE_0)*3._dl))
+    call self%background_matter(params_cache, 1._dl, grho_tot, Ptil, dPtil, ddPtil)
+    H_0 = sqrt(grho_tot/((1._dl - OmegaDE_0)*3._dl))
     OmegaM_0 = grhom/(3._dl*H_0**2)
     OmegaRad_0 = grhorad/(3._dl*H_0**2)
 
@@ -428,6 +437,8 @@
     grhom = params_cache%grhob + params_cache%grhoc
     grhorad = params_cache%grhornomass + params_cache%grhog
     OmegaDE_0 = 1._dl - params_cache%omegac - params_cache%omegab - params_cache%omegag - params_cache%omegar
+    ! massive neutrinos are part of the matter content (background_matter):
+    OmegaDE_0 = OmegaDE_0 - params_cache%omegan
 
     if (self%LCDM_background) then
         ! 2) Set initial conditions to reproduce LCDM bacground
@@ -522,12 +533,14 @@
     real(dl), intent(out), dimension(num_eq) :: ydot   !< value of the derivative at time x
 
     real(dl) :: qs, epsilon_phi, h, H2, OmegaRad
+    real(dl) :: grho_tot, Ptil, dPtil, ddPtil
 
     ! 1) compute the functionals entering the ODEs
 
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/((1._dl - y(1) - y(2) - y(3) - y(4))*3._dl)
+    call self%background_matter(params_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
+    H2 = grho_tot/((1._dl - y(1) - y(2) - y(3) - y(4))*3._dl)
 
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
+    OmegaRad = Ptil/H2
 
     qs = 5._dl*y(3)**2._dl + 20._dl*(y(1) + 2._dl*y(2) + y(3)) + 4._dl*(6._dl - y(1) - 2._dl*y(2) + 3._dl*y(3))*y(4) &
         + 8._dl*y(4)**2._dl
@@ -588,6 +601,7 @@
         OmegaRadprimeprime
 
     real(dl) :: a, H2, adotoa, Hdot, temp
+    real(dl) :: grho_tot, Ptil, dPtil, ddPtil
 
     a = exp(x)
 
@@ -612,9 +626,10 @@
         x4 = self%bHor_x40*1.d-6*(a/exp(self%x_initial))**(4._dl/3._dl)
     end if
 
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/((1._dl - x1 - x2 - x3 - x4)*3._dl)
+    call self%background_matter(params_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
+    H2 = grho_tot/((1._dl - x1 - x2 - x3 - x4)*3._dl)
 
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
+    OmegaRad = Ptil/H2
 
     ! 3) compute the functionals entering the ODEs
 
@@ -634,7 +649,7 @@
         x4p = 4._dl*x4*epsilon
     end if
 
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
+    OmegaRadprime = dPtil/H2 - 2._dl*h*OmegaRad
 
     hprime = ((15._dl*x3**2._dl + 12._dl*x4**2._dl + 10._dl*(x1 + 2._dl*x2)*(3._dl + 3._dl*x1 + x2 + OmegaRad) + &
         10._dl*x3*(3._dl + 6._dl*x1 + 3._dl*x2 + OmegaRad) + &
@@ -663,7 +678,7 @@
     x2pp = 2._dl*(x2p*(2._dl*epsilon - h) + x2*(2._dl*epsilon_p - hprime))
     x3pp = x3p*(3._dl*epsilon - h) + x3*(3._dl*epsilon_p - hprime)
     x4pp = 4._dl*(x4p*epsilon + x4*epsilon_p)
-    OmegaRadprimeprime = -2._dl*OmegaRadprime*(2._dl + h) - 2._dl*OmegaRad*hprime
+    OmegaRadprimeprime = ddPtil/H2 - 2._dl*h*dPtil/H2 - 2._dl*hprime*OmegaRad - 2._dl*h*OmegaRadprime
 
     epsilon_pp = (-2._dl*(60._dl*x1 + 40._dl*x2 - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - &
         x4*(36._dl*x1 + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))* &
@@ -911,6 +926,7 @@
     real(dl) :: x1, x2, x3, x4, x1p, x2p, x3p, x4p, x1pp, x2pp, x4pp, x3pp, x3ppp, x4ppp, qs, qsprime
     real(dl) :: OmegaRad, OmegaRadprime, h, hprime, hpprime, grhom, grhorad, H2, qspprime
     real(dl) :: epsilon, epsilon_p, epsilon_pp, OmegaRadprimeprime, EFTcdot, EFTLAMBDAdot, EFTc, EFTLAMBDA
+    real(dl) :: grho_tot, Ptil, dPtil, ddPtil
 
     if (a == 0._dl) return
 
@@ -932,8 +948,9 @@
         x4 = self%bHor_x40*1.d-6*(a/exp(self%x_initial))**(4._dl/3._dl)
     end if
 
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/((1._dl - x1 - x2 - x3 - x4)*3._dl)
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
+    call self%background_matter(eft_par_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
+    H2 = grho_tot/((1._dl - x1 - x2 - x3 - x4)*3._dl)
+    OmegaRad = Ptil/H2
 
     epsilon = -((20._dl*(3._dl*x1 + 2._dl*x2) - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - x4*(36._dl*x1 &
         + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))/(5._dl*x3**2._dl + 20._dl*(x1 + 2._dl*x2 + x3) + 4._dl*(6._dl &
@@ -949,7 +966,7 @@
     x3p = x3*(3._dl*epsilon - h)
     x4p = 4._dl*x4*epsilon
 
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
+    OmegaRadprime = dPtil/H2 - 2._dl*h*OmegaRad
 
     hprime = ((15._dl*x3**2._dl + 12._dl*x4**2._dl + 10._dl*(x1 + 2._dl*x2)*(3._dl + 3._dl*x1 + x2 + OmegaRad) + &
         10._dl*x3*(3._dl + 6._dl*x1 + 3._dl*x2 + OmegaRad) + &
@@ -978,7 +995,7 @@
     x2pp = 2._dl*(x2p*(2._dl*epsilon - h) + x2*(2._dl*epsilon_p - hprime))
     x3pp = x3p*(3._dl*epsilon - h) + x3*(3._dl*epsilon_p - hprime)
     x4pp = 4._dl*(x4p*epsilon + x4*epsilon_p)
-    OmegaRadprimeprime = -2._dl*OmegaRadprime*(2._dl + h) - 2._dl*OmegaRad*hprime
+    OmegaRadprimeprime = ddPtil/H2 - 2._dl*h*dPtil/H2 - 2._dl*hprime*OmegaRad - 2._dl*h*OmegaRadprime
 
     epsilon_pp = (-2._dl*(60._dl*x1 + 40._dl*x2 - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - &
         x4*(36._dl*x1 + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))* &
@@ -1091,6 +1108,7 @@
     real(dl) :: x1, x2, x3, x4, x1p, x2p, x3p, x4p, x1pp, x2pp, x4pp, x3pp, x3ppp, x4ppp, OmegaRad, OmegaRadprime
     real(dl) :: grhom, grhorad, H2, epsilon, epsilon_p, epsilon_pp, OmegaRadprimeprime
     real(dl) :: mu, x, h, hprime, hpprime, qs, qsprime, qspprime, Hdotdotdot
+    real(dl) :: grho_tot, Ptil, dPtil, ddPtil
     integer  :: ind
 
     x = log(a)
@@ -1110,8 +1128,9 @@
         x4 = self%bHor_x40*1.d-6*(a/exp(self%x_initial))**(4._dl/3._dl)
     end if
 
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/((1._dl - x1 - x2 - x3 - x4)*3._dl)
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
+    call self%background_matter(eft_par_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
+    H2 = grho_tot/((1._dl - x1 - x2 - x3 - x4)*3._dl)
+    OmegaRad = Ptil/H2
 
     epsilon = -((20._dl*(3._dl*x1 + 2._dl*x2) - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - &
         x4*(36._dl*x1 + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))/ &
@@ -1127,7 +1146,7 @@
     x3p = x3*(3._dl*epsilon - h)
     x4p = 4._dl*x4*epsilon
 
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
+    OmegaRadprime = dPtil/H2 - 2._dl*h*OmegaRad
 
     hprime = ((15._dl*x3**2._dl + 12._dl*x4**2._dl + 10._dl*(x1 + 2._dl*x2)*(3._dl + 3._dl*x1 + x2 + OmegaRad) + &
         10._dl*x3*(3._dl + 6._dl*x1 + 3._dl*x2 + OmegaRad) + &
@@ -1156,7 +1175,7 @@
     x2pp = 2._dl*(x2p*(2._dl*epsilon - h) + x2*(2._dl*epsilon_p - hprime))
     x3pp = x3p*(3._dl*epsilon - h) + x3*(3._dl*epsilon_p - hprime)
     x4pp = 4._dl*(x4p*epsilon + x4*epsilon_p)
-    OmegaRadprimeprime = -2._dl*OmegaRadprime*(2._dl + h) - 2._dl*OmegaRad*hprime
+    OmegaRadprimeprime = ddPtil/H2 - 2._dl*h*dPtil/H2 - 2._dl*hprime*OmegaRad - 2._dl*h*OmegaRadprime
 
     epsilon_pp = (-2._dl*(60._dl*x1 + 40._dl*x2 - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - &
         x4*(36._dl*x1 + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))* &
@@ -1272,5 +1291,44 @@
     EFTCAMBBeyondHorndeskiAdditionalModelStability = .true.
 
     end function EFTCAMBBeyondHorndeskiAdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the matter content of the model background: 8 pi G rho, 8 pi G P and the first two
+    !! N = log(a) derivatives of 8 pi G P (cosmic, i.e. without a^2), including massive neutrinos. Matter enters the
+    !! closure H^2 = 8 pi G rho/(3 (1 - sum x_i)) and the equations through Pi = P/(m0^2 H^2) (arXiv:1905.11364
+    !! eqs. 3.6-3.10), so that the model H equals the CAMB H, which includes massive neutrinos.
+    subroutine EFTCAMBBeyondHorndeskiMatter(self, params_cache, a, grho, Ptil, dPtil, ddPtil)
+
+    implicit none
+
+    class(EFTCAMB_Beyond_Horndeski)            :: self          !< the base class
+    type(TEFTCAMB_parameter_cache), intent(in) :: params_cache  !< the EFTCAMB parameter cache
+    real(dl), intent(in)                       :: a             !< the scale factor
+    !< 8 pi G rho, 8 pi G P and the first two log(a) derivatives of 8 pi G P (cosmic, without a^2)
+    real(dl), intent(out)                      :: grho, Ptil, dPtil, ddPtil
+
+    real(dl) :: grhorad, grhom, rhonu, pnu, am, dP1, dP2
+    integer  :: nu_i
+
+    grhom = params_cache%grhob + params_cache%grhoc
+    grhorad = params_cache%grhornomass + params_cache%grhog
+    grho = grhorad/a**4 + grhom/a**3
+    Ptil = grhorad/(3._dl*a**4)
+    dPtil = -4._dl*Ptil
+    ddPtil = 16._dl*Ptil
+    if (params_cache%Num_Nu_Massive /= 0) then
+        do nu_i = 1, params_cache%Nu_mass_eigenstates
+            am = a*params_cache%nu_masses(nu_i)
+            call ThermalNuBackground%rho_P(am, rhonu, pnu)
+            dP1 = ThermalNuBackground%pidot(am, 1._dl, pnu)
+            dP2 = ThermalNuBackground%pidotdot(am, 1._dl, 0._dl, pnu, dP1)
+            grho = grho + params_cache%grhormass(nu_i)*rhonu/a**4
+            Ptil = Ptil + params_cache%grhormass(nu_i)*pnu/a**4
+            dPtil = dPtil + params_cache%grhormass(nu_i)*(dP1 - 4._dl*pnu)/a**4
+            ddPtil = ddPtil + params_cache%grhormass(nu_i)*(dP2 - 8._dl*dP1 + 16._dl*pnu)/a**4
+        end do
+    end if
+
+    end subroutine EFTCAMBBeyondHorndeskiMatter
 
     end module EFTCAMB_full_Beyond_Horndeski

@@ -333,6 +333,21 @@ class EFTCAMBTest(unittest.TestCase):
         tt_gr = camb.get_results(self.read("1_EFT_GR")).get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"]
         np.testing.assert_allclose(tt, tt_gr[2:601, 0], rtol=1e-3)
 
+    def test_beyond_horndeski_massive_nu(self):
+        # the Beyond Horndeski background includes massive neutrinos (base_params has omnuh2 = 0.01): H(z = 0) = H0 and
+        # the model H equals the CAMB H (it was 1.0102 H0, and 5e-2 off at early times)
+        model = (
+            "EFTflag = 4\nFullMappingEFTmodel = 5\nBeyond_Horndeski_x10 = -0.1\nBeyond_Horndeski_x30 = 1.0\n"
+            "Beyond_Horndeski_x40 = 1.0\nEFTCAMB_stability_threshold = 0.0"
+        )
+        cp = self.read("2_PEFT_wDE_wCDM_1", model)
+        self.assertGreater(cp.omnuh2, 0.005)
+        res = camb.get_results(cp)
+        self.assertAlmostEqual(res.hubble_parameter(0.0) / cp.H0, 1, delta=1e-5)
+        a = np.array([1e-4, 1e-2, 0.5, 1.0])
+        h_eft = cp.EFTCAMB.get_eft_functions(res, a)[1]["adotoa"]
+        np.testing.assert_allclose(h_eft, a * res.h_of_z(1 / a - 1), rtol=1e-5)
+
     def test_horava_domain(self):
         # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
         # the GR point (arXiv:1508.01787 Sec. 2.4)
