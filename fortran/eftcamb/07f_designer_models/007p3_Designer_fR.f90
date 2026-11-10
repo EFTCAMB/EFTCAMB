@@ -116,6 +116,8 @@
     procedure :: compute_H_derivs => EFTCAMBDesignerFRComputeHubbleDer
 
     ! stability procedures:
+    !< function that computes model specific stability requirements: f_RR > 0 (EFT_additional_priors).
+    procedure :: additional_model_stability => EFTCAMBDesignerFRAdditionalModelStability
     !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
     procedure :: wDE_prior => EFTCAMBDesignerFRwDEPrior
 
@@ -1188,6 +1190,40 @@
     if (self%DesfRwDE%value(a) > -1._dl/3._dl) EFTCAMBDesignerFRwDEPrior = .false.
 
     end function EFTCAMBDesignerFRwDEPrior
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that computes the model specific stability requirements, enforced when EFT_additional_priors = T
+    !! at every a from EFTCAMB_stability_time on (before the turn-on too): no tachyonic scalaron, f_RR > 0
+    !! (arXiv:0709.0296 Sec. II.B, condition 1; the B < 0 branch of astro-ph/0610532 is unstable). B0 < 0 and a
+    !! constant w_DE < -1 violate it. The sign of f_RR itself is tested, not that of B: B tracks f_RR only while
+    !! R' < 0, and any f_RR < 0 is unstable (the tachyonic rate grows as |B|^(-1/2) when B -> 0^-).
+    function EFTCAMBDesignerFRAdditionalModelStability(self, a, eft_par_cache, eft_cache)
+
+    implicit none
+
+    class(EFTCAMB_fR_designer) :: self          !< the base class
+    real(dl), intent(in)       :: a             !< the input scale factor.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+
+    logical :: EFTCAMBDesignerFRAdditionalModelStability !< true if the model specific criteria are met.
+    character(len=200) :: message
+
+    EFTCAMBDesignerFRAdditionalModelStability = .true.
+    ! f_RR = dOmega/dR = Omega'/R' (Omega = f_R). With R = 6 (H' + H^2)/a^2 in conformal time,
+    ! R' = 6 (H'' - 2 H^3)/a^2 and Omega' = a H dOmega/da, so f_RR < 0 <=> dOmega/da (H'' - 2 H^3) < 0.
+    ! Only the roundoff of a dOmega/da is ignored: it is <= 4e-17 for LCDM (B0 = 0), whose sign is noise.
+    if (eft_cache%EFTOmegaP*(eft_cache%Hdotdot - 2._dl*eft_cache%adotoa**3) < 0._dl .and. &
+        abs(a*eft_cache%EFTOmegaP) > 1.e-14_dl*(1._dl + abs(eft_cache%EFTOmegaV))) then
+        EFTCAMBDesignerFRAdditionalModelStability = .false.
+        write(message, '(a,es10.3,a)') 'EFTCAMB: f(R) with f_RR < 0 (tachyonic scalaron) at a =', a, &
+            ', refused by the f(R) prior (EFT_additional_priors; EFTCAMB_stability_time sets where it starts)'
+        call GlobalError(trim(message), 1)
+    end if
+
+    end function EFTCAMBDesignerFRAdditionalModelStability
 
     ! ---------------------------------------------------------------------------------------------
 

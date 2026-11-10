@@ -465,6 +465,15 @@ class EFTCAMBTest(unittest.TestCase):
         res = camb.get_results(self.read("4_Des_F_R_wCDM_1", "EFTw0 = -0.85\nEFTB0 = 1e-4"))
         self.assertGreater(res.get_sigma8_0(), 0)
 
+    def test_fR_tachyon_prior(self):
+        # the f(R) prior refuses f_RR < 0 (tachyonic scalaron) from EFTCAMB_stability_time on: B0 < 0 and a constant
+        # w < -1 (B < 0 only before a = 3.4e-3 for w = -1.01, B0 = 1: it runs if the check starts later)
+        for model, extra in (("4_Des_F_R_LCDM_1", "EFTB0 = -1e-4"), ("4_Des_F_R_wCDM_1", "EFTw0 = -1.01")):
+            with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, r"f_RR < 0 \(tachyonic scalaron\)"):
+                camb.get_results(self.read(model, extra))
+        res = camb.get_results(self.read("4_Des_F_R_wCDM_1", "EFTw0 = -1.01\nEFTCAMB_stability_time = 1e-2"))
+        self.assertGreater(res.get_sigma8_0(), 0)
+
     def test_3p1_b22(self):
         # 3+1 designer gradient test with the corrected B22 (+ b3/2, missing in arXiv:2508.01378 App. D): this healthy
         # model was refused by the model's own gradient test
