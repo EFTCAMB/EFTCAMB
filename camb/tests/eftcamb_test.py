@@ -282,6 +282,36 @@ class EFTCAMBTest(unittest.TestCase):
             with self.subTest(model=model, extra=extra):
                 self.assertGreater(camb.get_results(self.read(model, extra)).get_sigma8_0(), 0)
 
+    def test_turn_on_warning(self):
+        # at feedback_level >= 1 EFTCAMB warns when the requested turn-on cuts into a background on which the GR
+        # perturbation equations used before it are inconsistent (|B2|/H^2 > 1e-4); the turn-on stays the user's choice
+        code = (
+            "import camb, sys\n"
+            "for model, extra in (('5_Kmouflage_2', ''), ('5_Kmouflage_2', 'EFTCAMB_turn_on_time = 1e-8'),\n"
+            "                     ('2_PEFT_Omega_const_1', '')):\n"
+            f"    ini = {self.tmp!r} + '/warn_' + model + str(len(extra)) + '.ini'\n"
+            "    open(ini, 'w').write('DEFAULT(' + " + repr(PARAMS) + " + '/' + model + '.ini)\\n' + extra + '\\n')\n"
+            "    cp = camb.read_ini(ini)\n"
+            "    print('MODEL', model, extra, flush=True)\n"
+            "    camb.get_background(cp)\n"
+            "    sys.stdout.flush()\n"
+        )
+        r = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+            env=dict(os.environ, PYTHONPATH=ROOT, OMP_NUM_THREADS="2"),
+        )
+        self.assertEqual(r.returncode, 0, r.stderr[-500:])
+        blocks = r.stdout.split("MODEL ")[1:]
+        self.assertEqual(len(blocks), 3)
+        warning = "the background is not a GR one at the requested EFTCAMB_turn_on_time"
+        self.assertIn(warning, blocks[0])
+        self.assertNotIn(warning, blocks[1])
+        self.assertNotIn(warning, blocks[2])
+
     def test_horava_domain(self):
         # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
         # the GR point (arXiv:1508.01787 Sec. 2.4)

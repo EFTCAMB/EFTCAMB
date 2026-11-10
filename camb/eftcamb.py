@@ -283,7 +283,7 @@ class EFTCAMB(F2003Class):
         (
             "EFTCAMB_pert_turn_on",
             c_double,
-            "Smallest scale factor at which EFTCAMB evolves perturbations. Default set to a=0.01.",
+            "Smallest scale factor at which EFTCAMB evolves perturbations. Default set to a=0.01. Before it the perturbations follow the GR equations: results of models that are not GR before the turn-on depend on it (check convergence with earlier turn-on times).",
         ),
         (
             "EFTCAMB_GR_threshold",

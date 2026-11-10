@@ -711,6 +711,10 @@
                 call EFTCAMBReturnToGR_feedback(this%CP%EFTCAMB%EFTCAMB_feedback_level, this%CP%EFTCAMB%model, &
                     this%CP%eft_par_cache, turn_on_requested, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold)
             end if
+            ! the turn-on is a modelling choice: warn when the model is not GR before it (also when the return to GR
+            ! is skipped)
+            call EFTCAMBReturnToGR_turn_on_warning(this%CP%EFTCAMB%EFTCAMB_feedback_level, this%CP%EFTCAMB%model, &
+                this%CP%eft_par_cache, turn_on_requested, this%CP%EFTCAMB%EFTCAMB_GR_threshold)
 
             if (.not. this%CP%EFTCAMB%EFTCAMB_skip_stability) then
 

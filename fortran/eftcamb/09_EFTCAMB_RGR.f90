@@ -37,7 +37,7 @@
 
     private
 
-    public EFTCAMBReturnToGR_feedback, EFTCAMBReturnToGR, EFTCAMBReturnToGR_is_GR
+    public EFTCAMBReturnToGR_feedback, EFTCAMBReturnToGR, EFTCAMBReturnToGR_is_GR, EFTCAMBReturnToGR_turn_on_warning
 
     !< number of points to sample logaritmically the time in the return to GR module.
     integer, parameter :: EFT_RGR_num_points = 1000
@@ -50,6 +50,12 @@
     !! 1 by more than this. Tuned on 4_Des_F_R_LCDM_2 (turn-on 0.039) against an early turn-on (0.007): P(k <= 1/Mpc)
     !! 4e-4, P(k <= 10/Mpc) 3.3e-2, sigma8 5e-6, lensed C_l 3e-5, C_l^phiphi 1.1e-4, runtime 1.1x the pre-C3 code.
     real(dl), parameter :: EFT_RGR_qs_threshold = 5.e-4_dl
+    !< the turn-on warning fires when the GR perturbation equations used before the turn-on violate the trace equation
+    !! by more than this, |B2|/H^2 with B2 = H^2 - H' - 4 pi G a^2 (rho + P) of matter (0 on a GR background; 1e-5 for
+    !! the shipped wCDM designers, 2e-4..0.5 for the shipped Horava and K-mouflage inis, which change by 5e-4..O(1)).
+    real(dl), parameter :: EFT_RGR_trace_threshold = 1.e-4_dl
+    !< and the turn-on is later than this: results are converged in the turn-on for 1e-6..1e-8 (audit P02).
+    real(dl), parameter :: EFT_RGR_turn_on_converged = 1.e-6_dl
 
     contains
 
@@ -81,11 +87,6 @@
         write(*, '(a)') "***************************************************************"
         write(*, '(a,E13.4)') ' EFTCAMB Return to GR time:     ', RGR_time
         write(*, '(a,E13.4)') ' EFTCAMB Return to GR threshold:', RGR_threshold
-        ! (the RGR scan samples 10**log10(a): equal up to roundoff)
-        if (abs(RGR_time - initial_time) <= 1.e-10_dl*initial_time) then
-            write(*, '(a)') ' Warning, RGR time and turn on time coincide.'
-            write(*, '(a)') ' The model might be far from GR at initial time.'
-        end if
         if (RGR_time > 1._dl) then
             write(*, '(a)') ' Warning, the model is GR within the threshold at all times:'
             write(*, '(a)') ' EFT perturbations are never switched on.'
@@ -134,6 +135,38 @@
     end if
 
     end subroutine
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that warns (feedback_level >= 1) when the background is not a GR one at the requested perturbation
+    !! turn-on. Before the turn-on EFTCAMB evolves the GR perturbation equations on the model background: they then
+    !! violate the trace equation by B2/H^2, and the results depend on the turn-on, a modelling choice left to the user.
+    !! Designer models on a GR background (B2 = 0) and turn-ons earlier than EFT_RGR_turn_on_converged are silent.
+    subroutine EFTCAMBReturnToGR_turn_on_warning(feedback_level, input_model, params_cache, turn_on, RGR_threshold)
+
+    implicit none
+
+    integer, intent(in) :: feedback_level           !< the EFTCAMB feedback level.
+    class(EFTCAMB_model), intent(in) :: input_model !< the EFTCAMB model.
+    type(TEFTCAMB_parameter_cache) :: params_cache  !< a EFTCAMB parameter cache containing cosmological parameters.
+    real(dl), intent(in) :: turn_on                 !< the requested perturbation turn-on.
+    real(dl), intent(in) :: RGR_threshold           !< the threshold for an EFT function to have reached its GR value.
+
+    real(dl) :: eft_functions(29), trace_violation
+
+    if (feedback_level < 1 .or. .not. (turn_on > EFT_RGR_turn_on_converged .and. turn_on <= 1._dl)) return
+    if (EFTCAMBReturnToGR_is_GR(turn_on, input_model, params_cache, RGR_threshold)) return
+    eft_functions = 0._dl
+    call EFTCAMBReturnToGR_functions(turn_on, input_model, params_cache, eft_functions, trace_violation)
+    if (.not. abs(trace_violation) > EFT_RGR_trace_threshold) return
+
+    write(*, '(a,es10.3,a)') ' EFTCAMB WARNING: the background is not a GR one at the requested ' // &
+        'EFTCAMB_turn_on_time =', turn_on, '.'
+    write(*, '(a,es10.3,a)') '    The GR perturbation equations used before the turn-on violate the trace ' // &
+        'equation by |B2|/H^2 =', abs(trace_violation), ','
+    write(*, '(a)') '    so the results depend on the turn-on. Check that they are converged with respect to it'
+    write(*, '(a)') '    (earlier turn-on times, e.g. 1e-6 to 1e-8).'
+
+    end subroutine EFTCAMBReturnToGR_turn_on_warning
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the return to GR of a theory.
@@ -220,7 +253,7 @@
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the EFT functions as we need them for the RGR function.
-    subroutine EFTCAMBReturnToGR_functions(a, input_model, params_cache, eft_functions)
+    subroutine EFTCAMBReturnToGR_functions(a, input_model, params_cache, eft_functions, trace_violation)
 
     implicit none
 
@@ -231,6 +264,9 @@
     type(TEFTCAMB_parameter_cache)   :: params_cache
     !< vector containing the values of the EFT functions minus their GR value.
     real(dl), intent(out) :: eft_functions(29)
+    !< optional: B2/H^2 = (H^2 - H' - 4 pi G a^2 (rho + P) of matter)/H^2, how much the GR perturbation equations
+    !! violate the trace equation on the model background (0 on a GR background).
+    real(dl), intent(out), optional :: trace_violation
 
     type(TEFTCAMB_timestep_cache) :: eft_cache
 
@@ -397,6 +433,9 @@
 
     ! subtract the GR threshold:
     eft_functions = eft_functions
+
+    if (present(trace_violation)) trace_violation = (eft_cache%adotoa**2 - eft_cache%Hdot - &
+        0.5_dl*(eft_cache%grhom_t + eft_cache%gpresm_t))/eft_cache%adotoa**2
 
     end subroutine EFTCAMBReturnToGR_functions
 
