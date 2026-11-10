@@ -187,7 +187,7 @@
     real(dl) :: test_dtauda, thr, kinetic_scale, gradient_scale
     real(dl), external :: dtauda
     character(len=160) :: message
-    real(dl) :: A_sign
+    real(dl) :: A_sign, eom_G00, eom_G00_scale
 
     ! Stability check initialization
     EFTTestStability = .true.
@@ -250,6 +250,29 @@
                     '   No pi kinetic term: A1 + k^2 A2 vanishes or changes sign at a =', a
                 return
             end if
+        end if
+    end if
+
+    ! 2c) where the EFT perturbations are evolved, the 00 Einstein constraint must determine h': its coefficient
+    !     2 (1 + Omega) EFTeomG (2 in GR, 2 - alpha_B in the Bellini-Sawicki convention) must stay positive. At the
+    !     alpha_B = 2 crossing (arXiv:2103.11195 App. A) z = h'/2k divides by zero and the integrator fails or stalls.
+    !     Evolving through the crossing (h' from the trace equation) is not implemented: this is a limit of the
+    !     solver, enforced whatever the stability flags.
+    if (a >= input_EFTCAMB%EFTCAMB_pert_turn_on) then
+        eom_G00 = 2._dl*(1._dl + eft_cache%EFTOmegaV) + a*eft_cache%EFTOmegaP + &
+            a*params_cache%h0_Mpc*eft_cache%EFTGamma2V/eft_cache%adotoa + 3._dl*eft_cache%EFTGamma3V + &
+            eft_cache%EFTGamma4V
+        eom_G00_scale = 2._dl*abs(1._dl + eft_cache%EFTOmegaV) + abs(a*eft_cache%EFTOmegaP) + &
+            abs(a*params_cache%h0_Mpc*eft_cache%EFTGamma2V/eft_cache%adotoa) + 3._dl*abs(eft_cache%EFTGamma3V) + &
+            abs(eft_cache%EFTGamma4V)
+        if (eom_G00 <= max(thr, 1.e-12_dl)*eom_G00_scale) then
+            EFTTestStability = .false.
+            write(message, '(a,es10.3,a)') 'EFTCAMB: the 00 Einstein constraint does not determine h'' at a =', a, &
+                ' (alpha_B = 2 crossing): EFTCAMB cannot evolve through it'
+            call GlobalError(trim(message), 1)
+            if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a,es11.4,a,es10.3)') &
+                '   Degenerate 00 constraint: 2(1+Omega) EFTeomG =', eom_G00, ' at a =', a
+            return
         end if
     end if
 

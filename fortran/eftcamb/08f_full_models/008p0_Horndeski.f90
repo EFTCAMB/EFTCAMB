@@ -2149,7 +2149,7 @@
         if ((last_alphaB - 2._dl)*(self%EFTalphaB%y(i) - 2._dl) <= 0._dl .and. (.not. self%evolve_metric_h) .and. &
             self%evolve_delta_phi .and. feedback_level > 2) then
             write(*, *) "alphaB crossing 2 detected at z=", 1._dl/a - 1, "tau=", tau
-            write(*, *) "h'' constraint is numerically unstable here. Consider setting EFTCAMB_evolve_metric_h = T."
+            write(*, *) "The 00 constraint does not determine h' at the crossing: the stability check refuses it."
         end if
         last_alphaB = self%EFTalphaB%y(i)
     end do

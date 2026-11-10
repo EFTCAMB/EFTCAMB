@@ -255,6 +255,19 @@ class EFTCAMBTest(unittest.TestCase):
         )
         self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
 
+    def test_braiding_crossing_refused(self):
+        # an alpha_B = 2 crossing (Bellini-Sawicki convention) after the turn-on leaves h' undetermined by the 00
+        # constraint: refused with its own message (it used to fail with RungeKuttaDP45 -3 or stall)
+        model = (
+            "EFTflag = 2\nAltParEFTmodel = 4\nShift_Symmetric_alphaK0 = 1.0\nShift_Symmetric_m = 1.0\n"
+            "EFTwDE = 1\nEFTw0 = -0.95\n"
+        )
+        for alphaB0 in ("2.0", "2.1"):
+            with self.subTest(alphaB0=alphaB0), self.assertRaisesRegex(CAMBError, "alpha_B = 2 crossing"):
+                camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model + f"Shift_Symmetric_alphaB0 = {alphaB0}"))
+        cp = self.read("2_PEFT_wDE_wCDM_1", model + "Shift_Symmetric_alphaB0 = 1.98")
+        self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
+
     def test_horava_domain(self):
         # Horava (code variables lambda = lambda_p - 1, xi = xi_p - 1): 0 < eta < 2 xi + 2 and lambda >= 0, except at
         # the GR point (arXiv:1508.01787 Sec. 2.4)
