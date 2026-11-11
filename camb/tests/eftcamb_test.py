@@ -465,6 +465,36 @@ class EFTCAMBTest(unittest.TestCase):
                 cp = self.read("5_scg", extra)
                 self.assertAlmostEqual(camb.get_results(cp).hubble_parameter(0) / cp.H0, 1, delta=1e-5)
 
+    def test_scaling_cubic_early_background(self):
+        # the Scaling Cubic background starts at a = 1e-10: it started at 6.7e-6, after the 1e-8 turn-on of 5_scg, and
+        # was frozen there (gamma2' 4.2e-4 off d gamma2/da at a = 1e-6). A turn-on before model_background_a_ini warns.
+        a, h = np.array([1e-8, 1e-6]), 1e-3
+        cp = self.read("5_scg")
+        bg = camb.get_background(cp)
+        g2 = [np.array(cp.EFTCAMB.get_eft_functions(bg, a * np.exp(s * h))[1]["EFTGamma2V"]) for s in (-1, 1)]
+        g2p = np.array(cp.EFTCAMB.get_eft_functions(bg, a)[1]["EFTGamma2P"])
+        np.testing.assert_allclose(g2p, (g2[1] - g2[0]) / (2 * h * a), rtol=1e-5)
+        code = (
+            "import camb\n"
+            "for extra in ('', 'model_background_a_ini = 1e-6'):\n"
+            f"    ini = {self.tmp!r} + '/scg_start' + str(len(extra)) + '.ini'\n"
+            "    open(ini, 'w').write('DEFAULT(' + "
+            + repr(PARAMS)
+            + " + '/5_scg.ini)\\nfeedback_level = 1\\n' + extra)\n"
+            "    print('MODEL', extra, flush=True)\n"
+            "    camb.get_background(camb.read_ini(ini))\n"
+        )
+        env = dict(os.environ, PYTHONPATH=ROOT, OMP_NUM_THREADS="2")
+        r = subprocess.run(
+            [sys.executable, "-c", code], capture_output=True, text=True, timeout=600, env=env, check=False
+        )
+        self.assertEqual(r.returncode, 0, r.stderr[-500:])
+        blocks = r.stdout.split("MODEL ")[1:]
+        self.assertEqual(len(blocks), 2)
+        warning = "before the model background starts"
+        self.assertNotIn(warning, blocks[0])
+        self.assertIn(warning, blocks[1])
+
     def test_extended_galileon_prior(self):
         # the empirical (S + 0.02) q < 0.5 line (a fit to the optional mass cut of arXiv:1912.07586) refused these
         # viable models; the strong-coupling prior still refuses q S > 1

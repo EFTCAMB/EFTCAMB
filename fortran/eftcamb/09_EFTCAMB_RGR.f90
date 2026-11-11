@@ -38,6 +38,7 @@
     private
 
     public EFTCAMBReturnToGR_feedback, EFTCAMBReturnToGR, EFTCAMBReturnToGR_is_GR, EFTCAMBReturnToGR_turn_on_warning
+    public EFTCAMBReturnToGR_background_start_warning
 
     !< number of points to sample logaritmically the time in the return to GR module.
     integer, parameter :: EFT_RGR_num_points = 1000
@@ -167,6 +168,30 @@
     write(*, '(a)') '    (earlier turn-on times, e.g. 1e-6 to 1e-8).'
 
     end subroutine EFTCAMBReturnToGR_turn_on_warning
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that warns (feedback_level >= 1) when the perturbations are switched on before the background
+    !! solution of the model starts (e.g. the Scaling Cubic table, model_background_a_ini): there the background is
+    !! frozen, with derivatives inconsistent with its values.
+    subroutine EFTCAMBReturnToGR_background_start_warning(feedback_level, input_model, turn_on)
+
+    implicit none
+
+    integer, intent(in) :: feedback_level           !< the EFTCAMB feedback level.
+    class(EFTCAMB_model), intent(in) :: input_model !< the EFTCAMB model.
+    real(dl), intent(in) :: turn_on                 !< the perturbation turn-on (after the return to GR).
+
+    real(dl) :: a_start
+
+    if (feedback_level < 1) return
+    a_start = input_model%background_start()
+    if (.not. turn_on < a_start) return
+
+    write(*, '(a,es10.3,a,es10.3,a)') ' EFTCAMB WARNING: the EFT perturbations are switched on at a =', turn_on, &
+        ', before the model background starts (model_background_a_ini =', a_start, '),'
+    write(*, '(a)') '    where the background is frozen: use an earlier model_background_a_ini.'
+
+    end subroutine EFTCAMBReturnToGR_background_start_warning
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the return to GR of a theory.

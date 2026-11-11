@@ -79,9 +79,11 @@
         type(equispaced_linear_interpolate_function_1D) :: fun_y2       !< The interpolated function y2
 
         ! some parameters for the ODE solver:
-        !< Number of points sampled by the designer code.
-        integer  :: designer_num_points = 10000
-        real(dl) :: x_initial = log(1._dl/(1.5*10._dl**(5._dl) + 1._dl))                   !< log(a start)
+        !< Number of points sampled by the designer code. The background starts at a = 1e-10, before the usual
+        !! perturbation and stability start times, where radiation dominates (arXiv:1807.09800 starts at z = 1e10);
+        !! below it the state is frozen. 20000 points keep the ln a step of the former 10000 from a = 1/(1.5e5 + 1).
+        integer  :: designer_num_points = 20000
+        real(dl) :: x_initial = log(1.e-10_dl)                                              !< log(a start)
         real(dl) :: x_final = 0._dl         !< log(a final)
 
         ! some additional parameters
@@ -129,6 +131,8 @@
     ! stability procedures:
     !< function that computes model specific stability requirements.
     procedure :: additional_model_stability => EFTCAMBScalingCubicAdditionalModelStability
+    !< function that returns the scale factor where the background table starts.
+    procedure :: background_start => EFTCAMBScalingCubicBackgroundStart
 
     end type EFTCAMB_Scaling_Cubic
 
@@ -148,8 +152,8 @@
     integer                      :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read precision parameters
-    self%designer_num_points = Ini%Read_Int('model_background_num_points', 10000)
-    self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1._dl/(1.5*10._dl**(5._dl) + 1._dl)))
+    self%designer_num_points = Ini%Read_Int('model_background_num_points', 20000)
+    self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1.e-10_dl))
     self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
 
     end subroutine EFTCAMBScalingCubicReadModelSelectionFromFile
@@ -1138,6 +1142,20 @@
     EFTCAMBScalingCubicAdditionalModelStability = .true.
 
     end function EFTCAMBScalingCubicAdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the scale factor where the background table starts (model_background_a_ini): earlier
+    !! the interpolated state is frozen at its first value.
+    function EFTCAMBScalingCubicBackgroundStart(self)
+
+    implicit none
+
+    class(EFTCAMB_Scaling_Cubic), intent(in) :: self      !< the base class
+    real(dl) :: EFTCAMBScalingCubicBackgroundStart        !< the scale factor where the background table starts.
+
+    EFTCAMBScalingCubicBackgroundStart = exp(self%x_initial)
+
+    end function EFTCAMBScalingCubicBackgroundStart
 
     ! ---------------------------------------------------------------------------------------------
 

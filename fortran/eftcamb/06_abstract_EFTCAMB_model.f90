@@ -138,6 +138,8 @@
     procedure :: additional_model_stability => EFTCAMBModelAdditionalModelStability
     !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
     procedure :: wDE_prior => EFTCAMBModelwDEPrior
+    !< function that returns the scale factor where the model background solution starts (0: everywhere).
+    procedure :: background_start => EFTCAMBModelBackgroundStart
     ! positivity bounds:
     !< function that computes the positivity bounds. See thesis Dani de Boe for details.
     procedure :: compute_positivity_bounds => EFTCAMBModelPositivityBounds
@@ -1206,6 +1208,21 @@
     EFTCAMBModelwDEPrior = .true.
 
     end function EFTCAMBModelwDEPrior
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the scale factor where the background solution of the model starts. Earlier, a model
+    !! whose background is a table returns a frozen state: the perturbations should not be switched on there.
+    !! The default 0 means that the background is defined at every a.
+    function EFTCAMBModelBackgroundStart(self)
+
+    implicit none
+
+    class(EFTCAMB_model), intent(in) :: self      !< the base class
+    real(dl) :: EFTCAMBModelBackgroundStart       !< the scale factor where the background solution starts.
+
+    EFTCAMBModelBackgroundStart = 0._dl
+
+    end function EFTCAMBModelBackgroundStart
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the LHS of positivity bounds. For details refer to the master thesis of Dani de Boe.

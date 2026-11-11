@@ -715,6 +715,9 @@
             ! is skipped)
             call EFTCAMBReturnToGR_turn_on_warning(this%CP%EFTCAMB%EFTCAMB_feedback_level, this%CP%EFTCAMB%model, &
                 this%CP%eft_par_cache, turn_on_requested, this%CP%EFTCAMB%EFTCAMB_GR_threshold)
+            ! and when the perturbations start before the model background (frozen there):
+            call EFTCAMBReturnToGR_background_start_warning(this%CP%EFTCAMB%EFTCAMB_feedback_level, &
+                this%CP%EFTCAMB%model, this%CP%EFTCAMB%EFTCAMB_pert_turn_on)
 
             if (.not. this%CP%EFTCAMB%EFTCAMB_skip_stability) then
 
