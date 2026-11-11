@@ -46,11 +46,12 @@ feedback_level = 0
 """
 
 # sigma8 and lensed TT C_l (muK^2, raw) at l = 10, 100, 400 with the FAST settings, computed on eftcamb-audit
-# (after the audit fixes); relative tolerance 1e-5
+# (after the audit fixes; the two Pure EFT / RPH entries after the pi' initial condition with E'); relative tolerance
+# 1e-5
 REFERENCE = {
-    "2_PEFT_Omega_const_1": (0.22928846758790644, [1.52493164e02, 1.65988613e00, 6.38823379e-02]),
+    "2_PEFT_Omega_const_1": (0.22928843949170907, [1.510155251e02, 1.659871241e00, 6.388233185e-02]),
     "4_Des_F_R_LCDM_1": (0.9795731927760171, [42.10276032, 1.61639925, 0.06437505]),
-    "3_RPH_KT_power_1": (0.6443599338148509, [46.04550157, 1.61509824, 0.06420765]),
+    "3_RPH_KT_power_1": (0.6443599573164126, [46.042638202, 1.615099968, 0.064207649]),
     "5_quint_exponential": (0.6283036331682146, [47.14345523, 1.6335124, 0.06406843]),
 }
 
@@ -412,6 +413,23 @@ class EFTCAMBTest(unittest.TestCase):
         cp = self.read("5_ADE_1", "cs2 = 0.86\nwf = 0.87\nLog_ac = -3.52\nf_ac = 0.086\np = 0.5")
         bg = camb.get_background(cp)
         self.assertGreater(bg.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1e-7)
+
+    def test_ic_pidot_attractor(self):
+        # the type-1 initial pi' is the time derivative of the attractor -H0 E/(C + k^2 D1 + k^4 D2) (arXiv:1405.3590),
+        # with E' for every model: E' = 0 whenever a gamma_i != 0 gave pi' = -4x (RPH) and ~0 (Horava) that derivative
+        eps = np.array([1e-6, 2e-6, 3e-6])
+        for model in ("3_RPH_KT_OmegaDE_1", "5_Horava_eta_3"):
+            cp = self.read(model)
+            res = camb.get_results(cp)
+            h0 = cp.H0 / 299792.458  # H0 in 1/Mpc
+            tau_on = res.conformal_time(1 / res.Params.EFTCAMB.EFTCAMB_pert_turn_on - 1)
+            for k in (0.01, 0.1, 1.0):
+                with self.subTest(model=model, k=k):
+                    ev = cp.EFTCAMB.get_evolution(res, [k], tau_on * (1 + eps))[1][0]
+                    den = ev["EFTpiC"] + k**2 * ev["EFTpiD1"] + k**4 * ev["EFTpiD2"]
+                    attractor = -h0 * ev["EFTpiE"] / den
+                    dattractor = (attractor[2] - attractor[0]) / (tau_on * (eps[2] - eps[0]))
+                    self.assertAlmostEqual(ev["pidot"][1] / dattractor, 1, delta=0.1)
 
     def test_quintessence_h0_shooting(self):
         # the H0 shooting returns a root that reproduces H0 (with drag, p = 1 returned H0 3.4% off; without drag it was
