@@ -550,6 +550,20 @@ class EFTCAMBTest(unittest.TestCase):
         cp = self.read("2_PEFT_wDE_LCDM_1", olg + "3\nOLOmega0 = 0.05\nOLOmegaExp = 1.0")
         self.assertAlmostEqual(camb.get_results(cp).hubble_parameter(0) / cp.H0, 1, delta=1e-7)
 
+    def test_omega_lambda_alpha_gamma3_derivatives(self):
+        # OL alpha sets the third derivative of gamma3 = -(1 + M) alpha_T; with M = 0.1 a, alpha_T = -0.05 a^3 the third
+        # and fourth derivatives of gamma3 = 0.05 a^3 + 0.005 a^4 were both 0
+        ola = "EFTflag = 2\nAltParEFTmodel = 3\nOLLambdamodel = 0\nOLmassPmodel = 3\nOLkineticitymodel = 3\n"
+        ola += "OLbraidingmodel = 3\nOLtensormodel = 3\nOLmass0 = 0.1\nOLmassExp = 1.0\nOLkineticity0 = 1.0\n"
+        ola += "OLkineticityExp = 1.0\nOLbraiding0 = 0.1\nOLbraidingExp = 1.0\nOLtensor0 = -0.05\nOLtensorExp = 3.0\n"
+        ola += "EFTCAMB_skip_stability = T"
+        cp = self.read("2_PEFT_wDE_LCDM_1", ola)
+        a = np.array([0.3, 0.6, 0.9])
+        f = cp.EFTCAMB.get_eft_functions(camb.get_background(cp), a)[1]
+        np.testing.assert_allclose(f["EFTGamma3V"], 0.05 * a**3 + 0.005 * a**4, rtol=1e-12)
+        np.testing.assert_allclose(f["EFTGamma3PPP"], 0.3 + 0.12 * a, rtol=1e-12)
+        np.testing.assert_allclose(f["EFTGamma3PPPP"], 0.12, rtol=1e-6)
+
     def test_glpv_domain_floor(self):
         # gamma6 and gamma3 + gamma4 enter the dispersion relation times (k/aH)^2 ~ 1e9: only roundoff counts as GLPV
         # (the physical floor 1e-8 let gamma3 + gamma4 = -1e-9, with a k^4 instability above 2.2/Mpc, pass)

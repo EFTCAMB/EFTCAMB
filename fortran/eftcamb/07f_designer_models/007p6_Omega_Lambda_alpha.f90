@@ -606,7 +606,7 @@
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
     real(dl) :: OL_PM_V, OL_AT_V, OL_AK_V, OL_AB_V, OL_PM_P, OL_AT_P, OL_AK_P, OL_AB_P
-    real(dl) :: OL_PM_PP, OL_AT_PP
+    real(dl) :: OL_PM_PP, OL_AT_PP, OL_PM_PPP, OL_AT_PPP
 
     ! precompute some functions:
     OL_PM_V = self%OL_PlanckMass%value(a)
@@ -619,6 +619,8 @@
     OL_AB_P = self%OL_Braiding%first_derivative(a)
     OL_PM_PP = self%OL_PlanckMass%second_derivative(a)
     OL_AT_PP = self%OL_Tensor%second_derivative(a)
+    OL_PM_PPP = self%OL_PlanckMass%third_derivative(a)
+    OL_AT_PPP = self%OL_Tensor%third_derivative(a)
     ! compute the EFT functions:
     eft_cache%EFTGamma1V = 0.25_dl*(OL_AK_V*(1._dl + OL_PM_V)*eft_cache%adotoa**2 &
         - 2._dl*eft_cache%EFTc)/(eft_par_cache%h0_Mpc**2*a**2)
@@ -644,6 +646,10 @@
     eft_cache%EFTGamma4PP = +(1._dl + OL_PM_V)*OL_AT_PP + OL_PM_PP*OL_AT_V &
         + 2._dl*OL_PM_P*OL_AT_P
     eft_cache%EFTGamma3PP = -eft_cache%EFTGamma4PP
+    ! gamma3 = -(1 + M) alpha_T: its third derivative is analytic too (the fourth comes from the numerical fallback,
+    ! which differentiates this one; both were 0 when the fallback differentiated an unset EFTGamma3PP)
+    eft_cache%EFTGamma3PPP = -((1._dl + OL_PM_V)*OL_AT_PPP + 3._dl*OL_PM_P*OL_AT_PP + 3._dl*OL_PM_PP*OL_AT_P &
+        + OL_PM_PPP*OL_AT_V)
     eft_cache%EFTGamma5V = +0.5_dl*eft_cache%EFTGamma3V
     eft_cache%EFTGamma5P = +0.5_dl*eft_cache%EFTGamma3P
     eft_cache%EFTGamma6V = 0._dl
