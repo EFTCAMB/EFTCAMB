@@ -109,8 +109,10 @@
         type(equispaced_linear_interpolate_function_1D) :: d4Ode
 
         ! background solver parameters:
-        !< Number of points sampled by the designer code.
-        integer  :: designer_num_points = 6000
+        !< Number of points sampled by the designer code. H, its derivatives, rho_DE and Omega_DE are linearly
+        !! interpolated tables: 6000 points left the GR point 1e-5 off LCDM (TT), 60000 leave 1e-7 at no measurable
+        !! runtime cost.
+        integer  :: designer_num_points = 60000
         real(dl) :: x_initial = log(10._dl**(-8))               !< log(a start)
         real(dl) :: x_final = 0.0_dl                          !< log(a final)
 
@@ -202,7 +204,7 @@
     end if
 
     ! read precision parameters
-    self%designer_num_points = Ini%Read_Int('model_background_num_points', 6000)
+    self%designer_num_points = Ini%Read_Int('model_background_num_points', 60000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
     self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
 

@@ -46,12 +46,12 @@ feedback_level = 0
 """
 
 # sigma8 and lensed TT C_l (muK^2, raw) at l = 10, 100, 400 with the FAST settings, computed on eftcamb-audit
-# (after the audit fixes; the two Pure EFT / RPH entries after the pi' initial condition with E'); relative tolerance
-# 1e-5
+# (after the audit fixes; the Pure EFT and RPH entries after the pi' initial condition with E', RPH also after the
+# 60000-point tables); relative tolerance 1e-5
 REFERENCE = {
     "2_PEFT_Omega_const_1": (0.22928843949170907, [1.510155251e02, 1.659871241e00, 6.388233185e-02]),
     "4_Des_F_R_LCDM_1": (0.9795731927760171, [42.10276032, 1.61639925, 0.06437505]),
-    "3_RPH_KT_power_1": (0.6443599573164126, [46.042638202, 1.615099968, 0.064207649]),
+    "3_RPH_KT_power_1": (0.6443587523382762, [46.042515957, 1.615098353, 0.064207618]),
     "5_quint_exponential": (0.6283036331682146, [47.14345523, 1.6335124, 0.06406843]),
 }
 
@@ -814,8 +814,9 @@ class EFTCAMBTest(unittest.TestCase):
             res.get_BAO([0.5, -0.1], res.Params)
         # plain CAMB is not restricted
         self.assertGreater(camb.get_background(camb.set_params(H0=67.0)).hubble_parameter(-0.1), 0)
-        # a = 1 through conformal times: conformal_time(z = 0) of RPH exceeds tau0 by ~2e-8 for this array
-        cp = self.read("3_RPH_KT_power_1")
+        # a = 1 through conformal times: conformal_time(z = 0) of RPH with 6000-point tables (the former default)
+        # exceeds tau0 by ~2e-8 for this array
+        cp = self.read("3_RPH_KT_power_1", "model_background_num_points = 6000")
         res = camb.get_results(cp)
         a = np.array([0.05, 0.1, 0.3, 0.6, 1.0])
         self.assertGreater(res.conformal_time(1 / a - 1)[-1], res.tau0)
@@ -885,6 +886,16 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr[-500:])
         self.assertIn("RPH_M0", r.stdout)
         self.assertIn("process alive", r.stdout)
+
+    def test_rph_gr_point(self):
+        # RPH reads H, its derivatives and rho_DE from linearly interpolated tables: with 6000 points the GR point (all
+        # alpha = 0, EFT never on) was off the Pure EFT LCDM by TT 9.8e-6, sigma8 1.9e-6; the 60000-point default 1e-7
+        tt = lambda res: res.get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"][2:, 0]
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1"))
+        res = camb.get_results(self.read("3_RPH_KT_power_1", "RPHkineticitymodel = 0\nRPHtensormodel = 0"))
+        self.assertGreater(res.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1)
+        np.testing.assert_allclose(tt(res), tt(lcdm), rtol=1e-6)
+        self.assertAlmostEqual(res.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=2e-7)
 
     def test_rph_wde_normalisation(self):
         # RPH with w_DE != -1: rho_DE(a = 1) = 3 H0^2 Omega_DE, so H(z = 0) = H0, with both integration branches
