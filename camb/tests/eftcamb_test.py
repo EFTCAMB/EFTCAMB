@@ -6,6 +6,7 @@ a second. The tests are skipped when the parameter files are not available (e.g.
 """
 
 import copy
+import glob
 import os
 import pickle
 import re
@@ -51,7 +52,7 @@ feedback_level = 0
 REFERENCE = {
     "2_PEFT_Omega_const_1": (0.22928843949170907, [1.510155251e02, 1.659871241e00, 6.388233185e-02]),
     "4_Des_F_R_LCDM_1": (0.9795731927760171, [42.10276032, 1.61639925, 0.06437505]),
-    "3_RPH_KT_power_1": (0.6443587523382762, [46.042515957, 1.615098353, 0.064207618]),
+    "3_RPH_KT_lin_1": (0.6443587523382762, [46.042515957, 1.615098353, 0.064207618]),
     "5_quint_exponential": (0.6283036331682146, [47.14345523, 1.6335124, 0.06406843]),
 }
 
@@ -936,7 +937,7 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertGreater(camb.get_background(camb.set_params(H0=67.0)).hubble_parameter(-0.1), 0)
         # a = 1 through conformal times: conformal_time(z = 0) of RPH with 6000-point tables (the former default)
         # exceeds tau0 by ~2e-8 for this array
-        cp = self.read("3_RPH_KT_power_1", "model_background_num_points = 6000")
+        cp = self.read("3_RPH_KT_lin_1", "model_background_num_points = 6000")
         res = camb.get_results(cp)
         a = np.array([0.05, 0.1, 0.3, 0.6, 1.0])
         self.assertGreater(res.conformal_time(1 / a - 1)[-1], res.tau0)
@@ -1012,7 +1013,7 @@ class EFTCAMBTest(unittest.TestCase):
         # alpha = 0, EFT never on) was off the Pure EFT LCDM by TT 9.8e-6, sigma8 1.9e-6; the 60000-point default 1e-7
         tt = lambda res: res.get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"][2:, 0]
         lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1"))
-        res = camb.get_results(self.read("3_RPH_KT_power_1", "RPHkineticitymodel = 0\nRPHtensormodel = 0"))
+        res = camb.get_results(self.read("3_RPH_KT_lin_1", "RPHkineticitymodel = 0\nRPHtensormodel = 0"))
         self.assertGreater(res.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1)
         np.testing.assert_allclose(tt(res), tt(lcdm), rtol=1e-6)
         self.assertAlmostEqual(res.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=2e-7)
@@ -1083,6 +1084,25 @@ class EFTCAMBTest(unittest.TestCase):
         # the shipped GR test model runs through EFTCAMB with EFTflag = 0
         res = camb.get_results(self.read("1_EFT_GR"))
         self.assertEqual(res.Params.EFTCAMB.EFTflag, 0)
+
+    def test_test_inis_keys_read(self):
+        # every EFTCAMB key a test ini sets is read by its model: a typo (EFtw2) or a key of another parametrization
+        # (an *exp key with a linear model, EFTGamma40 in the gamma3 Horndeski mode) is silently ignored by the reader
+        unread = {}
+        for path in sorted(glob.glob(os.path.join(PARAMS, "*.ini"))):
+            with open(path) as f:
+                text = f.read()
+            if not re.search(r"^\s*EFTflag\s*=\s*[1-9]", text, re.MULTILINE):
+                continue
+            keys = re.findall(r"^\s*([A-Za-z_]\w*)\s*=", text, re.MULTILINE)
+            model = os.path.basename(path)[:-4]
+            cp = self.read(model)  # keep the parent of cp.EFTCAMB alive
+            read = set(cp.EFTCAMB.read_parameters())
+            missing = [k for k in keys if eftcamb.is_eftcamb_parameter(k) and k not in read]
+            missing = [k for k in missing if k not in ("output_root", "feedback_level")]
+            if missing:
+                unread[model] = missing
+        self.assertEqual(unread, {})
 
     def test_regression(self):
         for model, (sigma8, tt) in REFERENCE.items():
