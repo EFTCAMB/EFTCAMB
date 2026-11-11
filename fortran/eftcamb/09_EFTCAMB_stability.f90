@@ -87,6 +87,13 @@
         write(*, '(a)')
     end if
 
+    ! the mathematical mass condition is deprecated (EFTTestStability step 4): it rejects healthy models.
+    if (input_EFTCAMB%EFT_mass_math_stability .and. input_EFTCAMB%EFTCAMB_feedback_level > 0) then
+        write(*, '(a)') ' EFTCAMB WARNING: EFT_mass_math_stability is deprecated. It rejects any growing root of the'
+        write(*, '(a)') '   k-sampled pi equation at frozen coefficients (threshold 0, from EFTCAMB_stability_time on)'
+        write(*, '(a)') '   and refuses healthy models (11 of the 67 test models). Use EFT_mass_stability.'
+    end if
+
     ! the mass stability check rejects models since the mass eigenvalues were corrected (step 7 of EFTTestStability);
     ! the former warning:
     ! ! the mass stability check is experimental and is ignored:

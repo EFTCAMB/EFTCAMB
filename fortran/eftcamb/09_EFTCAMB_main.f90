@@ -79,7 +79,9 @@
         ! EFTCAMB stability flags:
         !< Flag that decides whether to enforce the mathematical ghost condition. This is less conservative than the physical requirement. Enforces the condition on both scalar and tensor sectors.
         logical  :: EFT_ghost_math_stability = .false.
-        !< Flag that decides whether to enforce the mathematical mass condition. This should prevent fast growing instabilities but is not fully rigorous. Use is deprecated.
+        !< Flag that decides whether to enforce the mathematical mass condition. Deprecated: it rejects any growing
+        !! root of the pi equation at frozen coefficients (threshold 0) and refuses healthy models;
+        !! use EFT_mass_stability.
         logical  :: EFT_mass_math_stability = .false.
         !
         !< Flag that decides whether to enforce the physical ghost condition. Works up to Horndeski.

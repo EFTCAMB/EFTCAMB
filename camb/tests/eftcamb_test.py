@@ -314,6 +314,36 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertNotIn(warning, blocks[1])
         self.assertNotIn(warning, blocks[2])
 
+    def test_mass_math_deprecated(self):
+        # EFT_mass_math_stability is kept as it is (it rejects healthy models: K-mimic here) and warns at feedback >= 1
+        code = (
+            "import camb, sys\n"
+            "for extra in ('EFT_mass_math_stability = T', 'EFT_mass_math_stability = F'):\n"
+            f"    ini = {self.tmp!r} + '/mathmass_' + extra[-1] + '.ini'\n"
+            "    open(ini, 'w').write('DEFAULT(' + " + repr(PARAMS) + " + '/5_Kmimic_1.ini)\\n' + extra + '\\n')\n"
+            "    print('CASE', extra, flush=True)\n"
+            "    try:\n"
+            "        camb.get_background(camb.read_ini(ini))\n"
+            "        print('ACCEPTED', flush=True)\n"
+            "    except camb.CAMBError:\n"
+            "        print('REFUSED', flush=True)\n"
+            "    sys.stdout.flush()\n"
+        )
+        r = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+            env=dict(os.environ, PYTHONPATH=ROOT, OMP_NUM_THREADS="2"),
+        )
+        self.assertEqual(r.returncode, 0, r.stderr[-500:])
+        on, off = r.stdout.split("CASE ")[1:]
+        self.assertIn("EFT_mass_math_stability is deprecated", on)
+        self.assertIn("REFUSED", on)
+        self.assertNotIn("deprecated", off)
+        self.assertIn("ACCEPTED", off)
+
     def test_3p1_gamma2_cosmic_time(self):
         # 3+1 designer: H0 gamma2 = -d rho1/dt with cosmic time, so the model has no braiding (alpha_B = 0:
         # a (H Omega' + H0 gamma2) = 0) and the near-GR model is close to GR (it had a spurious braiding before)

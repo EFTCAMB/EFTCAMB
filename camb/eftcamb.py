@@ -219,7 +219,11 @@ class EFTCAMB(F2003Class):
         (
             "EFT_mass_math_stability",
             c_bool,
-            "Flag that decides whether to enforce the mathematical mass condition. This should prevent fast growing instabilities but is not fully rigorous. Use is deprecated",
+            (
+                "Flag that decides whether to enforce the mathematical mass condition. Deprecated: it rejects any "
+                "growing root of the pi equation at frozen coefficients (threshold 0) and refuses healthy models; use "
+                "EFT_mass_stability."
+            ),
         ),
         (
             "EFT_ghost_stability",
