@@ -109,18 +109,18 @@
         if (eft_functions(7) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   cdot/3H^3    = ', eft_functions(7)
         if (eft_functions(8) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   Lambdadot/3H3= ', eft_functions(8)
         if (eft_functions(9) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma1V   = ', eft_functions(9)
-        if (eft_functions(10) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma1P   = ', eft_functions(10)
+        if (eft_functions(10) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   a EFTGamma1P = ', eft_functions(10)
         if (eft_functions(11) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma2V   = ', eft_functions(11)
-        if (eft_functions(12) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma2P   = ', eft_functions(12)
+        if (eft_functions(12) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   a EFTGamma2P = ', eft_functions(12)
         if (eft_functions(13) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma3V   = ', eft_functions(13)
-        if (eft_functions(14) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma3P   = ', eft_functions(14)
+        if (eft_functions(14) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   a EFTGamma3P = ', eft_functions(14)
         if (eft_functions(15) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma4V   = ', eft_functions(15)
-        if (eft_functions(16) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma4P   = ', eft_functions(16)
+        if (eft_functions(16) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   a EFTGamma4P = ', eft_functions(16)
         if (eft_functions(18) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma5V   = ', eft_functions(18)
         if (eft_functions(17) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma4PP  = ', eft_functions(17)
-        if (eft_functions(19) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma5P   = ', eft_functions(19)
+        if (eft_functions(19) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   a EFTGamma5P = ', eft_functions(19)
         if (eft_functions(20) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma6V   = ', eft_functions(20)
-        if (eft_functions(21) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTGamma6P   = ', eft_functions(21)
+        if (eft_functions(21) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   a EFTGamma6P = ', eft_functions(21)
         if (eft_functions(22) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   OmegaPPPP   = ', eft_functions(22)
         if (eft_functions(23) - RGR_threshold > 0._dl) write(*, '(a18,E13.4)') '   EFTLambdadotdot   = ', &
             eft_functions(23)
@@ -394,7 +394,8 @@
     call input_model%compute_QS_Mu_Sigma(a, EFT_RGR_kmax, params_cache, eft_cache)
 
     ! get the EFT functions, all dimensionless: the dimensionful c, Lambda (H^2 units, a^2-weighted in the cache)
-    ! are normalised by 3 adotoa^2 = 3 a^2 H^2 and their conformal time derivatives by 3 adotoa^3.
+    ! are normalised by 3 adotoa^2 = 3 a^2 H^2 and their conformal time derivatives by 3 adotoa^3; the derivatives of
+    ! Omega and gamma_i are taken in ln a (a d/da: a raw d/da magnifies a power law a^n by n/a, ~1e8 at a = 1e-8).
     eft_functions(1) = abs(eft_cache%EFTOmegaV)
     eft_functions(2) = abs(a*eft_cache%EFTOmegaP)
     ! observable-based criterion (scale-dependent models): deviation of the quasi-static mu, Sigma from GR at
@@ -410,18 +411,18 @@
     eft_functions(7) = abs(eft_cache%EFTcdot)/(3._dl*adotoa**3)
     eft_functions(8) = abs(eft_cache%EFTLambdadot)/(3._dl*adotoa**3)
     eft_functions(9) = abs(eft_cache%EFTGamma1V)
-    eft_functions(10) = abs(eft_cache%EFTGamma1P)
+    eft_functions(10) = abs(a*eft_cache%EFTGamma1P)
     eft_functions(11) = abs(eft_cache%EFTGamma2V)
-    eft_functions(12) = abs(eft_cache%EFTGamma2P)
+    eft_functions(12) = abs(a*eft_cache%EFTGamma2P)
     eft_functions(13) = abs(eft_cache%EFTGamma3V)
-    eft_functions(14) = abs(eft_cache%EFTGamma3P)
+    eft_functions(14) = abs(a*eft_cache%EFTGamma3P)
     eft_functions(15) = abs(eft_cache%EFTGamma4V)
-    eft_functions(16) = abs(eft_cache%EFTGamma4P)
+    eft_functions(16) = abs(a*eft_cache%EFTGamma4P)
     eft_functions(17) = 0._dl
     eft_functions(18) = abs(eft_cache%EFTGamma5V)
-    eft_functions(19) = abs(eft_cache%EFTGamma5P)
+    eft_functions(19) = abs(a*eft_cache%EFTGamma5P)
     eft_functions(20) = abs(eft_cache%EFTGamma6V)
-    eft_functions(21) = abs(eft_cache%EFTGamma6P)
+    eft_functions(21) = abs(a*eft_cache%EFTGamma6P)
     eft_functions(22) = 0._dl
     eft_functions(23) = 0._dl
     eft_functions(24) = 0._dl

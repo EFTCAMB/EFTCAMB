@@ -388,6 +388,13 @@ class EFTCAMBTest(unittest.TestCase):
         h0 = cp.H0 / 299792.458  # H0 in 1/Mpc
         np.testing.assert_allclose(c / (c + 2 * h0**2 * a**2 * gamma1), 0.86, rtol=1e-7)
 
+    def test_ade_turn_on(self):
+        # the return to GR compares d gamma_i/d ln a with the threshold: the raw d gamma1/da = 1e-8 switched this ADE
+        # (arXiv:1905.12618 Table I) on at a = 7.3e-9, where gamma1 = 1e-17
+        cp = self.read("5_ADE_1", "cs2 = 0.86\nwf = 0.87\nLog_ac = -3.52\nf_ac = 0.086\np = 0.5")
+        bg = camb.get_background(cp)
+        self.assertGreater(bg.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1e-7)
+
     def test_quintessence_h0_shooting(self):
         # the H0 shooting returns a root that reproduces H0 (with drag, p = 1 returned H0 3.4% off; without drag it was
         # refused), the same model with and without drag, and refuses a steep exponential whose only root starts
