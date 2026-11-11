@@ -495,6 +495,22 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertNotIn(warning, blocks[0])
         self.assertIn(warning, blocks[1])
 
+    def test_kmouflage_parameter_domain(self):
+        # K-mimic does not use alphaU (alphaU < 0 was refused); parameters for which the background is undefined (they
+        # were refused through a NaN dtauda) are named, also without the priors, and so are the priors
+        sigma8 = camb.get_results(self.read("5_Kmimic_1")).get_sigma8_0()
+        self.assertEqual(camb.get_results(self.read("5_Kmimic_1", "alphaU = -0.1")).get_sigma8_0(), sigma8)
+        for model, extra, message in (
+            ("5_Kmouflage_3", "eps2_0 = 0.0\nEFT_additional_priors = F", r"undefined for eps2_0 = 0 \(the LCDM limit"),
+            ("5_Kmimic_1", "gammaA = 0.0", r"undefined for gammaA <= 0"),
+            ("5_Kmimic_1", "m = 1.0", r"undefined for m <= 1"),
+            ("5_Kmimic_1", "m = 1.2\neps2_0 = 0.1\ngammaA = 0.2", r"undefined for A\(a -> 0\) <= 0"),
+            ("5_Kmouflage_3", "alphaU = -0.1", r"prior not met: alphaU < 0"),
+            ("5_Kmimic_1", "eps2_0 = 0.1\ngammaA = 0.1", r"prior not met: gammaA < eps2_0/\(1 - eps2_0\)"),
+        ):
+            with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, message):
+                camb.get_results(self.read(model, extra))
+
     def test_extended_galileon_prior(self):
         # the empirical (S + 0.02) q < 0.5 line (a fit to the optional mass cut of arXiv:1912.07586) refused these
         # viable models; the strong-coupling prior still refuses q S > 1
