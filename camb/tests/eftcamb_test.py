@@ -409,6 +409,19 @@ class EFTCAMBTest(unittest.TestCase):
         with self.assertRaisesRegex(CAMBError, "background solver failed"):
             camb.get_results(self.read("5_quint_exponential", "EFT_lambda = 2.2"))
 
+    def test_quintessence_early_background(self):
+        # dphi/dN is 1e-28..1e-9 before a ~ 1e-3: with one absolute tolerance 1e-14 (and a transposed Jacobian) it was
+        # solver noise, and EFTcdot/(H EFTc) = 38 at a = 1e-6 while c grew as a^4. The cache holds a^2 c and a^2 c'.
+        a = np.array([1e-7, 1e-6, 1e-5, 1e-4])
+        h = 0.05
+        cp = self.read("5_quint_exponential")
+        bg = camb.get_background(cp)
+        f = cp.EFTCAMB.get_eft_functions(bg, a)[1]
+        slope = np.array(f["EFTcdot"]) / (np.array(f["adotoa"]) * np.array(f["EFTc"]))
+        c_plus = np.array(cp.EFTCAMB.get_eft_functions(bg, a * np.exp(h))[1]["EFTc"])
+        c_minus = np.array(cp.EFTCAMB.get_eft_functions(bg, a * np.exp(-h))[1]["EFTc"])
+        np.testing.assert_allclose(slope, np.log(c_plus / c_minus) / (2 * h) - 2, atol=1e-3)
+
     def test_scaling_cubic_shooting(self):
         # the y2_i bracket expands until Omega_DE is overshot, and there is no Omega_v >= 0.3 cut: these were refused
         for extra in ("Scaling_Cubic_beta2 = 3.0", "model_background_a_ini = 1e-5", "omch2 = 0.33", "hubble = 99.0"):

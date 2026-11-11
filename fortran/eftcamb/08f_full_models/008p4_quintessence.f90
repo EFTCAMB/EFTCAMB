@@ -694,9 +694,11 @@
 
     ! odepack quantities:
     integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2, t2_temp, B
+    real(dl) :: rtol, atol(2), t1, t2, t2_temp, B
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
+    !< DLSODA calls that continue one integration interval after an excess-work return (1000 steps each):
+    integer, parameter :: max_continuations = 100
 
     ! background quantities that are shared among the derivs and output routines:
     real(dl) :: a, a2, grhob_t, grhoc_t, grhor_t, grhog_t, grhonu_tot, gpinu_tot
@@ -719,6 +721,8 @@
 
     ! Set initial conditions:
     y(1) = phi_ini
+    ! derivs reads y(2): define it before the drag initial condition, which needs only the matter densities
+    y(2) = 0._dl
     ! compute drag initial conditions:
     if (self%drag_initial_conditions) then
         ! call derivs to compute everything:
@@ -738,10 +742,12 @@
     H02 = 0._dl
 
     ! Initialize DLSODA:
-    ! set-up the relative and absolute tollerances:
-    itol = 1
+    ! set-up the relative and absolute tollerances: one absolute tolerance per component, since dphi/dN is 1e-28..1e-9
+    ! before a ~ 1e-3 in thawing models (an absolute 1e-14 left it as solver noise, 541x off at a < 1e-6)
+    itol = 2
     rtol = 1.d-10
-    atol = 1.d-14
+    atol(1) = 1.d-14
+    atol(2) = 1.d-35
     ! initialize task to do:
     itask = 1
     istate = 1
@@ -788,35 +794,24 @@
         if (t1 < 0._dl .and. t2 >= 0._dl) then
             ! solve until zero:
             t2_temp = 0._dl
-            call DLSODA (derivs, num_eq, y, t1, t2_temp, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
-                LIW, jacobian, JacobianMode)
+            call integrate(t1, t2_temp)
             ! check istate for LSODA good completion:
             if (istate < 0) then
-                if (istate == -1) then
-                    istate = 1
-                else
-                    success = .false.
-                    return
-                end if
+                success = .false.
+                return
             end if
             ! save H0:
             call derivs(num_eq, t2_temp, y, ydot)
             H02 = H2
             ! solve until t2:
-            call DLSODA (derivs, num_eq, y, t2_temp, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
-                LIW, jacobian, JacobianMode)
+            call integrate(t2_temp, t2)
         else
-            call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-                jacobian, JacobianMode)
+            call integrate(t1, t2)
         end if
         ! check istate for LSODA good completion:
         if (istate < 0) then
-            if (istate == -1) then
-                istate = 1
-            else
-                success = .false.
-                return
-            end if
+            success = .false.
+            return
         end if
 
         ! compute output EFT functions if needed:
@@ -841,6 +836,31 @@
     return
 
     contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that integrates the system from t_start to t_end with DLSODA. An excess-work return (istate = -1)
+    !! stops at an intermediate time: the same integration is continued (istate = 2), at most max_continuations
+    !! times (a restart with istate = 1 stored the solution of that earlier time at t_end).
+    subroutine integrate(t_start, t_end)
+
+    implicit none
+
+    real(dl), intent(inout) :: t_start !< initial time, the time reached on output
+    real(dl), intent(in)    :: t_end   !< final time
+
+    integer :: n_continue
+
+    call DLSODA(derivs, num_eq, y, t_start, t_end, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
+        jacobian, JacobianMode)
+    n_continue = 0
+    do while (istate == -1 .and. n_continue < max_continuations)
+        istate = 2
+        call DLSODA(derivs, num_eq, y, t_start, t_end, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+            LIW, jacobian, JacobianMode)
+        n_continue = n_continue + 1
+    end do
+
+    end subroutine integrate
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes y' given y for the background of 5e
@@ -926,13 +946,13 @@
     PV = self%quintessence_potential(phi, deriv=1)
     PPV = self%quintessence_potential(phi, deriv=2)
 
-    ! compute the Jacobian:
+    ! compute the Jacobian, pd(i, j) = d ydot(i)/d y(j) (ODEPACK convention):
     pd(1, 1) = 0._dl
-    pd(2, 1) = 1._dl
-    pd(1, 2) = (v**2 - 6._dl)*V0/4._dl/(grho_matter + V0*Vphi)**2*( &
+    pd(1, 2) = 1._dl
+    pd(2, 1) = (v**2 - 6._dl)*V0/4._dl/(grho_matter + V0*Vphi)**2*( &
         +v*PV*(grho_matter + gpres_matter) - 2._dl*V0*PV**2 &
         + 2._dl*PPV*(grho_matter + V0*Vphi))
-    pd(2, 2) = 1._dl/4._dl/(grho_matter + V0*Vphi)*( &
+    pd(2, 2) = -1._dl/4._dl/(grho_matter + V0*Vphi)*( &
         -6._dl*(v**2 - 2._dl)*V0*Vphi - 4._dl*v*V0*PV &
         + 3._dl*(v**2 - 2._dl)*(gpres_matter - grho_matter))
 
