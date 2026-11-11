@@ -30,7 +30,7 @@
 
     private
 
-    public hunt, integer_to_string, string, dfridr, double_NaN, log1p
+    public hunt, integer_to_string, string, dfridr, dfridr_general, double_NaN, log1p
 
     ! ----------------------------------------------------------------------------------------
     !> This is a utility type that allows to handle strings arrays. It is used because
@@ -158,6 +158,75 @@
         if (abs(a(i, i) - a(i - 1, i - 1)) >= SAFE*err) return
 12  continue
     end function dfridr
+
+    ! ----------------------------------------------------------------------------------------
+    !> Ridders' extrapolation (as dfridr) for the first (order = 1) or second (order = 2) derivative, from central
+    !! (side = 0) or backward (side = -1) differences. The backward differences use only x - j h, j = 0, 1, 2: they
+    !! serve where x + h would leave the domain of func (e.g. the background tables, which end at a = 1). Central
+    !! differences have errors in even powers of h, one-sided ones in all powers, hence the extrapolation factors.
+    function dfridr_general(func, x, h, err, order, side)
+
+    implicit none
+
+    integer, parameter :: ntab = 100
+    real(dl) :: dfridr_general
+    real(dl), intent(in) :: x, h
+    real(dl), intent(out) :: err
+    integer, intent(in) :: order, side
+    real(dl), external :: func
+
+    real(dl), parameter :: CON = 1.4_dl     ! decrease of the stepsize.
+    real(dl), parameter :: SAFE = 2._dl
+
+    integer i, j
+    real(dl) errt, fac, step_fac, hh, f0
+    real(dl), dimension(ntab, ntab) :: a
+
+    hh = h
+    if (hh == 0._dl) hh = 1.d-8
+    if (side == 0) then
+        step_fac = CON*CON
+    else
+        step_fac = CON
+    end if
+    if (order == 2 .or. side /= 0) f0 = func(x)
+    a(1, 1) = estimate(hh)
+    err = huge(1._dl)
+    dfridr_general = a(1, 1)
+    do i = 2, ntab
+        hh = hh/CON
+        a(1, i) = estimate(hh)
+        fac = step_fac
+        do j = 2, i
+            a(j, i) = (a(j - 1, i)*fac - a(j - 1, i - 1))/(fac - 1._dl)
+            fac = step_fac*fac
+            errt = max(abs(a(j, i) - a(j - 1, i)), abs(a(j, i) - a(j - 1, i - 1)))
+            if (errt <= err) then
+                err = errt
+                dfridr_general = a(j, i)
+            end if
+        end do
+        if (abs(a(i, i) - a(i - 1, i - 1)) >= SAFE*err) return
+    end do
+
+    contains
+
+    !> the finite difference estimate with step s.
+    function estimate(s)
+    real(dl), intent(in) :: s
+    real(dl) :: estimate
+    if (order == 1 .and. side == 0) then
+        estimate = (func(x + s) - func(x - s))/(2._dl*s)
+    else if (order == 1) then
+        estimate = (f0 - func(x - s))/s
+    else if (side == 0) then
+        estimate = (func(x + s) - 2._dl*f0 + func(x - s))/s**2
+    else
+        estimate = (f0 - 2._dl*func(x - s) + func(x - 2._dl*s))/s**2
+    end if
+    end function estimate
+
+    end function dfridr_general
 
     ! ----------------------------------------------------------------------------------------
     !> Algorithm to compute log(1+x)

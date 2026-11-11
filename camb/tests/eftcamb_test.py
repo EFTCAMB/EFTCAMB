@@ -564,6 +564,30 @@ class EFTCAMBTest(unittest.TestCase):
         np.testing.assert_allclose(f["EFTGamma3PPP"], 0.3 + 0.12 * a, rtol=1e-12)
         np.testing.assert_allclose(f["EFTGamma3PPPP"], 0.12, rtol=1e-6)
 
+    def test_numerical_derivative_fallbacks(self):
+        # near a = 1 the fallback derivatives are one-sided (the central stencil went past the end of the tables:
+        # designer f(R) OmegaPPPP(1) = -0.46 off the trend -0.92); a third derivative of a field whose second
+        # derivative the model does not set is the second derivative of the first (EFTGamma2PPP was 0 for OL alpha and
+        # Extended Galileon)
+        cp = self.read("4_Des_F_R_LCDM_1")
+        f = cp.EFTCAMB.get_eft_functions(camb.get_background(cp), np.array([0.97, 0.98, 0.99, 1.0]))[1]
+        for name in ("EFTOmegaPPPP", "EFTLambdadotdot"):
+            v = np.array(f[name])
+            with self.subTest(name=name):
+                self.assertAlmostEqual(v[3] / (3 * v[2] - 3 * v[1] + v[0]), 1, delta=1e-2)
+        ola = "EFTflag = 2\nAltParEFTmodel = 3\nOLLambdamodel = 0\nOLmassPmodel = 3\nOLkineticitymodel = 3\n"
+        ola += "OLbraidingmodel = 3\nOLtensormodel = 3\nOLmass0 = 0.1\nOLmassExp = 1.0\nOLkineticity0 = 1.0\n"
+        ola += "OLkineticityExp = 1.0\nOLbraiding0 = 0.1\nOLbraidingExp = 1.0\nOLtensor0 = -0.05\nOLtensorExp = 1.0\n"
+        galileon = "EFTflag = 4\nFullMappingEFTmodel = 7\nExtendedGalileon_S = 0.05\nExtendedGalileon_q = 1.0\n"
+        a, h = np.array([0.3, 0.6, 0.9]), 1e-3
+        for model, extra in (("2_PEFT_wDE_LCDM_1", ola), ("1_EFT_GR", galileon)):
+            with self.subTest(model=extra[:30]):
+                cp = self.read(model, extra + "EFTCAMB_skip_stability = T")
+                bg = camb.get_background(cp)
+                pp = [np.array(cp.EFTCAMB.get_eft_functions(bg, a * (1 + s * h))[1]["EFTGamma2PP"]) for s in (-1, 1)]
+                ppp = np.array(cp.EFTCAMB.get_eft_functions(bg, a)[1]["EFTGamma2PPP"])
+                np.testing.assert_allclose(ppp, (pp[1] - pp[0]) / (2 * h * a), rtol=1e-3)
+
     def test_numerical_derivative_large_values(self):
         # the numerical derivative (dfridr) of the fallbacks returned 0 for derivatives above ~1e30: OL alpha
         # EFTGamma1PP (-6.7e39 .. -6.9e32 for a = 1e-8 .. 2.5e-7) was 0 there

@@ -73,24 +73,61 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    integer, parameter :: num_fields = 9, max_memo = 512
-    real(dl) :: err, memo_a(max_memo), memo_v(num_fields, max_memo)
-    integer  :: n_memo
+    integer, parameter :: num_fields = 10, max_memo = 512
+    real(dl) :: err, h, memo_a(max_memo), memo_v(num_fields, max_memo)
+    integer  :: n_memo, side
+    logical  :: g2pp_given, g3pp_given, g3ppp_given, omppp_given
 
     n_memo = 0
+    ! the EFT functions end at a = 1 (P17; the background tables of most models too, where the interpolation freezes):
+    ! when the central stencil would leave them, use backward differences
+    h = 0.03_dl*a
+    side = 0
+    if (a + h > 1._dl) side = -1
+    ! the lower derivatives the model provides itself (the fallbacks below fill the others): a higher derivative is
+    ! the derivative of a provided one, else the second derivative of the one below (the derivative of an unset
+    ! field was 0, e.g. EFTGamma2PPP of OL alpha and Extended Galileon)
+    g2pp_given = eft_cache%EFTGamma2PP /= 0._dl
+    g3pp_given = eft_cache%EFTGamma3PP /= 0._dl
+    g3ppp_given = eft_cache%EFTGamma3PPP /= 0._dl
+    omppp_given = eft_cache%EFTOmegaPPP /= 0._dl
 
-    if (eft_cache%EFTGamma1PP == 0._dl) eft_cache%EFTGamma1PP = dfridr(helper_1, a, 0.03_dl*a, err)
-    if (eft_cache%EFTGamma2PP == 0._dl) eft_cache%EFTGamma2PP = dfridr(helper_2, a, 0.03_dl*a, err)
-    if (eft_cache%EFTGamma3PP == 0._dl) eft_cache%EFTGamma3PP = dfridr(helper_3, a, 0.03_dl*a, err)
-    if (eft_cache%EFTGamma2PPP == 0._dl) eft_cache%EFTGamma2PPP = dfridr(helper_4, a, 0.03_dl*a, err)
-    if (eft_cache%EFTGamma3PPP == 0._dl) eft_cache%EFTGamma3PPP = dfridr(helper_5, a, 0.03_dl*a, err)
-    if (eft_cache%EFTGamma3PPPP == 0._dl) eft_cache%EFTGamma3PPPP = dfridr(helper_6, a, 0.03_dl*a, err)
-    if (eft_cache%EFTOmegaPPPP == 0._dl) eft_cache%EFTOmegaPPPP = dfridr(helper_7, a, 0.03_dl*a, err)
+    if (eft_cache%EFTGamma1PP == 0._dl) eft_cache%EFTGamma1PP = dfridr_general(helper_1, a, h, err, 1, side)
+    if (eft_cache%EFTGamma2PP == 0._dl) eft_cache%EFTGamma2PP = dfridr_general(helper_2, a, h, err, 1, side)
+    if (eft_cache%EFTGamma3PP == 0._dl) eft_cache%EFTGamma3PP = dfridr_general(helper_3, a, h, err, 1, side)
+    if (eft_cache%EFTGamma2PPP == 0._dl) then
+        if (g2pp_given) then
+            eft_cache%EFTGamma2PPP = dfridr_general(helper_4, a, h, err, 1, side)
+        else
+            eft_cache%EFTGamma2PPP = dfridr_general(helper_2, a, h, err, 2, side)
+        end if
+    end if
+    if (eft_cache%EFTGamma3PPP == 0._dl) then
+        if (g3pp_given) then
+            eft_cache%EFTGamma3PPP = dfridr_general(helper_5, a, h, err, 1, side)
+        else
+            eft_cache%EFTGamma3PPP = dfridr_general(helper_3, a, h, err, 2, side)
+        end if
+    end if
+    if (eft_cache%EFTGamma3PPPP == 0._dl) then
+        if (g3ppp_given) then
+            eft_cache%EFTGamma3PPPP = dfridr_general(helper_6, a, h, err, 1, side)
+        else if (g3pp_given) then
+            eft_cache%EFTGamma3PPPP = dfridr_general(helper_5, a, h, err, 2, side)
+        end if
+    end if
+    if (eft_cache%EFTOmegaPPPP == 0._dl) then
+        if (omppp_given) then
+            eft_cache%EFTOmegaPPPP = dfridr_general(helper_7, a, h, err, 1, side)
+        else
+            eft_cache%EFTOmegaPPPP = dfridr_general(helper_10, a, h, err, 2, side)
+        end if
+    end if
     ! the dotted EFT functions follow Xdot = dX/dtau - 2 H X (a^2-weighted), so Xdotdot = a H dXdot/da - 2 H Xdot:
-    if (eft_cache%EFTcdotdot == 0._dl) eft_cache%EFTcdotdot = a*eft_cache%adotoa*dfridr(helper_8, a, 0.03_dl*a, err) &
-        - 2._dl*eft_cache%adotoa*eft_cache%EFTcdot
+    if (eft_cache%EFTcdotdot == 0._dl) eft_cache%EFTcdotdot = &
+        a*eft_cache%adotoa*dfridr_general(helper_8, a, h, err, 1, side) - 2._dl*eft_cache%adotoa*eft_cache%EFTcdot
     if (eft_cache%EFTLambdadotdot == 0._dl) eft_cache%EFTLambdadotdot = &
-        a*eft_cache%adotoa*dfridr(helper_9, a, 0.03_dl*a, err) - 2._dl*eft_cache%adotoa*eft_cache%EFTLambdadot
+        a*eft_cache%adotoa*dfridr_general(helper_9, a, h, err, 1, side) - 2._dl*eft_cache%adotoa*eft_cache%EFTLambdadot
 
     contains
 
@@ -186,7 +223,7 @@
     memo_a(j) = temp_a
     memo_v(:, j) = [temp_cache%EFTGamma1P, temp_cache%EFTGamma2P, temp_cache%EFTGamma3P, &
         temp_cache%EFTGamma2PP, temp_cache%EFTGamma3PP, temp_cache%EFTGamma3PPP, temp_cache%EFTOmegaPPP, &
-        temp_cache%EFTcdot, temp_cache%EFTLambdadot]
+        temp_cache%EFTcdot, temp_cache%EFTLambdadot, temp_cache%EFTOmegaPP]
     helper_value = memo_v(i, j)
 
     end function helper_value
@@ -235,6 +272,11 @@
     real(dl) :: temp_a, helper_9
     helper_9 = helper_value(temp_a, 9)
     end function helper_9
+
+    function helper_10(temp_a)
+    real(dl) :: temp_a, helper_10
+    helper_10 = helper_value(temp_a, 10)
+    end function helper_10
 
     end subroutine EFTCAMBDesignerModelComputeAdditionalDer
 
