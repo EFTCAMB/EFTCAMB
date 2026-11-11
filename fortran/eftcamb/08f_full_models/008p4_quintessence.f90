@@ -13,12 +13,21 @@
 !
 ! ----------------------------------------------------------------------------------------
 
-!> @file 008p3_quintessence.f90
+!> @file 008p4_quintessence.f90
 !! This file contains the definition of the Quintessence full mapping model.
 
 
 ! ----------------------------------------------------------------------------------------
-!> This module contains the definition of the Quintessence full mapping model.
+!> This module contains the definition of the Quintessence full mapping model: a minimally coupled scalar field phi
+!! (in units of the reduced Planck mass) with potential V(phi) = U P(phi), P the function selected by potential_model
+!! with its own parameters (e.g. its amplitude V0). Conventions:
+!! - the potential unit is U = 3 H0^2 (1 - Omega_c - Omega_b - Omega_nu)/(8 pi G), which does not subtract photons and
+!!   massless neutrinos: the LCDM point (a constant P, potential_model = 1) is V0 = Omega_v/(1 - Omega_c - Omega_b -
+!!   Omega_nu), e.g. 0.999895 for the test parameters, not 1 (V0 = 1 has no background solution);
+!! - phidot_ini is dphi/d ln a at a_ini (with drag_initial_conditions = F);
+!! - drag_initial_conditions = T sets dphi/d ln a at a_ini from d^2phi/d ln a^2 = 0 (the field dragged by the Hubble
+!!   friction): in the radiation era this is 5x the attractor velocity, to which the solution relaxes;
+!! - phi_ini is found by shooting on H0, within [field_min, field_max].
 
 !> @author Marco Raveri
 
@@ -61,10 +70,10 @@
     type, extends (EFTCAMB_full_model) :: EFTCAMB_5e
 
         ! 5e theory parameters:
-        real(dl) :: phidot_ini      !< initial value of the quintessence kinetic term.
-        !< bounds on the initial value of the field, minimum value. Useful for periodic potentials. Default to +10^10
+        real(dl) :: phidot_ini      !< initial value of the field velocity dphi/d ln a.
+        !< bounds on the initial value of the field, minimum value. Useful for periodic potentials. Default to -10^10
         real(dl) :: field_min
-        !< bounds on the initial value of the field, maximum value. Useful for periodic potentials. Default to -10^10
+        !< bounds on the initial value of the field, maximum value. Useful for periodic potentials. Default to +10^10
         real(dl) :: field_max
 
         ! scalar field potential model selection flag:
@@ -73,7 +82,8 @@
         logical  :: drag_initial_conditions !< Flag to select Hubble dragged initial conditions.
 
         ! the scalar field potential in case we need it:
-        class(parametrized_function_1D), allocatable :: potential   !< The JBD scalar field potential.
+        !< The quintessence potential P(phi), in units of U (see the module header).
+        class(parametrized_function_1D), allocatable :: potential
 
         ! the interpolated EFT functions that come out of the background solver:
         !< The interpolated function Lambda (and derivatives).
@@ -492,7 +502,7 @@
     call self%EFTc%precompute(x, ind, mu)
 
     eft_cache%EFTc = self%EFTc%value(x, index=ind, coeff=mu)
-    eft_cache%EFTLambda = self%EFTLambda%value(x, index=ind, coeff=mu)
+    eft_cache%EFTLambda = a*a*self%EFTLambda%value(x, index=ind, coeff=mu)
     eft_cache%EFTcdot = self%EFTc%first_derivative(x, index=ind, coeff=mu)
     eft_cache%EFTLambdadot = self%EFTLambda%first_derivative(x, index=ind, coeff=mu)
     eft_cache%EFTOmegaV = 0._dl
@@ -979,8 +989,10 @@
     phi_prime_prime = ydot(2)
 
     ! 2) compute the EFT functions:
-    self%EFTLambda%y(ind) = 0.5_dl*H2*phi_prime**2 - &
-        3._dl*(1._dl - omega_m)*params_cache%h0_Mpc**2*a2*self%quintessence_potential(phi, deriv=0)
+    ! tabulate Lambda/m0^2, not Lambda a^2/m0^2 = O(a^2) (as designer f(R), P18): the linear interpolation of the a^2
+    ! factor on the ln a grid tripped the return-to-GR Lambda test at the LCDM point, which was then refused
+    self%EFTLambda%y(ind) = (0.5_dl*H2*phi_prime**2 - &
+        3._dl*(1._dl - omega_m)*params_cache%h0_Mpc**2*a2*self%quintessence_potential(phi, deriv=0))/a2
     self%EFTc%y(ind) = 0.5_dl*H2*phi_prime**2
     ! we have to safeguard against H2 < 0
     if (H2 > 0._dl) then

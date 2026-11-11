@@ -457,6 +457,17 @@ class EFTCAMBTest(unittest.TestCase):
             with self.subTest(name=name):
                 np.testing.assert_allclose(ev[name], eft[name], rtol=1e-6)
 
+    def test_quintessence_lcdm_point(self):
+        # a constant potential with V0 = Omega_v/(1 - Om_c - Om_b - Om_nu) (the potential unit) is LCDM: the a^2-weighted
+        # Lambda table switched it on at a = 0.17, where it was refused (no pi kinetic term); it is never switched on now
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1"))
+        cp = self.read("5_quint_quadratic")
+        v0 = lcdm.get_Omega("de") / (1 - (cp.omch2 + cp.ombh2 + cp.omnuh2) / (cp.H0 / 100) ** 2)
+        extra = f"potential_model = 1\nV0 = {float(v0)!r}\ndrag_initial_conditions = F\nphidot_ini = 0.0"
+        res = camb.get_results(self.read("5_quint_quadratic", extra))
+        self.assertGreater(res.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1)
+        self.assertAlmostEqual(res.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=1e-10)
+
     def test_quintessence_early_background(self):
         # dphi/dN is 1e-28..1e-9 before a ~ 1e-3: with one absolute tolerance 1e-14 (and a transposed Jacobian) it was
         # solver noise, and EFTcdot/(H EFTc) = 38 at a = 1e-6 while c grew as a^4. The cache holds a^2 c and a^2 c'.
