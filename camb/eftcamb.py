@@ -245,6 +245,14 @@ class EFTCAMB(F2003Class):
             "Flag that sets the rate for the mass instability in units of Hubble time.",
         ),
         (
+            "EFT_mass_stability_method",
+            c_int,
+            (
+                "Mass condition of EFT_mass_stability: 1 (default) the k -> 0 eigenvalues of arXiv:1609.03599 App. C "
+                "(corrected), 2 the normal-form mass of pi, tested where pi also grows faster than the rate."
+            ),
+        ),
+        (
             "EFT_additional_priors",
             c_bool,
             "Flag that extablishes whether to use additional priors that are related to the specific model. Each model has the possibility of implementing their own additional stability requirements.",

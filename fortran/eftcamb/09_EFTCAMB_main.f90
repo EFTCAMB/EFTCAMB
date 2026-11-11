@@ -91,6 +91,10 @@
         logical  :: EFT_mass_stability = .false.
         !< Flag that sets the rate for the mass instability in units of Hubble time.
         real(dl) :: EFT_mass_stability_rate = 10._dl
+        !< Mass condition used by EFT_mass_stability: 1 (default) the k -> 0 eigenvalues of arXiv:1609.03599 App. C
+        !! (corrected), both tested; 2 the normal-form mass of pi (invariant under time-dependent rescalings of pi),
+        !! tested only where pi itself also grows faster than the rate.
+        integer  :: EFT_mass_stability_method = 1
         !
         !< Flag that extablishes whether to use additional priors that are related to the specific model. Each model has the possibility of implementing their own additional stability requirements.
         logical  :: EFT_additional_priors = .true.
@@ -228,6 +232,12 @@
     self%EFT_gradient_stability = Ini%Read_Logical('EFT_gradient_stability', .true.)
     self%EFT_mass_stability = Ini%Read_Logical('EFT_mass_stability', .false.)
     self%EFT_mass_stability_rate = Ini%Read_Double ('EFT_mass_stability_rate', 10._dl)
+    self%EFT_mass_stability_method = Ini%Read_Int('EFT_mass_stability_method', 1)
+    if (self%EFT_mass_stability_method < 1 .or. self%EFT_mass_stability_method > 2) then
+        call GlobalError('EFTCAMB error: invalid EFT_mass_stability_method, must be 1 (arXiv:1609.03599 ' // &
+            'eigenvalues) or 2 (normal-form mass of pi)', error_unsupported_params)
+        return
+    end if
 
     ! model specific priors:
     self%EFT_additional_priors = Ini%Read_Logical('EFT_additional_priors', .true.)
@@ -468,6 +478,7 @@
     write(*, *) ' Gradient stability     = ', self%EFT_gradient_stability
     write(*, *) ' Mass stability         = ', self%EFT_mass_stability
     write(*, '(a,E12.5)') '  Mass stability rate    = ', self%EFT_mass_stability_rate
+    write(*, '(a,I2)') '  Mass stability method  = ', self%EFT_mass_stability_method
     write(*, *) ' Additional priors      = ', self%EFT_additional_priors
     write(*, *) ' w_DE <= -1/3 prior     = ', self%EFT_wDE_prior
     write(*, *) ' Positivity bounds      = ', self%EFT_positivity_bounds

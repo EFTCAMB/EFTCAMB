@@ -71,6 +71,7 @@
     use EFT_def
     use EFTCAMB_abstract_model_full
     use EFTCAMB_abstract_model_designer
+    use EFTCAMB_stability, only: EFTStabilityMassEigenvalues
     ! EFTCAMB MOD END.
 
     implicit none
@@ -2795,6 +2796,8 @@
     real(dl) :: pigddot, E2ddot
     ! message of a pi equation without kinetic term
     character(len=160) :: eft_message
+    ! whether the printed mass eigenvalues are resolved
+    logical :: eft_mass_resolved
     ! EFTCAMB MOD END.
 
     k = EV%k_buf
@@ -3739,10 +3742,14 @@
         ! stability quantities:
         call CP%EFTCAMB%model%compute_stability_factors(a, CP%eft_par_cache, EV%eft_cache)
         ! the higher derivatives (zeros unless the model provides them) and the Hubble derivatives that use them, as
-        ! in the stability check, so that the printed mass eigenvalues are the checked ones:
+        ! in the stability check, so that the printed mass eigenvalues are the checked ones (method 2 takes the pi
+        ! factors from stability caches at a and at the neighbouring times):
         call CP%EFTCAMB%model%compute_additional_derivs(a, CP%eft_par_cache, EV%eft_cache)
         call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
-        call CP%EFTCAMB%model%compute_mass_factors(a, CP%eft_par_cache, EV%eft_cache)
+        call EFTStabilityMassEigenvalues(a, CP%EFTCAMB, CP%eft_par_cache, EV%eft_cache, eft_mass_resolved, &
+            recompute=.true.)
+        ! formerly:
+        ! call CP%EFTCAMB%model%compute_mass_factors(a, CP%eft_par_cache, EV%eft_cache)
     end if
     ! EFTCAMB MOD END.
 

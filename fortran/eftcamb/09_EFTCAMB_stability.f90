@@ -40,6 +40,7 @@
     private
 
     public EFTCAMB_Stability_Check, EFTTestStability, EFTStability_cleanup, EFTStabilityComputation
+    public EFTStabilityMassEigenvalues
     public EFTCAMB_compute_effective_w0wa
 
     ! storage for some utility values that needs to be stored for the stability check.
@@ -186,7 +187,7 @@
     logical                                      :: EFTTestStability
 
     ! Definitions of variables:
-    logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep, mass_resolved
+    logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep, mass_resolved, mass_unstable
     real(dl) :: EFT_instability_rate, tempk, temp1, temp2, temp3, temp4, temp5
     integer  :: ind_max, ind
     real(dl) :: test_dtauda, thr, kinetic_scale, gradient_scale
@@ -471,15 +472,27 @@
     end if
 
     ! 7) mass viability (EFT_mass_stability, off by default): tachyonic modes of the scalar sector at k -> 0.
-    !    compute_mass_factors gives the mass eigenvalues EFT_mu1 (scalar) and EFT_mu2 (matter), cosmic time
-    !    (arXiv:1609.03599 App. C, corrected). A mode grows as exp(int sqrt(-mu) dt): the model is rejected if
+    !    EFTStabilityMassEigenvalues gives the masses EFT_mu1 (scalar) and EFT_mu2 (matter), cosmic time, with the
+    !    method EFT_mass_stability_method. A mode grows as exp(int sqrt(-mu) dt): the model is rejected if
     !    mu < -(EFT_mass_stability_rate H)^2, i.e. if a mode grows faster than EFT_mass_stability_rate e-folds per
-    !    Hubble time. Tested after the perturbation turn-on, where the eigenvalues are numerically resolved.
+    !    Hubble time. Tested after the perturbation turn-on, where the masses are numerically resolved.
+    !    Method 1 (arXiv:1609.03599 App. C, corrected) tests both eigenvalues. Method 2 tests the normal-form mass of
+    !    pi, and only where pi itself also grows faster than the rate (largest root of A1 s^2 + B1 s + C = 0 at
+    !    frozen coefficients): a fast change of the pi normalisation (hilltop quintessence, where pi = delta phi/phi'
+    !    stays bounded while delta phi follows the rolling background) gives mu_1 < 0 without a growing pi;
+    !    EFT_mu2 = -rho_dust/2 is reported, not tested.
     if (input_EFTCAMB%EFT_mass_stability .and. a > input_EFTCAMB%EFTCAMB_pert_turn_on) then
-        call input_EFTCAMB%model%compute_mass_factors(a, params_cache, eft_cache, mass_resolved)
+        call EFTStabilityMassEigenvalues(a, input_EFTCAMB, params_cache, eft_cache, mass_resolved, &
+            floor=max(thr, 1.e-10_dl))
         if (mass_resolved) then
-            if (min(eft_cache%EFT_mu1, eft_cache%EFT_mu2) < &
-                -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2) then
+            if (input_EFTCAMB%EFT_mass_stability_method == 2) then
+                mass_unstable = eft_cache%EFT_mu1 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2 &
+                    .and. EFTPiFrozenGrowthRate(eft_cache) > input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa
+            else
+                mass_unstable = min(eft_cache%EFT_mu1, eft_cache%EFT_mu2) < &
+                    -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2
+            end if
+            if (mass_unstable) then
                 EFTTestStability = .false.
                 if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a,2E12.4)') &
                     '   Physical instability: tachyonic mass, mu_1/H^2, mu_2/H^2 = ', &
@@ -818,11 +831,13 @@
     call input_model%compute_tensor_factors(a, params_cache, eft_cache)
     ! Compute kinetic, gradient and mass terms:
     call input_model%compute_stability_factors(a, params_cache, eft_cache)
-    ! Higher derivatives of the EFT functions used by the mass eigenvalues, the positivity bounds and the
+    ! Higher derivatives of the EFT functions used by the mass eigenvalues of method 1, the positivity bounds and the
     ! Minkowski limit: compute them first (models that do not provide them analytically would otherwise use
     ! zeros), then recompute the Hubble derivatives so that Hdotdotdot includes EFTLambdadotdot and EFTOmegaPPPP.
+    ! (The normal-form mass of method 2 needs only the pi factors.)
     if (input_EFTCAMB%EFT_positivity_bounds .or. input_EFTCAMB%EFT_minkowski_limit .or. &
-        (input_EFTCAMB%EFT_mass_stability .and. a > input_EFTCAMB%EFTCAMB_pert_turn_on)) then
+        (input_EFTCAMB%EFT_mass_stability .and. input_EFTCAMB%EFT_mass_stability_method == 1 .and. &
+        a > input_EFTCAMB%EFTCAMB_pert_turn_on)) then
         call input_model%compute_additional_derivs(a, params_cache, eft_cache)
         call input_model%compute_H_derivs(a, params_cache, eft_cache)
     end if
@@ -841,6 +856,129 @@
     end if
 
     end subroutine EFTStabilityComputation
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the k -> 0 masses EFT_mu1 (scalar) and EFT_mu2 (matter) at scale factor a, cosmic time
+    !! (Mpc^-2), with the method EFT_mass_stability_method; eft_cache must be filled at a (EFTStabilityComputation,
+    !! or the evolution). resolved = .false. where they are not numerically resolved (EFT_mu1, EFT_mu2 are then 0, or
+    !! EFT_mu2 = -rho_dust/2 for method 2).
+    !! Method 1: compute_mass_factors, the k -> 0 eigenvalues of arXiv:1609.03599 App. C (corrected).
+    !! Method 2: the normal form of the k -> 0 pi equation A1 pi'' + B1 pi' + C pi = 0 (conformal time): with
+    !!  p = EFTpiB1/EFTpiA1, q = EFTpiC/EFTpiA1 and pi = u exp(-int p/2) it reads u'' + (q - p^2/4 - p'/2) u = 0, and
+    !!      EFT_mu1 = (q - p^2/4 - p'/2 + adotoa^2 + Hdot)/a^2,
+    !!  the mass relative to a massless minimally coupled field (u'' - (a''/a) u = 0). EFT_mu1 does not change under
+    !!  time-dependent rescalings of pi; it is V'' for canonical quintessence and the scalaron mass for f(R).
+    !!  EFT_mu2 = -rho_dust/2 (the matter Jeans term). p' is a central difference of stability caches in ln a with
+    !!  step mass_dlna (second-order backward where a exp(mass_dlna) > 1). Not resolved where EFTpiA1 is zero or below
+    !!  floor times the sum of the magnitudes of its terms (no pi kinetic term at k -> 0: auxiliary pi, Horava, gamma6)
+    !!  or changes sign or by more than |d ln EFTpiA1/d ln a| = mass_max_dlnA across the stencil (A1 -> 0, e.g. phi' = 0
+    !!  for quintessence: there the truncation error of -p'/2 stays below 0.01 H^2 outside +-0.03 e-folds, where a
+    !!  tachyon of rate 3 H grows by at most 20%). With recompute = .true. the pi factors at a are also taken from a
+    !!  stability cache (for the evolution output: the same values as the stability check).
+    subroutine EFTStabilityMassEigenvalues(a, input_EFTCAMB, params_cache, eft_cache, resolved, floor, recompute)
+
+    implicit none
+
+    real(dl), intent(in)       :: a              !< the input scale factor.
+    type(TEFTCAMB), intent(in) :: input_EFTCAMB  !< the EFTCAMB object.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: params_cache
+    !< the EFTCAMB timestep cache, filled at a. On output EFT_mu1, EFT_mu2 are set.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+    logical, intent(out)            :: resolved   !< whether EFT_mu1, EFT_mu2 are numerically resolved.
+    real(dl), intent(in), optional  :: floor      !< relative numerical floor of EFTpiA1 (method 2; default 1e-10).
+    logical, intent(in), optional   :: recompute  !< method 2: take the pi factors at a from a stability cache.
+
+    real(dl), parameter :: mass_dlna = 1.e-4_dl      ! finite-difference step in ln a
+    real(dl), parameter :: mass_max_dlnA = 63._dl    ! largest resolved |d ln EFTpiA1/d ln a|
+    type(TEFTCAMB_timestep_cache) :: cache_0, cache_1, cache_2
+    real(dl) :: a_1, a_2, p0, p1, p2, pdot, q, F1, A1_scale, dlnA, A1_floor
+    logical  :: backward
+
+    resolved = .false.
+    if (input_EFTCAMB%EFT_mass_stability_method /= 2) then
+        call input_EFTCAMB%model%compute_mass_factors(a, params_cache, eft_cache, resolved)
+        return
+    end if
+
+    A1_floor = 1.e-10_dl
+    if (present(floor)) A1_floor = floor
+    ! the pi factors at a:
+    call cache_0%initialize()
+    if (present(recompute)) then
+        if (recompute) then
+            call EFTStabilityComputation(a, input_EFTCAMB, input_EFTCAMB%model, params_cache, cache_0)
+        else
+            cache_0 = eft_cache
+        end if
+    else
+        cache_0 = eft_cache
+    end if
+    eft_cache%EFT_mu1 = 0._dl
+    eft_cache%EFT_mu2 = -0.5_dl*(cache_0%grhob_t + cache_0%grhoc_t)/a**2
+    if (cache_0%EFTpiA1 == 0._dl) return
+    ! EFTpiA1 = a^2 K/(2 F1), K = F1 (2c + 4 H0^2 gamma1) + 3 (dOmega/dt + H0 gamma2)^2 (cosmic): numerical floor
+    F1 = 2._dl*(1._dl + cache_0%EFTOmegaV) + 3._dl*cache_0%EFTGamma3V + cache_0%EFTGamma4V
+    if (F1 == 0._dl) return
+    A1_scale = (abs(F1)*(2._dl*abs(cache_0%EFTc) + 4._dl*a**2*params_cache%h0_Mpc**2*abs(cache_0%EFTGamma1V)) + &
+        3._dl*a**2*(abs(cache_0%adotoa*cache_0%EFTOmegaP) + params_cache%h0_Mpc*abs(cache_0%EFTGamma2V))**2)/ &
+        (2._dl*abs(F1))
+    if (.not. abs(cache_0%EFTpiA1) > A1_floor*A1_scale) return
+    ! pi factors at the neighbouring times:
+    backward = a*exp(mass_dlna) > 1._dl
+    a_1 = a*exp(-mass_dlna)
+    if (backward) then
+        a_2 = a*exp(-2._dl*mass_dlna)
+    else
+        a_2 = a*exp(mass_dlna)
+    end if
+    call cache_1%initialize()
+    call EFTStabilityComputation(a_1, input_EFTCAMB, input_EFTCAMB%model, params_cache, cache_1)
+    call cache_2%initialize()
+    call EFTStabilityComputation(a_2, input_EFTCAMB, input_EFTCAMB%model, params_cache, cache_2)
+    if (cache_1%EFTpiA1*cache_0%EFTpiA1 <= 0._dl .or. cache_2%EFTpiA1*cache_0%EFTpiA1 <= 0._dl) return
+    if (backward) then
+        dlnA = abs(log(cache_0%EFTpiA1/cache_2%EFTpiA1))/(2._dl*mass_dlna)
+    else
+        dlnA = abs(log(cache_2%EFTpiA1/cache_1%EFTpiA1))/(2._dl*mass_dlna)
+    end if
+    if (.not. dlnA <= mass_max_dlnA) return
+    p0 = cache_0%EFTpiB1/cache_0%EFTpiA1
+    p1 = cache_1%EFTpiB1/cache_1%EFTpiA1
+    p2 = cache_2%EFTpiB1/cache_2%EFTpiA1
+    if (backward) then
+        pdot = cache_0%adotoa*(3._dl*p0 - 4._dl*p1 + p2)/(2._dl*mass_dlna)
+    else
+        pdot = cache_0%adotoa*(p2 - p1)/(2._dl*mass_dlna)
+    end if
+    q = cache_0%EFTpiC/cache_0%EFTpiA1
+    eft_cache%EFT_mu1 = (q - 0.25_dl*p0**2 - 0.5_dl*pdot + cache_0%adotoa**2 + cache_0%Hdot)/a**2
+    resolved = eft_cache%EFT_mu1 == eft_cache%EFT_mu1
+    if (.not. resolved) eft_cache%EFT_mu1 = 0._dl
+
+    end subroutine EFTStabilityMassEigenvalues
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the growth rate of pi at k -> 0 with frozen coefficients (conformal time, Mpc^-1): the
+    !! largest real part of the roots of EFTpiA1 s^2 + EFTpiB1 s + EFTpiC = 0. Used by the mass condition of method 2
+    !! to require that pi itself grows, not only its normal-form amplitude.
+    function EFTPiFrozenGrowthRate(eft_cache)
+
+    implicit none
+
+    type(TEFTCAMB_timestep_cache), intent(in) :: eft_cache  !< the EFTCAMB timestep cache.
+    real(dl) :: EFTPiFrozenGrowthRate
+    real(dl) :: disc
+
+    disc = eft_cache%EFTpiB1**2 - 4._dl*eft_cache%EFTpiA1*eft_cache%EFTpiC
+    if (disc >= 0._dl) then
+        EFTPiFrozenGrowthRate = max((-eft_cache%EFTpiB1 + sqrt(disc))/(2._dl*eft_cache%EFTpiA1), &
+            (-eft_cache%EFTpiB1 - sqrt(disc))/(2._dl*eft_cache%EFTpiA1))
+    else
+        EFTPiFrozenGrowthRate = -eft_cache%EFTpiB1/(2._dl*eft_cache%EFTpiA1)
+    end if
+
+    end function EFTPiFrozenGrowthRate
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the effective CPL equation of state (w0, wa) of the model background, as used by
