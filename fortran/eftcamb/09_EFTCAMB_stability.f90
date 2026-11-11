@@ -86,11 +86,13 @@
         write(*, '(a)')
     end if
 
-    ! the mass stability check is experimental and is ignored:
-    if (input_EFTCAMB%EFT_mass_stability .and. input_EFTCAMB%EFTCAMB_feedback_level > 0) then
-        write(*, '(a)') ' EFTCAMB WARNING: EFT_mass_stability is experimental and is ignored:'
-        write(*, '(a)') '   the mass eigenvalues are computed but models are not rejected on them.'
-    end if
+    ! the mass stability check rejects models since the mass eigenvalues were corrected (step 7 of EFTTestStability);
+    ! the former warning:
+    ! ! the mass stability check is experimental and is ignored:
+    ! if (input_EFTCAMB%EFT_mass_stability .and. input_EFTCAMB%EFTCAMB_feedback_level > 0) then
+    !     write(*, '(a)') ' EFTCAMB WARNING: EFT_mass_stability is experimental and is ignored:'
+    !     write(*, '(a)') '   the mass eigenvalues are computed but models are not rejected on them.'
+    ! end if
 
     ! debug open cache files:
     if (DebugEFTCAMB) then
@@ -184,7 +186,7 @@
     logical                                      :: EFTTestStability
 
     ! Definitions of variables:
-    logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep
+    logical  :: EFT_HaveNan_parameter, EFT_HaveNan_timestep, mass_resolved
     real(dl) :: EFT_instability_rate, tempk, temp1, temp2, temp3, temp4, temp5
     integer  :: ind_max, ind
     real(dl) :: test_dtauda, thr, kinetic_scale, gradient_scale
@@ -468,19 +470,37 @@
 
     end if
 
-    ! 7) mass viability: EXPERIMENTAL, never rejects a model.
-    !    The mass eigenvalues mu_1, mu_2 reject canonical quintessence (|mu|/H^2 ~ 1e9) and are dominated by
-    !    roundoff near GR (audit findings F-042, F-063): until they are re-derived the check only reports.
+    ! 7) mass viability (EFT_mass_stability, off by default): tachyonic modes of the scalar sector at k -> 0.
+    !    compute_mass_factors gives the mass eigenvalues EFT_mu1 (scalar) and EFT_mu2 (matter), cosmic time
+    !    (arXiv:1609.03599 App. C, corrected). A mode grows as exp(int sqrt(-mu) dt): the model is rejected if
+    !    mu < -(EFT_mass_stability_rate H)^2, i.e. if a mode grows faster than EFT_mass_stability_rate e-folds per
+    !    Hubble time. Tested after the perturbation turn-on, where the eigenvalues are numerically resolved.
     if (input_EFTCAMB%EFT_mass_stability .and. a > input_EFTCAMB%EFTCAMB_pert_turn_on) then
-        if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
-            if (eft_cache%EFT_mu1 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2) &
-                write(*, '(a,E11.4)') '   Experimental mass check (ignored): mu_1/H^2 = ', &
-                eft_cache%EFT_mu1*(a/eft_cache%adotoa)**2
-            if (eft_cache%EFT_mu2 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2) &
-                write(*, '(a,E11.4)') '   Experimental mass check (ignored): mu_2/H^2 = ', &
-                eft_cache%EFT_mu2*(a/eft_cache%adotoa)**2
+        call input_EFTCAMB%model%compute_mass_factors(a, params_cache, eft_cache, mass_resolved)
+        if (mass_resolved) then
+            if (min(eft_cache%EFT_mu1, eft_cache%EFT_mu2) < &
+                -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2) then
+                EFTTestStability = .false.
+                if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a,2E12.4)') &
+                    '   Physical instability: tachyonic mass, mu_1/H^2, mu_2/H^2 = ', &
+                    eft_cache%EFT_mu1*(a/eft_cache%adotoa)**2, eft_cache%EFT_mu2*(a/eft_cache%adotoa)**2
+            end if
         end if
     end if
+    ! the former check (experimental, it never rejected a model):
+    ! ! 7) mass viability: EXPERIMENTAL, never rejects a model.
+    ! !    The mass eigenvalues mu_1, mu_2 reject canonical quintessence (|mu|/H^2 ~ 1e9) and are dominated by
+    ! !    roundoff near GR (audit findings F-042, F-063): until they are re-derived the check only reports.
+    ! if (input_EFTCAMB%EFT_mass_stability .and. a > input_EFTCAMB%EFTCAMB_pert_turn_on) then
+    !     if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
+    !         if (eft_cache%EFT_mu1 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2) &
+    !             write(*, '(a,E11.4)') '   Experimental mass check (ignored): mu_1/H^2 = ', &
+    !             eft_cache%EFT_mu1*(a/eft_cache%adotoa)**2
+    !         if (eft_cache%EFT_mu2 < -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2) &
+    !             write(*, '(a,E11.4)') '   Experimental mass check (ignored): mu_2/H^2 = ', &
+    !             eft_cache%EFT_mu2*(a/eft_cache%adotoa)**2
+    !     end if
+    ! end if
 
     ! 8) enforce model specific priors:
     if (input_EFTCAMB%EFT_additional_priors) then
@@ -808,10 +828,12 @@
     end if
     ! Compute positivity bounds:
     call input_model%compute_positivity_bounds(a, params_cache, eft_cache)
-    ! Compute the mass eigenvalues:
-    if (a > input_EFTCAMB%EFTCAMB_pert_turn_on .and. input_EFTCAMB%EFT_mass_stability) then
-        call input_model%compute_mass_factors(a, params_cache, eft_cache)
-    end if
+    ! The mass eigenvalues are computed by the mass check (step 7 of EFTTestStability), which needs to know whether
+    ! they are resolved; formerly here:
+    ! ! Compute the mass eigenvalues:
+    ! if (a > input_EFTCAMB%EFTCAMB_pert_turn_on .and. input_EFTCAMB%EFT_mass_stability) then
+    !     call input_model%compute_mass_factors(a, params_cache, eft_cache)
+    ! end if
 
     ! dump cache if in debug mode:
     if (DebugEFTCAMB) then

@@ -234,7 +234,10 @@ class EFTCAMB(F2003Class):
         (
             "EFT_mass_stability",
             c_bool,
-            "Flag that decides whether to enforce the physical mass condition. Works up to Horndeski.",
+            (
+                "Flag that decides whether to enforce the physical mass condition (off by default): reject a k -> 0 "
+                "mass eigenvalue of the scalar sector below -(EFT_mass_stability_rate H)^2 after the turn-on."
+            ),
         ),
         (
             "EFT_mass_stability_rate",
@@ -1041,11 +1044,11 @@ class EFTCAMB_timestep_cache(F2003Class):
         (
             "EFT_mu1",
             c_double,
-        ),  # the value of the first mass eigenvalue. Refer to the Numerical Notes for the definition.
+        ),  # k -> 0 mass squared of the scalar field (cosmic time, Mpc^-2; 0 where not resolved).
         (
             "EFT_mu2",
             c_double,
-        ),  # the value of the second mass eigenvalue. Refer to the Numerical Notes for the definition.
+        ),  # k -> 0 mass eigenvalue of the matter (dust) mode (cosmic time, Mpc^-2; 0 where not resolved).
         # 13) other quantities usefull for debug purposes:
         ("Psi", c_double),  # Perturbation in the 00 component of the metric in Conformal Newtonian gauge.
         ("Phi", c_double),  # Perturbation in the space component of the metric in Conformal Newtonian gauge.

@@ -86,7 +86,8 @@
         logical  :: EFT_ghost_stability = .true.
         !< Flag that decides whether to enforce the physical gradient condition. Works up to Horndeski.
         logical  :: EFT_gradient_stability = .true.
-        !< Flag that decides whether to enforce the physical mass condition. Works up to Horndeski.
+        !< Flag that decides whether to enforce the physical mass condition (off by default): reject a k -> 0 mass
+        !! eigenvalue of the scalar sector below -(EFT_mass_stability_rate H)^2 after the turn-on.
         logical  :: EFT_mass_stability = .false.
         !< Flag that sets the rate for the mass instability in units of Hubble time.
         real(dl) :: EFT_mass_stability_rate = 10._dl

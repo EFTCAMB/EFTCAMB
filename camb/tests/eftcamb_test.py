@@ -664,6 +664,36 @@ class EFTCAMBTest(unittest.TestCase):
         res = camb.get_results(self.read("4_Des_F_R_wCDM_1", "EFTw0 = -1.01\nEFTCAMB_stability_time = 1e-2"))
         self.assertGreater(res.get_sigma8_0(), 0)
 
+    def test_mass_eigenvalues(self):
+        # compute_mass_factors (arXiv:1609.03599 App. C, corrected: d^2 EFTc/da^2, the matter rho + p as dust with a
+        # consistent Hdotdot, quadruple precision): EFT_mu1 is the scalaron mass ((1 + f_R)/f_RR - R)/3 of a heavy
+        # f(R) scalaron (it was +-1e13 H^2 or inf) and of order H^2 for quintessence (it was +-1e15 H^2)
+        a = np.array([0.5, 1.0])
+        cp = self.read("4_Des_F_R_LCDM_1", "EFTB0 = 1e-4")
+        ev = cp.EFTCAMB.get_scale_evolution(camb.get_results(cp), [1e-3], a)[1][0]
+        ev = {name: np.ravel(ev[name]) for name in ("adotoa", "Hdot", "Hdotdot", "EFTOmegaV", "EFTOmegaP", "EFT_mu1")}
+        H = ev["adotoa"] / a
+        Hd = ev["Hdot"] / a**2 - H**2
+        Hdd = ev["Hdotdot"] / a**3 - 4 * H * Hd - 2 * H**3
+        R, Rdot = 6 * (2 * H**2 + Hd), 6 * (4 * H * Hd + Hdd)
+        scalaron = ((1 + ev["EFTOmegaV"]) * Rdot / (ev["adotoa"] * ev["EFTOmegaP"]) - R) / 3
+        np.testing.assert_allclose(ev["EFT_mu1"], scalaron, rtol=1e-2)
+        cp = self.read("5_quint_exponential")
+        ev = cp.EFTCAMB.get_scale_evolution(camb.get_results(cp), [1e-3], a)[1][0]
+        self.assertTrue(np.all(np.abs(np.ravel(ev["EFT_mu1"])) < 5 * (np.ravel(ev["adotoa"]) / a) ** 2))
+
+    def test_mass_stability(self):
+        # EFT_mass_stability rejects a tachyonic f(R) scalaron (B0 < 0 with the f_RR prior off: mu_1 ~ -4e7 H^2); it
+        # was experimental and ignored, and the run then failed in the integrator. Healthy models still run.
+        with self.assertRaisesRegex(CAMBError, "theory unstable"):
+            camb.get_results(
+                self.read("4_Des_F_R_LCDM_1", "EFTB0 = -1e-4\nEFT_additional_priors = F\nEFT_mass_stability = T")
+            )
+        for model, extra in (("4_Des_F_R_LCDM_1", "EFTB0 = 1e-4"), ("5_quint_exponential", "")):
+            with self.subTest(model=model):
+                cp = self.read(model, extra + "\nEFT_mass_stability = T")
+                self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
+
     def test_3p1_b22(self):
         # 3+1 designer gradient test with the corrected B22 (+ b3/2, missing in arXiv:2508.01378 App. D): this healthy
         # model was refused by the model's own gradient test

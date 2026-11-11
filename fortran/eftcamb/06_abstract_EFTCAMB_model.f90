@@ -123,7 +123,7 @@
     procedure :: compute_tensor_factors => EFTCAMBModelComputeTensorFactors
     !< subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
     procedure :: compute_stability_factors => EFTCAMBModelComputeStabilityFactors
-    !< subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
+    !< subroutine that computes the k -> 0 mass eigenvalues of the scalar sector (arXiv:1609.03599 App. C, corrected).
     procedure :: compute_mass_factors => EFTCAMBModelComputeMassFactors
     ! compute Sigma and mu
     !< function that computes the quasi-static expression of mu.
@@ -832,8 +832,23 @@
     end subroutine EFTCAMBStabilityScales
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the kinetic and gradient terms. For details refer to the numerical notes.
-    subroutine EFTCAMBModelComputeMassFactors(self, a, eft_par_cache, eft_cache)
+    !> Subroutine that computes the k -> 0 mass eigenvalues of the scalar sector, EFT_mu1 and EFT_mu2 (cosmic time,
+    !! Mpc^-2), from the closed form of arXiv:1609.03599 App. C (pi and dust at k -> 0, after diagonalising the kinetic
+    !! matrix). In exact arithmetic the closed form is right: it gives V''/2 for canonical quintessence and half the
+    !! f(R) scalaron mass, with its sign. Three corrections make it usable (the original body is kept below, commented):
+    !!  - EFTcPP = d^2 EFTc/da^2 (the original local expression was too large by about 1/adotoa);
+    !!  - the closed form assumes a dust-only background. It gets the rho + p of all matter as rho_d, with dust
+    !!    continuity, and the Hdotdot of the background in which that dust obeys the c equation and its time
+    !!    derivative: Hdotdot + a^2 dP/dtau/(2 (1 + Omega) + a dOmega/da). Otherwise the non-dust residual is divided by
+    !!    Ktilde = 3 F2^2 + F1 F3, which vanishes near GR (radiation at 1e-4 of the matter density gives 200 V'' for
+    !!    quintessence). The correction leaves an error of order rho_rad/rho_m (1e-4 at 1e-4, 13% at 1e-1);
+    !!  - Ktilde cancels near GR, so the closed form is evaluated in quadruple precision (double where the compiler
+    !!    has none) and only where Ktilde/(3 F2^2) > 100 sqrt(epsilon), which keeps the roundoff error below
+    !!    1e-3 H^2. Elsewhere (and at a NaN) resolved = .false. and EFT_mu1 = EFT_mu2 = 0.
+    !! The outputs are twice the eigenvalues of the paper, so that EFT_mu1 is the mass squared (V'' for canonical
+    !! quintessence, the f(R) scalaron mass ((1 + f_R)/f_RR - R)/3): a mode grows as exp(int sqrt(-mu) dt) where
+    !! mu < 0. EFT_mu2 is the matter (dust) eigenvalue.
+    subroutine EFTCAMBModelComputeMassFactors(self, a, eft_par_cache, eft_cache, resolved)
 
     implicit none
 
@@ -843,146 +858,334 @@
     type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+    logical, intent(out), optional                :: resolved      !< whether EFT_mu1, EFT_mu2 are resolved.
 
-    real(dl) :: F1, F2, F3, F1dot, F2dot, rho_d, rho_d_dot, F1dotdot, F2dotdot, F3dot, F3dotdot
-    real(dl) :: EFTcP, EFTcPP
+    ! quadruple precision where the compiler has it:
+    integer, parameter :: qp = merge(selected_real_kind(30), dl, selected_real_kind(30) > 0)
+    real(qp) :: F1, F2, F3, F1dot, F2dot, rho_d, rho_d_dot, F1dotdot, F2dotdot, F3dot, F3dotdot
+    real(qp) :: EFTcP, EFTcPP, Ktilde, denom, mu1, mu2
+    real(qp) :: h0_Mpc, Hdotdot, EFTGamma1P, EFTGamma1PP, EFTGamma1V, EFTGamma2P, EFTGamma2PP, EFTGamma2V, &
+        EFTGamma3P, EFTGamma3PP, EFTGamma3V, EFTGamma4P, EFTGamma4PP, EFTGamma4V, EFTOmegaP, EFTOmegaPP, &
+        EFTOmegaPPP, EFTOmegaV, EFTc, EFTcdot, EFTcdotdot, Hdot, adotoa
 
-    !< Define useful quantities used for the mass stability
-    rho_d = (eft_cache%grhob_t + eft_cache%grhoc_t)/a**2._dl
-    rho_d_dot = -3._dl*eft_cache%adotoa/a*rho_d
-    EFTcP = eft_cache%EFTcdot/(a*eft_cache%adotoa) + 2._dl*eft_cache%EFTc/a
+    eft_cache%EFT_mu1 = 0._dl
+    eft_cache%EFT_mu2 = 0._dl
+    if (present(resolved)) resolved = .false.
 
-    !< Define some EFT functions needed by stability
-    EFTcPP = (eft_cache%EFTcdotdot/eft_cache%adotoa + (3._dl - eft_cache%Hdot/eft_cache%adotoa)*eft_cache%EFTcdot + &
-        2._dl*eft_cache%adotoa*eft_cache%EFTc)/(a**2*eft_cache%adotoa**2)
+    ! inputs:
+    h0_Mpc = eft_par_cache%h0_Mpc
+    EFTGamma1P = eft_cache%EFTGamma1P
+    EFTGamma1PP = eft_cache%EFTGamma1PP
+    EFTGamma1V = eft_cache%EFTGamma1V
+    EFTGamma2P = eft_cache%EFTGamma2P
+    EFTGamma2PP = eft_cache%EFTGamma2PP
+    EFTGamma2V = eft_cache%EFTGamma2V
+    EFTGamma3P = eft_cache%EFTGamma3P
+    EFTGamma3PP = eft_cache%EFTGamma3PP
+    EFTGamma3V = eft_cache%EFTGamma3V
+    EFTGamma4P = eft_cache%EFTGamma4P
+    EFTGamma4PP = eft_cache%EFTGamma4PP
+    EFTGamma4V = eft_cache%EFTGamma4V
+    EFTOmegaP = eft_cache%EFTOmegaP
+    EFTOmegaPP = eft_cache%EFTOmegaPP
+    EFTOmegaPPP = eft_cache%EFTOmegaPPP
+    EFTOmegaV = eft_cache%EFTOmegaV
+    EFTc = eft_cache%EFTc
+    EFTcdot = eft_cache%EFTcdot
+    EFTcdotdot = eft_cache%EFTcdotdot
+    Hdot = eft_cache%Hdot
+    adotoa = eft_cache%adotoa
 
-    !< general expressions for Fs
-    F1 = 2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V
+    ! dust-equivalent background: the matter rho + p as dust, and Hdotdot shifted so that the c equation and its time
+    ! derivative hold with dust continuity:
+    denom = 2._qp*(1._qp + EFTOmegaV) + a*EFTOmegaP
+    if (denom == 0._qp) return
+    rho_d = (real(eft_cache%grhom_t, qp) + real(eft_cache%gpresm_t, qp))/a**2
+    rho_d_dot = -3._qp*adotoa/a*rho_d
+    Hdotdot = real(eft_cache%Hdotdot, qp) + real(eft_cache%gpresdotm_t, qp)/denom
 
-    F2 = eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + &
-        (eft_cache%adotoa*(2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V))/ &
-        a + eft_cache%adotoa*eft_cache%EFTOmegaP
+    ! d EFTc/da and d^2 EFTc/da^2:
+    EFTcP = EFTcdot/(a*adotoa) + 2._qp*EFTc/a
+    EFTcPP = (EFTcdotdot/adotoa + (3._qp - Hdot/adotoa**2)*EFTcdot + 2._qp*adotoa*EFTc)/(a**2*adotoa)
 
-    F3 = (2._dl*eft_cache%EFTc)/a**2. + 4._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%EFTGamma1V - &
-        (6._dl*eft_par_cache%h0_Mpc*eft_cache%adotoa*eft_cache%EFTGamma2V)/a - &
-        (3._dl*eft_cache%adotoa**2.* &
-        (2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V))/a**2. - &
-        (6._dl*eft_cache%adotoa**2.*eft_cache%EFTOmegaP)/a
+    ! the closed form of arXiv:1609.03599 App. C:
+    F1 = 2._dl*(1._dl + EFTOmegaV) + 3._dl*EFTGamma3V + EFTGamma4V
 
-    F1dot = eft_cache%adotoa*(2._dl*eft_cache%EFTOmegaP + 3._dl*eft_cache%EFTGamma3P + eft_cache%EFTGamma4P)
+    F2 = h0_Mpc*EFTGamma2V + &
+        (adotoa*(2._dl*(1._dl + EFTOmegaV) + 3._dl*EFTGamma3V + EFTGamma4V))/ &
+        a + adotoa*EFTOmegaP
 
-    F2dot = ((2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + &
-        a*eft_cache%EFTOmegaP)*eft_cache%Hdot + &
-        a**2._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%adotoa*eft_cache%EFTGamma2P + &
-        eft_cache%adotoa**2._dl*(-2._dl - 2._dl*eft_cache%EFTOmegaV - 3._dl*eft_cache%EFTGamma3V - &
-        eft_cache%EFTGamma4V + 2._dl*a*eft_cache%EFTOmegaP + 3._dl*a*eft_cache%EFTGamma3P + a*eft_cache%EFTGamma4P + &
-        a**2._dl*eft_cache%EFTOmegaPP))/a**2._dl
+    F3 = (2._dl*EFTc)/a**2 + 4._dl*h0_Mpc**2*EFTGamma1V - &
+        (6._dl*h0_Mpc*adotoa*EFTGamma2V)/a - &
+        (3._dl*adotoa**2* &
+        (2._dl*(1._dl + EFTOmegaV) + 3._dl*EFTGamma3V + EFTGamma4V))/a**2 - &
+        (6._dl*adotoa**2*EFTOmegaP)/a
 
-    F3dot = -((4._dl*eft_cache%EFTc*eft_cache%adotoa + &
-        6._dl*a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V*eft_cache%Hdot - &
-        2._dl*eft_cache%adotoa*(a*EFTcP - &
-        3._dl*(2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + &
-        2._dl*a*eft_cache%EFTOmegaP)*eft_cache%Hdot + 2._dl*a**3._dl*eft_par_cache%h0_Mpc**2*eft_cache%EFTGamma1P) + &
-        6._dl*a*eft_par_cache%h0_Mpc*eft_cache%adotoa**2._dl*(-eft_cache%EFTGamma2V + a*eft_cache%EFTGamma2P) - &
-        3._dl*eft_cache%adotoa**3._dl* &
-        (4._dl + 4._dl*eft_cache%EFTOmegaV + 6._dl*eft_cache%EFTGamma3V + 2._dl*eft_cache%EFTGamma4V - &
-        3._dl*a*eft_cache%EFTGamma3P - a*eft_cache%EFTGamma4P - 2._dl*a**2*eft_cache%EFTOmegaPP))/a**3._dl)
+    F1dot = adotoa*(2._dl*EFTOmegaP + 3._dl*EFTGamma3P + EFTGamma4P)
 
-    F1dotdot = (2._dl*eft_cache%EFTOmegaP*eft_cache%Hdot + &
-        eft_cache%Hdot*(3._dl*eft_cache%EFTGamma3P + eft_cache%EFTGamma4P) + &
-        a*eft_cache%adotoa**2._dl*(2._dl*eft_cache%EFTOmegaPP + 3._dl*eft_cache%EFTGamma3PP + eft_cache%EFTGamma4PP))/a
+    F2dot = ((2._dl + 2._dl*EFTOmegaV + 3._dl*EFTGamma3V + EFTGamma4V + &
+        a*EFTOmegaP)*Hdot + &
+        a**2*h0_Mpc**2*adotoa*EFTGamma2P + &
+        adotoa**2*(-2._dl - 2._dl*EFTOmegaV - 3._dl*EFTGamma3V - &
+        EFTGamma4V + 2._dl*a*EFTOmegaP + 3._dl*a*EFTGamma3P + a*EFTGamma4P + &
+        a**2*EFTOmegaPP))/a**2
 
-    F2dotdot = (a**2._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%Hdot*eft_cache%EFTGamma2P + &
-        eft_cache%adotoa*eft_cache%Hdot* &
-        (-8._dl - 8._dl*eft_cache%EFTOmegaV - 12._dl*eft_cache%EFTGamma3V - 4._dl*eft_cache%EFTGamma4V + &
-        5._dl*a*eft_cache%EFTOmegaP + 9._dl*a*eft_cache%EFTGamma3P + 3._dl*a*eft_cache%EFTGamma4P + &
-        3._dl*a**2._dl*eft_cache%EFTOmegaPP) + &
-        (2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + &
-        a*eft_cache%EFTOmegaP)*eft_cache%Hdotdot + &
-        a**3._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%adotoa**2._dl*eft_cache%EFTGamma2PP + &
-        eft_cache%adotoa**3._dl*(4._dl + 4._dl*eft_cache%EFTOmegaV + 6._dl*eft_cache%EFTGamma3V + &
-        2._dl*eft_cache%EFTGamma4V - 4._dl*a*eft_cache%EFTOmegaP - 6._dl*a*eft_cache%EFTGamma3P - &
-        2._dl*a*eft_cache%EFTGamma4P + 2._dl*a**2._dl*eft_cache%EFTOmegaPP + 3._dl*a**2._dl*eft_cache%EFTGamma3PP + &
-        a**2._dl*eft_cache%EFTGamma4PP + a**3._dl*eft_cache%EFTOmegaPPP))/a**3._dl
+    F3dot = -((4._dl*EFTc*adotoa + &
+        6._dl*a*h0_Mpc*EFTGamma2V*Hdot - &
+        2._dl*adotoa*(a*EFTcP - &
+        3._dl*(2._dl + 2._dl*EFTOmegaV + 3._dl*EFTGamma3V + EFTGamma4V + &
+        2._dl*a*EFTOmegaP)*Hdot + 2._dl*a**3*h0_Mpc**2*EFTGamma1P) + &
+        6._dl*a*h0_Mpc*adotoa**2*(-EFTGamma2V + a*EFTGamma2P) - &
+        3._dl*adotoa**3* &
+        (4._dl + 4._dl*EFTOmegaV + 6._dl*EFTGamma3V + 2._dl*EFTGamma4V - &
+        3._dl*a*EFTGamma3P - a*EFTGamma4P - 2._dl*a**2*EFTOmegaPP))/a**3)
 
-    F3dotdot = (4._dl*eft_cache%EFTc*(3._dl*eft_cache%adotoa**2._dl - eft_cache%Hdot) + &
-        2._dl*(a*EFTcP*eft_cache%Hdot - &
-        3._dl*(2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + &
-        2*a*eft_cache%EFTOmegaP)*eft_cache%Hdot**2 + &
-        2._dl*a**3._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%Hdot*eft_cache%EFTGamma1P - &
-        3._dl*a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V*eft_cache%Hdotdot) - &
-        6._dl*eft_cache%adotoa*(a*eft_par_cache%h0_Mpc*eft_cache%Hdot* &
-        (-4._dl*eft_cache%EFTGamma2V + 3._dl*a*eft_cache%EFTGamma2P) + &
-        (2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + &
-        2._dl*a*eft_cache%EFTOmegaP)*eft_cache%Hdotdot) + &
-        eft_cache%adotoa**2._dl*(-8._dl*a*EFTcP + &
-        3._dl*eft_cache%Hdot*(24._dl + 24._dl*eft_cache%EFTOmegaV + 36._dl*eft_cache%EFTGamma3V + &
-        12._dl*eft_cache%EFTGamma4V + 4._dl*a*eft_cache%EFTOmegaP - 15._dl*a*eft_cache%EFTGamma3P - &
-        5._dl*a*eft_cache%EFTGamma4P - 10._dl*a**2._dl*eft_cache%EFTOmegaPP) + &
-        2._dl*a**2._dl*(EFTcPP + 2._dl*a**2._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%EFTGamma1PP)) - &
-        6._dl*a*eft_par_cache%h0_Mpc*eft_cache%adotoa**3* &
-        (2*eft_cache%EFTGamma2V + a*(-2._dl*eft_cache%EFTGamma2P + a*eft_cache%EFTGamma2PP)) - &
-        3._dl*eft_cache%adotoa**4._dl* &
-        (12._dl + 12._dl*eft_cache%EFTOmegaV + 18._dl*eft_cache%EFTGamma3V + 6._dl*eft_cache%EFTGamma4V - &
-        4._dl*a*eft_cache%EFTOmegaP - 12._dl*a*eft_cache%EFTGamma3P - 4._dl*a*eft_cache%EFTGamma4P - &
-        2._dl*a**2._dl*eft_cache%EFTOmegaPP + 3._dl*a**2._dl*eft_cache%EFTGamma3PP + a**2._dl*eft_cache%EFTGamma4PP + &
-        2._dl*a**3._dl*eft_cache%EFTOmegaPPP))/a**4._dl
+    F1dotdot = (2._dl*EFTOmegaP*Hdot + &
+        Hdot*(3._dl*EFTGamma3P + EFTGamma4P) + &
+        a*adotoa**2*(2._dl*EFTOmegaPP + 3._dl*EFTGamma3PP + EFTGamma4PP))/a
 
-    !< compute the mass eigenvalues
-    eft_cache%EFT_mu1 = ((-4._dl*F1*F2**2._dl*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2._dl)/ &
-        (3._dl*F2**2._dl + F1*F3) + &
-        (4._dl*F1*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2._dl)/(3._dl + (F1*F3)/F2**2._dl) - &
-        (9._dl*F2**6*(1._dl + 1._dl/(3.*sqrt(F2**4._dl/(3._dl*F2**2._dl + 2._dl*F1*F3)**2._dl)))* &
-        (6._dl*F1*F2*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa* &
+    F2dotdot = (a**2*h0_Mpc**2*Hdot*EFTGamma2P + &
+        adotoa*Hdot* &
+        (-8._dl - 8._dl*EFTOmegaV - 12._dl*EFTGamma3V - 4._dl*EFTGamma4V + &
+        5._dl*a*EFTOmegaP + 9._dl*a*EFTGamma3P + 3._dl*a*EFTGamma4P + &
+        3._dl*a**2*EFTOmegaPP) + &
+        (2._dl + 2._dl*EFTOmegaV + 3._dl*EFTGamma3V + EFTGamma4V + &
+        a*EFTOmegaP)*Hdotdot + &
+        a**3*h0_Mpc**2*adotoa**2*EFTGamma2PP + &
+        adotoa**3*(4._dl + 4._dl*EFTOmegaV + 6._dl*EFTGamma3V + &
+        2._dl*EFTGamma4V - 4._dl*a*EFTOmegaP - 6._dl*a*EFTGamma3P - &
+        2._dl*a*EFTGamma4P + 2._dl*a**2*EFTOmegaPP + 3._dl*a**2*EFTGamma3PP + &
+        a**2*EFTGamma4PP + a**3*EFTOmegaPPP))/a**3
+
+    F3dotdot = (4._dl*EFTc*(3._dl*adotoa**2 - Hdot) + &
+        2._dl*(a*EFTcP*Hdot - &
+        3._dl*(2._dl + 2._dl*EFTOmegaV + 3._dl*EFTGamma3V + EFTGamma4V + &
+        2*a*EFTOmegaP)*Hdot**2 + &
+        2._dl*a**3*h0_Mpc**2*Hdot*EFTGamma1P - &
+        3._dl*a*h0_Mpc*EFTGamma2V*Hdotdot) - &
+        6._dl*adotoa*(a*h0_Mpc*Hdot* &
+        (-4._dl*EFTGamma2V + 3._dl*a*EFTGamma2P) + &
+        (2._dl + 2._dl*EFTOmegaV + 3._dl*EFTGamma3V + EFTGamma4V + &
+        2._dl*a*EFTOmegaP)*Hdotdot) + &
+        adotoa**2*(-8._dl*a*EFTcP + &
+        3._dl*Hdot*(24._dl + 24._dl*EFTOmegaV + 36._dl*EFTGamma3V + &
+        12._dl*EFTGamma4V + 4._dl*a*EFTOmegaP - 15._dl*a*EFTGamma3P - &
+        5._dl*a*EFTGamma4P - 10._dl*a**2*EFTOmegaPP) + &
+        2._dl*a**2*(EFTcPP + 2._dl*a**2*h0_Mpc**2*EFTGamma1PP)) - &
+        6._dl*a*h0_Mpc*adotoa**3* &
+        (2*EFTGamma2V + a*(-2._dl*EFTGamma2P + a*EFTGamma2PP)) - &
+        3._dl*adotoa**4* &
+        (12._dl + 12._dl*EFTOmegaV + 18._dl*EFTGamma3V + 6._dl*EFTGamma4V - &
+        4._dl*a*EFTOmegaP - 12._dl*a*EFTGamma3P - 4._dl*a*EFTGamma4P - &
+        2._dl*a**2*EFTOmegaPP + 3._dl*a**2*EFTGamma3PP + a**2*EFTGamma4PP + &
+        2._dl*a**3*EFTOmegaPPP))/a**4
+
+
+    ! Ktilde = 3 F2^2 + F1 F3 divides the eigenvalues: resolved only well above roundoff.
+    Ktilde = 3._qp*F2**2 + F1*F3
+    if (.not. (abs(Ktilde) > 100._qp*sqrt(epsilon(1._qp))*3._qp*F2**2)) return
+
+    mu1 = ((-4._dl*F1*F2**2*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2)/ &
+        (3._dl*F2**2 + F1*F3) + &
+        (4._dl*F1*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2)/(3._dl + (F1*F3)/F2**2) - &
+        (9._dl*F2**6*(1._dl + 1._dl/(3._dl*sqrt(F2**4/(3._dl*F2**2 + 2._dl*F1*F3)**2)))* &
+        (6._dl*F1*F2*F3*(3._dl*F2**2 + F1*F3)*adotoa* &
         (F2*F3*F1dot + F1*(F2*F3dot + 2._dl*F3*(-F2dot + rho_d))) + &
-        a*(-3._dl*F2**4._dl*F3**2._dl*F1dot**2._dl + &
-        2._dl*F1*F2**2._dl*F3**2._dl*(-(F3*F1dot**2._dl) + 3._dl*F2**2._dl*F1dotdot) + &
-        2._dl*F1**3._dl*F3*(-2._dl*F2**2._dl*F3dot**2._dl + F2*F3*(F2*F3dotdot - 2._dl*F3dot*(-2._dl*F2dot + rho_d)) - &
-        2._dl*F3**2._dl*(F2dot**2._dl - F2dot*rho_d + rho_d**2._dl + F2*(F2dotdot - rho_d_dot))) + &
-        F1**2._dl*F2*(4._dl*F3**3._dl*F1dot*F2dot + F2**3._dl*(-9._dl*F3dot**2._dl + 6._dl*F3*F3dotdot) + &
-        2._dl*F2*F3**2._dl*(-(F1dot*F3dot) + F3*F1dotdot + 6._dl*(F2dot - rho_d)*rho_d) + &
-        12._dl*F2**2._dl*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))))))/ &
-        (a*(3._dl*F2**2._dl + F1*F3)**2._dl*(3._dl*F2**2._dl + 2._dl*F1*F3)) + &
-        (2._dl*F1*F2**2._dl*(6._dl*F1*F2**2._dl*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa* &
-        (-2._dl*F3**2._dl*F1dot + 3._dl*F2**2._dl*F3dot + 6._dl*F2*F3*(-F2dot + rho_d)) + &
-        a*(6._dl*F2**4._dl*F3**3._dl*F1dot**2._dl + 2._dl*F1**3._dl*F3**2._dl*(-2._dl*F3*F2dot + F2*F3dot)**2._dl + &
-        F1**2._dl*F2*F3*(-8._dl*F3**3._dl*F1dot*F2dot + F2**3._dl*(-9._dl*F3dot**2._dl + 6._dl*F3*F3dotdot) + &
-        4._dl*F2*F3**2._dl*(F1dot*F3dot - F3*F1dotdot + 3._dl*(F2dot - rho_d)*rho_d) + &
-        12._dl*F2**2._dl*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))) + &
-        F1*(4._dl*F2**2._dl*F3**4._dl*F1dot**2._dl + 9._dl*F2**6._dl*(-3._dl*F3dot**2._dl + 2._dl*F3*F3dotdot) - &
-        12._dl*F2**4._dl*F3**2._dl*(F3*F1dotdot + 3._dl*rho_d*(-F2dot + rho_d)) + &
-        36._dl*F2**5._dl*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))))))/ &
-        (a*(3._dl*F2**2._dl + F1*F3)*(3._dl*F2**2._dl + 2._dl*F1*F3)))/(16._dl*F1**2._dl*F2**4._dl*F3**2._dl)
+        a*(-3._dl*F2**4*F3**2*F1dot**2 + &
+        2._dl*F1*F2**2*F3**2*(-(F3*F1dot**2) + 3._dl*F2**2*F1dotdot) + &
+        2._dl*F1**3*F3*(-2._dl*F2**2*F3dot**2 + F2*F3*(F2*F3dotdot - 2._dl*F3dot*(-2._dl*F2dot + rho_d)) - &
+        2._dl*F3**2*(F2dot**2 - F2dot*rho_d + rho_d**2 + F2*(F2dotdot - rho_d_dot))) + &
+        F1**2*F2*(4._dl*F3**3*F1dot*F2dot + F2**3*(-9._dl*F3dot**2 + 6._dl*F3*F3dotdot) + &
+        2._dl*F2*F3**2*(-(F1dot*F3dot) + F3*F1dotdot + 6._dl*(F2dot - rho_d)*rho_d) + &
+        12._dl*F2**2*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))))))/ &
+        (a*(3._dl*F2**2 + F1*F3)**2*(3._dl*F2**2 + 2._dl*F1*F3)) + &
+        (2._dl*F1*F2**2*(6._dl*F1*F2**2*F3*(3._dl*F2**2 + F1*F3)*adotoa* &
+        (-2._dl*F3**2*F1dot + 3._dl*F2**2*F3dot + 6._dl*F2*F3*(-F2dot + rho_d)) + &
+        a*(6._dl*F2**4*F3**3*F1dot**2 + 2._dl*F1**3*F3**2*(-2._dl*F3*F2dot + F2*F3dot)**2 + &
+        F1**2*F2*F3*(-8._dl*F3**3*F1dot*F2dot + F2**3*(-9._dl*F3dot**2 + 6._dl*F3*F3dotdot) + &
+        4._dl*F2*F3**2*(F1dot*F3dot - F3*F1dotdot + 3._dl*(F2dot - rho_d)*rho_d) + &
+        12._dl*F2**2*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))) + &
+        F1*(4._dl*F2**2*F3**4*F1dot**2 + 9._dl*F2**6*(-3._dl*F3dot**2 + 2._dl*F3*F3dotdot) - &
+        12._dl*F2**4*F3**2*(F3*F1dotdot + 3._dl*rho_d*(-F2dot + rho_d)) + &
+        36._dl*F2**5*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))))))/ &
+        (a*(3._dl*F2**2 + F1*F3)*(3._dl*F2**2 + 2._dl*F1*F3)))/(16._dl*F1**2*F2**4*F3**2)
 
-    eft_cache%EFT_mu2 = ((-4._dl*F1*F2**2._dl*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2._dl)/ &
-        (3._dl*F2**2._dl + F1*F3) + &
-        (4._dl*F1*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2._dl)/(3._dl + (F1*F3)/F2**2._dl) - &
-        (2._dl*F2**2._dl*F3*(6._dl*F1*F2**2._dl*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa* &
-        (9._dl*F2**4._dl*F1dot + 6._dl*F1*F2**2._dl*F3*F1dot + &
-        F1**2._dl*(-3._dl*F2**2._dl*F3dot + 2._dl*F3*(F3*F1dot + 3._dl*F2*(F2dot - rho_d)))) + &
-        a*(-27._dl*F2**8._dl*F3*F1dot**2._dl - 2._dl*F1**5._dl*F3**2._dl*(-2._dl*F3*F2dot + F2*F3dot)**2._dl + &
-        18._dl*F1*F2**6._dl*F3*(-2._dl*F3*F1dot**2._dl + 3._dl*F2**2._dl*F1dotdot) + &
-        18._dl*F1**2._dl*F2**4._dl*F3* &
-        (-(F1dot*(F3**2._dl*F1dot - 2._dl*F2*F3*F2dot + F2**2._dl*F3dot)) + 3._dl*F2**2._dl*F3*F1dotdot) + &
-        2._dl*F1**3._dl*F2**2._dl*(-2._dl*F3**4._dl*F1dot**2._dl + 12._dl*F2*F3**3._dl*F1dot*F2dot + &
-        9._dl*F2**4._dl*(F3dot**2._dl - F3*F3dotdot) + &
-        6._dl*F2**2._dl*F3**2._dl*(-3._dl*F2dot**2._dl - F1dot*F3dot + 2._dl*F3*F1dotdot - 3._dl*F2dot*rho_d + &
-        3._dl*rho_d**2._dl) + 18._dl*F2**3._dl*F3*(F3dot*rho_d + F3*(F2dotdot - rho_d_dot))) + &
-        F1**4._dl*F2*F3*(8._dl*F3**3._dl*F1dot*F2dot + 3._dl*F2**3._dl*(F3dot**2._dl - 2._dl*F3*F3dotdot) + &
-        4._dl*F2*F3**2._dl*(-(F1dot*F3dot) + F3*F1dotdot + 3._dl*(-2._dl*F2dot + rho_d)*(F2dot + rho_d)) + &
-        12._dl*F2**2._dl*F3*(F3dot*(F2dot + rho_d) + F3*(F2dotdot - rho_d_dot))))))/ &
-        (a*(3._dl*F2**2._dl + F1*F3)**2._dl*(3._dl*F2**2._dl + 2._dl*F1*F3)) + &
-        (9._dl*F2**6._dl*(1._dl + 1._dl/(3._dl*sqrt(F2**4._dl/(3._dl*F2**2._dl + 2._dl*F1*F3)**2._dl)))* &
-        (6._dl*F1*F2*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa* &
+    mu2 = ((-4._dl*F1*F2**2*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2)/ &
+        (3._dl*F2**2 + F1*F3) + &
+        (4._dl*F1*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2)/(3._dl + (F1*F3)/F2**2) - &
+        (2._dl*F2**2*F3*(6._dl*F1*F2**2*F3*(3._dl*F2**2 + F1*F3)*adotoa* &
+        (9._dl*F2**4*F1dot + 6._dl*F1*F2**2*F3*F1dot + &
+        F1**2*(-3._dl*F2**2*F3dot + 2._dl*F3*(F3*F1dot + 3._dl*F2*(F2dot - rho_d)))) + &
+        a*(-27._dl*F2**8*F3*F1dot**2 - 2._dl*F1**5*F3**2*(-2._dl*F3*F2dot + F2*F3dot)**2 + &
+        18._dl*F1*F2**6*F3*(-2._dl*F3*F1dot**2 + 3._dl*F2**2*F1dotdot) + &
+        18._dl*F1**2*F2**4*F3* &
+        (-(F1dot*(F3**2*F1dot - 2._dl*F2*F3*F2dot + F2**2*F3dot)) + 3._dl*F2**2*F3*F1dotdot) + &
+        2._dl*F1**3*F2**2*(-2._dl*F3**4*F1dot**2 + 12._dl*F2*F3**3*F1dot*F2dot + &
+        9._dl*F2**4*(F3dot**2 - F3*F3dotdot) + &
+        6._dl*F2**2*F3**2*(-3._dl*F2dot**2 - F1dot*F3dot + 2._dl*F3*F1dotdot - 3._dl*F2dot*rho_d + &
+        3._dl*rho_d**2) + 18._dl*F2**3*F3*(F3dot*rho_d + F3*(F2dotdot - rho_d_dot))) + &
+        F1**4*F2*F3*(8._dl*F3**3*F1dot*F2dot + 3._dl*F2**3*(F3dot**2 - 2._dl*F3*F3dotdot) + &
+        4._dl*F2*F3**2*(-(F1dot*F3dot) + F3*F1dotdot + 3._dl*(-2._dl*F2dot + rho_d)*(F2dot + rho_d)) + &
+        12._dl*F2**2*F3*(F3dot*(F2dot + rho_d) + F3*(F2dotdot - rho_d_dot))))))/ &
+        (a*(3._dl*F2**2 + F1*F3)**2*(3._dl*F2**2 + 2._dl*F1*F3)) + &
+        (9._dl*F2**6*(1._dl + 1._dl/(3._dl*sqrt(F2**4/(3._dl*F2**2 + 2._dl*F1*F3)**2)))* &
+        (6._dl*F1*F2*F3*(3._dl*F2**2 + F1*F3)*adotoa* &
         (F2*F3*F1dot + F1*(F2*F3dot + 2._dl*F3*(-F2dot + rho_d))) + &
-        a*(-3._dl*F2**4._dl*F3**2._dl*F1dot**2._dl + &
-        2._dl*F1*F2**2._dl*F3**2._dl*(-(F3*F1dot**2._dl) + 3._dl*F2**2._dl*F1dotdot) + &
-        2._dl*F1**3._dl*F3*(-2._dl*F2**2._dl*F3dot**2._dl + F2*F3*(F2*F3dotdot - 2._dl*F3dot*(-2._dl*F2dot + rho_d)) - &
-        2._dl*F3**2*(F2dot**2._dl - F2dot*rho_d + rho_d**2._dl + F2*(F2dotdot - rho_d_dot))) + &
-        F1**2*F2*(4._dl*F3**3._dl*F1dot*F2dot + F2**3._dl*(-9._dl*F3dot**2._dl + 6._dl*F3*F3dotdot) + &
-        2._dl*F2*F3**2._dl*(-(F1dot*F3dot) + F3*F1dotdot + 6._dl*(F2dot - rho_d)*rho_d) + &
-        12._dl*F2**2._dl*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))))))/ &
-        (a*(3._dl*F2**2._dl + F1*F3)**2._dl*(3._dl*F2**2._dl + 2._dl*F1*F3)))/(16._dl*F1**2._dl*F2**4._dl*F3**2._dl)
+        a*(-3._dl*F2**4*F3**2*F1dot**2 + &
+        2._dl*F1*F2**2*F3**2*(-(F3*F1dot**2) + 3._dl*F2**2*F1dotdot) + &
+        2._dl*F1**3*F3*(-2._dl*F2**2*F3dot**2 + F2*F3*(F2*F3dotdot - 2._dl*F3dot*(-2._dl*F2dot + rho_d)) - &
+        2._dl*F3**2*(F2dot**2 - F2dot*rho_d + rho_d**2 + F2*(F2dotdot - rho_d_dot))) + &
+        F1**2*F2*(4._dl*F3**3*F1dot*F2dot + F2**3*(-9._dl*F3dot**2 + 6._dl*F3*F3dotdot) + &
+        2._dl*F2*F3**2*(-(F1dot*F3dot) + F3*F1dotdot + 6._dl*(F2dot - rho_d)*rho_d) + &
+        12._dl*F2**2*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))))))/ &
+        (a*(3._dl*F2**2 + F1*F3)**2*(3._dl*F2**2 + 2._dl*F1*F3)))/(16._dl*F1**2*F2**4*F3**2)
+
+    if (.not. (abs(mu1) < huge(1._dl) .and. abs(mu2) < huge(1._dl))) return
+    eft_cache%EFT_mu1 = 2._dl*real(mu1, dl)
+    eft_cache%EFT_mu2 = 2._dl*real(mu2, dl)
+    if (present(resolved)) resolved = .true.
+
+    ! The original transcription of arXiv:1609.03599 App. C (double precision, dust-only background, EFTcPP too large
+    ! by about 1/adotoa; unusable: |mu_1|/H^2 up to 1e17 on healthy models), replaced above:
+!   real(dl) :: F1, F2, F3, F1dot, F2dot, rho_d, rho_d_dot, F1dotdot, F2dotdot, F3dot, F3dotdot
+!   real(dl) :: EFTcP, EFTcPP
+    !
+!   !< Define useful quantities used for the mass stability
+!   rho_d = (eft_cache%grhob_t + eft_cache%grhoc_t)/a**2._dl
+!   rho_d_dot = -3._dl*eft_cache%adotoa/a*rho_d
+!   EFTcP = eft_cache%EFTcdot/(a*eft_cache%adotoa) + 2._dl*eft_cache%EFTc/a
+    !
+!   !< Define some EFT functions needed by stability
+!   EFTcPP = (eft_cache%EFTcdotdot/eft_cache%adotoa + (3._dl - eft_cache%Hdot/eft_cache%adotoa)*eft_cache%EFTcdot + &
+!       2._dl*eft_cache%adotoa*eft_cache%EFTc)/(a**2*eft_cache%adotoa**2)
+    !
+!   !< general expressions for Fs
+!   F1 = 2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V
+    !
+!   F2 = eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V + &
+!       (eft_cache%adotoa*(2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V))/ &
+!       a + eft_cache%adotoa*eft_cache%EFTOmegaP
+    !
+!   F3 = (2._dl*eft_cache%EFTc)/a**2. + 4._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%EFTGamma1V - &
+!       (6._dl*eft_par_cache%h0_Mpc*eft_cache%adotoa*eft_cache%EFTGamma2V)/a - &
+!       (3._dl*eft_cache%adotoa**2.* &
+!       (2._dl*(1._dl + eft_cache%EFTOmegaV) + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V))/a**2. - &
+!       (6._dl*eft_cache%adotoa**2.*eft_cache%EFTOmegaP)/a
+    !
+!   F1dot = eft_cache%adotoa*(2._dl*eft_cache%EFTOmegaP + 3._dl*eft_cache%EFTGamma3P + eft_cache%EFTGamma4P)
+    !
+!   F2dot = ((2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + &
+!       a*eft_cache%EFTOmegaP)*eft_cache%Hdot + &
+!       a**2._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%adotoa*eft_cache%EFTGamma2P + &
+!       eft_cache%adotoa**2._dl*(-2._dl - 2._dl*eft_cache%EFTOmegaV - 3._dl*eft_cache%EFTGamma3V - &
+!       eft_cache%EFTGamma4V + 2._dl*a*eft_cache%EFTOmegaP + 3._dl*a*eft_cache%EFTGamma3P + a*eft_cache%EFTGamma4P + &
+!       a**2._dl*eft_cache%EFTOmegaPP))/a**2._dl
+    !
+!   F3dot = -((4._dl*eft_cache%EFTc*eft_cache%adotoa + &
+!       6._dl*a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V*eft_cache%Hdot - &
+!       2._dl*eft_cache%adotoa*(a*EFTcP - &
+!       3._dl*(2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + &
+!       2._dl*a*eft_cache%EFTOmegaP)*eft_cache%Hdot + 2._dl*a**3._dl*eft_par_cache%h0_Mpc**2*eft_cache%EFTGamma1P) + &
+!       6._dl*a*eft_par_cache%h0_Mpc*eft_cache%adotoa**2._dl*(-eft_cache%EFTGamma2V + a*eft_cache%EFTGamma2P) - &
+!       3._dl*eft_cache%adotoa**3._dl* &
+!       (4._dl + 4._dl*eft_cache%EFTOmegaV + 6._dl*eft_cache%EFTGamma3V + 2._dl*eft_cache%EFTGamma4V - &
+!       3._dl*a*eft_cache%EFTGamma3P - a*eft_cache%EFTGamma4P - 2._dl*a**2*eft_cache%EFTOmegaPP))/a**3._dl)
+    !
+!   F1dotdot = (2._dl*eft_cache%EFTOmegaP*eft_cache%Hdot + &
+!       eft_cache%Hdot*(3._dl*eft_cache%EFTGamma3P + eft_cache%EFTGamma4P) + &
+!       a*eft_cache%adotoa**2._dl*(2._dl*eft_cache%EFTOmegaPP + 3._dl*eft_cache%EFTGamma3PP + eft_cache%EFTGamma4PP))/a
+    !
+!   F2dotdot = (a**2._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%Hdot*eft_cache%EFTGamma2P + &
+!       eft_cache%adotoa*eft_cache%Hdot* &
+!       (-8._dl - 8._dl*eft_cache%EFTOmegaV - 12._dl*eft_cache%EFTGamma3V - 4._dl*eft_cache%EFTGamma4V + &
+!       5._dl*a*eft_cache%EFTOmegaP + 9._dl*a*eft_cache%EFTGamma3P + 3._dl*a*eft_cache%EFTGamma4P + &
+!       3._dl*a**2._dl*eft_cache%EFTOmegaPP) + &
+!       (2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + &
+!       a*eft_cache%EFTOmegaP)*eft_cache%Hdotdot + &
+!       a**3._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%adotoa**2._dl*eft_cache%EFTGamma2PP + &
+!       eft_cache%adotoa**3._dl*(4._dl + 4._dl*eft_cache%EFTOmegaV + 6._dl*eft_cache%EFTGamma3V + &
+!       2._dl*eft_cache%EFTGamma4V - 4._dl*a*eft_cache%EFTOmegaP - 6._dl*a*eft_cache%EFTGamma3P - &
+!       2._dl*a*eft_cache%EFTGamma4P + 2._dl*a**2._dl*eft_cache%EFTOmegaPP + 3._dl*a**2._dl*eft_cache%EFTGamma3PP + &
+!       a**2._dl*eft_cache%EFTGamma4PP + a**3._dl*eft_cache%EFTOmegaPPP))/a**3._dl
+    !
+!   F3dotdot = (4._dl*eft_cache%EFTc*(3._dl*eft_cache%adotoa**2._dl - eft_cache%Hdot) + &
+!       2._dl*(a*EFTcP*eft_cache%Hdot - &
+!       3._dl*(2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + &
+!       2*a*eft_cache%EFTOmegaP)*eft_cache%Hdot**2 + &
+!       2._dl*a**3._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%Hdot*eft_cache%EFTGamma1P - &
+!       3._dl*a*eft_par_cache%h0_Mpc*eft_cache%EFTGamma2V*eft_cache%Hdotdot) - &
+!       6._dl*eft_cache%adotoa*(a*eft_par_cache%h0_Mpc*eft_cache%Hdot* &
+!       (-4._dl*eft_cache%EFTGamma2V + 3._dl*a*eft_cache%EFTGamma2P) + &
+!       (2._dl + 2._dl*eft_cache%EFTOmegaV + 3._dl*eft_cache%EFTGamma3V + eft_cache%EFTGamma4V + &
+!       2._dl*a*eft_cache%EFTOmegaP)*eft_cache%Hdotdot) + &
+!       eft_cache%adotoa**2._dl*(-8._dl*a*EFTcP + &
+!       3._dl*eft_cache%Hdot*(24._dl + 24._dl*eft_cache%EFTOmegaV + 36._dl*eft_cache%EFTGamma3V + &
+!       12._dl*eft_cache%EFTGamma4V + 4._dl*a*eft_cache%EFTOmegaP - 15._dl*a*eft_cache%EFTGamma3P - &
+!       5._dl*a*eft_cache%EFTGamma4P - 10._dl*a**2._dl*eft_cache%EFTOmegaPP) + &
+!       2._dl*a**2._dl*(EFTcPP + 2._dl*a**2._dl*eft_par_cache%h0_Mpc**2._dl*eft_cache%EFTGamma1PP)) - &
+!       6._dl*a*eft_par_cache%h0_Mpc*eft_cache%adotoa**3* &
+!       (2*eft_cache%EFTGamma2V + a*(-2._dl*eft_cache%EFTGamma2P + a*eft_cache%EFTGamma2PP)) - &
+!       3._dl*eft_cache%adotoa**4._dl* &
+!       (12._dl + 12._dl*eft_cache%EFTOmegaV + 18._dl*eft_cache%EFTGamma3V + 6._dl*eft_cache%EFTGamma4V - &
+!       4._dl*a*eft_cache%EFTOmegaP - 12._dl*a*eft_cache%EFTGamma3P - 4._dl*a*eft_cache%EFTGamma4P - &
+!       2._dl*a**2._dl*eft_cache%EFTOmegaPP + 3._dl*a**2._dl*eft_cache%EFTGamma3PP + a**2._dl*eft_cache%EFTGamma4PP + &
+!       2._dl*a**3._dl*eft_cache%EFTOmegaPPP))/a**4._dl
+    !
+!   !< compute the mass eigenvalues
+!   eft_cache%EFT_mu1 = ((-4._dl*F1*F2**2._dl*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2._dl)/ &
+!       (3._dl*F2**2._dl + F1*F3) + &
+!       (4._dl*F1*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2._dl)/(3._dl + (F1*F3)/F2**2._dl) - &
+!       (9._dl*F2**6*(1._dl + 1._dl/(3.*sqrt(F2**4._dl/(3._dl*F2**2._dl + 2._dl*F1*F3)**2._dl)))* &
+!       (6._dl*F1*F2*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa* &
+!       (F2*F3*F1dot + F1*(F2*F3dot + 2._dl*F3*(-F2dot + rho_d))) + &
+!       a*(-3._dl*F2**4._dl*F3**2._dl*F1dot**2._dl + &
+!       2._dl*F1*F2**2._dl*F3**2._dl*(-(F3*F1dot**2._dl) + 3._dl*F2**2._dl*F1dotdot) + &
+!       2._dl*F1**3._dl*F3*(-2._dl*F2**2._dl*F3dot**2._dl + F2*F3*(F2*F3dotdot - 2._dl*F3dot*(-2._dl*F2dot + rho_d)) - &
+!       2._dl*F3**2._dl*(F2dot**2._dl - F2dot*rho_d + rho_d**2._dl + F2*(F2dotdot - rho_d_dot))) + &
+!       F1**2._dl*F2*(4._dl*F3**3._dl*F1dot*F2dot + F2**3._dl*(-9._dl*F3dot**2._dl + 6._dl*F3*F3dotdot) + &
+!       2._dl*F2*F3**2._dl*(-(F1dot*F3dot) + F3*F1dotdot + 6._dl*(F2dot - rho_d)*rho_d) + &
+!       12._dl*F2**2._dl*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))))))/ &
+!       (a*(3._dl*F2**2._dl + F1*F3)**2._dl*(3._dl*F2**2._dl + 2._dl*F1*F3)) + &
+!       (2._dl*F1*F2**2._dl*(6._dl*F1*F2**2._dl*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa* &
+!       (-2._dl*F3**2._dl*F1dot + 3._dl*F2**2._dl*F3dot + 6._dl*F2*F3*(-F2dot + rho_d)) + &
+!       a*(6._dl*F2**4._dl*F3**3._dl*F1dot**2._dl + 2._dl*F1**3._dl*F3**2._dl*(-2._dl*F3*F2dot + F2*F3dot)**2._dl + &
+!       F1**2._dl*F2*F3*(-8._dl*F3**3._dl*F1dot*F2dot + F2**3._dl*(-9._dl*F3dot**2._dl + 6._dl*F3*F3dotdot) + &
+!       4._dl*F2*F3**2._dl*(F1dot*F3dot - F3*F1dotdot + 3._dl*(F2dot - rho_d)*rho_d) + &
+!       12._dl*F2**2._dl*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))) + &
+!       F1*(4._dl*F2**2._dl*F3**4._dl*F1dot**2._dl + 9._dl*F2**6._dl*(-3._dl*F3dot**2._dl + 2._dl*F3*F3dotdot) - &
+!       12._dl*F2**4._dl*F3**2._dl*(F3*F1dotdot + 3._dl*rho_d*(-F2dot + rho_d)) + &
+!       36._dl*F2**5._dl*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))))))/ &
+!       (a*(3._dl*F2**2._dl + F1*F3)*(3._dl*F2**2._dl + 2._dl*F1*F3)))/(16._dl*F1**2._dl*F2**4._dl*F3**2._dl)
+    !
+!   eft_cache%EFT_mu2 = ((-4._dl*F1*F2**2._dl*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2._dl)/ &
+!       (3._dl*F2**2._dl + F1*F3) + &
+!       (4._dl*F1*F3*(-2._dl*F1*F3*F2dot + F2*(F3*F1dot + F1*F3dot))**2._dl)/(3._dl + (F1*F3)/F2**2._dl) - &
+!       (2._dl*F2**2._dl*F3*(6._dl*F1*F2**2._dl*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa* &
+!       (9._dl*F2**4._dl*F1dot + 6._dl*F1*F2**2._dl*F3*F1dot + &
+!       F1**2._dl*(-3._dl*F2**2._dl*F3dot + 2._dl*F3*(F3*F1dot + 3._dl*F2*(F2dot - rho_d)))) + &
+!       a*(-27._dl*F2**8._dl*F3*F1dot**2._dl - 2._dl*F1**5._dl*F3**2._dl*(-2._dl*F3*F2dot + F2*F3dot)**2._dl + &
+!       18._dl*F1*F2**6._dl*F3*(-2._dl*F3*F1dot**2._dl + 3._dl*F2**2._dl*F1dotdot) + &
+!       18._dl*F1**2._dl*F2**4._dl*F3* &
+!       (-(F1dot*(F3**2._dl*F1dot - 2._dl*F2*F3*F2dot + F2**2._dl*F3dot)) + 3._dl*F2**2._dl*F3*F1dotdot) + &
+!       2._dl*F1**3._dl*F2**2._dl*(-2._dl*F3**4._dl*F1dot**2._dl + 12._dl*F2*F3**3._dl*F1dot*F2dot + &
+!       9._dl*F2**4._dl*(F3dot**2._dl - F3*F3dotdot) + &
+!       6._dl*F2**2._dl*F3**2._dl*(-3._dl*F2dot**2._dl - F1dot*F3dot + 2._dl*F3*F1dotdot - 3._dl*F2dot*rho_d + &
+!       3._dl*rho_d**2._dl) + 18._dl*F2**3._dl*F3*(F3dot*rho_d + F3*(F2dotdot - rho_d_dot))) + &
+!       F1**4._dl*F2*F3*(8._dl*F3**3._dl*F1dot*F2dot + 3._dl*F2**3._dl*(F3dot**2._dl - 2._dl*F3*F3dotdot) + &
+!       4._dl*F2*F3**2._dl*(-(F1dot*F3dot) + F3*F1dotdot + 3._dl*(-2._dl*F2dot + rho_d)*(F2dot + rho_d)) + &
+!       12._dl*F2**2._dl*F3*(F3dot*(F2dot + rho_d) + F3*(F2dotdot - rho_d_dot))))))/ &
+!       (a*(3._dl*F2**2._dl + F1*F3)**2._dl*(3._dl*F2**2._dl + 2._dl*F1*F3)) + &
+!       (9._dl*F2**6._dl*(1._dl + 1._dl/(3._dl*sqrt(F2**4._dl/(3._dl*F2**2._dl + 2._dl*F1*F3)**2._dl)))* &
+!       (6._dl*F1*F2*F3*(3._dl*F2**2._dl + F1*F3)*eft_cache%adotoa* &
+!       (F2*F3*F1dot + F1*(F2*F3dot + 2._dl*F3*(-F2dot + rho_d))) + &
+!       a*(-3._dl*F2**4._dl*F3**2._dl*F1dot**2._dl + &
+!       2._dl*F1*F2**2._dl*F3**2._dl*(-(F3*F1dot**2._dl) + 3._dl*F2**2._dl*F1dotdot) + &
+!       2._dl*F1**3._dl*F3*(-2._dl*F2**2._dl*F3dot**2._dl + F2*F3*(F2*F3dotdot - 2._dl*F3dot*(-2._dl*F2dot + rho_d)) - &
+!       2._dl*F3**2*(F2dot**2._dl - F2dot*rho_d + rho_d**2._dl + F2*(F2dotdot - rho_d_dot))) + &
+!       F1**2*F2*(4._dl*F3**3._dl*F1dot*F2dot + F2**3._dl*(-9._dl*F3dot**2._dl + 6._dl*F3*F3dotdot) + &
+!       2._dl*F2*F3**2._dl*(-(F1dot*F3dot) + F3*F1dotdot + 6._dl*(F2dot - rho_d)*rho_d) + &
+!       12._dl*F2**2._dl*F3*(F3dot*(F2dot - rho_d) + F3*(-F2dotdot + rho_d_dot))))))/ &
+!       (a*(3._dl*F2**2._dl + F1*F3)**2._dl*(3._dl*F2**2._dl + 2._dl*F1*F3)))/(16._dl*F1**2._dl*F2**4._dl*F3**2._dl)
 
     end subroutine EFTCAMBModelComputeMassFactors
 
