@@ -564,6 +564,19 @@ class EFTCAMBTest(unittest.TestCase):
         np.testing.assert_allclose(f["EFTGamma3PPP"], 0.3 + 0.12 * a, rtol=1e-12)
         np.testing.assert_allclose(f["EFTGamma3PPPP"], 0.12, rtol=1e-6)
 
+    def test_numerical_derivative_large_values(self):
+        # the numerical derivative (dfridr) of the fallbacks returned 0 for derivatives above ~1e30: OL alpha
+        # EFTGamma1PP (-6.7e39 .. -6.9e32 for a = 1e-8 .. 2.5e-7) was 0 there
+        ola = "EFTflag = 2\nAltParEFTmodel = 3\nOLLambdamodel = 0\nOLmassPmodel = 3\nOLkineticitymodel = 3\n"
+        ola += "OLbraidingmodel = 0\nOLtensormodel = 0\nOLmass0 = 0.05\nOLmassExp = 1.0\nOLkineticity0 = 1.0\n"
+        ola += "OLkineticityExp = 1.0\nEFTCAMB_skip_stability = T"
+        cp = self.read("2_PEFT_wDE_LCDM_1", ola)
+        bg = camb.get_background(cp)
+        a, h = np.array([1e-8, 1e-7, 2.5e-7, 1e-6]), 1e-3
+        g1p = [np.array(cp.EFTCAMB.get_eft_functions(bg, a * (1 + s * h))[1]["EFTGamma1P"]) for s in (-1, 1)]
+        g1pp = np.array(cp.EFTCAMB.get_eft_functions(bg, a)[1]["EFTGamma1PP"])
+        np.testing.assert_allclose(g1pp, (g1p[1] - g1p[0]) / (2 * h * a), rtol=1e-4)
+
     def test_glpv_domain_floor(self):
         # gamma6 and gamma3 + gamma4 enter the dispersion relation times (k/aH)^2 ~ 1e9: only roundoff counts as GLPV
         # (the physical floor 1e-8 let gamma3 + gamma4 = -1e-9, with a k^4 instability above 2.2/Mpc, pass)

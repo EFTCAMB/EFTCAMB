@@ -128,7 +128,6 @@
 
     real(dl), parameter :: CON = 1.4_dl     ! decrease of the stepsize.
     real(dl), parameter :: CON2 = CON*CON
-    real(dl), parameter :: BIG = 1.d+30
     real(dl), parameter :: SAFE = 2._dl
 
     integer i, j
@@ -139,8 +138,10 @@
 
     hh = h
     a(1, 1) = (func(x + hh) - func(x - hh))/(2.0_dl*hh)
-    err = BIG
-    dfridr = 0._dl
+    ! start from the first estimate with an unbounded error: the former bound BIG = 1e30 discarded every estimate of a
+    ! derivative larger than ~1e30 (e.g. EFTGamma1PP ~ 1e33..1e39 at a < 3e-7), and 0 was returned
+    err = huge(1._dl)
+    dfridr = a(1, 1)
     do 12 i = 2, ntab
         hh = hh/CON
         a(1, i) = (func(x + hh) - func(x - hh))/(2.0_dl*hh)
