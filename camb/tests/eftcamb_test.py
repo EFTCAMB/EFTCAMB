@@ -465,12 +465,25 @@ class EFTCAMBTest(unittest.TestCase):
                 self.assertAlmostEqual(res.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=1e-12)
 
     def test_fR_b0_shooting(self):
-        # the B0 shooting must reproduce the requested B0 (relative 1e-4), or the model is refused: w = -0.55, B0 = 1
-        # returned B(1) = 6.1e5; the near-correct w = -0.85, B0 = 1e-4 (9.3e-6 off) runs
+        # the B0 shooting must reproduce the requested B0 (relative 1e-4), or the model is refused: w = -0.45, B0 = 1
+        # returns B(1) = 1.001. w = -0.55, -0.8 with B0 = 1 (missed while the initial condition counted massive
+        # neutrinos as radiation: B(1) = 6.1e5 for -0.55) and w = -0.85, B0 = 1e-4 run
         with self.assertRaisesRegex(CAMBError, "background solver failed"):
-            camb.get_results(self.read("4_Des_F_R_wCDM_1", "EFTw0 = -0.55"))
-        res = camb.get_results(self.read("4_Des_F_R_wCDM_1", "EFTw0 = -0.85\nEFTB0 = 1e-4"))
-        self.assertGreater(res.get_sigma8_0(), 0)
+            camb.get_results(self.read("4_Des_F_R_wCDM_1", "EFTw0 = -0.45"))
+        for extra in ("EFTw0 = -0.55", "EFTw0 = -0.8", "EFTw0 = -0.85\nEFTB0 = 1e-4"):
+            with self.subTest(extra=extra):
+                self.assertGreater(camb.get_results(self.read("4_Des_F_R_wCDM_1", extra)).get_sigma8_0(), 0)
+
+    def test_fR_massive_nu_ic(self):
+        # the f(R) initial condition at a = 1e-8 counts massive neutrinos as radiation, as they are there: Omega(a) then
+        # starts as with 3.046 massless neutrinos (today's omegan as radiation gave d ln Omega/d ln a = 958 at a_ini)
+        a = np.array([1e-8, 1.2e-8, 1.5e-8, 2e-8])
+        slopes = []
+        for extra in ("", "omnuh2 = 0\nmassless_neutrinos = 3.046\nmassive_neutrinos = 0"):
+            cp = self.read("4_Des_F_R_LCDM_1", extra)
+            f = cp.EFTCAMB.get_eft_functions(camb.get_background(cp), a)[1]
+            slopes.append(a * np.array(f["EFTOmegaP"]) / np.array(f["EFTOmegaV"]))
+        np.testing.assert_allclose(slopes[0], slopes[1], rtol=1e-5)
 
     def test_fR_tachyon_prior(self):
         # the f(R) prior refuses f_RR < 0 (tachyonic scalaron) from EFTCAMB_stability_time on: B0 < 0 and a constant

@@ -331,7 +331,7 @@
 
     integer, parameter :: num_eq = 2   !<  Number of equations
 
-    real(dl) :: Omegam_EFT, Omegavac_EFT, OmegaMassiveNu_EFT, OmegaGamma_EFT, OmegaNu_EFT
+    real(dl) :: Omegam_EFT, Omegavac_EFT, OmegaGamma_EFT, OmegaNu_EFT
     real(dl) :: Omegarad_EFT, EquivalenceScale_fR, Ratio_fR, Initial_B_fR, Initial_C_fR
     real(dl) :: PPlus, yPlus, CoeffA_Part, yStar, x
 
@@ -350,13 +350,15 @@
     ! 1) Cosmological parameters:
     Omegam_EFT = params_cache%omegab + params_cache%omegac
     Omegavac_EFT = params_cache%omegav
-    OmegaMassiveNu_EFT = params_cache%omegan
     OmegaGamma_EFT = params_cache%omegag
     OmegaNu_EFT = params_cache%omegar
 
     Omegarad_EFT = OmegaGamma_EFT + OmegaNu_EFT
 
-    EquivalenceScale_fR = (Omegarad_EFT + OmegaMassiveNu_EFT)/Omegam_EFT
+    ! a_eq of the growing-mode solution at a_ini: massive neutrinos are relativistic there (a_ini << 1e-4), so they
+    ! count with their radiation-like density grhormass, as in CAMB's z_eq (today's omegan was 2e3x too large)
+    EquivalenceScale_fR = (params_cache%grhog + params_cache%grhornomass + &
+        sum(params_cache%grhormass(1:params_cache%Nu_mass_eigenstates)))/(params_cache%grhob + params_cache%grhoc)
     Ratio_fR = EquivalenceScale_fR/exp(self%x_initial)
 
     ! 2) Growing mode solution:
