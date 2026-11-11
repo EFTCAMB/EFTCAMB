@@ -364,6 +364,24 @@ class EFTCAMBTest(unittest.TestCase):
                 h_eft = cp.EFTCAMB.get_eft_functions(res, a)[1]["adotoa"]
                 np.testing.assert_allclose(h_eft, a * res.h_of_z(1 / a - 1), rtol=1e-12)
 
+    def test_beyond_horndeski_background_solver(self):
+        # no hidden Omega_v >= 0.3 cut (omch2 = 0.35 was refused as 'background solver failed'); before the background
+        # table (a_s = 1/(1.5e5 + 1)) x_i grow with the rates of the solution at a_s: for x4 = 0 the fixed x4-attractor
+        # exponents made d ln c/d ln a jump from +1.0 to -1.5 at a_s; a failed integration is named
+        model = "EFTflag = 4\nFullMappingEFTmodel = 5\nBeyond_Horndeski_x10 = -0.1\nBeyond_Horndeski_x30 = 1.0\n"
+        model += "EFTCAMB_stability_threshold = 0.0\nBeyond_Horndeski_x40 = "
+        cp = self.read("2_PEFT_wDE_wCDM_1", model + "1.0\nomch2 = 0.35")
+        self.assertAlmostEqual(camb.get_results(cp).hubble_parameter(0.0) / cp.H0, 1, delta=1e-5)
+        cp = self.read("2_PEFT_wDE_wCDM_1", model + "0.0")
+        bg = camb.get_background(cp)
+        a = np.array([0.95, 1.05]) / (1.5e5 + 1)
+        h = 0.01
+        c = [np.array(cp.EFTCAMB.get_eft_functions(bg, a * np.exp(s * h))[1]["EFTc"]) for s in (-1, 1)]
+        slope = np.log(c[1] / c[0]) / (2 * h)
+        self.assertAlmostEqual(slope[0], slope[1], delta=1e-2)
+        with self.assertRaisesRegex(CAMBError, "Beyond Horndeski background integration failed"):
+            camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model + "-100.0"))
+
     def test_ade_flatness(self):
         # ADE closes flatness with the continuity integral for the input p (the p = 1 closed form gave H(z = 0) 2.5% off
         # for p = 1/2, w_f = 0)

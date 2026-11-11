@@ -58,6 +58,10 @@
         real(dl) :: bHor_x2today
         real(dl) :: bHor_x3today
         real(dl) :: bHor_x4today
+        !< the background solution at a_s = exp(x_initial) and its growth rates d ln x_i/d ln a there, which extend
+        !! x_i as power laws to a < a_s (stability checks and dtauda before the start of the background table):
+        real(dl) :: bHor_x_ini(4) = 0._dl
+        real(dl) :: bHor_n_ini(4) = 0._dl
 
         ! the interpolated EFT functions that come out of the background sover:
         type(equispaced_linear_interpolate_function_1D) :: fun_x1       !< The interpolated function x1
@@ -209,6 +213,7 @@
     real(dl) :: H2, H_0, grhom, grhorad, epsilon, h, w_DE, H2_LCDM
     integer  :: j, ind, i
     real(dl) :: grho_tot, Ptil, dPtil, ddPtil
+    integer, parameter :: max_bisection_steps = 100
 
     grhom = params_cache%grhob + params_cache%grhoc
     grhorad = params_cache%grhornomass + params_cache%grhog
@@ -235,11 +240,8 @@
     call self%fun_x3%initialize      (self%designer_num_points, self%x_initial, self%x_final)
     call self%fun_x4%initialize      (self%designer_num_points, self%x_initial, self%x_final)
 
-    ! SP: check omegav
-    if (params_cache%omegav < 0.3_dl) then
-        success = .false.
-        return
-    end if
+    ! there is no Omega_v >= 0.3 cut (not part of the model): a model without an x2_i that recovers Omega_DE is
+    ! refused by the bisection below with its own error.
 
     ! Initial values of x2 used in the bisection algorithm
 
@@ -256,20 +258,26 @@
             write(*, *)  '   x3 initial   =    0'
             write(*, *)  '   x4 initial   =    0'
         end if
-        call self%solve_background(params_cache, tol, success=success)
+        if (.not. solved(tol)) return
     else
         self%bHor_x20 = -1.5*self%bHor_x10*1.d-16
         x2_i = self%bHor_x20
         x2_il = 0._dl
         x2_ir = 10._dl*x2_i*(abs(self%bHor_x10*1.d-16/ &
             (-2._dl*OmegaDE_0/(OmegaRad_0/exp(self%x_initial)**4 + OmegaM_0/exp(self%x_initial)**3 + OmegaDE_0))))
-        call self%solve_background(params_cache, tol, success=success)
+        if (.not. solved(tol)) return
         i = 0
         do while (abs(tol) > 1.d-6)
+            if (i >= max_bisection_steps) then
+                call GlobalError('EFTCAMB: the Beyond Horndeski bisection for the initial x2_i did not converge', &
+                    error_unsupported_params)
+                success = .false.
+                return
+            end if
             self%bHor_x20 = x2_ir
-            call self%solve_background(params_cache, tol_r, success=success)
+            if (.not. solved(tol_r)) return
             self%bHor_x20 = x2_il
-            call self%solve_background(params_cache, tol_l, success=success)
+            if (.not. solved(tol_l)) return
             if (sign(1._dl, tol_r) == sign(1._dl, tol_l)) then
                 if (feedback_level > 1) then
                     if (sign(1._dl, tol_r) < 0._dl) then
@@ -300,7 +308,7 @@
                 end if
             end if
             self%bHor_x20 = x2_i
-            call self%solve_background(params_cache, tol, success=success)
+            if (.not. solved(tol)) return
             i = i + 1
         end do
         if (feedback_level > 0) then
@@ -407,11 +415,28 @@
     self%bHor_x3today = self%fun_x3%value(xj, index=ind, coeff=mu)
     self%bHor_x4today = self%fun_x4%value(xj, index=ind, coeff=mu)
 
+    contains
+
+    !> solves the background for the current x2_i; on a solver failure or a NaN tolerance (tol was undefined then and
+    !! the bisection could report success) raises an error and returns false.
+    logical function solved(tol_out)
+    real(dl), intent(out) :: tol_out
+    call self%solve_background(params_cache, tol_out, success=success)
+    solved = success .and. .not. IsNaN(tol_out)
+    if (.not. solved) then
+        success = .false.
+        call GlobalError('EFTCAMB: the Beyond Horndeski background integration failed (ODE solver error or NaN) ' // &
+            'for the initial x1..x4', error_unsupported_params)
+    end if
+    end function solved
+
     end subroutine EFTCAMBBeyondHorndeskiInitBackground
 
     ! ---------------------------------------------------------------------------------------------
 
     subroutine EFTCAMBBeyondHorndeskiSolveBackground(self, params_cache, tol, success)
+
+    use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan
 
     implicit none
 
@@ -456,7 +481,13 @@
         y(4) = self%bHor_x40*1.d-6
     end if
 
-    ydot = 0._dl
+    ! tol is the relative Omega_DE mismatch today: NaN until the integration reaches a = 1
+    tol = ieee_value(tol, ieee_quiet_nan)
+    ! the initial state and its growth rates d ln x_i/d ln a = ydot/y (the power laws used for a < a_s):
+    call derivs(num_eq, x, y, ydot)
+    self%bHor_x_ini = y
+    self%bHor_n_ini = 0._dl
+    where (y /= 0._dl) self%bHor_n_ini = ydot/y
     ! 3) Initialize DLSODA:
     ! set-up the relative and absolute tollerances:
     itol = 1
@@ -620,10 +651,12 @@
     x4p = ydot(4)
 
     if (x < self%x_initial) then
-        x1 = self%bHor_x10*1.d-16*(a/exp(self%x_initial))**(14._dl/3._dl)
-        x2 = self%bHor_x20*(a/exp(self%x_initial))**(16._dl/3._dl)
-        x3 = self%bHor_x30*1.d-9*(a/exp(self%x_initial))**(3._dl)
-        x4 = self%bHor_x40*1.d-6*(a/exp(self%x_initial))**(4._dl/3._dl)
+        ! before the background table: power laws with the growth rates of the solution at a_s (the fixed
+        ! exponents 14/3, 16/3, 3, 4/3 hold only on the x4-dominated attractor; for x4 = 0 they are 3, 2, 1/2)
+        x1 = self%bHor_x_ini(1)*(a/exp(self%x_initial))**self%bHor_n_ini(1)
+        x2 = self%bHor_x_ini(2)*(a/exp(self%x_initial))**self%bHor_n_ini(2)
+        x3 = self%bHor_x_ini(3)*(a/exp(self%x_initial))**self%bHor_n_ini(3)
+        x4 = self%bHor_x_ini(4)*(a/exp(self%x_initial))**self%bHor_n_ini(4)
     end if
 
     call self%background_matter(params_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
@@ -942,10 +975,12 @@
     x4 = self%fun_x4%value(x, index=ind, coeff=mu)
 
     if (x < self%x_initial) then
-        x1 = self%bHor_x10*1.d-16*(a/exp(self%x_initial))**(14._dl/3._dl)
-        x2 = self%bHor_x20*(a/exp(self%x_initial))**(16._dl/3._dl)
-        x3 = self%bHor_x30*1.d-9*(a/exp(self%x_initial))**(3._dl)
-        x4 = self%bHor_x40*1.d-6*(a/exp(self%x_initial))**(4._dl/3._dl)
+        ! before the background table: power laws with the growth rates of the solution at a_s (the fixed
+        ! exponents 14/3, 16/3, 3, 4/3 hold only on the x4-dominated attractor; for x4 = 0 they are 3, 2, 1/2)
+        x1 = self%bHor_x_ini(1)*(a/exp(self%x_initial))**self%bHor_n_ini(1)
+        x2 = self%bHor_x_ini(2)*(a/exp(self%x_initial))**self%bHor_n_ini(2)
+        x3 = self%bHor_x_ini(3)*(a/exp(self%x_initial))**self%bHor_n_ini(3)
+        x4 = self%bHor_x_ini(4)*(a/exp(self%x_initial))**self%bHor_n_ini(4)
     end if
 
     call self%background_matter(eft_par_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
@@ -1124,10 +1159,12 @@
     x4 = self%fun_x4%value(x, index=ind, coeff=mu)
 
     if (x < self%x_initial) then
-        x1 = self%bHor_x10*1.d-16*(a/exp(self%x_initial))**(14._dl/3._dl)
-        x2 = self%bHor_x20*(a/exp(self%x_initial))**(16._dl/3._dl)
-        x3 = self%bHor_x30*1.d-9*(a/exp(self%x_initial))**(3._dl)
-        x4 = self%bHor_x40*1.d-6*(a/exp(self%x_initial))**(4._dl/3._dl)
+        ! before the background table: power laws with the growth rates of the solution at a_s (the fixed
+        ! exponents 14/3, 16/3, 3, 4/3 hold only on the x4-dominated attractor; for x4 = 0 they are 3, 2, 1/2)
+        x1 = self%bHor_x_ini(1)*(a/exp(self%x_initial))**self%bHor_n_ini(1)
+        x2 = self%bHor_x_ini(2)*(a/exp(self%x_initial))**self%bHor_n_ini(2)
+        x3 = self%bHor_x_ini(3)*(a/exp(self%x_initial))**self%bHor_n_ini(3)
+        x4 = self%bHor_x_ini(4)*(a/exp(self%x_initial))**self%bHor_n_ini(4)
     end if
 
     call self%background_matter(eft_par_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
