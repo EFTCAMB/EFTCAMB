@@ -445,6 +445,18 @@ class EFTCAMBTest(unittest.TestCase):
         with self.assertRaisesRegex(CAMBError, "background solver failed"):
             camb.get_results(self.read("5_quint_exponential", "EFT_lambda = 2.2"))
 
+    def test_evolution_higher_derivatives(self):
+        # get_scale_evolution computes the higher derivatives before the mass eigenvalues, as the stability check does:
+        # for full models they were 0 there (EFTcdotdot, EFTLambdadotdot) and Hdotdotdot was 3x off at a = 0.5
+        a = np.array([0.02, 0.1, 0.5])
+        cp = self.read("5_quint_exponential")
+        res = camb.get_results(cp)
+        ev = cp.EFTCAMB.get_scale_evolution(res, [0.05], a)[1][0]
+        eft = cp.EFTCAMB.get_eft_functions(res, a)[1]
+        for name in ("EFTcdotdot", "EFTLambdadotdot", "Hdotdotdot"):
+            with self.subTest(name=name):
+                np.testing.assert_allclose(ev[name], eft[name], rtol=1e-6)
+
     def test_quintessence_early_background(self):
         # dphi/dN is 1e-28..1e-9 before a ~ 1e-3: with one absolute tolerance 1e-14 (and a transposed Jacobian) it was
         # solver noise, and EFTcdot/(H EFTc) = 38 at a = 1e-6 while c grew as a^4. The cache holds a^2 c and a^2 c'.

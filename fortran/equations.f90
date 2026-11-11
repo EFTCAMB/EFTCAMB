@@ -3738,6 +3738,10 @@
         call CP%EFTCAMB%model%compute_tensor_factors(a, CP%eft_par_cache, EV%eft_cache)
         ! stability quantities:
         call CP%EFTCAMB%model%compute_stability_factors(a, CP%eft_par_cache, EV%eft_cache)
+        ! the higher derivatives (zeros unless the model provides them) and the Hubble derivatives that use them, as
+        ! in the stability check, so that the printed mass eigenvalues are the checked ones:
+        call CP%EFTCAMB%model%compute_additional_derivs(a, CP%eft_par_cache, EV%eft_cache)
+        call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
         call CP%EFTCAMB%model%compute_mass_factors(a, CP%eft_par_cache, EV%eft_cache)
     end if
     ! EFTCAMB MOD END.
