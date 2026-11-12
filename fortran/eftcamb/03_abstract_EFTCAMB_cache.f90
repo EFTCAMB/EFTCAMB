@@ -343,7 +343,8 @@
         real(dl) :: EFTDT
         ! 12) Kinetic and Gradient quantities for the stability check:
         real(dl) :: EFT_kinetic   !< the value of the kinetic term. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFT_gradient  !< the value of the gradient term. Refer to the Numerical Notes for the definition.
+        !< the value of the gradient term (numerator of c_s^2, dressed by pressureless dust in GLPV).
+        real(dl) :: EFT_gradient
         !< the value of the first mass eigenvalue. Refer to the Numerical Notes for the definition.
         real(dl) :: EFT_mu1
         !< the value of the second mass eigenvalue. Refer to the Numerical Notes for the definition.

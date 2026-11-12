@@ -1052,7 +1052,7 @@ class EFTCAMB_timestep_cache(F2003Class):
         ),  # the value of the tensor equation coefficient D. Refer to the Numerical Notes for the definition.
         # 12) Kinetic and Gradient quantities for the stability check:
         ("EFT_kinetic", c_double),  # the value of the kinetic term. Refer to the Numerical Notes for the definition.
-        ("EFT_gradient", c_double),  # the value of the gradient term. Refer to the Numerical Notes for the definition.
+        ("EFT_gradient", c_double),  # the gradient term (numerator of c_s^2; dressed by pressureless dust in GLPV).
         (
             "EFT_mu1",
             c_double,

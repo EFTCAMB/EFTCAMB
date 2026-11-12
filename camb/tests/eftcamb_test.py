@@ -314,6 +314,20 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertNotIn(warning, blocks[1])
         self.assertNotIn(warning, blocks[2])
 
+    def test_glpv_dust_dressed_gradient(self):
+        # GLPV gradient condition with pressureless dust dressed (D3): G + (2 G5 - F1)^2 rho_dust/F2^2 >= 0. Pure EFT
+        # gamma1 = 0.05, gamma5 = 0.1 checked from a = 0.65: the bare c_s^2 is negative until a ~ 0.7 (-0.23 at 0.66),
+        # the dressed one positive (0.34), and the evolved pi propagates with it (c^2 = 0.381 vs 0.384): it was refused.
+        # From a = 0.5 the dressed c_s^2 is negative too (-0.32 at 0.56): still refused.
+        extra = (
+            "PureEFTmodelGamma1 = 1\nEFTGamma10 = 0.05\nPureEFTmodelGamma5 = 1\nEFTGamma50 = 0.1\n"
+            "EFT_ghost_math_stability = F\nEFT_ghost_stability = T\nEFT_gradient_stability = T\nEFTCAMB_skip_RGR = T\n"
+            "EFTCAMB_turn_on_time = 0.65\nEFTCAMB_stability_time = 0.65"
+        )
+        self.assertGreater(camb.get_results(self.read("2_PEFT_gamma5_exp_2", extra)).get_sigma8_0(), 0)
+        with self.assertRaisesRegex(CAMBError, "theory unstable"):
+            camb.get_results(self.read("2_PEFT_gamma5_exp_2", extra.replace("0.65", "0.5")))
+
     def test_mass_math_deprecated(self):
         # EFT_mass_math_stability is kept as it is (it rejects healthy models: K-mimic here) and warns at feedback >= 1
         code = (

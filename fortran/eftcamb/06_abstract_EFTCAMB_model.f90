@@ -756,6 +756,13 @@
         3._dl*eft_cache%EFTOmegaV)) + &
         (1._dl + 2._dl*eft_cache%EFTGamma5V + eft_cache%EFTOmegaV)* &
         (4._dl + a*eft_cache%EFTOmegaP + 4._dl*eft_cache%EFTOmegaV)*eft_cache%Hdot))
+    ! The terms above are the bare form: every matter species in the alpha_H^2 mixing, as for fluids with pressure.
+    ! Pressureless dust dresses it (decision D3): in GLPV the DE mode propagates with c_s^2 + lambda_d,
+    ! lambda_d = (2 G5 - F1)^2 rho_dust/(F2^2 L_zz) (Kase & Tsujikawa arXiv:1802.02728; measured on the evolved pi:
+    ! c^2 = 0.381 vs 0.384), so the gradient condition is G + (2 G5 - F1)^2 rho_dust/F2^2 >= 0 with
+    ! G5 = 1 + Omega + 2 gamma5, F1 = 2 (1 + Omega) + 3 gamma3 + gamma4. The dressing vanishes in Horndeski (2 G5 = F1).
+    eft_cache%EFT_gradient = eft_cache%EFT_gradient + 4.5_dl*(4._dl*eft_cache%EFTGamma5V - &
+        3._dl*eft_cache%EFTGamma3V - eft_cache%EFTGamma4V)**2*(eft_cache%grhob_t + eft_cache%grhoc_t)
 
     end subroutine EFTCAMBModelComputeStabilityFactors
 
@@ -827,7 +834,9 @@
         + eft_cache%EFTOmegaV)* (1._dl + 2._dl*a*eft_cache%EFTGamma5P + 4._dl*eft_cache%EFTGamma5V &
         + eft_cache%EFTOmegaV) - a*eft_cache%EFTOmegaP*(3._dl + 2._dl*a*eft_cache%EFTGamma5P + 2._dl* &
         eft_cache%EFTGamma5V + 3._dl*eft_cache%EFTOmegaV)) + (1._dl + 2._dl*eft_cache%EFTGamma5V &
-        + eft_cache%EFTOmegaV)* (4._dl + a*eft_cache%EFTOmegaP + 4._dl*eft_cache%EFTOmegaV)*eft_cache%Hdot)))
+        + eft_cache%EFTOmegaV)* (4._dl + a*eft_cache%EFTOmegaP + 4._dl*eft_cache%EFTOmegaV)*eft_cache%Hdot))) + &
+        4.5_dl*(4._dl*eft_cache%EFTGamma5V - 3._dl*eft_cache%EFTGamma3V - eft_cache%EFTGamma4V)**2* &
+        (eft_cache%grhob_t + eft_cache%grhoc_t)
 
     end subroutine EFTCAMBStabilityScales
 
