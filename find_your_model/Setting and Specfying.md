@@ -126,6 +126,11 @@
          - Names: **Scaling_Cubic_A, Scaling_Cubic_beta1, Scaling_Cubic_beta2, Scaling_Cubic_lambda**
          - Latex format: $A, \beta_1, \beta_2, \lambda$
 
+         Note: the positivity bounds (**EFT_positivity_bounds**) and the Minkowski-limit check (**EFT_minkowski_limit**)
+         do not apply to this model. They test the Horndeski theory reconstructed from the EFT functions with $G_i$
+         analytic at $X = 0$, while here $G_3 = A \ln(X e^{\lambda\phi})$: with either check on, the published models
+         and the test model `5_scg` are refused at every time. Keep both off.
+
          Reference Paper:
          - [1] Albuquerque, I. S., Frusciante, N., and Martinelli, M., “Constraining cosmological scaling solutions of a Galileon field”, <i>Physical Review D</i>, vol. 105, no. 4, Art. no. 044056, APS, 2022. [doi:10.1103/PhysRevD.105.044056](https://journals.aps.org/prd/abstract/10.1103/PhysRevD.105.044056).
        <br>

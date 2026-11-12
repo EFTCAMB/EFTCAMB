@@ -21,6 +21,9 @@
 ! ----------------------------------------------------------------------------------------
 !> This module contains the definition of the Scaling Cubic model consistent with the mathematica file.
 !! Please refer to the numerical notes for details.
+!! The positivity bounds and the Minkowski-limit check (EFT_positivity_bounds, EFT_minkowski_limit) do not apply to
+!! this model: they test the Horndeski theory reconstructed from the EFT functions with G_i analytic at X = 0, while
+!! here G3 = A ln(X e^(lambda phi)). With either check on every model is refused at every time: keep both off.
 
 !> @author Inês Albuquerque, Noemi Frusciante
 

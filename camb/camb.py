@@ -45,6 +45,7 @@ _EFT_HIGHER_DERIVATIVES_MODELS = (
     "Shift Symmetric alpha B",
     "Designer full3p1",
     "K-mouflage",
+    # computes the derivatives, but the bounds do not apply to it (G3 ~ ln X is not analytic at X = 0): see the model
     "Scaling Cubic Galileon",
 )
 # EFTCAMB MOD END
