@@ -255,6 +255,10 @@
     !< subroutine that checks whether the theory satisfies the Minkowski positivity bounds
     procedure :: horndeski_check_positivity => EFTCAMBHdskCheckPositivity
 
+    ! perturbations:
+    !< subroutine that refuses the pi path where phi' changes sign after the turn-on.
+    procedure :: pi_evolution_check => EFTCAMBHdskPiEvolutionCheck
+
     end type
 
     ! ---------------------------------------------------------------------------------------------
@@ -3368,5 +3372,32 @@
     end if
 
     end subroutine
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that checks the pi path (EFTCAMB_evolve_delta_phi = F): pi = delta_phi/phi' has a simple pole where
+    !! the field velocity phi' changes sign (arXiv:1404.3713 below eq. 3.16), which cannot be removed: after the turn-on
+    !! the pi evolution is then garbage (5_hdsk_TG_3: sigma8 1.77 instead of 0.903). The delta_phi path is regular.
+    subroutine EFTCAMBHdskPiEvolutionCheck(self, turn_on, message)
+
+    implicit none
+
+    class(EFTCAMB_Hdsk), intent(in) :: self      !< the base class
+    real(dl), intent(in)            :: turn_on   !< the scale factor of the perturbation turn-on.
+    character(len=*), intent(out)   :: message   !< why the pi evolution is singular ('' if it is regular).
+
+    integer :: i
+
+    message = ''
+    if (self%evolve_delta_phi) return
+    do i = 2, self%dphi%num_points
+        if (self%dphi%x(i) <= log(turn_on)) cycle
+        if (self%dphi%y(i - 1)*self%dphi%y(i) < 0._dl) then
+            write(message, '(a,es10.3,a)') 'EFTCAMB: the Horndeski field velocity changes sign at a =', &
+                exp(self%dphi%x(i)), ', where the pi evolution is singular: set EFTCAMB_evolve_delta_phi = T'
+            return
+        end if
+    end do
+
+    end subroutine EFTCAMBHdskPiEvolutionCheck
 
     end module EFTCAMB_Horndeski

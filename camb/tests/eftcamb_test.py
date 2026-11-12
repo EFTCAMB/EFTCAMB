@@ -904,6 +904,16 @@ class EFTCAMBTest(unittest.TestCase):
                 (dp[0] + dp[1] * v["dddphi"]) / ((poly(shifted(v, 1)) - poly(shifted(v, -1))) / 2e-6), 1, delta=1e-6
             )
 
+    def test_horndeski_pi_path_turning_point(self):
+        # on the pi path (EFTCAMB_evolve_delta_phi = F) pi = delta_phi/phi' is singular where the Horndeski field velocity
+        # changes sign: 5_hdsk_TG_3 (a = 1.69e-3) ran with sigma8 1.77 instead of 0.903 and zero CMB C_l, even with the
+        # stability check on. It is refused whatever the stability flags; TG_2 (pi path, no crossing) still runs.
+        message = r"field velocity changes sign at a = 1\.692E-03"
+        for extra in ("", "\nEFTCAMB_skip_stability = F"):
+            with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, message):
+                camb.get_background(self.read("5_hdsk_TG_3", "EFTCAMB_evolve_delta_phi = F" + extra))
+        self.assertGreater(camb.get_background(self.read("5_hdsk_TG_2")).hubble_parameter(0), 0)
+
     def test_horndeski_gr_limit(self):
         # LCDM written as Horndeski (G2 = const, G4 = 1/2): rho_DE + p_DE comes from the background equation without
         # subtracting matter, so c and gamma1 are exactly 0 (they were noise up to 1e-4 and the pi path aborted)

@@ -353,6 +353,7 @@
     real(dl) :: RGR_time, turn_on_requested
     logical  :: success
     real(dl) :: k_max
+    character(len=256) :: eft_message
     ! EFTCAMB MOD END.
 
     global_error_flag = 0
@@ -718,6 +719,14 @@
             ! and when the perturbations start before the model background (frozen there):
             call EFTCAMBReturnToGR_background_start_warning(this%CP%EFTCAMB%EFTCAMB_feedback_level, &
                 this%CP%EFTCAMB%model, this%CP%EFTCAMB%EFTCAMB_pert_turn_on)
+            ! the pi evolution must be regular after the turn-on (e.g. Horndeski on the pi path is singular where phi'
+            ! changes sign). A limit of the pi formulation, enforced whatever the stability flags:
+            call this%CP%EFTCAMB%model%pi_evolution_check(this%CP%EFTCAMB%EFTCAMB_pert_turn_on, eft_message)
+            if (len_trim(eft_message) > 0) then
+                call GlobalError(trim(eft_message), 1)
+                if (present(error)) error = global_error_flag
+                return
+            end if
 
             if (.not. this%CP%EFTCAMB%EFTCAMB_skip_stability) then
 

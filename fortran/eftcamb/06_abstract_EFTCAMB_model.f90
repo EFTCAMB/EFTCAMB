@@ -140,6 +140,8 @@
     procedure :: wDE_prior => EFTCAMBModelwDEPrior
     !< function that returns the scale factor where the model background solution starts (0: everywhere).
     procedure :: background_start => EFTCAMBModelBackgroundStart
+    !< subroutine that checks that the pi evolution is regular after the perturbation turn-on (message: '' if it is).
+    procedure :: pi_evolution_check => EFTCAMBModelPiEvolutionCheck
     ! positivity bounds:
     !< function that computes the positivity bounds. See thesis Dani de Boe for details.
     procedure :: compute_positivity_bounds => EFTCAMBModelPositivityBounds
@@ -1435,6 +1437,22 @@
     EFTCAMBModelBackgroundStart = 0._dl
 
     end function EFTCAMBModelBackgroundStart
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that checks that the evolution of pi is regular after the perturbation turn-on. A model whose pi
+    !! variable is singular somewhere (e.g. Horndeski on the pi path: pi = delta_phi/phi' where phi' changes sign)
+    !! returns the reason in message, and the run is refused; '' otherwise. Default: regular.
+    subroutine EFTCAMBModelPiEvolutionCheck(self, turn_on, message)
+
+    implicit none
+
+    class(EFTCAMB_model), intent(in) :: self      !< the base class
+    real(dl), intent(in)             :: turn_on   !< the scale factor of the perturbation turn-on.
+    character(len=*), intent(out)    :: message   !< why the pi evolution is singular ('' if it is regular).
+
+    message = ''
+
+    end subroutine EFTCAMBModelPiEvolutionCheck
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the LHS of positivity bounds. For details refer to the master thesis of Dani de Boe.
