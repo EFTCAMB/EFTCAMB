@@ -13,14 +13,16 @@
 !
 ! ----------------------------------------------------------------------------------------
 
-!> @file 10p6_Scaling_Cubic.f90
-!! This file contains the definition of the Scaling Cubic model consistent with the equations on the mathematica file.
-!! Please refer to the numerical notes for details.
+!> @file 008p6_Scaling_Cubic.f90
+!! This file contains the definition of the Scaling Cubic Galileon: L = R/2 + G2 - G3 box(phi) with
+!! G2 = X - V1 e^(-beta1 phi) - V2 e^(-beta2 phi) and G3 = A ln(X e^(lambda phi)). The background (dimensionless
+!! x1 = phidot/(sqrt(6) H), y_i = sqrt(V_i e^(-beta_i phi))/(sqrt(3) H); the radiation scaling point (a1) as initial
+!! condition) follows arXiv:1807.09800, the EFT mapping and the constraints arXiv:2112.06892 (Albuquerque, Frusciante,
+!! Martinelli). The derivation (a Mathematica notebook of the authors) is not in the repository.
 
 
 ! ----------------------------------------------------------------------------------------
-!> This module contains the definition of the Scaling Cubic model consistent with the mathematica file.
-!! Please refer to the numerical notes for details.
+!> This module contains the definition of the Scaling Cubic Galileon (see the file header for the references).
 !! The positivity bounds and the Minkowski-limit check (EFT_positivity_bounds, EFT_minkowski_limit) do not apply to
 !! this model: they test the Horndeski theory reconstructed from the EFT functions with G_i analytic at X = 0, while
 !! here G3 = A ln(X e^(lambda phi)). With either check on every model is refused at every time: keep both off.
@@ -917,6 +919,8 @@
     Qp = 2._dl*hprime*G + 2._dl*h*Gp + Gpp
 
     ! compute the second order EFT functions:
+    ! the factor sqrt(3/2) is right (audit: the unitary-gauge reduction of the covariant action); the gamma1 of
+    ! arXiv:2112.06892 is printed with sqrt(3/4)
     eft_cache%EFTGamma1V = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2)*G)/((a**2)*(eft_par_cache%h0_Mpc**2))
     eft_cache%EFTGamma1P = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2)*Q)/((a**3)*(eft_par_cache%h0_Mpc**2))
     eft_cache%EFTGamma1PP = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2)*(2._dl*h*Q + Qp - Q))/ &
