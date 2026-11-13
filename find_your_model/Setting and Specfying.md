@@ -40,6 +40,10 @@
          **RPHalphaMmodel/RPHmassPmodel, RPHkineticitymodel, RPHbraidingmodel, RPHtensormodel**.
          ***(Parametrizations name rule see the text below.)***
          Their function names are **RPHalphaM, RPHmassP, RPHkineticity, RPHbraiding, RPHtenso** and Latex format are $\alpha^{\rm M},\tilde{M},\alpha^{\rm K},{\alpha^{\rm B}},{\alpha^{\rm T}}$, respectively.
+         - With **RPHusealphaM** = T the Planck mass is integrated from $\alpha^{\rm M}$ and **RPH_M0** sets
+           $1 + M_0 = M_{\rm eff}^2/m_0^2$ where the integration starts: today if **RPHintegratefromtoday** = T, at the
+           start of the background (**model_background_a_ini**) otherwise. In the second case today's value differs
+           (constant $\alpha^{\rm M} = 0.1$ with $M_0 = 0.1$ gives $M_{\rm eff}^2(a=1) = 6.94$).
       <br>
       * **AltParEFTmodel** = 2
          - Flags: **OLLambdamodel, OLOmegamodel, OLGamma1model, OLGamma2model, OLGamma3model**

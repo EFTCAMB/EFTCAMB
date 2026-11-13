@@ -68,7 +68,10 @@
         logical  :: RPHhasOmegaDE           !< Flag whether using the OmegaDE parametrization
         logical  :: RPHintegratefromtoday   !< Flag whether integrating from today or radiation era
 
-        real(dl) :: RPH_M0                  !< Modification to Planck Mass at today, 1 + M0 = Meff^2(a=1)/m_0^2
+        !< With RPHusealphaM = T, the Planck mass where the alpha_M integration starts: 1 + RPH_M0 = Meff^2/m_0^2
+        !! today if RPHintegratefromtoday = T, at the start of the background (model_background_a_ini) otherwise;
+        !! today's value then differs (constant alpha_M = 0.1, RPH_M0 = 0.1: Meff^2(a=1) = 6.94).
+        real(dl) :: RPH_M0
 
         ! the RPH functions:
         class(parametrized_function_1D), allocatable :: RPH_wDE         !< The RPH function w_DE.
