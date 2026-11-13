@@ -251,6 +251,19 @@
 
     ! self%SCG_x10 = (2._dl*sqrt(2._dl/3._dl))/(self%SCG_beta1)
     ! self%SCG_y10 = sqrt((4._dl/3._dl) + 2._dl*self%SCG_A*(self%SCG_beta1 - (4._dl/3._dl)*self%SCG_lambda))/(self%SCG_beta1)
+    ! initial conditions: the radiation scaling point (a1) of arXiv:1807.09800. It exists only if
+    ! 4/3 + 2A(beta1 - 4 lambda/3) >= 0 (eq. (acon1) with gamma = 4/3); otherwise y1_i = sqrt(negative) was NaN and
+    ! the run stopped with 'background is NaN'. Computed here, so that the parameters set through init_model_parameters
+    ! (array interface) are used as well (they never updated x1_i, y1_i).
+    if (4._dl/3._dl + 2._dl*self%SCG_A*(self%SCG_beta1 - (4._dl/3._dl)*self%SCG_lambda) < 0._dl) then
+        call GlobalError('EFTCAMB error: Scaling Cubic radiation scaling point does not exist ' // &
+            '(4/3 + 2 A (beta1 - 4 lambda/3) < 0)', error_unsupported_params)
+        success = .false.
+        return
+    end if
+    self%SCG_x10 = (2._dl*sqrt(2._dl/3._dl))/(self%SCG_beta1)
+    self%SCG_y10 = sqrt((4._dl/3._dl) + 2._dl*self%SCG_A*(self%SCG_beta1 - (4._dl/3._dl)*self%SCG_lambda))/ &
+        self%SCG_beta1
 
     ! initialize interpolating functions:
     call self%fun_x1%initialize      (self%designer_num_points, self%x_initial, self%x_final)

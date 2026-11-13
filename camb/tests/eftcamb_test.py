@@ -552,6 +552,12 @@ class EFTCAMBTest(unittest.TestCase):
         c_minus = np.array(cp.EFTCAMB.get_eft_functions(bg, a * np.exp(-h))[1]["EFTc"])
         np.testing.assert_allclose(slope, np.log(c_plus / c_minus) / (2 * h) - 2, atol=1e-3)
 
+    def test_scaling_cubic_scaling_point(self):
+        # the initial conditions are the radiation scaling point, which exists only if 4/3 + 2 A (beta1 - 4 lambda/3) >= 0:
+        # A = 0.1 gave NaN initial conditions and 'Scaling Cubic background is NaN'
+        with self.assertRaisesRegex(CAMBError, "radiation scaling point does not exist"):
+            camb.get_background(self.read("5_scg", "Scaling_Cubic_A = 0.1"))
+
     def test_scaling_cubic_shooting(self):
         # the y2_i bracket expands until Omega_DE is overshot, and there is no Omega_v >= 0.3 cut: these were refused
         for extra in ("Scaling_Cubic_beta2 = 3.0", "model_background_a_ini = 1e-5", "omch2 = 0.33", "hubble = 99.0"):
