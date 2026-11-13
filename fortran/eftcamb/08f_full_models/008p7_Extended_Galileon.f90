@@ -42,6 +42,14 @@
 
     public EFTCAMB_Extended_Galileon
 
+    !> per-thread cache of the last tracker solution, which is solved several times per derivs call at the same a:
+    !! its inputs (a, S, the background parameters and up to extgal_nu massive-neutrino eigenstates, each one on its
+    !! own), then adotoa and the three derivatives of ln E. With more eigenstates the tracker is always solved.
+    integer, parameter :: extgal_nu = 5
+    logical, save      :: extgal_valid = .false.
+    real(dl), save     :: extgal_key(10 + 2*extgal_nu), extgal_out(4)
+    !$OMP THREADPRIVATE(extgal_valid, extgal_key, extgal_out)
+
     ! ----------------------------------------------------------------------------------------
     !> This is the type that contains the definition of the Extended Galileon model.
     type, extends (EFTCAMB_full_model) :: EFTCAMB_Extended_Galileon
@@ -494,7 +502,9 @@
 
     real(dl) :: S, Om_phi, Om, Om_p, Om_pp, Om_ppp, rho, rho_p, rho_pp, rho_ppp, p, p_p, p_pp
     real(dl) :: rhonu, pnu, dpnu, ddpnu, am, Om_m, Om_r, u, u_lo, u_hi, g, dg, du, W2, V, den
-    integer  :: nu_i, iter
+    real(dl) :: key(10 + 2*extgal_nu)
+    integer  :: nu_i, iter, nnu
+    logical  :: use_cache
 
     adotoa = 0._dl
     up = 0._dl
@@ -503,6 +513,27 @@
     if (a <= 0._dl) return
     S = self%S
     Om_phi = eft_par_cache%omegav
+
+    ! 0) the last solution of this thread is returned if every input is the same:
+    nnu = 0
+    if (eft_par_cache%Num_Nu_Massive /= 0) nnu = eft_par_cache%Nu_mass_eigenstates
+    use_cache = nnu <= extgal_nu
+    if (use_cache) then
+        key = 0._dl
+        key(1:10) = [a, S, Om_phi, eft_par_cache%h0_Mpc, eft_par_cache%omegab, eft_par_cache%omegac, &
+            eft_par_cache%omegag, eft_par_cache%omegar, real(eft_par_cache%Num_Nu_Massive, dl), real(nnu, dl)]
+        key(11:10 + nnu) = eft_par_cache%nu_masses(1:nnu)
+        key(11 + extgal_nu:10 + extgal_nu + nnu) = eft_par_cache%grhormass(1:nnu)
+        if (extgal_valid) then
+            if (all(key == extgal_key)) then
+                adotoa = extgal_out(1)
+                up = extgal_out(2)
+                upp = extgal_out(3)
+                uppp = extgal_out(4)
+                return
+            end if
+        end if
+    end if
 
     ! 1) Omega_tot(N) = rho/(3 H0^2) and its derivatives wrt N. Massive neutrinos: rho' = -3 (rho + p).
     rho = 0._dl
@@ -563,6 +594,12 @@
     up = Om_p/den
     upp = (Om_pp - 4._dl*up**2*W2 + S**2*up**2*V)/den
     uppp = (Om_ppp - 12._dl*up*upp*W2 - 8._dl*up**3*W2 + 3._dl*S**2*up*upp*V - S**3*up**3*V)/den
+
+    if (use_cache) then
+        extgal_key = key
+        extgal_out = [adotoa, up, upp, uppp]
+        extgal_valid = .true.
+    end if
 
     end subroutine ExtGalTracker
 

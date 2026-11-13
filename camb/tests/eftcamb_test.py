@@ -662,6 +662,33 @@ class EFTCAMBTest(unittest.TestCase):
         with self.assertRaisesRegex(CAMBError, "theory unstable"):
             camb.get_background(self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = 0.11\nExtendedGalileon_q = 10.0"))
 
+    def test_extended_galileon_tracker_cache(self):
+        # the tracker solution is cached per thread, keyed on every input: another model evaluated just before at
+        # the same a (other S; other split of the same omnuh2 between two eigenstates, which a key on the sum of
+        # m_nu grhormass would miss; other H0) must not change the result. The Fortran routine is called directly,
+        # since get_eft_functions first integrates the conformal time of the model (which refills the cache)
+        def eft_at(res):
+            buf = (eftcamb.EFTCAMB_timestep_cache * 1)()
+            a, eta = np.array([0.5]), np.array([0.0])
+            ptr = (a.ctypes.data_as(POINTER(c_double)), eta.ctypes.data_as(POINTER(c_double)))
+            eftcamb.EFTCAMB_eftfunctions(byref(res), byref(c_int(1)), *ptr, byref(buf))
+            return np.ctypeslib.as_array(buf)
+
+        model = "EFTflag = 4\nFullMappingEFTmodel = 7\nExtendedGalileon_q = 0.35\nmassless_neutrinos = 1.046\n"
+        model += "nu_mass_eigenstates = 2\nmassive_neutrinos = 1 1\nExtendedGalileon_S = "
+        bg = camb.get_background(self.read("1_EFT_GR", model + "1.0\nnu_mass_fractions = 0.5 0.5"))
+        ref = eft_at(bg)
+        for extra in (
+            "1.5\nnu_mass_fractions = 0.5 0.5",
+            "1.0\nnu_mass_fractions = 0.3 0.7",
+            "1.0\nnu_mass_fractions = 0.5 0.5\nhubble = 67",
+        ):
+            with self.subTest(extra=extra):
+                other = eft_at(camb.get_background(self.read("1_EFT_GR", model + extra)))
+                f = eft_at(bg)
+                self.assertNotEqual(other["adotoa"][0], ref["adotoa"][0])
+                self.assertEqual(f.tobytes(), ref.tobytes())
+
     def test_omega_lambda_backgrounds(self):
         # OL gamma / OL alpha integrate the deviation from the LCDM solution of the same matter from a = 1 (no
         # shooting, no dust mode): the GR points (refused before) are the Pure EFT LCDM, and H(z = 0) = H0
