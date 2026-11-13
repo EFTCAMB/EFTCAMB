@@ -49,6 +49,12 @@
          - Flags: **OLLambdamodel, OLOmegamodel, OLGamma1model, OLGamma2model, OLGamma3model**
          - Names: **OLLambda, OLOmega, OLGamma1, OLGamma2, OLGamma3**
          - Latex format: $\tilde{\lambda}, \Omega, \gamma_1, \gamma_2, \gamma_3$
+         - Definitions: $\Lambda = \Lambda_0 (1 + \tilde{\lambda}(a))$ with $\Lambda_0 = -3 H_0^2 (1 - \Omega_m)$, the
+           cosmological constant of $\Lambda$CDM with the same matter; $\gamma_4 = -\gamma_3$, $\gamma_5 = \gamma_3/2$
+           (Horndeski); the background follows from $H(a=1) = H_0$. Note: $\Omega \neq 0$ with $\tilde{\lambda} = 0$ is
+           not $\Lambda$CDM, flatness generates a dust-like $c = \frac{3}{2} H_0^2 \Omega_0 a^{-3}$ (a ghost for
+           $\Omega_0 < 0$).
+         - Reference papers: arXiv:1703.05297 (App. A), arXiv:2407.15832.
       <br>
       * **AltParEFTmodel** = 3
         - Flags: **OLLambdamodel, OLmassPmodel, OLkineticitymodel, OLbraidingmodel, OLtensormodel**

@@ -15,13 +15,21 @@
 
 !> @file 007p5_Omega_Lambda_gamma.f90
 !! This file contains the definition of the Omega-Lambda parametrization of Horndeski models.
-!! The perturbations are described wuth the gamma functions.
-!! Please refer to the numerical notes for details.
+!! The perturbations are described with the gamma functions.
+!! The model is that of arXiv:1703.05297 App. A, with the gamma functions of arXiv:2407.15832 (Suppl. eq. (1)):
+!!  - input functions: Omega(a) (OLOmega), lambda~(a) (OLLambda) and gamma1, gamma2, gamma3 (OLGamma1-3), with
+!!    gamma4 = -gamma3, gamma5 = gamma3/2, gamma6 = 0 (Horndeski);
+!!  - Lambda = Lambda_0 (1 + lambda~), Lambda_0 = -3 H0^2 (1 - Omega_m): the cosmological constant of LCDM with the same
+!!    matter;
+!!  - the background follows from the Friedmann equations with H(a = 1) = H0 (flatness): y = a^2 (H^2 - H_LCDM^2)/H0^2
+!!    is integrated from y(1) = 0 backward and forward, and c follows from the Friedmann constraint;
+!!  - consequence: Omega /= 0 with lambda~ = 0 is not LCDM. Flatness generates a dust-like c = (3/2) H0^2 Omega_0 a^-3
+!!    (cosmic time, constant Omega = Omega_0), so Omega_0 < 0 with lambda~ = 0 is always a ghost (c < 0) and the GR
+!!    limit Omega -> 0 is approached linearly in Omega_0.
 
 ! ----------------------------------------------------------------------------------------
 !! This module contains the definition of the Omega-Lambda parametrization of Horndeski models.
-!! The perturbations are described wuth the gamma functions.
-!! Please refer to the numerical notes for details.
+!! The perturbations are described with the gamma functions (see the file header for the definitions).
 
 !> @author Marco Raveri, Simone Peirone, Gen Ye
 
