@@ -117,6 +117,9 @@
          Needed parameters:
          - Names: **cs2, Log_ac, f_ac, p, wf**
          - Latex format: $c_s^2, \log(a_c), f(a_c), p, w_f$
+         - Model of arXiv:1905.12618: $1 + w_{\rm ADE} = (1 + w_f)/[1 + (a_c/a)^{3(1+w_f)/p}]^p$, $f(a_c)$ the ADE fraction
+           of the total density at $a_c$, $c_s^2$ its rest-frame sound speed. The default **p** = 1 differs from the
+           paper's $p = 1/2$ (the test model `5_ADE_1` sets 0.5).
        <br>
       * **FullMappingEFTmodel** = 3: K-mouflage
          Needed parameters:

@@ -13,11 +13,14 @@
 !
 ! ----------------------------------------------------------------------------------------
 
-!> @file 008p5_ADE.f90
-!! This file contains the implementation of the Acoustic Dark Energy model discussed in
+!> @file 008p2_ADE.f90
+!! This file contains the implementation of the Acoustic Dark Energy (ADE) model of arXiv:1905.12618 (Lin, Benevento,
+!! Hu, Raveri): a dark-energy fluid with 1 + w_ADE = (1 + w_f)/(1 + (a_c/a)^(3(1 + w_f)/p))^p, which makes up the
+!! fraction f_ac of the total density at a_c = 10^Log_ac, and rest-frame sound speed squared cs2. Parameters cs2,
+!! Log_ac, f_ac, p, wf; the default p = 1 differs from the p = 1/2 of the paper.
 
 ! ----------------------------------------------------------------------------------------
-!> This module contains
+!> This module contains the Acoustic Dark Energy model (see the file header).
 
 !> @author Giampaolo Benevento, Marco Raveri
 
@@ -60,7 +63,6 @@
         !< The interpolated function c (and derivatives).
         type(equispaced_linear_interpolate_function_1D) :: EFTc
         !< The interpolated function gamma1 (and derivatives).
-        type(equispaced_linear_interpolate_function_1D) :: EFTgamma1
 
         ! some designer parameters:
         !< Number of points sampled by the designer code.
@@ -447,7 +449,6 @@
     ! initialize interpolating functions:
     call self%EFTLambda%initialize (self%background_num_points, self%x_initial, self%x_final)
     call self%EFTc%initialize      (self%background_num_points, self%x_initial, self%x_final)
-    call self%EFTgamma1%initialize (self%background_num_points, self%x_initial, self%x_final)
 
     ! debug code to print all background quantities:
     if (DebugEFTCAMB) then
@@ -482,8 +483,8 @@
     integer  :: i, nu_i
     real(dl) :: wf, ac, grho_ac, grho_ADE, grho_ADEp, wADE, wADE_p, onepw, rhoADE_ratio_today, fratio
     real(dl) :: grhom, grhorad, grhov, wADEtot, wADEtot_first, omegac, k, cs, cs_p
-    real(dl) :: a, adotoa, Hdot, Hdotdot, adotoaLCDM, h0_Mpc, grhormass_t, rhonu_tot, presnu_tot, rhonu, presnu, &
-        adotoaNoNu, grhormass_ac, rhonu_ac, presnu_ac, presnudot, presnudotdot, presnudot_tot, presnudotdot_tot
+    real(dl) :: a, adotoa, Hdot, h0_Mpc, grhormass_t, rhonu_tot, presnu_tot, rhonu, presnu, grhormass_ac, rhonu_ac, &
+        presnu_ac
 
     integer  :: limit, iord(100), last, key, ier, neval
     real(dl) :: rtol, atol, t1, t2, result, alist(100), blist(100), rlist(100), elist(100), abserr
@@ -569,7 +570,7 @@
     end function integrand
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the derivative of K w.r.t. x at the time x
+    !> Subroutine that computes the ADE background (w_ADE, rho_ADE, H) at x = ln a.
     subroutine derivs(x)
 
     implicit none
@@ -608,62 +609,15 @@
         end do
     end if
 
-    adotoaNoNu = sqrt(grhorad/(3._dl*a**2) + grhom/(3._dl*a) + grhov*a**2/3._dl + grho_ADE*a**2/3._dl)
     adotoa = sqrt(grhorad/(3._dl*a**2) + grhom/(3._dl*a) + grhov*a**2/3._dl + grho_ADE*a**2/3._dl + rhonu_tot/3._dl)
-    adotoaLCDM = sqrt(grhorad/(3._dl*a**2) + grhom/(3._dl*a) + grhov*a**2/3._dl + rhonu_tot/3._dl)
 
+    ! (only for the debug output)
     Hdot = -adotoa**2/2._dl - (grhorad/(3._dl*a**2) - grhov*a**2 + wADE*grho_ADE*a**2 + presnu_tot)/2._dl
-
-    rhonu_tot = 0._dl
-    presnu_tot = 0._dl
-    presnudot_tot = 0._dl
-    presnudotdot_tot = 0._dl
-    if (params_cache%Num_Nu_Massive /= 0) then
-        do nu_i = 1, params_cache%Nu_mass_eigenstates
-            rhonu = 0._dl
-            presnu = 0._dl
-            presnudot = 0._dl
-            presnudotdot = 0._dl
-            grhormass_t = params_cache%grhormass(nu_i)/a**2
-            call ThermalNuBackground%rho_P(a*params_cache%nu_masses(nu_i), rhonu, presnu)
-            presnudot = ThermalNuBackground%pidot(a*params_cache%nu_masses(nu_i), adotoa, presnu)
-            presnudotdot = ThermalNuBackground%pidotdot(a*params_cache%nu_masses(nu_i), adotoa, Hdot, presnu, presnudot)
-
-            rhonu_tot = rhonu_tot + grhormass_t*rhonu
-            presnu_tot = presnu_tot + grhormass_t*presnu
-            rhonu_tot = rhonu_tot + grhormass_t*rhonu
-            presnu_tot = presnu_tot + grhormass_t*presnu
-            presnudot_tot = presnudot_tot + grhormass_t*(presnudot - 4._dl*adotoa*presnu)
-            presnudotdot_tot = presnudotdot_tot + grhormass_t*(presnudotdot &
-                - 8._dl*adotoa*presnudot + 4._dl*presnu*(+4._dl*adotoa**2 - Hdot))
-        end do
-    end if
-
-    Hdotdot = (grhom/a)*adotoa*(1._dl/6._dl) + (grhorad/a**2)*adotoa*(2._dl/3._dl) + &
-        (grho_ADE*a**2)*adotoa*(1._dl/6._dl + wADE + 1.5_dl*wADE**2 - 0.5_dl*a*wADE_p) + &
-        (grhov*a**2)*adotoa*2._dl/3._dl + adotoa*rhonu_tot/6._dl - adotoa*presnu_tot/2._dl - 0.5_dl*presnudot_tot
 
     cs = self%cs2
     cs_p = 0
 
     end subroutine
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the Jacobian of the system. Now a dummy function.
-    !! Implementing it might increase performances.
-    subroutine jacobian(num_eq, x, y, ml, mu, pd, nrowpd)
-
-    implicit none
-
-    integer                     :: num_eq !< number of components of the Jacobian
-    integer                     :: ml     !< ignored
-    integer                     :: mu     !< ignored
-    integer                     :: nrowpd !< ignored
-    real(dl)                    :: x      !< time at which the Jacobian is computed
-    real(dl), dimension(num_eq) :: y      !< input status of the system
-    real(dl), dimension(nrowpd, num_eq) :: pd    !< output Jacobian
-
-    end subroutine jacobian
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that takes the solution of the JBD equations and computes additional quantities
@@ -689,9 +643,6 @@
 
     self%EFTc%y(ind) = 0.5_dl*a**2*(grho_ADE)*onepw
     self%EFTc%yp(ind) = (grho_ADE)*adotoa*(-3._dl*onepw**2 + a*wADE_p)*a**2/2._dl
-
-    self%EFTgamma1%y(ind) = 1._dl/(4._dl*h0_Mpc**2*a**2)*2._dl*self%EFTc%y(ind)*((cs**-1) - 1._dl)
-    self%EFTgamma1%yp(ind) = 1._dl/(4._dl*h0_Mpc**2)*2._dl*self%EFTc%yp(ind)/(adotoa*a**3)*((cs**-1) - 1._dl)
 
     ! write debug quantities:
     if (DebugEFTCAMB) then
