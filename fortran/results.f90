@@ -700,6 +700,7 @@
                 if (present(error)) error = global_error_flag
                 return
             end if
+            this%CP%EFTCAMB%EFTCAMB_turn_on_from_RGR = .false.
             if (.not. this%CP%EFTCAMB%EFTCAMB_skip_RGR) then
                 call EFTCAMBReturnToGR(this%CP%EFTCAMB%model, this%CP%eft_par_cache, &
                     turn_on_requested, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold)
@@ -708,6 +709,9 @@
                     return
                 end if
                 this%CP%EFTCAMB%EFTCAMB_pert_turn_on = RGR_time
+                ! the model is GR before a turn-on moved by the return to GR (the scan starts at the requested time;
+                ! its first point differs from it by roundoff only): no jump to sample there
+                this%CP%EFTCAMB%EFTCAMB_turn_on_from_RGR = RGR_time > turn_on_requested*(1._dl + 1.e-10_dl)
                 ! (the feedback compares the RGR time with the requested turn-on)
                 call EFTCAMBReturnToGR_feedback(this%CP%EFTCAMB%EFTCAMB_feedback_level, this%CP%EFTCAMB%model, &
                     this%CP%eft_par_cache, turn_on_requested, RGR_time, this%CP%EFTCAMB%EFTCAMB_GR_threshold)
@@ -3196,9 +3200,12 @@
     end if
 
     ! EFTCAMB MOD START: sample the sources tightly around the EFT perturbation turn-on, where the potentials
-    ! jump: points straddling the turn-on and a fine grid on both sides
+    ! jump: points straddling the turn-on and a fine grid on both sides. Not when the return to GR moved the turn-on:
+    ! the model is GR before it, nothing jumps, and the extra samples would only shift the result from GR's own
+    ! sampling (by up to 2e-4 in the C_l of quintessence)
     if (allocated(State%CP%EFTCAMB)) then
-        if (State%CP%EFTCAMB%EFTflag /= 0 .and. State%CP%WantScalars) then
+        if (State%CP%EFTCAMB%EFTflag /= 0 .and. State%CP%WantScalars .and. &
+            .not. State%CP%EFTCAMB%EFTCAMB_turn_on_from_RGR) then
             tau_on = State%DeltaTime(0._dl, State%CP%EFTCAMB%EFTCAMB_pert_turn_on)
             if (tau_on > State%taurst .and. tau_on < State%tau0) then
                 call TimeSteps%Add_delta(max(State%taurst, tau_on - 100._dl), tau_on*(1 - 1.e-7_dl), dtau0/10)

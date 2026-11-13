@@ -335,6 +335,15 @@ class EFTCAMB(F2003Class):
             c_bool,
             "Flag that decides whether to write the background quantities when called from an ini file.",
         ),
+        (
+            "EFTCAMB_turn_on_from_RGR",
+            c_bool,
+            (
+                "Output, set by the code at every run: whether the return to GR moved the perturbation turn-on later "
+                "than requested (the model is then GR before it and the fine time sampling around the turn-on is "
+                "skipped)."
+            ),
+        ),
     )
 
     def initialize_parameters(self, camb_parameters, EFTCAMB_params, print_header=True):

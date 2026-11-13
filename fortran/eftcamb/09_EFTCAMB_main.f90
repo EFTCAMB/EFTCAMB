@@ -149,6 +149,10 @@
         logical  :: EFTCAMB_skip_RGR = .false.              !< Flag that decides whether skip the return to GR checks.
         !< Flag whether output background quantities when called from ini
         logical  :: EFTCAMB_write_background = .false.
+        !< Output, set by the code at every run (not read from the ini): whether the return to GR moved the
+        !! perturbation turn-on later than requested. The model is then GR before the turn-on (no jump there) and the
+        !! fine time sampling around the turn-on is skipped.
+        logical  :: EFTCAMB_turn_on_from_RGR = .false.
 
         ! EFTCAMB output root:
         character(len=:), allocatable :: outroot   !< The root for auxiliary EFTCAMB output.

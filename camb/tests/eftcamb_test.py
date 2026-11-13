@@ -48,12 +48,13 @@ feedback_level = 0
 
 # sigma8 and lensed TT C_l (muK^2, raw) at l = 10, 100, 400 with the FAST settings, computed on eftcamb-audit
 # (after the audit fixes; the Pure EFT and RPH entries after the pi' initial condition with E', RPH also after the
-# 60000-point tables); relative tolerance 1e-5
+# 60000-point tables, quintessence without the turn-on samples once the return to GR moved the turn-on); relative
+# tolerance 1e-5
 REFERENCE = {
     "2_PEFT_Omega_const_1": (0.22928843949170907, [1.510155251e02, 1.659871241e00, 6.388233185e-02]),
     "4_Des_F_R_LCDM_1": (0.9795731927760171, [42.10276032, 1.61639925, 0.06437505]),
     "3_RPH_KT_lin_1": (0.6443587523382762, [46.042515957, 1.615098353, 0.064207618]),
-    "5_quint_exponential": (0.6283036331682146, [47.14345523, 1.6335124, 0.06406843]),
+    "5_quint_exponential": (0.6283037067996029, [47.142177527, 1.633889155, 0.064069268]),
 }
 
 
@@ -516,6 +517,20 @@ class EFTCAMBTest(unittest.TestCase):
         cp = self.read("5_ADE_1", "cs2 = 0.86\nwf = 0.87\nLog_ac = -3.52\nf_ac = 0.086\np = 0.5")
         bg = camb.get_background(cp)
         self.assertGreater(bg.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1e-7)
+
+    def test_turn_on_samples_rgr(self):
+        # the fine time sampling around the turn-on (where the potentials jump) is skipped when the return to GR moved
+        # the turn-on: the model is GR before it. Sampled anyway, quintessence switched on by the return to GR differed
+        # from the same model switched on at 1e-8 (no samples there) by 2.4e-4 in TT (l = 116)
+        cls = {}
+        for skip in ("F", "T"):
+            res = camb.get_results(self.read("5_quint_exponential", f"EFTCAMB_skip_RGR = {skip}"))
+            self.assertEqual(res.Params.EFTCAMB.EFTCAMB_turn_on_from_RGR, skip == "F")
+            cls[skip] = res.get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"][2:601, :2]
+        np.testing.assert_allclose(cls["F"], cls["T"], rtol=5e-6)
+        # a model that is not GR at the requested turn-on keeps the samples
+        res = camb.get_background(self.read("2_PEFT_Omega_const_1"))
+        self.assertFalse(res.Params.EFTCAMB.EFTCAMB_turn_on_from_RGR)
 
     def test_ic_pidot_attractor(self):
         # the type-1 initial pi' is the time derivative of the attractor -H0 E/(C + k^2 D1 + k^4 D2) (arXiv:1405.3590),
