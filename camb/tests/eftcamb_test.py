@@ -420,6 +420,27 @@ class EFTCAMBTest(unittest.TestCase):
                 h_eft = cp.EFTCAMB.get_eft_functions(res, a)[1]["adotoa"]
                 np.testing.assert_allclose(h_eft, a * res.h_of_z(1 / a - 1), rtol=1e-12)
 
+    def test_beyond_horndeski_x4_zero_derivatives(self):
+        # with x4 = 0 the Beyond Horndeski branch had four typos in the higher derivatives (OmegaRad for OmegaRad', 3 x3 x3'
+        # for 3 (x3'^2 + x3 x3''), 9 x2'' for 9 x1'', Hdot^3 x3 for 3 Hdot^3 x3): EFTLambdadotdot was 13-63x off,
+        # Hdotdotdot 1-4x, EFTGamma2PPP up to 9%. Against central differences of the next lower derivative (the
+        # Lambda fields are a^2-weighted: a^2 Lambda'' = d(a^2 Lambda')/dtau - 2 Hc a^2 Lambda'):
+        model = "EFTflag = 4\nFullMappingEFTmodel = 5\nBeyond_Horndeski_x10 = -0.1\nBeyond_Horndeski_x30 = 1.0\n"
+        cp = self.read("2_PEFT_wDE_wCDM_1", model + "Beyond_Horndeski_x40 = 0.0\nEFTCAMB_skip_stability = T")
+        bg = camb.get_background(cp)
+        names = ("adotoa", "Hdotdot", "Hdotdotdot", "EFTLambdadot", "EFTLambdadotdot", "EFTGamma2PP", "EFTGamma2PPP")
+        for a0 in (0.3, 0.7, 0.95):
+            h = 1e-4 * a0
+            f = cp.EFTCAMB.get_eft_functions(bg, np.array([a0 - h, a0, a0 + h]))[1]
+            g = {k: np.ravel(f[k]) for k in names}
+            dg = {k: (g[k][2] - g[k][0]) / (2 * h) for k in names}
+            Hc = g["adotoa"][1]
+            with self.subTest(a=a0):
+                self.assertAlmostEqual(g["Hdotdotdot"][1] / (a0 * Hc * dg["Hdotdot"]), 1, delta=5e-3)
+                lam_fd = a0 * Hc * dg["EFTLambdadot"] - 2 * Hc * g["EFTLambdadot"][1]
+                self.assertAlmostEqual(g["EFTLambdadotdot"][1] / lam_fd, 1, delta=5e-3)
+                self.assertAlmostEqual(g["EFTGamma2PPP"][1] / dg["EFTGamma2PP"], 1, delta=5e-3)
+
     def test_beyond_horndeski_background_solver(self):
         # no hidden Omega_v >= 0.3 cut (omch2 = 0.35 was refused as 'background solver failed'); before the background
         # table (a_s = 1/(1.5e5 + 1)) x_i grow with the rates of the solution at a_s: for x4 = 0 the fixed x4-attractor

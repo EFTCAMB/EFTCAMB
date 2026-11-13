@@ -1113,8 +1113,8 @@
             2._dl*qs**2._dl*(x3*(6._dl*x1pp + 3._dl*x2pp + OmegaRadprimeprime) + &
             (x1 + 2._dl*x2)*(3._dl*x1pp + x2pp + OmegaRadprimeprime) + &
             (3._dl*x1 + x2 + OmegaRad + 3._dl)*(x1pp + 2._dl*x2pp) + 2._dl*x3p*(6*x1p + 3._dl*x2p + OmegaRadprime) + &
-            2._dl*(x1p + 2._dl*x2p)*(3._dl*x1p + x2p + OmegaRad) + x3pp*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + &
-            3._dl*x3*x3p)))
+            2._dl*(x1p + 2._dl*x2p)*(3._dl*x1p + x2p + OmegaRadprime) + &
+            x3pp*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + 3._dl*(x3p**2 + x3*x3pp))))
 
         x3ppp = -x3*(hpprime - 3._dl*epsilon_pp) - 2._dl*x3p*(hprime - 3._dl*epsilon_p) - (h - 3._dl*epsilon)*x3pp
 
@@ -1122,7 +1122,7 @@
             (-5._dl*eft_cache%adotoa**2._dl*eft_cache%Hdot* &
             (x3*hprime + x3p*h - 2._dl*h*x3 - 9._dl*x1p - 3._dl*x2p - 2._dl*x3p + x3pp + 18._dl*x1 + 6._dl*x2) + &
             eft_cache%adotoa**4._dl*(-x3*hpprime + 4._dl*x3*hprime - 2._dl*hprime*x3p + 4._dl*h*x3p - h*x3pp - &
-            4._dl*h*x3 - 36._dl*x1p - 12._dl*x2p - 4._dl*x3p + 9._dl*x2pp + 3._dl*x2pp + 4._dl*x3pp + 36._dl*x1 + &
+            4._dl*h*x3 - 36._dl*x1p - 12._dl*x2p - 4._dl*x3p + 9._dl*x1pp + 3._dl*x2pp + 4._dl*x3pp + 36._dl*x1 + &
             12._dl*x2 - x3ppp) + 2._dl*eft_cache%adotoa*eft_cache%Hdotdot*(-h*x3 - x3p + 9._dl*x1 + 3._dl*x2) + &
             2._dl*eft_cache%Hdot**2._dl*(-h*x3 - x3p + 9._dl*x1 + 3._dl*x2))
     end if
@@ -1278,8 +1278,8 @@
             2._dl*qs**2._dl*(x3*(6._dl*x1pp + 3._dl*x2pp + OmegaRadprimeprime) + &
             (x1 + 2._dl*x2)*(3._dl*x1pp + x2pp + OmegaRadprimeprime) + &
             (3._dl*x1 + x2 + OmegaRad + 3._dl)*(x1pp + 2._dl*x2pp) + 2._dl*x3p*(6*x1p + 3._dl*x2p + OmegaRadprime) + &
-            2._dl*(x1p + 2._dl*x2p)*(3._dl*x1p + x2p + OmegaRad) + x3pp*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + &
-            3._dl*x3*x3p)))
+            2._dl*(x1p + 2._dl*x2p)*(3._dl*x1p + x2p + OmegaRadprime) + &
+            x3pp*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + 3._dl*(x3p**2 + x3*x3pp))))
 
         x3ppp = -x3*(hpprime - 3._dl*epsilon_pp) - 2._dl*x3p*(hprime - 3._dl*epsilon_p) - (h - 3._dl*epsilon)*x3pp
         Hdotdotdot = eft_cache%adotoa**4*(hpprime + 7._dl*(1._dl + h)*hprime + 6._dl*(1._dl + h)**3)
@@ -1295,7 +1295,7 @@
             eft_cache%adotoa**2._dl*Hdotdotdot*x3 + &
             eft_cache%adotoa**4._dl*eft_cache%Hdot*(-11._dl*x3 + 12._dl*x3p - 3._dl*x3pp) + &
             eft_cache%adotoa**6._dl*(6._dl*x3 - 11._dl*x3p + 6._dl*x3pp - x3ppp) - &
-            eft_cache%Hdot**3._dl*x3)/(a**4._dl*eft_par_cache%h0_Mpc*eft_cache%adotoa**5._dl)
+            3._dl*eft_cache%Hdot**3._dl*x3)/(a**4._dl*eft_par_cache%h0_Mpc*eft_cache%adotoa**5._dl)
 
     end if
 
