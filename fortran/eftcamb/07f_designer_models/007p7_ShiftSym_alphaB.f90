@@ -15,6 +15,13 @@
 
 !> @file 007p7_ShiftSym_alphaB.f90
 !! This file contains the relevant code for the shift-symmetric parametrization of alpha_B.
+!! Conventions (the parameters are Shift_Symmetric_alphaB0, Shift_Symmetric_m, Shift_Symmetric_alphaK0 and the w_DE
+!! parametrization EFTwDE):
+!!  - alpha_B = alphaB0 (H0/H)^(4/m) with alphaB0 the Bellini-Sawicki alpha_hat_B of arXiv:2103.11195 (eq. (aB-param)),
+!!    i.e. -2 times the alpha_B,0 of arXiv:2401.04096 (EFTCAMB convention there): that paper's alpha_B,0 = -0.30 is
+!!    alphaB0 = +0.60 here. m > 0 is required unless alphaB0 = 0;
+!!  - alpha_K = alphaK0 a, not the constant alpha_K of both papers (alphaK0 = 10 constant vs alphaK0 a moves TT by 4%
+!!    at l <= 30).
 
 
 ! ----------------------------------------------------------------------------------------
@@ -50,11 +57,11 @@
     type, extends (EFTCAMB_designer_model) :: EFTCAMB_ShiftSym_alphaB
 
         ! theory parameters:
-        !< The constant pre-factor of alpha_B.
+        !< The constant pre-factor of alpha_B (Bellini-Sawicki alpha_hat_B: -2 alpha_B,0 of arXiv:2401.04096).
         real(dl) :: SS_alphaB0
-        !< The parameter that enters in the exponent of alpha_B.
+        !< The parameter that enters in the exponent of alpha_B, alpha_B = alphaB0 (H0/H)^(4/m): m > 0.
         real(dl) :: SS_m
-        !< The constant pre-factor of alpha_K.
+        !< The pre-factor of alpha_K = alphaK0 a (not constant).
         real(dl) :: SS_alphaK0
 
         ! the pure EFT functions model selection flags:

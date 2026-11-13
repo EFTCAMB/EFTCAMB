@@ -70,6 +70,12 @@
 
       * **AltParEFTmodel** = 4
          Flag for different $w_{DE}$ parametrizations: **EFTwDE**.
+         - Names: **Shift_Symmetric_alphaB0, Shift_Symmetric_m, Shift_Symmetric_alphaK0**
+         - Latex format: $\hat{\alpha}_{B}, m, \alpha_{K0}$
+         - Conventions: $\alpha_B = \hat{\alpha}_B (H_0/H)^{4/m}$ with $\hat{\alpha}_B$ the Bellini-Sawicki amplitude of
+           arXiv:2103.11195, i.e. $-2$ times the $\alpha_{B,0}$ of the reference paper below (its best fit
+           $\alpha_{B,0} = -0.30$ is **Shift_Symmetric_alphaB0** = 0.60); $m > 0$ is required unless $\hat{\alpha}_B = 0$;
+           $\alpha_K = \alpha_{K0}\, a$, not constant as in both papers.
          **Reference Paper:**
          - [1] Albuquerque, I. S., Frusciante, N., Pace, F., and Schimd, C., “Spherical collapse and halo abundance in shift-symmetric Galileon theory”, <i>Physical Review D</i>, vol. 109, no. 2, Art. no. 023535, APS, 2024. [doi:10.1103/PhysRevD.109.023535](https://journals.aps.org/prd/abstract/10.1103/PhysRevD.109.023535).
 
