@@ -25,7 +25,11 @@
 !!    is integrated from y(1) = 0 backward and forward, and c follows from the Friedmann constraint;
 !!  - consequence: Omega /= 0 with lambda~ = 0 is not LCDM. Flatness generates a dust-like c = (3/2) H0^2 Omega_0 a^-3
 !!    (cosmic time, constant Omega = Omega_0), so Omega_0 < 0 with lambda~ = 0 is always a ghost (c < 0) and the GR
-!!    limit Omega -> 0 is approached linearly in Omega_0.
+!!    limit Omega -> 0 is approached linearly in Omega_0;
+!!  - limit of the basis: c is a difference of O(H^2) background terms, so below their roundoff it is noise (c/H^2 ~
+!!    1e-10 at early times in the audit's cases; the floor depends on the model and on the time). Theories with a
+!!    smaller c/H^2 there, e.g. Extended Galileon or K-mouflage rewritten in this basis, can be refused by the
+!!    stability checks although they are stable as full models: use the full model, or a later turn-on.
 
 ! ----------------------------------------------------------------------------------------
 !! This module contains the definition of the Omega-Lambda parametrization of Horndeski models.

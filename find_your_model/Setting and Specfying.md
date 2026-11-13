@@ -28,6 +28,12 @@
       And their function names:
       - **EFTOmega**,**EFTGamma1**,**EFTGamma2**,**EFTGamma3**,**EFTGamma4**,**EFTGamma5**,**EFTGamma6**
 
+      Limit of this basis (and of **AltParEFTmodel** = 2, 3): $c$ is rebuilt from the background, a difference of
+      $O(H^2)$ terms, so below their roundoff it is noise ($c/H^2 \sim 10^{-10}$ at early times in the audit's cases;
+      the floor depends on the model and on the time). A theory with a smaller $c/H^2$ there (e.g. Extended Galileon or
+      K-mouflage rewritten in these bases) can be refused by the stability checks although it is stable as a full
+      model: use the full model (**EFTflag** = 4, 5), or a later turn-on.
+
       ---
 
 
@@ -55,6 +61,7 @@
            not $\Lambda$CDM, flatness generates a dust-like $c = \frac{3}{2} H_0^2 \Omega_0 a^{-3}$ (a ghost for
            $\Omega_0 < 0$).
          - Reference papers: arXiv:1703.05297 (App. A), arXiv:2407.15832.
+         - Limit: $c$ is rebuilt from the background, see the note on the Pure EFT basis above.
       <br>
       * **AltParEFTmodel** = 3
         - Flags: **OLLambdamodel, OLmassPmodel, OLkineticitymodel, OLbraidingmodel, OLtensormodel**
@@ -65,6 +72,7 @@
           for **AltParEFTmodel** = 2, a constant $\tilde{M} \neq 0$ with $\tilde{\lambda} = 0$ is not $\Lambda$CDM:
           flatness generates a dust-like $c = \frac{3}{2} H_0^2 \tilde{M}_0 a^{-3}$.
         - Reference papers: arXiv:1703.05297 (App. A, background), arXiv:1405.3590 (alpha convention).
+        - Limit: $c$ is rebuilt from the background, see the note on the Pure EFT basis above.
       <br>
 
 

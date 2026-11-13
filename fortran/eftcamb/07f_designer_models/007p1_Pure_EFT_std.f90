@@ -16,6 +16,11 @@
 !> @file 007p1_Pure_EFT_std.f90
 !! This file contains the definition of the Pure EFT model in which the EFT is described
 !! by six functions of time and w_DE. Please refer to the numerical notes for details.
+!! Limit of the basis: c is rebuilt from the background (H, H', Omega and its derivatives, rho_DE (1 + w_DE)), a
+!! difference of O(H^2) terms, so below their roundoff it is noise (c/H^2 ~ 1e-10 at early times in the audit's
+!! cases; the floor depends on the model and on the time). Theories with a smaller c/H^2 there, e.g. Extended
+!! Galileon or K-mouflage rewritten in this basis, can be refused by the stability checks although they are stable
+!! as full models: use the full model, or a later turn-on.
 
 
 ! ----------------------------------------------------------------------------------------

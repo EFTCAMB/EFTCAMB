@@ -22,6 +22,10 @@
 !! (arXiv:1405.3590): alpha_B is the EFTCAMB alpha_B = -alpha_B^BS/2, so a Bellini-Sawicki (hi_class) alpha_B must be
 !! entered as -alpha_B/2. As for OL gamma, M~ /= 0 with lambda~ = 0 is not LCDM: flatness generates a dust-like
 !! c = (3/2) H0^2 M~_0 a^-3 (constant M~ = M~_0; M~_0 = 0.2 gives 2c/(3H^2) = 0.2 today).
+!! Limit of the basis: c follows from the Friedmann constraint, a difference of O(H^2) background terms, so below their
+!! roundoff it is noise (c/H^2 ~ 1e-10 at early times in the audit's cases; the floor depends on the model and on the
+!! time). Theories with a smaller c/H^2 there, e.g. Extended Galileon or K-mouflage rewritten in this basis, can be
+!! refused by the stability checks although they are stable as full models: use the full model, or a later turn-on.
 
 ! ----------------------------------------------------------------------------------------
 !> This module contains the definition of an EFT reparametrization of Horndeski models: OL alpha (see the file
