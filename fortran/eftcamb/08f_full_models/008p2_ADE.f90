@@ -361,6 +361,14 @@
     eft_cache%EFTLambda = self%EFTLambda%value(x, index=ind, coeff=mu)
     eft_cache%EFTcdot = self%EFTc%first_derivative(x, index=ind, coeff=mu)
     eft_cache%EFTLambdadot = self%EFTLambda%first_derivative(x, index=ind, coeff=mu)
+    ! without ADE (f_ac = 0) the model is LCDM: the exact GR values, not the interpolated tables (their 1e-8 error in
+    ! Lambda switched the perturbations on, and with c = 0 the pi field has no kinetic term, which is refused):
+    if (self%f_ac == 0._dl) then
+        eft_cache%EFTc = 0._dl
+        eft_cache%EFTcdot = 0._dl
+        eft_cache%EFTLambda = -eft_par_cache%grhov*a**2
+        eft_cache%EFTLambdadot = 0._dl
+    end if
 
     end subroutine EFTCAMBADEBackgroundEFTFunctions
 
@@ -415,6 +423,19 @@
     integer, intent(in)  :: feedback_level !< level of feedback from the background code. 0=none; 1=some; 2=chatty.
     logical, intent(out) :: success        !< wether the background initialization succeded or not
     character(len=*), intent(in), optional :: outroot        !< the output root for the debug files
+
+    ! the background is defined for 0 <= f_ac < 1 (f_ac = 0 is LCDM: no ADE) and p > 0 (the transition exponent
+    ! 3(1 + w_f)/p of 1 + w_ADE), whatever the priors:
+    if (self%f_ac < 0._dl .or. self%f_ac >= 1._dl) then
+        call GlobalError('EFTCAMB error: ADE background undefined for f_ac outside [0, 1)', error_unsupported_params)
+        success = .false.
+        return
+    end if
+    if (.not. self%p > 0._dl) then
+        call GlobalError('EFTCAMB error: ADE background undefined for p <= 0', error_unsupported_params)
+        success = .false.
+        return
+    end if
 
     ! some feedback:
     if (feedback_level > 0) then
@@ -517,6 +538,9 @@
     grhov = 3._dl*params_cache%h0_Mpc**2 - grhorad - grhom - rhonu_tot
     grho_ac = fratio*(grhorad/ac**4 + grhom/ac**3 + rhonu_ac/ac**2 + grhov)/(1._dl + fratio*rhoADE_ratio_today)
     grhov = grhov - rhoADE_ratio_today*grho_ac
+    ! without ADE (f_ac = 0, the LCDM limit) the background is LCDM with the cosmological constant of CAMB (the closure
+    ! above recomputes it with the model's own neutrino integral); the EFT functions are then exactly the GR ones:
+    if (self%f_ac == 0._dl) grhov = params_cache%grhov
 
     h0_Mpc = params_cache%h0_Mpc
 
@@ -703,20 +727,24 @@
 
     EFTCAMBADEAdditionalModelStability = .true.
 
+    ! the priors of the model (EFT_additional_priors); its undefined domain (f_ac outside [0, 1), p <= 0) is refused
+    ! by the background initialization. The original checks only printed a message ('Chose an appropriate value for
+    ! parameter ...') and refused f_ac = 0, the LCDM limit:
     if (self%Log_ac > 0.0_dl) then
-        print*, 'Chose an appropriate value for parameter Log(a_c)'
+        call GlobalError('EFTCAMB: ADE prior not met: Log_ac > 0, a_c after today (EFT_additional_priors)', 1)
         EFTCAMBADEAdditionalModelStability = .false.
         return
     end if
 
     if (self%wf < 0.0_dl) then
-        print*, 'Chose an appropriate value for parameter wf'
+        call GlobalError('EFTCAMB: ADE prior not met: wf < 0 (EFT_additional_priors)', 1)
         EFTCAMBADEAdditionalModelStability = .false.
         return
     end if
 
-    if (self%f_ac >= 1.0_dl .or. self%f_ac <= 0.0_dl) then
-        print*, 'Chose an appropriate value for parameter f_ac'
+    ! c_s^2 < 0 is a gradient instability of the ADE fluid (it ran as 'stable' and failed in the integrator):
+    if (self%cs2 < 0.0_dl) then
+        call GlobalError('EFTCAMB: ADE prior not met: cs2 < 0, gradient instability (EFT_additional_priors)', 1)
         EFTCAMBADEAdditionalModelStability = .false.
         return
     end if

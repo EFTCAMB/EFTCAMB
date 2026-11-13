@@ -462,6 +462,22 @@ class EFTCAMBTest(unittest.TestCase):
         h0 = cp.H0 / 299792.458  # H0 in 1/Mpc
         np.testing.assert_allclose(c / (c + 2 * h0**2 * a**2 * gamma1), 0.86, rtol=1e-7)
 
+    def test_ade_priors(self):
+        # ADE: the undefined domain (f_ac outside [0, 1), p <= 0) is refused by the background initialization, the
+        # priors with named messages (they only printed, and cs2 < 0 ran as 'stable' and failed in the integrator).
+        # f_ac = 0 (no ADE) is LCDM and runs: it was refused by the f_ac prior.
+        for extra, message in (
+            ("cs2 = -0.5", "cs2 < 0"),
+            ("p = -1.0", "p <= 0"),
+            ("f_ac = 1.0", r"f_ac outside \[0, 1\)"),
+            ("Log_ac = 0.5", "Log_ac > 0"),
+        ):
+            with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, message):
+                camb.get_background(self.read("5_ADE_1", extra))
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1")).get_sigma8_0()
+        ade = camb.get_results(self.read("5_ADE_1", "f_ac = 0.0")).get_sigma8_0()
+        self.assertAlmostEqual(ade / lcdm, 1, delta=1e-8)
+
     def test_ade_turn_on(self):
         # the return to GR compares d gamma_i/d ln a with the threshold: the raw d gamma1/da = 1e-8 switched this ADE
         # (arXiv:1905.12618 Table I) on at a = 7.3e-9, where gamma1 = 1e-17
