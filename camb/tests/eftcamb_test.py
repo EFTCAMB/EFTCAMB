@@ -267,6 +267,17 @@ class EFTCAMBTest(unittest.TestCase):
         )
         self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
 
+    def test_shiftsym_param_index(self):
+        # the w_DE parameters follow alpha_B0, m, alpha_K0: the getters used an offset of 1 and raised
+        # 'illegal parameter index' (or returned the wrong entry) for EFTwDE >= 1
+        model = "EFTflag = 2\nAltParEFTmodel = 4\nShift_Symmetric_alphaK0 = 1.0\nShift_Symmetric_m = 2.0\n"
+        cp = self.read(
+            "2_PEFT_wDE_wCDM_1", model + "EFTwDE = 2\nEFTw0 = -0.9\nEFTwa = 0.1\nShift_Symmetric_alphaB0 = 0.1"
+        )
+        self.assertEqual(cp.EFTCAMB.param_names(), ["alpha_B0", "m", "alpha_K0", "EFTw0", "EFTwa"])
+        self.assertEqual(cp.EFTCAMB.param_labels(), ["alpha_B0", "m", "alpha_K0", "w_0", "w_a"])
+        self.assertEqual(cp.EFTCAMB.param_values(), [0.1, 2.0, 1.0, -0.9, 0.1])
+
     def test_braiding_crossing_refused(self):
         # an alpha_B = 2 crossing (Bellini-Sawicki convention) after the turn-on leaves h' undetermined by the 00
         # constraint: refused with its own message (it used to fail with RungeKuttaDP45 -3 or stall)

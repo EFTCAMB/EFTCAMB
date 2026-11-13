@@ -247,15 +247,16 @@
 
     class(EFTCAMB_ShiftSym_alphaB)                         :: self   !< the base class
     real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
-    real(dl), dimension(self%parameter_number - 1)         :: temp
+    real(dl), dimension(self%parameter_number - 3)         :: temp
     integer                                                :: i
 
     self%SS_alphaB0 = array(1)
     self%SS_m = array(2)
     self%SS_alphaK0 = array(3)
 
-    do i = 1, self%parameter_number - 1        !< I'M NOT SURE WHAT THIS DOES
-        temp(i) = array(i + 1)
+    ! the w_DE parameters follow alpha_B0, m, alpha_K0 (it passed array(i + 1), off by 2, to w_DE):
+    do i = 1, self%parameter_number - 3
+        temp(i) = array(i + 3)
     end do
     call self%ShiftSymwDE%init_parameters(temp)
     ! w_DE integral of parametrizations without a closed form, for the new parameters:
@@ -355,9 +356,9 @@
     else if (i == 3) then
         name = trim('alpha_K0')
         return
-        ! the other parameters are the w_DE parameters: [NOT ENTIRELY SURE ABOUT THIS PART]
+        ! the other parameters are the w_DE parameters, after the three of alpha_B and alpha_K:
     else
-        call self%ShiftSymwDE%parameter_names(i - 1, name)
+        call self%ShiftSymwDE%parameter_names(i - 3, name)
         return
     end if
 
@@ -395,7 +396,7 @@
         return
         ! the other parameters are the w_DE parameters:
     else
-        call self%ShiftSymwDE%parameter_names_latex(i - 1, latexname)
+        call self%ShiftSymwDE%parameter_names_latex(i - 3, latexname)
         return
     end if
 
@@ -433,7 +434,7 @@
         return
         ! the other parameters are the w_DE parameters:
     else
-        call self%ShiftSymwDE%parameter_value(i - 1, value)
+        call self%ShiftSymwDE%parameter_value(i - 3, value)
         return
     end if
 
