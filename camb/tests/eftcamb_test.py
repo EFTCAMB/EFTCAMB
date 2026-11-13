@@ -336,6 +336,36 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertNotIn(warning, blocks[1])
         self.assertNotIn(warning, blocks[2])
 
+    def test_stiff_sound_speed_warning(self):
+        # at feedback_level >= 1 the stability check warns when c_s^2 > 1e4 after the turn-on (the pi equation is stiff
+        # and the run slow): constant gamma3 has c_s^2 = 1.9e5 at its turn-on 0.01 (15x the GR run time), linear
+        # gamma3 5.3e2 (1.5x)
+        code = (
+            "import camb, sys\n"
+            "for model in ('2_PEFT_gamma3_const_1', '2_PEFT_gamma3_lin_2'):\n"
+            f"    ini = {self.tmp!r} + '/stiff_' + model + '.ini'\n"
+            "    text = 'DEFAULT(' + " + repr(PARAMS) + " + '/' + model + '.ini)\\nfeedback_level = 1\\n'\n"
+            "    open(ini, 'w').write(text)\n"
+            "    cp = camb.read_ini(ini)\n"
+            "    print('MODEL', model, flush=True)\n"
+            "    camb.get_background(cp)\n"
+            "    sys.stdout.flush()\n"
+        )
+        r = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+            env=dict(os.environ, PYTHONPATH=ROOT, OMP_NUM_THREADS="2"),
+        )
+        self.assertEqual(r.returncode, 0, r.stderr[-500:])
+        blocks = r.stdout.split("MODEL ")[1:]
+        self.assertEqual(len(blocks), 2)
+        warning = "large scalar sound speed after the turn-on: c_s^2 = 1.894E+05 at a = 1.001E-02"
+        self.assertIn(warning, blocks[0])
+        self.assertNotIn("large scalar sound speed", blocks[1])
+
     def test_glpv_dust_dressed_gradient(self):
         # GLPV gradient condition with pressureless dust dressed (D3): G + (2 G5 - F1)^2 rho_dust/F2^2 >= 0. Pure EFT
         # gamma1 = 0.05, gamma5 = 0.1 checked from a = 0.65: the bare c_s^2 is negative until a ~ 0.7 (-0.23 at 0.66),

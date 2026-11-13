@@ -51,6 +51,9 @@
     !< the two previous sampled scale factors after the turn-on and the margin of A there (its value closest to zero
     !! in k, times its sign), to bracket a local minimum of A where it may touch zero between two samples.
     real(dl), save :: PastAa(2) = 0._dl, PastAm(2) = 0._dl
+    !< c_s^2 above which the stability check warns that the pi equation is stiff: it oscillates at the rate c_s k and
+    !! the run time grows about as c_s (test inis: 1.5x the GR time at c_s^2 = 5e2, 6x at 4e4, 15x at 2e5).
+    real(dl), parameter :: EFT_stiff_cs2 = 1.e4_dl
 
     contains
 
@@ -74,7 +77,7 @@
     integer, parameter :: indMax = 1000    ! Number of points sampled.
     real(dl), parameter :: LogSamplingScale = -10._dl ! Where to start with the log sampling
 
-    real(dl) :: Atest, y
+    real(dl) :: Atest, y, cs2_max, a_cs2_max
     integer  :: ind
     type(TEFTCAMB_timestep_cache) :: eft_cache
 
@@ -109,6 +112,9 @@
 
     ! 1) stability code:
     success = .true.
+    ! the largest scalar sound speed after the perturbation turn-on (a stiff pi equation: reported below)
+    cs2_max = 0._dl
+    a_cs2_max = 0._dl
 
     ! - linear sampling:
     if (success) then
@@ -116,6 +122,7 @@
         do ind = 1, indMax
             Atest = astart + real(ind - 1)*(aend - astart)/real(indMax - 1)
             success = EFTTestStability(Atest, k_max, input_EFTCAMB, params_cache, eft_cache)
+            if (success) call track_sound_speed(Atest)
             if (.not. success) then
                 if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
                     write(*, *)
@@ -133,6 +140,7 @@
             y = LogSamplingScale + real(ind - 1)*(0._dl - LogSamplingScale)/real(indMax - 1)
             Atest = astart + (aend - astart)*10._dl**y
             success = EFTTestStability(Atest, k_max, input_EFTCAMB, params_cache, eft_cache)
+            if (success) call track_sound_speed(Atest)
             if (.not. success) then
                 if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
                     write(*, *)
@@ -150,6 +158,7 @@
             y = LogSamplingScale + real(ind - 1)*(0._dl - LogSamplingScale)/real(indMax - 1)
             Atest = aend + (astart - aend)*10._dl**y
             success = EFTTestStability(Atest, k_max, input_EFTCAMB, params_cache, eft_cache)
+            if (success) call track_sound_speed(Atest)
             if (.not. success) then
                 if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
                     write(*, *)
@@ -172,7 +181,42 @@
         else
             write(*, '(a)') ' EFTCAMB: theory unstable'
         end if
+        if (success .and. cs2_max > 0._dl) write(*, '(a,es10.3,a,es10.3)') &
+            '   largest c_s^2 after the turn-on:', cs2_max, ' at a =', a_cs2_max
     end if
+    ! a large sound speed makes the pi equation stiff and the run slow (a diagnostic only: the model is kept)
+    if (success .and. cs2_max > EFT_stiff_cs2 .and. input_EFTCAMB%EFTCAMB_feedback_level > 0) then
+        write(*, '(a,es10.3,a,es10.3)') ' EFTCAMB WARNING: large scalar sound speed after the turn-on: c_s^2 =', &
+            cs2_max, ' at a =', a_cs2_max
+        write(*, '(a)') '   The pi equation is stiff (it oscillates at the rate c_s k) and the run can be slow.'
+        write(*, '(a)') '   E.g. braiding with no kinetic term (alpha_K = 0) near the GR limit: c_s^2 ~ 1/alpha_B.'
+    end if
+
+    contains
+
+    !> Subroutine that records the largest scalar sound speed squared, EFT_gradient/EFT_kinetic, after the turn-on.
+    !! Only where both are positive beyond their roundoff floor and the model is within GLPV (where the ratio is
+    !! c_s^2).
+    subroutine track_sound_speed(a)
+
+    real(dl), intent(in) :: a   !< the sampled scale factor (eft_cache holds the values there).
+
+    real(dl) :: floor, kinetic_scale, gradient_scale
+    real(dl), parameter :: domain_eps = 1.e-12_dl
+
+    if (a < input_EFTCAMB%EFTCAMB_pert_turn_on) return
+    if (abs(eft_cache%EFTGamma6V) > domain_eps*(1._dl + abs(eft_cache%EFTOmegaV)) .or. &
+        abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
+        domain_eps*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) return
+    call EFTCAMBStabilityScales(a, params_cache, eft_cache, kinetic_scale, gradient_scale)
+    floor = max(input_EFTCAMB%EFTCAMB_stability_threshold, 1.e-12_dl)
+    if (eft_cache%EFT_kinetic <= floor*kinetic_scale .or. eft_cache%EFT_gradient <= floor*gradient_scale) return
+    if (eft_cache%EFT_gradient/eft_cache%EFT_kinetic > cs2_max) then
+        cs2_max = eft_cache%EFT_gradient/eft_cache%EFT_kinetic
+        a_cs2_max = a
+    end if
+
+    end subroutine track_sound_speed
 
     end subroutine EFTCAMB_Stability_Check
 
