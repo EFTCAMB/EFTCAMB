@@ -15,13 +15,17 @@
 
 !> @file 007p6_Omega_Lambda_alpha.f90
 !! This file contains the definition of an EFT reparametrization of Horndeski models.
-!! This is described by four functions of time Lambda.
-!! Please refer to the numerical notes for details.
+!! This is the Omega-Lambda parametrization with alpha functions (OL alpha), with five input functions of time:
+!!  - lambda~ (OLLambda): Lambda = Lambda_0 (1 + lambda~), Lambda_0 = -3 H0^2 (1 - Omega_m), as in OL gamma;
+!!  - M~ = M*^2/m0^2 - 1 (OLmass), alpha_K (OLkineticity), alpha_B (OLbraiding) and alpha_T (OLtensor).
+!! The background is that of arXiv:1703.05297 App. A (H(a = 1) = H0). The alpha functions are in the RPH convention
+!! (arXiv:1405.3590): alpha_B is the EFTCAMB alpha_B = -alpha_B^BS/2, so a Bellini-Sawicki (hi_class) alpha_B must be
+!! entered as -alpha_B/2. As for OL gamma, M~ /= 0 with lambda~ = 0 is not LCDM: flatness generates a dust-like
+!! c = (3/2) H0^2 M~_0 a^-3 (constant M~ = M~_0; M~_0 = 0.2 gives 2c/(3H^2) = 0.2 today).
 
 ! ----------------------------------------------------------------------------------------
-!> This module contains the definition of an EFT reparametrization of Horndeski models.
-!! This is described by four functions of time Lambda.
-!! Please refer to the numerical notes for details.
+!> This module contains the definition of an EFT reparametrization of Horndeski models: OL alpha (see the file
+!! header for the definitions).
 
 !> @author Marco Raveri
 

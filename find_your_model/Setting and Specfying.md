@@ -60,6 +60,11 @@
         - Flags: **OLLambdamodel, OLmassPmodel, OLkineticitymodel, OLbraidingmodel, OLtensormodel**
         - Names: **OLLambda, OLmass, OLkineticity, OLbraiding, OLtensor**
         - Latex format: $\tilde{\lambda}, \tilde{M}, \alpha^{\rm K}, \alpha^{\rm B}, \alpha^{\rm T}$
+        - Definitions: $\tilde{\lambda}$ as for **AltParEFTmodel** = 2; $\tilde{M} = M_*^2/m_0^2 - 1$; $\alpha^{\rm B}$ is in
+          the EFTCAMB convention, $-1/2$ times the $\alpha_B$ of Bellini-Sawicki and hi_class (enter $-\alpha_B/2$). As
+          for **AltParEFTmodel** = 2, a constant $\tilde{M} \neq 0$ with $\tilde{\lambda} = 0$ is not $\Lambda$CDM:
+          flatness generates a dust-like $c = \frac{3}{2} H_0^2 \tilde{M}_0 a^{-3}$.
+        - Reference papers: arXiv:1703.05297 (App. A, background), arXiv:1405.3590 (alpha convention).
       <br>
 
 
