@@ -13,13 +13,12 @@
 !
 ! ----------------------------------------------------------------------------------------
 
-!> @file 10p5_Extended_Galileon.f90
-!! This file contains the definition of the Extended Galileon model.
-!! Please refer to the numerical notes for details.
+!> @file 008p7_Extended_Galileon.f90
+!! This file contains the definition of the Extended Galileon model on its tracker solution: parameters S and q, with
+!! B = S q (arXiv:1912.07586; the strong-coupling prior follows arXiv:1811.10885 and arXiv:1912.07586).
 
 ! ----------------------------------------------------------------------------------------
-!> This module contains the definition of the Extended Galileon model.
-!! Please refer to the numerical notes for details.
+!> This module contains the definition of the Extended Galileon model (see the file header for the references).
 
 !> @author Luis Atayde, Noemi Frusciante, Simone Peirone
 
@@ -50,8 +49,6 @@
         ! the model parameters:
         real(dl) :: ExtendedGalileon_B      !< Extended Galileon model parameter \f$B\f$
         real(dl) :: ExtendedGalileon_q      !< Extended Galileon model parameter \f$q\f$
-        !< Extended Galileon background parameter \f$\xi\f$ deriving from the tracker solution
-        real(dl) :: csi
         real(dl) :: S
 
     contains
@@ -180,18 +177,13 @@
     logical, optional                :: print_params !< optional flag that decised whether to print numerical values
     !! of the parameters.
 
-    ! print general model informations:
-    if (self%ExtendedGalileon_B /= 0._dl) then
-
-        write(*, *)
-        write(*, '(a,a)')       '   Model              =', self%name
-        write(*, '(a,I3)')      '   Number of params   =', self%parameter_number
-        write(*, '(a,F12.6)')   '                xi    =', self%csi
-        write(*, '(a,F12.6)')   '                B     =', self%ExtendedGalileon_B
-        write(*, '(a,F12.6)')   '                q     =', self%ExtendedGalileon_q
-        write(*, '(a,F12.6)')   '                S     =', self%S
-
-    end if
+    ! print general model informations (for every model; xi, a field that was never set, is not printed):
+    write(*, *)
+    write(*, '(a,a)')       '   Model              =', self%name
+    write(*, '(a,I3)')      '   Number of params   =', self%parameter_number
+    write(*, '(a,F12.6)')   '                B     =', self%ExtendedGalileon_B
+    write(*, '(a,F12.6)')   '                q     =', self%ExtendedGalileon_q
+    write(*, '(a,F12.6)')   '                S     =', self%S
 
     end subroutine EFTCAMBExtendedGalileonFeedback
 
@@ -601,8 +593,10 @@
     ! No strong coupling at early times (arXiv:1811.10885 sec. 3, arXiv:1912.07586 sec. III B): the exponent of
     ! Q_s ~ Omega_phi^((q S - 1)/(q (2 + S))) must not be positive. No ghost (S > 0) and no gradient instability
     ! (q (3 + 2 S) >= 1) are enforced by the general stability checks.
+    ! The boundary q S = 1 is allowed: compare with a 1e-12 tolerance (with fused multiply-add q S - 1 is 5.6e-17 for
+    ! (S, q) = (0.1, 10), which refused it).
     if ((self%ExtendedGalileon_q*self%S - 1._dl)/(2._dl*self%ExtendedGalileon_q*(1._dl + self%S/2._dl)) > &
-        0._dl) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
+        1.e-12_dl) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
 
     end function EFTCAMBExtendedGalileonAdditionalModelStability
 

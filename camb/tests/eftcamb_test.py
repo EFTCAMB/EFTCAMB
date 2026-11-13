@@ -643,6 +643,13 @@ class EFTCAMBTest(unittest.TestCase):
                 self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
         with self.assertRaises(CAMBError):
             camb.get_results(self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = 2.0\nExtendedGalileon_q = 1.0"))
+        # the boundary q S = 1 is allowed: (0.1, 10) and (0.2, 5) were refused by roundoff (q S - 1 = 5.6e-17 with
+        # fused multiply-add); q S = 1.1 is still refused
+        for s, q in (("0.1", "10.0"), ("0.2", "5.0")):
+            with self.subTest(S=s, q=q):
+                camb.get_background(self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = {s}\nExtendedGalileon_q = {q}"))
+        with self.assertRaisesRegex(CAMBError, "theory unstable"):
+            camb.get_background(self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = 0.11\nExtendedGalileon_q = 10.0"))
 
     def test_omega_lambda_backgrounds(self):
         # OL gamma / OL alpha integrate the deviation from the LCDM solution of the same matter from a = 1 (no
