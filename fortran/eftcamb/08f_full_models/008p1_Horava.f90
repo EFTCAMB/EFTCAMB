@@ -49,10 +49,11 @@
         logical  :: HoravaSolarSystem
         !! Notice that when this is used the parameter Horava_xi is ignored.
 
-        ! the model parameters:
-        real(dl) :: Horava_eta      !< first Horava model parameter.
-        real(dl) :: Horava_xi       !< second Horava model parameter.
-        real(dl) :: Horava_lambda   !< third Horava model parameter.
+        ! the model parameters, deviations from GR (all zero is GR) in the notation of arXiv:1508.01787:
+        real(dl) :: Horava_eta      !< eta of arXiv:1508.01787 (GR: 0).
+        !< xi - 1 of arXiv:1508.01787 (GR: xi = 1); the solar-system class is xi - 1 = eta/2.
+        real(dl) :: Horava_xi
+        real(dl) :: Horava_lambda   !< lambda - 1 of arXiv:1508.01787 (GR: lambda = 1).
 
     contains
 
@@ -286,11 +287,11 @@
         return
     end if
     if (i == 2) then
-        latexname = '\lambda_{\rm Ho\v rava}'
+        latexname = '\lambda_{\rm Ho\v rava} - 1'
         return
     end if
     if (i == 3 .and. .not. self%HoravaSolarSystem) then
-        latexname = '\xi_{\rm Ho\v rava}'
+        latexname = '\xi_{\rm Ho\v rava} - 1'
         return
     end if
 

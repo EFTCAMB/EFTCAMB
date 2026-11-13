@@ -103,7 +103,11 @@
       * **FullMappingEFTmodel** = 1: Horava
          Needed parameters:
          - Names: **Horava_eta, Horava_xi, Horava_lambda** (if **HoravaSolarSystem** = 1, then **Horava_xi** is not needed)
-         - Latex format: $\eta_{\rm Ho\v rava}, \lambda_{\rm Ho\v rava}, \xi_{\rm Ho\v rava}$
+         - Latex format: $\eta_{\rm Ho\v rava}, \xi_{\rm Ho\v rava} - 1, \lambda_{\rm Ho\v rava} - 1$
+         - Convention: deviations from GR (all zero is GR) in the notation of [1]: **Horava_eta** = $\eta$,
+           **Horava_xi** = $\xi - 1$, **Horava_lambda** = $\lambda - 1$. The example $\lambda = 1.4$, $\xi = 0.9$ of [1] is
+           **Horava_lambda** = 0.4, **Horava_xi** = -0.1 (entered as is it runs $\lambda = 2.4$, $\xi = 1.9$). The solar-system
+           class is **Horava_xi** = **Horava_eta**/2, i.e. $\eta = 2\xi - 2$.
 
          Reference Paper:
          - [1] Frusciante, N., Raveri, M., Vernieri, D., Hu, B., and Silvestri, A., “Hořava Gravity in the Effective Field Theory formalism: From cosmology to observational constraints”, <i>Physics of the Dark Universe</i>, vol. 13, pp. 7–24, 2016. [doi:10.1016/j.dark.2016.03.002](https://www.sciencedirect.com/science/article/pii/S2212686416300139?via%3Dihub).
