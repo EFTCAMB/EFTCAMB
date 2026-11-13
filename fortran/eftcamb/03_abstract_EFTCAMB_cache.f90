@@ -358,9 +358,13 @@
         real(dl) :: EFTLensing    !< Source for lensing effect.
         real(dl) :: T_monopole    !< The effective CMB temperature monopole.
         real(dl) :: T_dipole      !< The effective CMB temperature dipole.
-        real(dl) :: mu            !< Effective perturbation gravitational constant. \f$ k^2\Psi/\Delta_{m} \f$
-        real(dl) :: gamma         !< Ratio between the two gravitational potentials. \f$ \gamma = \Phi/\Psi \f$
-        !< Ratio between Weyl potential and matter density. \f$ \Sigma = \frac{\Phi+\Psi}{\Delta_{m}} \f$
+        !< Effective gravitational coupling mu = -2 k^2 Psi/(a^2 rho Delta + 2 dgpi), with a^2 rho Delta = dgrho
+        !! + 3 adotoa dgq/k the comoving total matter density and dgpi the matter anisotropic stress: 1 in GR.
+        real(dl) :: mu
+        !< Gravitational slip corrected for the matter anisotropic stress, gamma = Phi/Psi + 2 dgpi/(a^2 rho Delta
+        !! + 2 dgpi): 1 in GR (Phi/Psi alone differs from it by 1e-4 at k = 0.003).
+        real(dl) :: gamma
+        !< Lensing (Weyl) coupling Sigma = -k^2 (Phi + Psi)/(a^2 rho Delta + dgpi): 1 in GR.
         real(dl) :: sigma_eft
         !< Effective perturbation gravitational constant in the quasi-static limit. \f$ k^2\Psi/\Delta_{m} \f$
         real(dl) :: QS_mu
@@ -370,8 +374,12 @@
         real(dl) :: QS_mu_gen
         !< Ratio between Weyl potential and matter density in the quasi-static limit. \f$ \Sigma = \frac{\Phi+\Psi}{\Delta_{m}} \f$
         real(dl) :: QS_sigma_gen
-        real(dl) :: dgrho_Newt    !< Newtonian gauge total matter density perturbation.
-        real(dl) :: delta_DE_eff  !< Syncronous gauge Dark energy fluid perturbation.
+        !< Comoving (gauge-invariant) total matter density perturbation a^2 rho Delta = dgrho + 3 adotoa dgq/k. Despite
+        !! the name it is not the Newtonian-gauge density, which differs from it by 10% at k = 0.003.
+        real(dl) :: dgrho_Newt
+        !< Effective dark-energy density perturbation from the Poisson equation, -2 k^2 Phi - a^2 rho Delta (comoving,
+        !! gauge invariant; not a synchronous-gauge quantity).
+        real(dl) :: delta_DE_eff
         ! 14) positivity bounds:
         !< The left-hand-side of the first positivity bound. See master thesis of Dani de Boe for details.
         real(dl) :: posbound1

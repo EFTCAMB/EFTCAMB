@@ -1070,12 +1070,13 @@ class EFTCAMB_timestep_cache(F2003Class):
         ("EFTLensing", c_double),  # Source for lensing effect.
         ("T_monopole", c_double),  # The effective CMB temperature monopole.
         ("T_dipole", c_double),  # The effective CMB temperature dipole.
-        ("mu", c_double),  # Effective perturbation gravitational constant. \f$ k^2\Psi/\Delta_{m} \f$
-        ("gamma", c_double),  # Ratio between the two gravitational potentials. \f$ \gamma = \Phi/\Psi \f$
-        (
-            "sigma_eft",
-            c_double,
-        ),  # Ratio between Weyl potential and matter density. \f$ \Sigma = \frac{\Phi+\Psi}{\Delta_{m}} \f$
+        # mu = -2 k^2 Psi/(a^2 rho Delta + 2 dgpi), a^2 rho Delta = dgrho + 3 adotoa dgq/k (comoving matter density),
+        # dgpi the matter anisotropic stress: 1 in GR
+        ("mu", c_double),
+        # gamma = Phi/Psi + 2 dgpi/(a^2 rho Delta + 2 dgpi): slip corrected for the matter anisotropic stress, 1 in GR
+        ("gamma", c_double),
+        # Sigma = -k^2 (Phi + Psi)/(a^2 rho Delta + dgpi): lensing (Weyl) coupling, 1 in GR
+        ("sigma_eft", c_double),
         (
             "QS_mu",
             c_double,
@@ -1092,8 +1093,10 @@ class EFTCAMB_timestep_cache(F2003Class):
             "QS_sigma_gen",
             c_double,
         ),  # Ratio between Weyl potential and matter density in the quasi-static limit. \f$ \Sigma = \frac{\Phi+\Psi}{\Delta_{m}} \f$
-        ("dgrho_Newt", c_double),  # Newtonian gauge total matter density perturbation.
-        ("delta_DE_eff", c_double),  # Syncronous gauge Dark energy fluid perturbation.
+        # comoving (gauge-invariant) matter density a^2 rho Delta = dgrho + 3 adotoa dgq/k (not the Newtonian-gauge one)
+        ("dgrho_Newt", c_double),
+        # effective DE density perturbation from the Poisson equation, -2 k^2 Phi - a^2 rho Delta (gauge invariant)
+        ("delta_DE_eff", c_double),
         # 14) LHS of positivity bounds:
         (
             "posbound1",
