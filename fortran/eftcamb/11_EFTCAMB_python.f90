@@ -905,6 +905,8 @@
                 ! the stability calculation):
                 call EFTCAMB%model%compute_additional_derivs(a, par_cache, cache)
                 call EFTCAMB%model%compute_H_derivs(a, par_cache, cache)
+                ! the alpha-basis outputs (from the EFT functions, unless the model computes them):
+                call EFTCAMB%model%compute_alpha_functions(a, par_cache, cache)
             end associate
         end do
     end associate

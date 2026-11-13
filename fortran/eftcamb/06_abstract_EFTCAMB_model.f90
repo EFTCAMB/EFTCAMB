@@ -115,6 +115,8 @@
 
     !< subroutine that computes \rho_Q and P_Q. For details refer to the numerical notes.
     procedure :: compute_rhoQPQ => EFTCAMBModelComputeRhoQPQ
+    !< subroutine that fills the alpha-basis outputs (alphaB/K/M/T, their derivatives, Meff2) from the EFT functions.
+    procedure :: compute_alpha_functions => EFTCAMBModelComputeAlphaFunctions
     !< subroutine that computes the Einstein equations factors. For details refer to the numerical notes.
     procedure :: compute_Einstein_factors => EFTCAMBModelComputeEinsteinFactors
     !< subroutine that computes the pi field equations factors. For details refer to the numerical notes.
@@ -412,6 +414,58 @@
         + 3._dl*eft_cache%adotoa*eft_cache%Hdot*(aomegaP + a2*eft_cache%EFTOmegaPP)
 
     end subroutine EFTCAMBModelComputeRhoQPQ
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that fills the alpha-basis outputs from the EFT functions (outputs only: get_eft_functions and the
+    !! evolution). Bellini-Sawicki arXiv:1404.3713 mapped as in Gleyzes et al. arXiv:1411.3712, in the cache
+    !! convention of the models that compute them themselves (RPH and Horndeski override this subroutine; these
+    !! formulas reproduce their values to roundoff and 1e-8):
+    !!   Meff2 = M*^2/m0^2 = 1 + Omega - gamma4,  alphaT = gamma4/Meff2,  alphaM = a (Omega' - gamma4')/Meff2,
+    !!   alphaB = (a Hc Omega' + a H0 gamma2)/(2 Hc Meff2)  (= -alpha_B^BS/2, the EFTCAMB/RPH convention),
+    !!   alphaK = (2 c + 4 a^2 H0^2 gamma1)/(Hc^2 Meff2)  (cache c = a^2 c),
+    !! and their conformal time derivatives a Hc d/da. gamma4'' is the model's, or -gamma3'' on the Horndeski line
+    !! when the model leaves it 0.
+    subroutine EFTCAMBModelComputeAlphaFunctions(self, a, eft_par_cache, eft_cache)
+
+    implicit none
+
+    class(EFTCAMB_model)                          :: self          !< the base class
+    real(dl), intent(in)                          :: a             !< the input scale factor
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout)  :: eft_cache
+
+    real(dl) :: Hc, H0, g3, g4, g4pp, M, Mp, Mpp, N, Np, dHda, K, Kdot
+
+    Hc = eft_cache%adotoa
+    H0 = eft_par_cache%h0_Mpc
+    g3 = eft_cache%EFTGamma3V
+    g4 = eft_cache%EFTGamma4V
+    g4pp = eft_cache%EFTGamma4PP
+    if (g4pp == 0._dl .and. abs(g3 + g4) <= 1.e-12_dl*(abs(g3) + abs(g4))) g4pp = -eft_cache%EFTGamma3PP
+    M = 1._dl + eft_cache%EFTOmegaV - g4
+    if (M == 0._dl .or. Hc == 0._dl) return
+    Mp = eft_cache%EFTOmegaP - eft_cache%EFTGamma4P
+    Mpp = eft_cache%EFTOmegaPP - g4pp
+    eft_cache%Meff2 = M
+    eft_cache%alphaT = g4/M
+    eft_cache%alphaTdot = a*Hc*(eft_cache%EFTGamma4P/M - g4*Mp/M**2)
+    eft_cache%alphaM = a*Mp/M
+    eft_cache%alphaMdot = a*Hc*((Mp + a*Mpp)/M - a*Mp**2/M**2)
+    N = a*Hc*eft_cache%EFTOmegaP + a*H0*eft_cache%EFTGamma2V
+    dHda = eft_cache%Hdot/(a*Hc)
+    Np = Hc*eft_cache%EFTOmegaP + a*dHda*eft_cache%EFTOmegaP + a*Hc*eft_cache%EFTOmegaPP + H0*eft_cache%EFTGamma2V + &
+        a*H0*eft_cache%EFTGamma2P
+    eft_cache%alphaB = N/(2._dl*Hc*M)
+    eft_cache%alphaBdot = a*Hc*(Np/(2._dl*Hc*M) - N*dHda/(2._dl*Hc**2*M) - N*Mp/(2._dl*Hc*M**2))
+    K = 2._dl*eft_cache%EFTc + 4._dl*a**2*H0**2*eft_cache%EFTGamma1V
+    Kdot = 4._dl*Hc*eft_cache%EFTc + 2._dl*eft_cache%EFTcdot + 8._dl*a**2*Hc*H0**2*eft_cache%EFTGamma1V + &
+        4._dl*a**3*Hc*H0**2*eft_cache%EFTGamma1P
+    eft_cache%alphaK = K/(Hc**2*M)
+    eft_cache%alphaKdot = Kdot/(Hc**2*M) - 2._dl*K*eft_cache%Hdot/(Hc**3*M) - K*a*Hc*Mp/(Hc**2*M**2)
+
+    end subroutine EFTCAMBModelComputeAlphaFunctions
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the Einstein equations factors. For details refer to the numerical notes.

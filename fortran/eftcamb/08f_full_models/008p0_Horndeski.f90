@@ -258,6 +258,8 @@
     ! perturbations:
     !< subroutine that refuses the pi path where phi' changes sign after the turn-on.
     procedure :: pi_evolution_check => EFTCAMBHdskPiEvolutionCheck
+    !< the alpha-basis outputs are computed with the EFT functions (EFTCAMBHdskSecondOrderEFTFunctions): nothing to do.
+    procedure :: compute_alpha_functions => EFTCAMBHdskComputeAlphaFunctions
 
     end type
 
@@ -3399,5 +3401,20 @@
     end do
 
     end subroutine EFTCAMBHdskPiEvolutionCheck
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that keeps the alpha-basis outputs that the Horndeski module computes with its EFT functions.
+    subroutine EFTCAMBHdskComputeAlphaFunctions(self, a, eft_par_cache, eft_cache)
+
+    implicit none
+
+    class(EFTCAMB_Hdsk)                           :: self          !< the base class
+    real(dl), intent(in)                          :: a             !< the input scale factor
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout)  :: eft_cache
+
+    end subroutine EFTCAMBHdskComputeAlphaFunctions
 
     end module EFTCAMB_Horndeski

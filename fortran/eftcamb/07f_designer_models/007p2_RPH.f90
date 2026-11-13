@@ -159,6 +159,8 @@
     ! stability procedures:
     !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
     procedure :: wDE_prior => EFTCAMBRPHwDEPrior
+    !< the alpha-basis outputs are computed with the EFT functions (EFTCAMBRPHSecondOrderEFTFunctions): nothing to do.
+    procedure :: compute_alpha_functions => EFTCAMBRPHComputeAlphaFunctions
 
     end type EFTCAMB_RPH
 
@@ -1933,5 +1935,20 @@
     end function EFTCAMBRPHwDEPrior
 
     ! ---------------------------------------------------------------------------------------------
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that keeps the alpha-basis outputs that RPH computes with its EFT functions.
+    subroutine EFTCAMBRPHComputeAlphaFunctions(self, a, eft_par_cache, eft_cache)
+
+    implicit none
+
+    class(EFTCAMB_RPH)                            :: self          !< the base class
+    real(dl), intent(in)                          :: a             !< the input scale factor
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout)  :: eft_cache
+
+    end subroutine EFTCAMBRPHComputeAlphaFunctions
 
     end module EFTCAMB_Reparametrized_Horndeski

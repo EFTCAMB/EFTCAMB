@@ -808,8 +808,8 @@ class EFTCAMB_timestep_cache(F2003Class):
             "EFTGamma6P",
             c_double,
         ),  # the value of the derivative wrt scale factor of Gamma 6 \f$  d \gamma_6(a) / da \f$.
-        # 5b) alternative EFT functions
-        ("alphaB", c_double),  # the value of the Horndeski function \f$ \alpha_B \f$
+        # 5b) alternative EFT functions (outputs: filled from the EFT functions for every model, or by RPH/Horndeski)
+        ("alphaB", c_double),  # the Horndeski function alpha_B, EFTCAMB convention (= -alpha_B of Bellini-Sawicki / 2)
         ("alphaBdot", c_double),  # the value of the derivative wrt conformal time of alphaB \f$ \dot{\alpha}_B \f$
         ("alphaT", c_double),  # the value of the Horndeski function \f$ \alpha_T \f$
         ("alphaTdot", c_double),  # the value of the derivative wrt conformal time of alphaT \f$ \dot{\alpha}_T \f$

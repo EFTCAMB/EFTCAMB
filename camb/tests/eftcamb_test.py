@@ -752,6 +752,20 @@ class EFTCAMBTest(unittest.TestCase):
         R, Rdot = 6 * (2 * H**2 + Hd), 6 * (4 * H * Hd + Hdd)
         return ev["EFT_mu1"], ((1 + ev["EFTOmegaV"]) * Rdot / (ev["adotoa"] * ev["EFTOmegaP"]) - R) / 3
 
+    def test_alpha_functions(self):
+        # get_eft_functions and the evolution fill the alpha-basis outputs from the EFT functions for every model (they
+        # were 0, Meff2 included, except for RPH and Horndeski, whose own values the same formulas reproduce). Pure EFT
+        # Omega = a: Meff2 = 1 + a, alphaM = a/(1 + a), alphaB = a/(2 (1 + a)) (EFTCAMB convention), alphaT = 0
+        a = np.array([0.1, 0.5, 0.9])
+        cp = self.read("2_PEFT_Omega_lin_1")
+        res = camb.get_results(cp)
+        for f in (cp.EFTCAMB.get_eft_functions(res, a)[1], cp.EFTCAMB.get_scale_evolution(res, [1e-2], a)[1][0]):
+            af = np.ravel(f["a"])  # the evolution is sampled in conformal time: a to ~1e-10
+            np.testing.assert_allclose(np.ravel(f["Meff2"]), 1 + af, rtol=1e-10)
+            np.testing.assert_allclose(np.ravel(f["alphaM"]), af / (1 + af), rtol=1e-10)
+            np.testing.assert_allclose(np.ravel(f["alphaB"]), af / (2 * (1 + af)), rtol=1e-10)
+            np.testing.assert_allclose(np.ravel(f["alphaT"]), 0, atol=1e-15)
+
     def test_mass_eigenvalues(self):
         # compute_mass_factors (arXiv:1609.03599 App. C, corrected: d^2 EFTc/da^2, the matter rho + p as dust with a
         # consistent Hdotdot, quadruple precision): EFT_mu1 is the scalaron mass ((1 + f_R)/f_RR - R)/3 of a heavy

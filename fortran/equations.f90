@@ -3746,6 +3746,8 @@
         ! factors from stability caches at a and at the neighbouring times):
         call CP%EFTCAMB%model%compute_additional_derivs(a, CP%eft_par_cache, EV%eft_cache)
         call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
+        ! the alpha-basis outputs (from the EFT functions, unless the model computes them):
+        call CP%EFTCAMB%model%compute_alpha_functions(a, CP%eft_par_cache, EV%eft_cache)
         call EFTStabilityMassEigenvalues(a, CP%EFTCAMB, CP%eft_par_cache, EV%eft_cache, eft_mass_resolved, &
             recompute=.true.)
         ! formerly:
