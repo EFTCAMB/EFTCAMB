@@ -87,6 +87,8 @@
     procedure :: init_model_parameters_from_file => EFTCAMBShiftSymmetricInitModelParametersFromFile
 
     ! background solver: [ALSO THINK WE DON'T NEED THESE]
+    !< subroutine that checks the parameters before the run (no background to solve).
+    procedure :: initialize_background => EFTCAMBShiftSymmetricInitBackground
     ! procedure :: initialize_background           => EFTCAMBDesignerFRInitBackground               !< subroutine that initializes the background of designer f(R).
     ! procedure :: solve_designer_equations        => EFTCAMBDesignerFRSolveDesignerEquations       !< subroutine that solves the designer f(R) background equations.
     ! procedure :: find_initial_conditions         => EFTCAMBDesignerFRFindInitialConditions        !< subroutine that solves the background equations several time to determine the values of the initial conditions.
@@ -202,6 +204,33 @@
     call self%ShiftSymwDE%init_func_from_file(Ini, eft_error)
 
     end subroutine EFTCAMBShiftSymmetricAllocateModelSelection
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that checks the model parameters before the run (there is no background to solve): alpha_B =
+    !! alpha_B0 (a H0/adotoa)^(4/m) needs m > 0 when alpha_B0 /= 0 (alpha_B -> 0 at early times; 4/m is undefined for
+    !! m = 0, the default when Shift_Symmetric_m is omitted, which gave NaN EFT functions and a 'theory unstable').
+    subroutine EFTCAMBShiftSymmetricInitBackground(self, params_cache, feedback_level, success, outroot)
+
+    implicit none
+
+    class(EFTCAMB_ShiftSym_alphaB)                :: self           !< the base class
+    !< a EFTCAMB parameter cache containing cosmological parameters
+    type(TEFTCAMB_parameter_cache), intent(inout) :: params_cache
+    integer, intent(in)  :: feedback_level !< level of feedback from the background code. 0=none; 1=some; 2=chatty.
+    logical, intent(out) :: success        !< wether the background initialization succeded or not
+    character(len=*), intent(in), optional :: outroot        !< the output root for the debug files
+
+    character(len=160) :: message
+
+    success = .true.
+    if (self%SS_alphaB0 /= 0._dl .and. .not. self%SS_m > 0._dl) then
+        write(message, '(a,es10.3,a)') 'EFTCAMB error: Shift_Symmetric_m must be > 0 when Shift_Symmetric_alphaB0 /= 0 &
+            &(found m =', self%SS_m, ')'
+        call GlobalError(trim(message), error_unsupported_params)
+        success = .false.
+    end if
+
+    end subroutine EFTCAMBShiftSymmetricInitBackground
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that initializes the model parameters based on the values found in an input array.
@@ -496,44 +525,49 @@
     real(dl) :: RPH_PM_PP, RPH_AT_PP, RPH_AK_PP, RPH_AB_PP
     real(dl) :: RPH_PM_PPP, RPH_AT_PPP, RPH_AK_PPP, RPH_AB_PPP
     real(dl) :: RPH_AT_PPPP, RPH_PM_PPPP
+    real(dl) :: SSm
+
+    ! m of alpha_B = alpha_B0 (a H0/adotoa)^(4/m): every term with it is proportional to alpha_B0, so at the GR
+    ! point alpha_B0 = 0 any finite exponent gives alpha_B = 0 (m may be omitted there, the default is 0):
+    SSm = merge(self%SS_m, 1._dl, self%SS_alphaB0 /= 0._dl)
 
     ! defining the necessary alpha functions:
     RPH_PM_V = 0._dl
     RPH_AT_V = 0._dl
     RPH_AK_V = self%SS_alphaK0*a
-    RPH_AB_V = self%SS_alphaB0*((a*eft_par_cache%h0_Mpc)/(eft_cache%adotoa))**(4._dl/self%SS_m)
+    RPH_AB_V = self%SS_alphaB0*((a*eft_par_cache%h0_Mpc)/(eft_cache%adotoa))**(4._dl/SSm)
 
     RPH_PM_P = 0._dl
     RPH_AT_P = 0._dl
     RPH_AK_P = self%SS_alphaK0
-    RPH_AB_P = ((4._dl*self%SS_alphaB0)/self%SS_m)*((a*eft_par_cache%h0_Mpc)/(eft_cache%adotoa))** &
-        (4._dl/self%SS_m - 1._dl)*(eft_par_cache%h0_Mpc/eft_cache%adotoa - &
+    RPH_AB_P = ((4._dl*self%SS_alphaB0)/SSm)*((a*eft_par_cache%h0_Mpc)/(eft_cache%adotoa))** &
+        (4._dl/SSm - 1._dl)*(eft_par_cache%h0_Mpc/eft_cache%adotoa - &
         (eft_par_cache%h0_Mpc*eft_cache%Hdot)/(eft_cache%adotoa**3))
 
     RPH_PM_PP = 0._dl
     RPH_AT_PP = 0._dl
     RPH_AK_PP = 0._dl
     ! audit fix (7a-background-coeffs): exact a-derivatives of alphaB0 (a H0/adotoa)^(4/m)
-    RPH_AB_PP = 4._dl*RPH_AB_V/(a**2*eft_cache%adotoa**4*self%SS_m**2)* &
-        (2._dl*eft_cache%Hdot**2*self%SS_m + 4._dl*eft_cache%Hdot**2 + eft_cache%Hdot*eft_cache%adotoa**2*self%SS_m - &
-        8._dl*eft_cache%Hdot*eft_cache%adotoa**2 - eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m - &
-        eft_cache%adotoa**4*self%SS_m + 4._dl*eft_cache%adotoa**4)
+    RPH_AB_PP = 4._dl*RPH_AB_V/(a**2*eft_cache%adotoa**4*SSm**2)* &
+        (2._dl*eft_cache%Hdot**2*SSm + 4._dl*eft_cache%Hdot**2 + eft_cache%Hdot*eft_cache%adotoa**2*SSm - &
+        8._dl*eft_cache%Hdot*eft_cache%adotoa**2 - eft_cache%Hdotdot*eft_cache%adotoa*SSm - &
+        eft_cache%adotoa**4*SSm + 4._dl*eft_cache%adotoa**4)
 
     RPH_PM_PPP = 0._dl
     RPH_AT_PPP = 0._dl
     RPH_AK_PPP = 0._dl
-    RPH_AB_PPP = 4._dl*RPH_AB_V/(a**3*eft_cache%adotoa**6*self%SS_m**3)*( &
-        -8._dl*eft_cache%Hdot**3*self%SS_m**2 - 24._dl*eft_cache%Hdot**3*self%SS_m - 16._dl*eft_cache%Hdot**3 &
-        - 6._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*self%SS_m**2 &
-        + 12._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*self%SS_m &
+    RPH_AB_PPP = 4._dl*RPH_AB_V/(a**3*eft_cache%adotoa**6*SSm**3)*( &
+        -8._dl*eft_cache%Hdot**3*SSm**2 - 24._dl*eft_cache%Hdot**3*SSm - 16._dl*eft_cache%Hdot**3 &
+        - 6._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*SSm**2 &
+        + 12._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*SSm &
         + 48._dl*eft_cache%Hdot**2*eft_cache%adotoa**2 &
-        + 7._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m**2 &
-        + 12._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m &
-        - 2._dl*eft_cache%Hdot*eft_cache%adotoa**4*self%SS_m**2 + 24._dl*eft_cache%Hdot*eft_cache%adotoa**4*self%SS_m &
-        - 48._dl*eft_cache%Hdot*eft_cache%adotoa**4 + 3._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*self%SS_m**2 &
-        - 12._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*self%SS_m &
-        - eft_cache%Hdotdotdot*eft_cache%adotoa**2*self%SS_m**2 &
-        + 2._dl*eft_cache%adotoa**6*self%SS_m**2 - 12._dl*eft_cache%adotoa**6*self%SS_m + 16._dl*eft_cache%adotoa**6)
+        + 7._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*SSm**2 &
+        + 12._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*SSm &
+        - 2._dl*eft_cache%Hdot*eft_cache%adotoa**4*SSm**2 + 24._dl*eft_cache%Hdot*eft_cache%adotoa**4*SSm &
+        - 48._dl*eft_cache%Hdot*eft_cache%adotoa**4 + 3._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*SSm**2 &
+        - 12._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*SSm &
+        - eft_cache%Hdotdotdot*eft_cache%adotoa**2*SSm**2 &
+        + 2._dl*eft_cache%adotoa**6*SSm**2 - 12._dl*eft_cache%adotoa**6*SSm + 16._dl*eft_cache%adotoa**6)
 
     RPH_AT_PPPP = 0._dl
     RPH_PM_PPPP = 0._dl
@@ -557,24 +591,24 @@
         a*eft_cache%adotoa**2*eft_cache%EFTOmegaPP)/(eft_par_cache%h0_Mpc*a*eft_cache%adotoa)
 
     ! audit fix (7a-background-coeffs): with M = Omega = 0, gamma2 = -RPH_AB_V adotoa/(H0 a); exact a-derivatives
-    eft_cache%EFTGamma2PP = RPH_AB_V*(self%SS_m - 4._dl)/(a**3*eft_cache%adotoa**3*eft_par_cache%h0_Mpc*self%SS_m**2)* &
-        (eft_cache%Hdot**2*self%SS_m + 4._dl*eft_cache%Hdot**2 + 3._dl*eft_cache%Hdot*eft_cache%adotoa**2*self%SS_m - &
-        8._dl*eft_cache%Hdot*eft_cache%adotoa**2 - eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m - &
-        2._dl*eft_cache%adotoa**4*self%SS_m + 4._dl*eft_cache%adotoa**4)
+    eft_cache%EFTGamma2PP = RPH_AB_V*(SSm - 4._dl)/(a**3*eft_cache%adotoa**3*eft_par_cache%h0_Mpc*SSm**2)* &
+        (eft_cache%Hdot**2*SSm + 4._dl*eft_cache%Hdot**2 + 3._dl*eft_cache%Hdot*eft_cache%adotoa**2*SSm - &
+        8._dl*eft_cache%Hdot*eft_cache%adotoa**2 - eft_cache%Hdotdot*eft_cache%adotoa*SSm - &
+        2._dl*eft_cache%adotoa**4*SSm + 4._dl*eft_cache%adotoa**4)
 
-    eft_cache%EFTGamma2PPP = -RPH_AB_V*(self%SS_m - 4._dl)/ &
-        (a**4*eft_cache%adotoa**5*eft_par_cache%h0_Mpc*self%SS_m**3)*( &
-        3._dl*eft_cache%Hdot**3*self%SS_m**2 + 16._dl*eft_cache%Hdot**3*self%SS_m + 16._dl*eft_cache%Hdot**3 &
-        + 6._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*self%SS_m**2 &
-        + 12._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*self%SS_m &
+    eft_cache%EFTGamma2PPP = -RPH_AB_V*(SSm - 4._dl)/ &
+        (a**4*eft_cache%adotoa**5*eft_par_cache%h0_Mpc*SSm**3)*( &
+        3._dl*eft_cache%Hdot**3*SSm**2 + 16._dl*eft_cache%Hdot**3*SSm + 16._dl*eft_cache%Hdot**3 &
+        + 6._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*SSm**2 &
+        + 12._dl*eft_cache%Hdot**2*eft_cache%adotoa**2*SSm &
         - 48._dl*eft_cache%Hdot**2*eft_cache%adotoa**2 &
-        - 4._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m**2 &
-        - 12._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*self%SS_m &
-        + 11._dl*eft_cache%Hdot*eft_cache%adotoa**4*self%SS_m**2 - 48._dl*eft_cache%Hdot*eft_cache%adotoa**4*self%SS_m &
-        + 48._dl*eft_cache%Hdot*eft_cache%adotoa**4 - 6._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*self%SS_m**2 &
-        + 12._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*self%SS_m &
-        + eft_cache%Hdotdotdot*eft_cache%adotoa**2*self%SS_m**2 &
-        - 6._dl*eft_cache%adotoa**6*self%SS_m**2 + 20._dl*eft_cache%adotoa**6*self%SS_m - 16._dl*eft_cache%adotoa**6)
+        - 4._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*SSm**2 &
+        - 12._dl*eft_cache%Hdot*eft_cache%Hdotdot*eft_cache%adotoa*SSm &
+        + 11._dl*eft_cache%Hdot*eft_cache%adotoa**4*SSm**2 - 48._dl*eft_cache%Hdot*eft_cache%adotoa**4*SSm &
+        + 48._dl*eft_cache%Hdot*eft_cache%adotoa**4 - 6._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*SSm**2 &
+        + 12._dl*eft_cache%Hdotdot*eft_cache%adotoa**3*SSm &
+        + eft_cache%Hdotdotdot*eft_cache%adotoa**2*SSm**2 &
+        - 6._dl*eft_cache%adotoa**6*SSm**2 + 20._dl*eft_cache%adotoa**6*SSm - 16._dl*eft_cache%adotoa**6)
 
     eft_cache%EFTGamma3V = -RPH_AT_V*(1._dl + RPH_PM_V)
     eft_cache%EFTGamma3P = -RPH_PM_P*RPH_AT_V - (1._dl + RPH_PM_V)*RPH_AT_P

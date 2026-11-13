@@ -231,6 +231,16 @@ class EFTCAMBTest(unittest.TestCase):
                 np.testing.assert_array_equal(ev["QS_sigma"], ev["QS_sigma_gen"])
                 self.assertTrue(np.all(ev["QS_mu"] != 1))
 
+    def test_shiftsym_m(self):
+        # alpha_B = alpha_B0 (H0/H)^(4/m) needs m > 0: Shift_Symmetric_m defaults to 0, and omitting it gave NaN EFT
+        # functions and 'theory unstable' with no word on m, even at the GR point alpha_B0 = 0, which now runs as LCDM
+        model = "EFTflag = 2\nAltParEFTmodel = 4\nEFTwDE = 0\nShift_Symmetric_alphaK0 = 1.0\n"
+        with self.assertRaisesRegex(CAMBError, "Shift_Symmetric_m must be > 0"):
+            camb.get_background(self.read("2_PEFT_wDE_LCDM_1", model + "Shift_Symmetric_alphaB0 = 0.1"))
+        gr = camb.get_results(self.read("2_PEFT_wDE_LCDM_1", model + "Shift_Symmetric_alphaB0 = 0.0"))
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1"))
+        self.assertAlmostEqual(gr.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=1e-8)
+
     def test_shiftsym_derivatives(self):
         # shift-symmetric alpha_B: EFTGamma2PP, EFTGamma2PPP and EFTLambdadotdot match finite differences of the
         # lower derivatives (the cache holds a^2 Lambda and a^2 times its conformal-time derivatives)
