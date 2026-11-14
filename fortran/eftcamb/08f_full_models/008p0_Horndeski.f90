@@ -773,7 +773,7 @@
     !< optional flag that decised whether to print numerical values of the parameters.
     logical, optional   :: print_params
 
-    integer :: i, num_params_model, num_params_temp
+    integer :: i, num_params_model
 
     ! 0) general feedback
     write(*, *)
@@ -790,26 +790,12 @@
     write(*, '(a26,F12.6)') 'Max DE energy fraction =  ', self%maxfrac_hdsk
     write(*, '(a26,F12.6)') 'Max DE energy fraction z =', self%z_maxfrac_hdsk
 
-    num_params_temp = 2
-
     ! 1) w_DE feedback
-    num_params_temp = num_params_temp + self%wDE%parameter_number
     if (self%designerV) then
         call self%wDE%feedback()
     end if
 
     ! 2) free Horndeski function feedback if used
-    num_params_temp = num_params_temp + self%free_c0%parameter_number
-    num_params_temp = num_params_temp + self%free_c1%parameter_number
-    num_params_temp = num_params_temp + self%free_c2%parameter_number
-    num_params_temp = num_params_temp + self%free_c3%parameter_number
-    num_params_temp = num_params_temp + self%free_c4%parameter_number
-    num_params_temp = num_params_temp + self%free_c5%parameter_number
-    num_params_temp = num_params_temp + self%free_c6%parameter_number
-    num_params_temp = num_params_temp + self%free_c7%parameter_number
-    num_params_temp = num_params_temp + self%free_c8%parameter_number
-    num_params_temp = num_params_temp + self%free_c9%parameter_number
-    num_params_temp = num_params_temp + self%free_c10%parameter_number
     select case (self%model)
     case(7, 8)
         call self%free_c0%feedback()
@@ -847,7 +833,7 @@
     write(*, *)
     if (num_params_model > 0) then
         do i = 1, num_params_model
-            write(*, *) '   Horndeski parameter #', i, ' = ', self%model_params(i + num_params_temp)
+            write(*, *) '   Horndeski parameter #', i, ' = ', self%model_params(i)
         end do
     end if
 
