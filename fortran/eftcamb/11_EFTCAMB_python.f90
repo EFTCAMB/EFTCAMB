@@ -709,6 +709,8 @@
         end if
     end do
     !$OMP END PARALLEL DO
+    ! warnings of the initial conditions raised in the k loop, in a fixed order:
+    call EFTCAMB_IC_print_warnings()
     this%CP%WantScalars = want_scalars
     this%CP%WantTensors = want_tensors
     this%CP%WantVectors = want_vectors

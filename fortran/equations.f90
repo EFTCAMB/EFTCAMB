@@ -260,6 +260,10 @@
     real(dl) :: tau
     end subroutine EFTCAMBInitialConditions
 
+    ! prints the warnings of the initial conditions raised in a k loop, in a fixed order: call it after the loop
+    module subroutine EFTCAMB_IC_print_warnings()
+    end subroutine EFTCAMB_IC_print_warnings
+
     end interface
     ! EFTCAMB MOD END.
 

@@ -383,6 +383,32 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertIn(warning, blocks[0])
         self.assertNotIn("large scalar sound speed", blocks[1])
 
+    def test_ic_warnings_order(self):
+        # the warnings of the EFT initial conditions are raised in the threaded k loop and printed after it in a fixed
+        # order (they came out in the order the threads hit them, which made the legacy log comparison flaky):
+        # 5_KMIMIC raises three of them
+        code = (
+            "import camb\n"
+            f"ini = {self.tmp!r} + '/ic_warnings.ini'\n"
+            "open(ini, 'w').write('DEFAULT(' + " + repr(PARAMS) + " + '/5_KMIMIC.ini)\\nfeedback_level = 1\\n')\n"
+            "camb.get_results(camb.read_ini(ini))\n"
+        )
+        r = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+            env=dict(os.environ, PYTHONPATH=ROOT, OMP_NUM_THREADS="4"),
+        )
+        self.assertEqual(r.returncode, 0, r.stderr[-500:])
+        warnings = [line for line in r.stdout.splitlines() if line.startswith("EFTCAMB WARNING")]
+        self.assertEqual(len(warnings), 3, warnings)
+        for warning, text in zip(
+            warnings, ("no stable quasi-static attractor", "C + k^2 D1 + k^4 D2 nearly vanishes", "varies too fast")
+        ):
+            self.assertIn(text, warning)
+
     def test_glpv_dust_dressed_gradient(self):
         # GLPV gradient condition with pressureless dust dressed (D3): G + (2 G5 - F1)^2 rho_dust/F2^2 >= 0. Pure EFT
         # gamma1 = 0.05, gamma5 = 0.1 checked from a = 0.65: the bare c_s^2 is negative until a ~ 0.7 (-0.23 at 0.66),

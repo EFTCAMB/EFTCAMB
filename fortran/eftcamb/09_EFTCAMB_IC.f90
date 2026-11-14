@@ -45,8 +45,11 @@
     real(dl), parameter :: EFT_IC_max_dlnden = 10._dl
     !< ... or if the relative error of the finite-difference derivative exceeds this value.
     real(dl), parameter :: EFT_IC_max_relerr = 0.1_dl
-    !< warnings already printed:
-    logical, save :: EFT_IC_warned(4) = .false.
+    !< warnings raised in the OpenMP k loop and not printed yet, their text, and warnings already printed (each is
+    !! printed at most once per session, after the loop, by EFTCAMB_IC_print_warnings):
+    logical, save :: EFT_IC_raised(4) = .false.
+    character(len=256), save :: EFT_IC_message(4) = ''
+    logical, save :: EFT_IC_printed(4) = .false.
 
     contains
 
@@ -443,24 +446,46 @@
     end subroutine EFTCAMBInitialConditions
 
     ! ----------------------------------------------------------------------------------------
-    !> Subroutine that prints, once per session and only if feedback_level > 0, a warning of the initial
-    !! conditions calculator (called from the OpenMP k loop).
+    !> Subroutine that raises a warning of the initial conditions calculator (called from the OpenMP k loop). It is
+    !! printed after the loop by EFTCAMB_IC_print_warnings: printing it here would give an order of the warnings that
+    !! depends on the threads.
     subroutine EFTCAMB_IC_warning(id, message)
 
     implicit none
 
-    integer, intent(in)      :: id       !< the index of the warning
+    integer, intent(in)      :: id       !< the index of the warning (the order in which they are printed)
     character(*), intent(in) :: message  !< the warning
 
-    if (EFT_IC_warned(id)) return
+    if (EFT_IC_raised(id) .or. EFT_IC_printed(id)) return
     !$OMP CRITICAL(EFTCAMB_IC_warning_lock)
-    if (.not. EFT_IC_warned(id)) then
-        EFT_IC_warned(id) = .true.
-        if (CP%EFTCAMB%EFTCAMB_feedback_level > 0) write(*, '(a)') message
+    if (.not. EFT_IC_raised(id)) then
+        EFT_IC_message(id) = message
+        EFT_IC_raised(id) = .true.
     end if
     !$OMP END CRITICAL(EFTCAMB_IC_warning_lock)
 
     end subroutine EFTCAMB_IC_warning
+
+    ! ----------------------------------------------------------------------------------------
+    !> Subroutine that prints the warnings of the initial conditions raised in an OpenMP k loop, in the order of their
+    !! index: each at most once per session and only if feedback_level > 0. Called after every k loop that sets the
+    !! initial conditions (outside parallel regions).
+    module subroutine EFTCAMB_IC_print_warnings()
+
+    implicit none
+
+    integer :: id
+
+    do id = 1, size(EFT_IC_raised)
+        if (EFT_IC_raised(id)) then
+            if (.not. EFT_IC_printed(id) .and. CP%EFTCAMB%EFTCAMB_feedback_level > 0) &
+                write(*, '(a)') trim(EFT_IC_message(id))
+            EFT_IC_printed(id) = .true.
+            EFT_IC_raised(id) = .false.
+        end if
+    end do
+
+    end subroutine EFTCAMB_IC_print_warnings
 
     ! ----------------------------------------------------------------------------------------
     !> Function that computes the pi field coefficient C at a given time and scale.

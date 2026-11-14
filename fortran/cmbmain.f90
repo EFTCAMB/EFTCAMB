@@ -272,6 +272,10 @@
         if (DebugMsgs .and. FeedbackLevel > 0) call Timer%WriteTime('Timing for transfer k values')
     end if
 
+    ! EFTCAMB MOD START: warnings of the EFT initial conditions raised in the k loops above, in a fixed order.
+    call EFTCAMB_IC_print_warnings()
+    ! EFTCAMB MOD END.
+
     if (CP%WantTransfer .and. .not. State%OnlyTransfer .and. global_error_flag == 0) &
         call Transfer_Get_sigmas(State, State%MT)
 
