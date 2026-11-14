@@ -67,6 +67,11 @@ for i in $TEST_PARAMS_DIR/*.ini;
 	extension="${filename##*.}"
 	filename="${filename%.*}"
 
+	# the base parameters are included by every test ini, they are not a test:
+	if [ "$filename" = "base_params" ]; then
+		continue
+	fi
+
 	printf "  Doing %s: " "$filename"
 
 	./camb $i &> $RESULTS_SPECTRA_RAW/$filename.log

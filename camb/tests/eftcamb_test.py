@@ -46,15 +46,24 @@ EFTCAMB_write_background = F
 feedback_level = 0
 """
 
-# sigma8 and lensed TT C_l (muK^2, raw) at l = 10, 100, 400 with the FAST settings, computed on eftcamb-audit
-# (after the audit fixes; the Pure EFT and RPH entries after the pi' initial condition with E', RPH also after the
-# 60000-point tables, quintessence without the turn-on samples once the return to GR moved the turn-on); relative
-# tolerance 1e-5
+# sigma8 and lensed TT C_l (muK^2, raw) at l = 10, 100, 400 with the FAST settings, computed with the regenerated test
+# inis (self-consistent base cosmology, turn-on converged at k <= 0.1/Mpc); relative tolerance 1e-5
 REFERENCE = {
-    "2_PEFT_Omega_const_1": (0.22928843949170907, [1.510155251e02, 1.659871241e00, 6.388233185e-02]),
-    "4_Des_F_R_LCDM_1": (0.9795731927760171, [42.10276032, 1.61639925, 0.06437505]),
-    "3_RPH_KT_lin_1": (0.6443587523382762, [46.042515957, 1.615098353, 0.064207618]),
-    "5_quint_exponential": (0.6283037067996029, [47.142177527, 1.633889155, 0.064069268]),
+    "2_PEFT_Omega_const": (0.046356075586693565, [1.468437963e02, 4.634768026e00, 1.360919682e-01]),
+    "4_FR_LCDM": (1.0360215217278423, [4.358225276e01, 1.655523866e00, 6.699599430e-02]),
+    "3_RPH_KT_lin": (0.6781749795945762, [4.618116061e01, 1.653259939e00, 6.679294218e-02]),
+    "5_QUINT_exponential": (0.664748598354237, [4.695580401e01, 1.668400245e00, 6.667436777e-02]),
+}
+
+
+# test points that the legacy test inis do not ship, as overrides of a shipped ini
+POINTS = {
+    # minimally coupled Pure EFT wCDM (the shipped ini adds a power-law Omega)
+    "2_PEFT_wDE_wCDM_noOmega": ("2_PEFT_wDE_wCDM", "PureEFTmodelOmega = 0"),
+    "2_PEFT_gamma3_exp": ("2_PEFT_gamma3_powerH", "PureEFTmodelGamma3 = 4\nEFTGamma30 = 0.5\nEFTGamma3Exp = 0.1"),
+    "4_FR_wCDM_B1": ("4_FR_wCDM", "EFTB0 = 1.0"),
+    "5_HORAVA_eta_weak": ("5_HORAVA_eta", "Horava_xi = -0.001\nHorava_lambda = 0.001\nHorava_eta = 0.021"),
+    "5_QUINT_quadratic": ("5_QUINT_cubic", "p = 2.0\nphidot_ini = 0.0"),
 }
 
 
@@ -71,6 +80,11 @@ class EFTCAMBTest(unittest.TestCase):
 
     def fast_ini(self, model, extra=""):
         name = os.path.join(self.tmp, f"{model}_{abs(hash(extra))}.ini")
+        if model in POINTS:
+            # a test point that the legacy set does not ship: a shipped ini with overrides (those the test sets win)
+            model, point = POINTS[model]
+            keys = {line.split("=")[0].strip() for line in extra.splitlines() if "=" in line}
+            extra = "\n".join([line for line in point.splitlines() if line.split("=")[0].strip() not in keys] + [extra])
         with open(name, "w") as f:
             f.write(f"DEFAULT({os.path.join(PARAMS, model + '.ini')})\n{FAST}output_root = {self.tmp}/out\n{extra}\n")
         return name
@@ -103,7 +117,7 @@ class EFTCAMBTest(unittest.TestCase):
                 )
         # the Fortran code fills an array of timestep caches: with a mismatched element size the fields of later
         # elements would be shifted and the guard element after the array overwritten
-        pars = self.read("2_PEFT_Omega_const_1")
+        pars = self.read("2_PEFT_Omega_const")
         res = camb.get_results(pars)
         a = np.array([0.1, 0.3, 0.6, 1.0])
         eta = np.asfortranarray(res.conformal_time(1 / a - 1))
@@ -127,7 +141,7 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertEqual(fields[0], "a")
 
     def test_parameter_cache_layout(self):
-        res = camb.get_results(self.read("2_PEFT_Omega_const_1"))
+        res = camb.get_results(self.read("2_PEFT_Omega_const"))
         p = res.Params
         cache = p.EFTCAMB_parameter_cache
         h = p.H0 / 100
@@ -144,7 +158,7 @@ class EFTCAMBTest(unittest.TestCase):
         # the cache of input parameters is zero (arrays unallocated) until a calculation fills it
         fresh = camb.CAMBparams()
         new = eftcamb.EFTCAMB_parameter_cache()
-        read = self.read("2_PEFT_Omega_const_1")
+        read = self.read("2_PEFT_Omega_const")
         caches = {"CAMBparams": fresh.EFTCAMB_parameter_cache, "new": new, "read_ini": read.EFTCAMB_parameter_cache}
         for name, cache in caches.items():
             for field, *_ in cache._fields_:
@@ -156,7 +170,7 @@ class EFTCAMBTest(unittest.TestCase):
     # ini reading and the set_params path
 
     def test_read_ini_set_params(self):
-        for model in ("2_PEFT_Omega_power_1", "4_Des_F_R_LCDM_1", "5_quint_exponential"):
+        for model in ("2_PEFT_Omega_power", "4_FR_LCDM", "5_QUINT_exponential"):
             with self.subTest(model=model):
                 cp = self.read(model)
                 eft = cp.EFTCAMB.read_parameters()
@@ -176,7 +190,7 @@ class EFTCAMBTest(unittest.TestCase):
                 # reusing the parameters keeps the EFTCAMB model; an EFT-only update changes it
                 c = camb.set_params(cp=a, H0=68.0)
                 self.assertEqual(c.EFTCAMB.read_parameters(), eft)
-                if model == "2_PEFT_Omega_power_1":
+                if model == "2_PEFT_Omega_power":
                     c = camb.set_params(cp=a, EFTOmega0=0.02)
                     self.assertEqual(c.EFTCAMB.read_parameters()["EFTOmega0"], 0.02)
                     self.assertEqual(c.EFTCAMB.EFTflag, eft["EFTflag"])
@@ -185,18 +199,19 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertEqual(p.EFTCAMB.EFTflag, 0)
 
     def test_pickle_deepcopy(self):
-        cp = self.read("4_Des_F_R_LCDM_1")
+        cp = self.read("4_FR_LCDM")
         ref = camb.get_background(cp).hubble_parameter([0.5, 1.0])
         for clone in (pickle.loads(pickle.dumps(cp)), copy.deepcopy(cp), cp.copy()):
             self.assertEqual(clone.EFTCAMB.model_name(), "Designer f(R)")
             self.assertEqual(clone.EFTCAMB.read_parameters(), cp.EFTCAMB.read_parameters())
-            np.testing.assert_array_equal(camb.get_background(clone).hubble_parameter([0.5, 1.0]), ref)
-        # results.Params can be reused (get_BAO calls the background on a copy)
+            np.testing.assert_allclose(camb.get_background(clone).hubble_parameter([0.5, 1.0]), ref, rtol=1e-13)
+        # results.Params can be reused (get_BAO calls the background on a copy; the designer background is solved again,
+        # equal to round-off)
         res = camb.get_background(cp)
-        np.testing.assert_array_equal(res.get_BAO([0.5, 1.0], cp)[:, 1], ref)
+        np.testing.assert_allclose(res.get_BAO([0.5, 1.0], cp)[:, 1], ref, rtol=1e-13)
 
     def test_write_ini_round_trip(self):
-        cp = self.read("2_PEFT_Omega_power_1")
+        cp = self.read("2_PEFT_Omega_power")
         name = os.path.join(self.tmp, "written.ini")
         cp.write_ini(name)
         cp2 = camb.read_ini(name)
@@ -209,7 +224,7 @@ class EFTCAMBTest(unittest.TestCase):
     # evolution and EFT functions
 
     def test_get_evolution_order(self):
-        cp = self.read("2_PEFT_Omega_const_1")
+        cp = self.read("2_PEFT_Omega_const")
         res = camb.get_results(cp)
         a = np.array([1.0, 0.05, 0.5, 0.2])
         _, ev = cp.EFTCAMB.get_scale_evolution(res, [0.01, 0.1], a)
@@ -223,7 +238,7 @@ class EFTCAMBTest(unittest.TestCase):
     def test_qs_outputs_general_form(self):
         # QS_mu and QS_sigma use the general quasi-static form (the former closed form was 12% off for f(R), and
         # ignored gamma3): they equal QS_mu_gen and QS_sigma_gen
-        for model in ("4_Des_F_R_LCDM_1", "2_PEFT_gamma3_lin_1"):
+        for model in ("4_FR_LCDM", "2_PEFT_gamma3_powerH"):
             with self.subTest(model=model):
                 cp = self.read(model)
                 res = camb.get_results(cp)
@@ -237,9 +252,9 @@ class EFTCAMBTest(unittest.TestCase):
         # functions and 'theory unstable' with no word on m, even at the GR point alpha_B0 = 0, which now runs as LCDM
         model = "EFTflag = 2\nAltParEFTmodel = 4\nEFTwDE = 0\nShift_Symmetric_alphaK0 = 1.0\n"
         with self.assertRaisesRegex(CAMBError, "Shift_Symmetric_m must be > 0"):
-            camb.get_background(self.read("2_PEFT_wDE_LCDM_1", model + "Shift_Symmetric_alphaB0 = 0.1"))
-        gr = camb.get_results(self.read("2_PEFT_wDE_LCDM_1", model + "Shift_Symmetric_alphaB0 = 0.0"))
-        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1"))
+            camb.get_background(self.read("2_PEFT_wDE_LCDM", model + "Shift_Symmetric_alphaB0 = 0.1"))
+        gr = camb.get_results(self.read("2_PEFT_wDE_LCDM", model + "Shift_Symmetric_alphaB0 = 0.0"))
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM"))
         self.assertAlmostEqual(gr.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=1e-8)
 
     def test_shiftsym_derivatives(self):
@@ -247,7 +262,7 @@ class EFTCAMBTest(unittest.TestCase):
         # lower derivatives (the cache holds a^2 Lambda and a^2 times its conformal-time derivatives)
         model = "EFTflag = 2\nAltParEFTmodel = 4\nShift_Symmetric_alphaK0 = 1.0\n"
         cp = self.read(
-            "2_PEFT_wDE_wCDM_1",
+            "2_PEFT_wDE_wCDM_noOmega",
             model + "EFTwDE = 1\nEFTw0 = -0.95\nShift_Symmetric_alphaB0 = 0.4\nShift_Symmetric_m = 1.0",
         )
         res = camb.get_results(cp)
@@ -263,7 +278,7 @@ class EFTCAMBTest(unittest.TestCase):
             self.assertLess(abs(e["EFTLambdadotdot"][1] - fd_ldd), 1e-6 * abs(e["EFTLambda"][1]) * H**2)
         # with the exact derivatives the healthy m = 2 model passes the positivity bounds (it used to be refused)
         cp = self.read(
-            "2_PEFT_wDE_wCDM_1",
+            "2_PEFT_wDE_wCDM_noOmega",
             model + "EFTwDE = 0\nShift_Symmetric_alphaB0 = 0.1\nShift_Symmetric_m = 2.0\nEFT_positivity_bounds = T",
         )
         self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
@@ -273,7 +288,7 @@ class EFTCAMBTest(unittest.TestCase):
         # 'illegal parameter index' (or returned the wrong entry) for EFTwDE >= 1
         model = "EFTflag = 2\nAltParEFTmodel = 4\nShift_Symmetric_alphaK0 = 1.0\nShift_Symmetric_m = 2.0\n"
         cp = self.read(
-            "2_PEFT_wDE_wCDM_1", model + "EFTwDE = 2\nEFTw0 = -0.9\nEFTwa = 0.1\nShift_Symmetric_alphaB0 = 0.1"
+            "2_PEFT_wDE_wCDM_noOmega", model + "EFTwDE = 2\nEFTw0 = -0.9\nEFTwa = 0.1\nShift_Symmetric_alphaB0 = 0.1"
         )
         self.assertEqual(cp.EFTCAMB.param_names(), ["alpha_B0", "m", "alpha_K0", "EFTw0", "EFTwa"])
         self.assertEqual(cp.EFTCAMB.param_labels(), ["alpha_B0", "m", "alpha_K0", "w_0", "w_a"])
@@ -288,8 +303,8 @@ class EFTCAMBTest(unittest.TestCase):
         )
         for alphaB0 in ("2.0", "2.1"):
             with self.subTest(alphaB0=alphaB0), self.assertRaisesRegex(CAMBError, "alpha_B = 2 crossing"):
-                camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model + f"Shift_Symmetric_alphaB0 = {alphaB0}"))
-        cp = self.read("2_PEFT_wDE_wCDM_1", model + "Shift_Symmetric_alphaB0 = 1.98")
+                camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega", model + f"Shift_Symmetric_alphaB0 = {alphaB0}"))
+        cp = self.read("2_PEFT_wDE_wCDM_noOmega", model + "Shift_Symmetric_alphaB0 = 1.98")
         self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
 
     def test_wde_touch_refused(self):
@@ -298,10 +313,10 @@ class EFTCAMBTest(unittest.TestCase):
         # while near-touch models and the exact LCDM limit run
         touch = "EFTwa = 0.3\nEFTwat = 0.8\nEFTw0 = "
         with self.assertRaisesRegex(CAMBError, r"vanishes \(A = 0\) at a = 8\.000E-01"):
-            camb.get_results(self.read("4_Des_mc5e_turning_point_1", touch + "-1.0"))
+            camb.get_results(self.read("4_MC_turnpoint", touch + "-1.0"))
         for model, extra in (
-            ("4_Des_mc5e_turning_point_1", touch + "-0.999999999999"),
-            ("4_Des_mc5e_wCDM_1", "EFTw0 = -1.0"),
+            ("4_MC_turnpoint", touch + "-0.999999999999"),
+            ("4_MC_wCDM", "EFTw0 = -1.0"),
         ):
             with self.subTest(model=model, extra=extra):
                 self.assertGreater(camb.get_results(self.read(model, extra)).get_sigma8_0(), 0)
@@ -311,8 +326,8 @@ class EFTCAMBTest(unittest.TestCase):
         # perturbation equations used before it are inconsistent (|B2|/H^2 > 1e-4); the turn-on stays the user's choice
         code = (
             "import camb, sys\n"
-            "for model, extra in (('5_Kmouflage_2', ''), ('5_Kmouflage_2', 'EFTCAMB_turn_on_time = 1e-8'),\n"
-            "                     ('2_PEFT_Omega_const_1', '')):\n"
+            "for model, extra in (('5_KMOUFLAGE', 'EFTCAMB_turn_on_time = 1e-2'), ('5_KMOUFLAGE', ''),\n"
+            "                     ('2_PEFT_Omega_const', '')):\n"
             f"    ini = {self.tmp!r} + '/warn_' + model + str(len(extra)) + '.ini'\n"
             "    open(ini, 'w').write('DEFAULT(' + " + repr(PARAMS) + " + '/' + model + '.ini)\\n' + extra + '\\n')\n"
             "    cp = camb.read_ini(ini)\n"
@@ -338,13 +353,15 @@ class EFTCAMBTest(unittest.TestCase):
 
     def test_stiff_sound_speed_warning(self):
         # at feedback_level >= 1 the stability check warns when c_s^2 > 1e4 after the turn-on (the pi equation is stiff
-        # and the run slow): constant gamma3 has c_s^2 = 1.9e5 at its turn-on 0.01 (15x the GR run time), linear
+        # and the run slow): constant gamma3 has c_s^2 = 2.1e5 at the turn-on 0.01 (15x the GR run time), linear
         # gamma3 5.3e2 (1.5x)
         code = (
             "import camb, sys\n"
-            "for model in ('2_PEFT_gamma3_const_1', '2_PEFT_gamma3_lin_2'):\n"
-            f"    ini = {self.tmp!r} + '/stiff_' + model + '.ini'\n"
+            "for model, extra in (('2_PEFT_gamma3_powerH', 'PureEFTmodelGamma3 = 1\\nEFTGamma30 = 0.5'),\n"
+            "                     ('2_PEFT_gamma3_powerH', 'PureEFTmodelGamma3 = 2\\nEFTGamma30 = 0.1')):\n"
+            f"    ini = {self.tmp!r} + '/stiff_' + extra[-3:] + '.ini'\n"
             "    text = 'DEFAULT(' + " + repr(PARAMS) + " + '/' + model + '.ini)\\nfeedback_level = 1\\n'\n"
+            "    text += 'EFTCAMB_turn_on_time = 1e-2\\n' + extra + '\\n'\n"
             "    open(ini, 'w').write(text)\n"
             "    cp = camb.read_ini(ini)\n"
             "    print('MODEL', model, flush=True)\n"
@@ -362,7 +379,7 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr[-500:])
         blocks = r.stdout.split("MODEL ")[1:]
         self.assertEqual(len(blocks), 2)
-        warning = "large scalar sound speed after the turn-on: c_s^2 = 1.894E+05 at a = 1.001E-02"
+        warning = "large scalar sound speed after the turn-on: c_s^2 = 2.144E+05 at a = 1.001E-02"
         self.assertIn(warning, blocks[0])
         self.assertNotIn("large scalar sound speed", blocks[1])
 
@@ -376,9 +393,9 @@ class EFTCAMBTest(unittest.TestCase):
             "EFT_ghost_math_stability = F\nEFT_ghost_stability = T\nEFT_gradient_stability = T\nEFTCAMB_skip_RGR = T\n"
             "EFTCAMB_turn_on_time = 0.65\nEFTCAMB_stability_time = 0.65"
         )
-        self.assertGreater(camb.get_results(self.read("2_PEFT_gamma5_exp_2", extra)).get_sigma8_0(), 0)
+        self.assertGreater(camb.get_results(self.read("2_PEFT_gamma5_exp", extra)).get_sigma8_0(), 0)
         with self.assertRaisesRegex(CAMBError, "theory unstable"):
-            camb.get_results(self.read("2_PEFT_gamma5_exp_2", extra.replace("0.65", "0.5")))
+            camb.get_results(self.read("2_PEFT_gamma5_exp", extra.replace("0.65", "0.5")))
 
     def test_mass_math_deprecated(self):
         # EFT_mass_math_stability is kept as it is (it rejects healthy models: K-mimic here) and warns at feedback >= 1
@@ -386,7 +403,7 @@ class EFTCAMBTest(unittest.TestCase):
             "import camb, sys\n"
             "for extra in ('EFT_mass_math_stability = T', 'EFT_mass_math_stability = F'):\n"
             f"    ini = {self.tmp!r} + '/mathmass_' + extra[-1] + '.ini'\n"
-            "    open(ini, 'w').write('DEFAULT(' + " + repr(PARAMS) + " + '/5_Kmimic_1.ini)\\n' + extra + '\\n')\n"
+            "    open(ini, 'w').write('DEFAULT(' + " + repr(PARAMS) + " + '/5_KMIMIC.ini)\\n' + extra + '\\n')\n"
             "    print('CASE', extra, flush=True)\n"
             "    try:\n"
             "        camb.get_background(camb.read_ini(ini))\n"
@@ -419,7 +436,7 @@ class EFTCAMBTest(unittest.TestCase):
             "Designer3p1modelrho1N = 0\nDesigner3p1modelrho2 = 1\nDesigner3p1rho20 = 1.e-4\n"
             "EFT_ghost_stability = F\nEFT_gradient_stability = F"
         )
-        cp = self.read("2_PEFT_wDE_wCDM_1", model)
+        cp = self.read("2_PEFT_wDE_wCDM_noOmega", model)
         res = camb.get_results(cp)
         h0 = res.Params.H0 / 299792.458
         e = cp.EFTCAMB.get_scale_evolution(res, [0.05], [0.1, 0.5, 0.9])[1][0]
@@ -428,7 +445,7 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertTrue(np.all(parts > 0))
         np.testing.assert_array_less(np.abs(braiding), 1e-10 * parts)
         tt = res.get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"][2:601, 0]
-        tt_gr = camb.get_results(self.read("1_EFT_GR")).get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"]
+        tt_gr = camb.get_results(self.read("1_GR")).get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"]
         np.testing.assert_allclose(tt, tt_gr[2:601, 0], rtol=1e-3)
 
     def test_beyond_horndeski_massive_nu(self):
@@ -438,7 +455,7 @@ class EFTCAMBTest(unittest.TestCase):
             "EFTflag = 4\nFullMappingEFTmodel = 5\nBeyond_Horndeski_x10 = -0.1\nBeyond_Horndeski_x30 = 1.0\n"
             "Beyond_Horndeski_x40 = 1.0\nEFTCAMB_stability_threshold = 0.0"
         )
-        cp = self.read("2_PEFT_wDE_wCDM_1", model)
+        cp = self.read("2_PEFT_wDE_wCDM_noOmega", model)
         self.assertGreater(cp.omnuh2, 0.005)
         res = camb.get_results(cp)
         self.assertAlmostEqual(res.hubble_parameter(0.0) / cp.H0, 1, delta=1e-5)
@@ -456,7 +473,7 @@ class EFTCAMBTest(unittest.TestCase):
                     f"EFTflag = 4\nFullMappingEFTmodel = 5\nBeyond_Horndeski_x10 = {x10}\nBeyond_Horndeski_x30 = 1.0\n"
                     f"Beyond_Horndeski_x40 = {x40}\nEFTCAMB_stability_threshold = 0.0"
                 )
-                cp = self.read("2_PEFT_wDE_wCDM_1", model)
+                cp = self.read("2_PEFT_wDE_wCDM_noOmega", model)
                 res = camb.get_results(cp)
                 a = np.array([1e-4, 1e-2, 0.5, 1.0])
                 h_eft = cp.EFTCAMB.get_eft_functions(res, a)[1]["adotoa"]
@@ -468,7 +485,7 @@ class EFTCAMBTest(unittest.TestCase):
         # Hdotdotdot 1-4x, EFTGamma2PPP up to 9%. Against central differences of the next lower derivative (the
         # Lambda fields are a^2-weighted: a^2 Lambda'' = d(a^2 Lambda')/dtau - 2 Hc a^2 Lambda'):
         model = "EFTflag = 4\nFullMappingEFTmodel = 5\nBeyond_Horndeski_x10 = -0.1\nBeyond_Horndeski_x30 = 1.0\n"
-        cp = self.read("2_PEFT_wDE_wCDM_1", model + "Beyond_Horndeski_x40 = 0.0\nEFTCAMB_skip_stability = T")
+        cp = self.read("2_PEFT_wDE_wCDM_noOmega", model + "Beyond_Horndeski_x40 = 0.0\nEFTCAMB_skip_stability = T")
         bg = camb.get_background(cp)
         names = ("adotoa", "Hdotdot", "Hdotdotdot", "EFTLambdadot", "EFTLambdadotdot", "EFTGamma2PP", "EFTGamma2PPP")
         for a0 in (0.3, 0.7, 0.95):
@@ -489,9 +506,9 @@ class EFTCAMBTest(unittest.TestCase):
         # exponents made d ln c/d ln a jump from +1.0 to -1.5 at a_s; a failed integration is named
         model = "EFTflag = 4\nFullMappingEFTmodel = 5\nBeyond_Horndeski_x10 = -0.1\nBeyond_Horndeski_x30 = 1.0\n"
         model += "EFTCAMB_stability_threshold = 0.0\nBeyond_Horndeski_x40 = "
-        cp = self.read("2_PEFT_wDE_wCDM_1", model + "1.0\nomch2 = 0.35")
+        cp = self.read("2_PEFT_wDE_wCDM_noOmega", model + "1.0\nomch2 = 0.35")
         self.assertAlmostEqual(camb.get_results(cp).hubble_parameter(0.0) / cp.H0, 1, delta=1e-5)
-        cp = self.read("2_PEFT_wDE_wCDM_1", model + "0.0")
+        cp = self.read("2_PEFT_wDE_wCDM_noOmega", model + "0.0")
         bg = camb.get_background(cp)
         a = np.array([0.95, 1.05]) / (1.5e5 + 1)
         h = 0.01
@@ -499,7 +516,7 @@ class EFTCAMBTest(unittest.TestCase):
         slope = np.log(c[1] / c[0]) / (2 * h)
         self.assertAlmostEqual(slope[0], slope[1], delta=1e-2)
         with self.assertRaisesRegex(CAMBError, "Beyond Horndeski background integration failed"):
-            camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model + "-100.0"))
+            camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega", model + "-100.0"))
 
     def test_ade_flatness(self):
         # ADE closes flatness with the continuity integral for the input p (the p = 1 closed form gave H(z = 0) 2.5% off
@@ -510,14 +527,14 @@ class EFTCAMBTest(unittest.TestCase):
             "",
         ):
             with self.subTest(extra=extra):
-                cp = self.read("5_ADE_1", extra)
+                cp = self.read("5_ADE_cs1", extra)
                 self.assertAlmostEqual(camb.get_background(cp).hubble_parameter(0.0) / cp.H0, 1, delta=1e-9)
 
     def test_ade_sound_speed(self):
         # ADE evaluates 1 + w directly: 1 + (w - 1) rounded to exactly 0 deep before a_c, so c = gamma1 = 0 while c' and
         # Lambda' were not, and this c_s^2 != 1 model was refused as having no pi kinetic term
         a = np.logspace(-8, -6, 5)
-        cp = self.read("5_ADE_1", "cs2 = 0.86\nwf = 0.87\nLog_ac = -3.52\nf_ac = 0.086\np = 0.5")
+        cp = self.read("5_ADE_cs1", "cs2 = 0.86\nwf = 0.87\nLog_ac = -3.52\nf_ac = 0.086\np = 0.5")
         res = camb.get_results(cp)
         ev = cp.EFTCAMB.get_scale_evolution(res, [0.05], a)[1][0]
         c, gamma1 = np.array(ev["EFTc"]), np.array(ev["EFTGamma1V"])
@@ -536,15 +553,15 @@ class EFTCAMBTest(unittest.TestCase):
             ("Log_ac = 0.5", "Log_ac > 0"),
         ):
             with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, message):
-                camb.get_background(self.read("5_ADE_1", extra))
-        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1")).get_sigma8_0()
-        ade = camb.get_results(self.read("5_ADE_1", "f_ac = 0.0")).get_sigma8_0()
+                camb.get_background(self.read("5_ADE_cs1", extra))
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM")).get_sigma8_0()
+        ade = camb.get_results(self.read("5_ADE_cs1", "f_ac = 0.0")).get_sigma8_0()
         self.assertAlmostEqual(ade / lcdm, 1, delta=1e-8)
 
     def test_ade_turn_on(self):
         # the return to GR compares d gamma_i/d ln a with the threshold: the raw d gamma1/da = 1e-8 switched this ADE
         # (arXiv:1905.12618 Table I) on at a = 7.3e-9, where gamma1 = 1e-17
-        cp = self.read("5_ADE_1", "cs2 = 0.86\nwf = 0.87\nLog_ac = -3.52\nf_ac = 0.086\np = 0.5")
+        cp = self.read("5_ADE_cs1", "cs2 = 0.86\nwf = 0.87\nLog_ac = -3.52\nf_ac = 0.086\np = 0.5")
         bg = camb.get_background(cp)
         self.assertGreater(bg.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1e-7)
 
@@ -554,19 +571,21 @@ class EFTCAMBTest(unittest.TestCase):
         # from the same model switched on at 1e-8 (no samples there) by 2.4e-4 in TT (l = 116)
         cls = {}
         for skip in ("F", "T"):
-            res = camb.get_results(self.read("5_quint_exponential", f"EFTCAMB_skip_RGR = {skip}"))
+            res = camb.get_results(
+                self.read("5_QUINT_exponential", f"EFTCAMB_skip_RGR = {skip}\nEFTCAMB_turn_on_time = 1e-8")
+            )
             self.assertEqual(res.Params.EFTCAMB.EFTCAMB_turn_on_from_RGR, skip == "F")
             cls[skip] = res.get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"][2:601, :2]
         np.testing.assert_allclose(cls["F"], cls["T"], rtol=5e-6)
         # a model that is not GR at the requested turn-on keeps the samples
-        res = camb.get_background(self.read("2_PEFT_Omega_const_1"))
+        res = camb.get_background(self.read("2_PEFT_Omega_const"))
         self.assertFalse(res.Params.EFTCAMB.EFTCAMB_turn_on_from_RGR)
 
     def test_ic_pidot_attractor(self):
         # the type-1 initial pi' is the time derivative of the attractor -H0 E/(C + k^2 D1 + k^4 D2) (arXiv:1405.3590),
         # with E' for every model: E' = 0 whenever a gamma_i != 0 gave pi' = -4x (RPH) and ~0 (Horava) that derivative
         eps = np.array([1e-6, 2e-6, 3e-6])
-        for model in ("3_RPH_KT_OmegaDE_1", "5_Horava_eta_3"):
+        for model in ("3_RPH_KT_ODE", "5_HORAVA_eta_weak"):
             cp = self.read(model)
             res = camb.get_results(cp)
             h0 = cp.H0 / 299792.458  # H0 in 1/Mpc
@@ -585,19 +604,19 @@ class EFTCAMBTest(unittest.TestCase):
         # scalar dominated (Omega_phi(a_ini) = 1: no radiation or matter era)
         sigma8 = []
         for drag in ("T", "F"):
-            cp = self.read("5_quint_quadratic", f"p = 1.0\ndrag_initial_conditions = {drag}")
+            cp = self.read("5_QUINT_quadratic", f"p = 1.0\ndrag_initial_conditions = {drag}")
             res = camb.get_results(cp)
             self.assertAlmostEqual(res.hubble_parameter(0) / cp.H0, 1, delta=1e-6)
             sigma8.append(res.get_sigma8_0())
         self.assertAlmostEqual(sigma8[0] / sigma8[1], 1, delta=1e-7)
         with self.assertRaisesRegex(CAMBError, "background solver failed"):
-            camb.get_results(self.read("5_quint_exponential", "EFT_lambda = 2.2"))
+            camb.get_results(self.read("5_QUINT_exponential", "EFT_lambda = 2.5"))
 
     def test_evolution_higher_derivatives(self):
         # get_scale_evolution computes the higher derivatives before the mass eigenvalues, as the stability check does:
         # for full models they were 0 there (EFTcdotdot, EFTLambdadotdot) and Hdotdotdot was 3x off at a = 0.5
         a = np.array([0.02, 0.1, 0.5])
-        cp = self.read("5_quint_exponential")
+        cp = self.read("5_QUINT_exponential")
         res = camb.get_results(cp)
         ev = cp.EFTCAMB.get_scale_evolution(res, [0.05], a)[1][0]
         eft = cp.EFTCAMB.get_eft_functions(res, a)[1]
@@ -608,11 +627,11 @@ class EFTCAMBTest(unittest.TestCase):
     def test_quintessence_lcdm_point(self):
         # a constant potential with V0 = Omega_v/(1 - Om_c - Om_b - Om_nu) (the potential unit) is LCDM: the a^2-weighted
         # Lambda table switched it on at a = 0.17, where it was refused (no pi kinetic term); it is never switched on now
-        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1"))
-        cp = self.read("5_quint_quadratic")
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM"))
+        cp = self.read("5_QUINT_quadratic")
         v0 = lcdm.get_Omega("de") / (1 - (cp.omch2 + cp.ombh2 + cp.omnuh2) / (cp.H0 / 100) ** 2)
         extra = f"potential_model = 1\nV0 = {float(v0)!r}\ndrag_initial_conditions = F\nphidot_ini = 0.0"
-        res = camb.get_results(self.read("5_quint_quadratic", extra))
+        res = camb.get_results(self.read("5_QUINT_quadratic", extra))
         self.assertGreater(res.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1)
         self.assertAlmostEqual(res.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=1e-10)
 
@@ -621,7 +640,7 @@ class EFTCAMBTest(unittest.TestCase):
         # solver noise, and EFTcdot/(H EFTc) = 38 at a = 1e-6 while c grew as a^4. The cache holds a^2 c and a^2 c'.
         a = np.array([1e-7, 1e-6, 1e-5, 1e-4])
         h = 0.05
-        cp = self.read("5_quint_exponential")
+        cp = self.read("5_QUINT_exponential")
         bg = camb.get_background(cp)
         f = cp.EFTCAMB.get_eft_functions(bg, a)[1]
         slope = np.array(f["EFTcdot"]) / (np.array(f["adotoa"]) * np.array(f["EFTc"]))
@@ -633,31 +652,32 @@ class EFTCAMBTest(unittest.TestCase):
         # the initial conditions are the radiation scaling point, which exists only if 4/3 + 2 A (beta1 - 4 lambda/3) >= 0:
         # A = 0.1 gave NaN initial conditions and 'Scaling Cubic background is NaN'
         with self.assertRaisesRegex(CAMBError, "radiation scaling point does not exist"):
-            camb.get_background(self.read("5_scg", "Scaling_Cubic_A = 0.1"))
+            camb.get_background(self.read("5_SCG", "Scaling_Cubic_A = 0.1"))
 
     def test_scaling_cubic_shooting(self):
         # the y2_i bracket expands until Omega_DE is overshot, and there is no Omega_v >= 0.3 cut: these were refused
         for extra in ("Scaling_Cubic_beta2 = 3.0", "model_background_a_ini = 1e-5", "omch2 = 0.33", "hubble = 99.0"):
             with self.subTest(extra=extra):
-                cp = self.read("5_scg", extra)
+                cp = self.read("5_SCG", extra)
                 self.assertAlmostEqual(camb.get_results(cp).hubble_parameter(0) / cp.H0, 1, delta=1e-5)
 
     def test_scaling_cubic_early_background(self):
-        # the Scaling Cubic background starts at a = 1e-10: it started at 6.7e-6, after the 1e-8 turn-on of 5_scg, and
-        # was frozen there (gamma2' 4.2e-4 off d gamma2/da at a = 1e-6). A turn-on before model_background_a_ini warns.
+        # the Scaling Cubic background starts at a = 1e-10: it started at 6.7e-6, after the 1e-8 turn-on of the old
+        # test ini, and was frozen there (gamma2' 4.2e-4 off d gamma2/da at a = 1e-6). A turn-on before
+        # model_background_a_ini warns (5_SCG turns on at 1e-6).
         a, h = np.array([1e-8, 1e-6]), 1e-3
-        cp = self.read("5_scg")
+        cp = self.read("5_SCG")
         bg = camb.get_background(cp)
         g2 = [np.array(cp.EFTCAMB.get_eft_functions(bg, a * np.exp(s * h))[1]["EFTGamma2V"]) for s in (-1, 1)]
         g2p = np.array(cp.EFTCAMB.get_eft_functions(bg, a)[1]["EFTGamma2P"])
         np.testing.assert_allclose(g2p, (g2[1] - g2[0]) / (2 * h * a), rtol=1e-5)
         code = (
             "import camb\n"
-            "for extra in ('', 'model_background_a_ini = 1e-6'):\n"
+            "for extra in ('', 'model_background_a_ini = 1e-5'):\n"
             f"    ini = {self.tmp!r} + '/scg_start' + str(len(extra)) + '.ini'\n"
             "    open(ini, 'w').write('DEFAULT(' + "
             + repr(PARAMS)
-            + " + '/5_scg.ini)\\nfeedback_level = 1\\n' + extra)\n"
+            + " + '/5_SCG.ini)\\nfeedback_level = 1\\n' + extra)\n"
             "    print('MODEL', extra, flush=True)\n"
             "    camb.get_background(camb.read_ini(ini))\n"
         )
@@ -675,15 +695,15 @@ class EFTCAMBTest(unittest.TestCase):
     def test_kmouflage_parameter_domain(self):
         # K-mimic does not use alphaU (alphaU < 0 was refused); parameters for which the background is undefined (they
         # were refused through a NaN dtauda) are named, also without the priors, and so are the priors
-        sigma8 = camb.get_results(self.read("5_Kmimic_1")).get_sigma8_0()
-        self.assertEqual(camb.get_results(self.read("5_Kmimic_1", "alphaU = -0.1")).get_sigma8_0(), sigma8)
+        sigma8 = camb.get_results(self.read("5_KMIMIC")).get_sigma8_0()
+        self.assertEqual(camb.get_results(self.read("5_KMIMIC", "alphaU = -0.1")).get_sigma8_0(), sigma8)
         for model, extra, message in (
-            ("5_Kmouflage_3", "eps2_0 = 0.0\nEFT_additional_priors = F", r"undefined for eps2_0 = 0 \(the LCDM limit"),
-            ("5_Kmimic_1", "gammaA = 0.0", r"undefined for gammaA <= 0"),
-            ("5_Kmimic_1", "m = 1.0", r"undefined for m <= 1"),
-            ("5_Kmimic_1", "m = 1.2\neps2_0 = 0.1\ngammaA = 0.2", r"undefined for A\(a -> 0\) <= 0"),
-            ("5_Kmouflage_3", "alphaU = -0.1", r"prior not met: alphaU < 0"),
-            ("5_Kmimic_1", "eps2_0 = 0.1\ngammaA = 0.1", r"prior not met: gammaA < eps2_0/\(1 - eps2_0\)"),
+            ("5_KMOUFLAGE", "eps2_0 = 0.0\nEFT_additional_priors = F", r"undefined for eps2_0 = 0 \(the LCDM limit"),
+            ("5_KMIMIC", "gammaA = 0.0", r"undefined for gammaA <= 0"),
+            ("5_KMIMIC", "m = 1.0", r"undefined for m <= 1"),
+            ("5_KMIMIC", "m = 1.2\neps2_0 = 0.1\ngammaA = 0.2", r"undefined for A\(a -> 0\) <= 0"),
+            ("5_KMOUFLAGE", "alphaU = -0.1", r"prior not met: alphaU < 0"),
+            ("5_KMIMIC", "eps2_0 = 0.1\ngammaA = 0.1", r"prior not met: gammaA < eps2_0/\(1 - eps2_0\)"),
         ):
             with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, message):
                 camb.get_results(self.read(model, extra))
@@ -695,17 +715,19 @@ class EFTCAMBTest(unittest.TestCase):
         model += "EFT_additional_priors = T\nEFTCAMB_stability_threshold = 0.0\n"
         for s, q in (("0.05", "1.0"), ("1.0", "0.35")):
             with self.subTest(S=s, q=q):
-                cp = self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = {s}\nExtendedGalileon_q = {q}")
+                cp = self.read("base_params", f"{model}ExtendedGalileon_S = {s}\nExtendedGalileon_q = {q}")
                 self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
         with self.assertRaises(CAMBError):
-            camb.get_results(self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = 2.0\nExtendedGalileon_q = 1.0"))
+            camb.get_results(self.read("base_params", f"{model}ExtendedGalileon_S = 2.0\nExtendedGalileon_q = 1.0"))
         # the boundary q S = 1 is allowed: (0.1, 10) and (0.2, 5) were refused by roundoff (q S - 1 = 5.6e-17 with
         # fused multiply-add); q S = 1.1 is still refused
         for s, q in (("0.1", "10.0"), ("0.2", "5.0")):
             with self.subTest(S=s, q=q):
-                camb.get_background(self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = {s}\nExtendedGalileon_q = {q}"))
+                galileon = f"{model}ExtendedGalileon_S = {s}\nExtendedGalileon_q = {q}"
+                camb.get_background(self.read("base_params", galileon))
         with self.assertRaisesRegex(CAMBError, "theory unstable"):
-            camb.get_background(self.read("1_EFT_GR", f"{model}ExtendedGalileon_S = 0.11\nExtendedGalileon_q = 10.0"))
+            galileon = f"{model}ExtendedGalileon_S = 0.11\nExtendedGalileon_q = 10.0"
+            camb.get_background(self.read("base_params", galileon))
 
     def test_extended_galileon_tracker_cache(self):
         # the tracker solution is cached per thread, keyed on every input: another model evaluated just before at
@@ -721,7 +743,7 @@ class EFTCAMBTest(unittest.TestCase):
 
         model = "EFTflag = 4\nFullMappingEFTmodel = 7\nExtendedGalileon_q = 0.35\nmassless_neutrinos = 1.046\n"
         model += "nu_mass_eigenstates = 2\nmassive_neutrinos = 1 1\nExtendedGalileon_S = "
-        bg = camb.get_background(self.read("1_EFT_GR", model + "1.0\nnu_mass_fractions = 0.5 0.5"))
+        bg = camb.get_background(self.read("base_params", model + "1.0\nnu_mass_fractions = 0.5 0.5"))
         ref = eft_at(bg)
         for extra in (
             "1.5\nnu_mass_fractions = 0.5 0.5",
@@ -729,7 +751,7 @@ class EFTCAMBTest(unittest.TestCase):
             "1.0\nnu_mass_fractions = 0.5 0.5\nhubble = 67",
         ):
             with self.subTest(extra=extra):
-                other = eft_at(camb.get_background(self.read("1_EFT_GR", model + extra)))
+                other = eft_at(camb.get_background(self.read("base_params", model + extra)))
                 f = eft_at(bg)
                 self.assertNotEqual(other["adotoa"][0], ref["adotoa"][0])
                 self.assertEqual(f.tobytes(), ref.tobytes())
@@ -737,16 +759,16 @@ class EFTCAMBTest(unittest.TestCase):
     def test_omega_lambda_backgrounds(self):
         # OL gamma / OL alpha integrate the deviation from the LCDM solution of the same matter from a = 1 (no
         # shooting, no dust mode): the GR points (refused before) are the Pure EFT LCDM, and H(z = 0) = H0
-        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1")).get_sigma8_0()
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM")).get_sigma8_0()
         olg = "EFTflag = 2\nAltParEFTmodel = 2\nOLLambdamodel = 0\nOLGamma1model = 0\nOLGamma2model = 0\n"
         olg += "OLGamma3model = 0\nOLOmegamodel = "
         ola = "EFTflag = 2\nAltParEFTmodel = 3\nOLLambdamodel = 0\nOLmassPmodel = 0\nOLkineticitymodel = 0\n"
         ola += "OLbraidingmodel = 0\nOLtensormodel = 0"
         for extra in (olg + "0", ola):
             with self.subTest(extra=extra):
-                res = camb.get_results(self.read("2_PEFT_wDE_LCDM_1", extra))
+                res = camb.get_results(self.read("2_PEFT_wDE_LCDM", extra))
                 self.assertAlmostEqual(res.get_sigma8_0() / lcdm, 1, delta=1e-10)
-        cp = self.read("2_PEFT_wDE_LCDM_1", olg + "3\nOLOmega0 = 0.05\nOLOmegaExp = 1.0")
+        cp = self.read("2_PEFT_wDE_LCDM", olg + "3\nOLOmega0 = 0.05\nOLOmegaExp = 1.0")
         self.assertAlmostEqual(camb.get_results(cp).hubble_parameter(0) / cp.H0, 1, delta=1e-7)
 
     def test_omega_lambda_alpha_gamma3_derivatives(self):
@@ -756,7 +778,7 @@ class EFTCAMBTest(unittest.TestCase):
         ola += "OLbraidingmodel = 3\nOLtensormodel = 3\nOLmass0 = 0.1\nOLmassExp = 1.0\nOLkineticity0 = 1.0\n"
         ola += "OLkineticityExp = 1.0\nOLbraiding0 = 0.1\nOLbraidingExp = 1.0\nOLtensor0 = -0.05\nOLtensorExp = 3.0\n"
         ola += "EFTCAMB_skip_stability = T"
-        cp = self.read("2_PEFT_wDE_LCDM_1", ola)
+        cp = self.read("2_PEFT_wDE_LCDM", ola)
         a = np.array([0.3, 0.6, 0.9])
         f = cp.EFTCAMB.get_eft_functions(camb.get_background(cp), a)[1]
         np.testing.assert_allclose(f["EFTGamma3V"], 0.05 * a**3 + 0.005 * a**4, rtol=1e-12)
@@ -768,7 +790,7 @@ class EFTCAMBTest(unittest.TestCase):
         # designer f(R) OmegaPPPP(1) = -0.46 off the trend -0.92); a third derivative of a field whose second
         # derivative the model does not set is the second derivative of the first (EFTGamma2PPP was 0 for OL alpha and
         # Extended Galileon)
-        cp = self.read("4_Des_F_R_LCDM_1")
+        cp = self.read("4_FR_LCDM")
         f = cp.EFTCAMB.get_eft_functions(camb.get_background(cp), np.array([0.97, 0.98, 0.99, 1.0]))[1]
         for name in ("EFTOmegaPPPP", "EFTLambdadotdot"):
             v = np.array(f[name])
@@ -779,7 +801,7 @@ class EFTCAMBTest(unittest.TestCase):
         ola += "OLkineticityExp = 1.0\nOLbraiding0 = 0.1\nOLbraidingExp = 1.0\nOLtensor0 = -0.05\nOLtensorExp = 1.0\n"
         galileon = "EFTflag = 4\nFullMappingEFTmodel = 7\nExtendedGalileon_S = 0.05\nExtendedGalileon_q = 1.0\n"
         a, h = np.array([0.3, 0.6, 0.9]), 1e-3
-        for model, extra in (("2_PEFT_wDE_LCDM_1", ola), ("1_EFT_GR", galileon)):
+        for model, extra in (("2_PEFT_wDE_LCDM", ola), ("base_params", galileon)):
             with self.subTest(model=extra[:30]):
                 cp = self.read(model, extra + "EFTCAMB_skip_stability = T")
                 bg = camb.get_background(cp)
@@ -793,7 +815,7 @@ class EFTCAMBTest(unittest.TestCase):
         ola = "EFTflag = 2\nAltParEFTmodel = 3\nOLLambdamodel = 0\nOLmassPmodel = 3\nOLkineticitymodel = 3\n"
         ola += "OLbraidingmodel = 0\nOLtensormodel = 0\nOLmass0 = 0.05\nOLmassExp = 1.0\nOLkineticity0 = 1.0\n"
         ola += "OLkineticityExp = 1.0\nEFTCAMB_skip_stability = T"
-        cp = self.read("2_PEFT_wDE_LCDM_1", ola)
+        cp = self.read("2_PEFT_wDE_LCDM", ola)
         bg = camb.get_background(cp)
         a, h = np.array([1e-8, 1e-7, 2.5e-7, 1e-6]), 1e-3
         g1p = [np.array(cp.EFTCAMB.get_eft_functions(bg, a * (1 + s * h))[1]["EFTGamma1P"]) for s in (-1, 1)]
@@ -806,30 +828,30 @@ class EFTCAMBTest(unittest.TestCase):
         model = "PureEFTHorndeski = F\nPureEFTmodelGamma"
         for extra in ("3 = 1\nEFTGamma30 = -1e-9", "6 = 1\nEFTGamma60 = -1e-9"):
             with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, "theory unstable"):
-                camb.get_results(self.read("2_PEFT_wDE_LCDM_1", model + extra))
+                camb.get_results(self.read("2_PEFT_wDE_LCDM", model + extra))
         self.assertGreater(
-            camb.get_results(self.read("2_PEFT_wDE_LCDM_1", model + "3 = 1\nEFTGamma30 = -1e-13")).get_sigma8_0(), 0
+            camb.get_results(self.read("2_PEFT_wDE_LCDM", model + "3 = 1\nEFTGamma30 = -1e-13")).get_sigma8_0(), 0
         )
 
     def test_fR_gr_limit(self):
         # designer f(R) with B0 = 0 is LCDM: the return to GR never switches it on (the interpolation error of an
         # a^2-weighted Lambda table used to switch it on at a = 0.099, then the run failed)
-        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1"))
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM"))
         for b0 in ("0.0", "1.e-10"):
             with self.subTest(B0=b0):
-                res = camb.get_results(self.read("4_Des_F_R_LCDM_1", f"EFTB0 = {b0}"))
+                res = camb.get_results(self.read("4_FR_LCDM", f"EFTB0 = {b0}"))
                 self.assertGreater(res.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1)
                 self.assertAlmostEqual(res.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=1e-12)
 
     def test_fR_b0_shooting(self):
         # the B0 shooting must reproduce the requested B0 (relative 1e-4), or the model is refused: w = -0.45, B0 = 1
-        # returns B(1) = 1.001. w = -0.55, -0.8 with B0 = 1 (missed while the initial condition counted massive
-        # neutrinos as radiation: B(1) = 6.1e5 for -0.55) and w = -0.85, B0 = 1e-4 run
+        # is refused. w = -0.65, -0.8 with B0 = 1 (missed while the initial condition counted massive neutrinos as
+        # radiation) and w = -0.85, B0 = 1e-4 run
         with self.assertRaisesRegex(CAMBError, "background solver failed"):
-            camb.get_results(self.read("4_Des_F_R_wCDM_1", "EFTw0 = -0.45"))
-        for extra in ("EFTw0 = -0.55", "EFTw0 = -0.8", "EFTw0 = -0.85\nEFTB0 = 1e-4"):
+            camb.get_results(self.read("4_FR_wCDM_B1", "EFTw0 = -0.45"))
+        for extra in ("EFTw0 = -0.65", "EFTw0 = -0.8", "EFTw0 = -0.85\nEFTB0 = 1e-4"):
             with self.subTest(extra=extra):
-                self.assertGreater(camb.get_results(self.read("4_Des_F_R_wCDM_1", extra)).get_sigma8_0(), 0)
+                self.assertGreater(camb.get_results(self.read("4_FR_wCDM_B1", extra)).get_sigma8_0(), 0)
 
     def test_fR_massive_nu_ic(self):
         # the f(R) initial condition at a = 1e-8 counts massive neutrinos as radiation, as they are there: Omega(a) then
@@ -837,7 +859,7 @@ class EFTCAMBTest(unittest.TestCase):
         a = np.array([1e-8, 1.2e-8, 1.5e-8, 2e-8])
         slopes = []
         for extra in ("", "omnuh2 = 0\nmassless_neutrinos = 3.046\nmassive_neutrinos = 0"):
-            cp = self.read("4_Des_F_R_LCDM_1", extra)
+            cp = self.read("4_FR_LCDM", extra)
             f = cp.EFTCAMB.get_eft_functions(camb.get_background(cp), a)[1]
             slopes.append(a * np.array(f["EFTOmegaP"]) / np.array(f["EFTOmegaV"]))
         np.testing.assert_allclose(slopes[0], slopes[1], rtol=1e-5)
@@ -845,16 +867,16 @@ class EFTCAMBTest(unittest.TestCase):
     def test_fR_tachyon_prior(self):
         # the f(R) prior refuses f_RR < 0 (tachyonic scalaron) from EFTCAMB_stability_time on: B0 < 0 and a constant
         # w < -1 (B < 0 only before a = 3.4e-3 for w = -1.01, B0 = 1: it runs if the check starts later)
-        for model, extra in (("4_Des_F_R_LCDM_1", "EFTB0 = -1e-4"), ("4_Des_F_R_wCDM_1", "EFTw0 = -1.01")):
+        for model, extra in (("4_FR_LCDM", "EFTB0 = -1e-4"), ("4_FR_wCDM_B1", "EFTw0 = -1.01")):
             with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, r"f_RR < 0 \(tachyonic scalaron\)"):
                 camb.get_results(self.read(model, extra))
-        res = camb.get_results(self.read("4_Des_F_R_wCDM_1", "EFTw0 = -1.01\nEFTCAMB_stability_time = 1e-2"))
+        res = camb.get_results(self.read("4_FR_wCDM_B1", "EFTw0 = -1.01\nEFTCAMB_stability_time = 1e-2"))
         self.assertGreater(res.get_sigma8_0(), 0)
 
     def fR_mass(self, extra, a):
         """EFT_mu1 of designer f(R) from get_scale_evolution, and the scalaron mass ((1 + f_R)/f_RR - R)/3 from the same
         cache (f_RR = dOmega/dt / dR/dt, cosmic time)."""
-        cp = self.read("4_Des_F_R_LCDM_1", extra)
+        cp = self.read("4_FR_LCDM", extra)
         ev = cp.EFTCAMB.get_scale_evolution(camb.get_results(cp), [1e-3], a)[1][0]
         ev = {name: np.ravel(ev[name]) for name in ("adotoa", "Hdot", "Hdotdot", "EFTOmegaV", "EFTOmegaP", "EFT_mu1")}
         H = ev["adotoa"] / a
@@ -868,7 +890,7 @@ class EFTCAMBTest(unittest.TestCase):
         # were 0, Meff2 included, except for RPH and Horndeski, whose own values the same formulas reproduce). Pure EFT
         # Omega = a: Meff2 = 1 + a, alphaM = a/(1 + a), alphaB = a/(2 (1 + a)) (EFTCAMB convention), alphaT = 0
         a = np.array([0.1, 0.5, 0.9])
-        cp = self.read("2_PEFT_Omega_lin_1")
+        cp = self.read("2_PEFT_Omega_lin")
         res = camb.get_results(cp)
         for f in (cp.EFTCAMB.get_eft_functions(res, a)[1], cp.EFTCAMB.get_scale_evolution(res, [1e-2], a)[1][0]):
             af = np.ravel(f["a"])  # the evolution is sampled in conformal time: a to ~1e-10
@@ -884,7 +906,7 @@ class EFTCAMBTest(unittest.TestCase):
         a = np.array([0.5, 1.0])
         mu1, scalaron = self.fR_mass("EFTB0 = 1e-4", a)
         np.testing.assert_allclose(mu1, scalaron, rtol=1e-2)
-        cp = self.read("5_quint_exponential")
+        cp = self.read("5_QUINT_exponential")
         ev = cp.EFTCAMB.get_scale_evolution(camb.get_results(cp), [1e-3], a)[1][0]
         self.assertTrue(np.all(np.abs(np.ravel(ev["EFT_mu1"])) < 5 * (np.ravel(ev["adotoa"]) / a) ** 2))
 
@@ -892,10 +914,8 @@ class EFTCAMBTest(unittest.TestCase):
         # EFT_mass_stability rejects a tachyonic f(R) scalaron (B0 < 0 with the f_RR prior off: mu_1 ~ -4e7 H^2); it
         # was experimental and ignored, and the run then failed in the integrator. Healthy models still run.
         with self.assertRaisesRegex(CAMBError, "theory unstable"):
-            camb.get_results(
-                self.read("4_Des_F_R_LCDM_1", "EFTB0 = -1e-4\nEFT_additional_priors = F\nEFT_mass_stability = T")
-            )
-        for model, extra in (("4_Des_F_R_LCDM_1", "EFTB0 = 1e-4"), ("5_quint_exponential", "")):
+            camb.get_results(self.read("4_FR_LCDM", "EFTB0 = -1e-4\nEFT_additional_priors = F\nEFT_mass_stability = T"))
+        for model, extra in (("4_FR_LCDM", "EFTB0 = 1e-4"), ("5_QUINT_exponential", "")):
             with self.subTest(model=model):
                 cp = self.read(model, extra + "\nEFT_mass_stability = T")
                 self.assertGreater(camb.get_results(cp).get_sigma8_0(), 0)
@@ -910,13 +930,13 @@ class EFTCAMBTest(unittest.TestCase):
         np.testing.assert_allclose(mu1, scalaron, rtol=1e-4)
         hilltop = "n = 1\nm = 8\nEFT_mass_stability = T\nEFT_mass_stability_rate = 3\nEFT_mass_stability_method = "
         with self.assertRaisesRegex(CAMBError, "theory unstable"):
-            camb.get_results(self.read("5_quint_axion", hilltop + "1"))
-        self.assertGreater(camb.get_results(self.read("5_quint_axion", hilltop + "2")).get_sigma8_0(), 0)
+            camb.get_results(self.read("5_QUINT_axion", hilltop + "1"))
+        self.assertGreater(camb.get_results(self.read("5_QUINT_axion", hilltop + "2")).get_sigma8_0(), 0)
         tachyon = "EFTB0 = -1e-4\nEFT_additional_priors = F\nEFT_mass_stability = T\nEFT_mass_stability_method = 2"
         with self.assertRaisesRegex(CAMBError, "theory unstable"):
-            camb.get_results(self.read("4_Des_F_R_LCDM_1", tachyon))
+            camb.get_results(self.read("4_FR_LCDM", tachyon))
         with self.assertRaisesRegex(CAMBValueError, "invalid EFT_mass_stability_method"):
-            self.read("5_quint_axion", "EFT_mass_stability_method = 3")
+            self.read("5_QUINT_axion", "EFT_mass_stability_method = 3")
 
     def test_3p1_b22(self):
         # 3+1 designer gradient test with the corrected B22 (+ b3/2, missing in arXiv:2508.01378 App. D): this healthy
@@ -927,7 +947,7 @@ class EFTCAMBTest(unittest.TestCase):
             "Designer3p1sigma1_ODE0 = -0.5\nDesigner3p1modelrho1N = 0\nDesigner3p1modelrho2 = 1\nDesigner3p1rho20 = 1.0\n"
             "EFT_ghost_stability = F\nEFT_gradient_stability = F\nEFT_additional_priors = T"
         )
-        self.assertGreater(camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model)).get_sigma8_0(), 0)
+        self.assertGreater(camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega", model)).get_sigma8_0(), 0)
 
     def test_3p1_dust_ghost(self):
         # with CDM the 3+1 scalar is a ghost at every k for sigma1 > 1 (alpha_L < 0): the model's own test used the
@@ -939,8 +959,8 @@ class EFTCAMBTest(unittest.TestCase):
             "EFT_ghost_stability = F\nEFT_gradient_stability = F\nEFT_additional_priors = T\n"
         )
         with self.assertRaisesRegex(CAMBError, "theory unstable"):
-            camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model + "Designer3p1sigma1_ODE0 = 1.e-7"))
-        res = camb.get_results(self.read("2_PEFT_wDE_wCDM_1", model + "Designer3p1sigma1_ODE0 = -1.e-7"))
+            camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega", model + "Designer3p1sigma1_ODE0 = 1.e-7"))
+        res = camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega", model + "Designer3p1sigma1_ODE0 = -1.e-7"))
         self.assertGreater(res.get_sigma8_0(), 0)
 
     def test_horndeski_coefficient_identities(self):
@@ -1063,23 +1083,25 @@ class EFTCAMBTest(unittest.TestCase):
 
     def test_horndeski_pi_path_turning_point(self):
         # on the pi path (EFTCAMB_evolve_delta_phi = F) pi = delta_phi/phi' is singular where the Horndeski field velocity
-        # changes sign: 5_hdsk_TG_3 (a = 1.69e-3) ran with sigma8 1.77 instead of 0.903 and zero CMB C_l, even with the
-        # stability check on. It is refused whatever the stability flags; TG_2 (pi path, no crossing) still runs.
-        message = r"field velocity changes sign at a = 1\.692E-03"
+        # changes sign: the old TG_3 test point (a = 1.69e-3) ran with sigma8 1.77 instead of 0.903 and zero CMB C_l,
+        # even with the stability check on. It is refused whatever the stability flags (6_HDSK_TG_strong crosses at
+        # a = 1.75e-3); 6_HDSK_TG_pi (pi path, no crossing) still runs.
+        message = r"field velocity changes sign at a = 1\.750E-03"
         for extra in ("", "\nEFTCAMB_skip_stability = F"):
             with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, message):
-                camb.get_background(self.read("5_hdsk_TG_3", "EFTCAMB_evolve_delta_phi = F" + extra))
-        self.assertGreater(camb.get_background(self.read("5_hdsk_TG_2")).hubble_parameter(0), 0)
+                camb.get_background(self.read("6_HDSK_TG_strong", "EFTCAMB_evolve_delta_phi = F" + extra))
+        self.assertGreater(camb.get_background(self.read("6_HDSK_TG_pi")).hubble_parameter(0), 0)
 
     def test_horndeski_gr_limit(self):
         # LCDM written as Horndeski (G2 = const, G4 = 1/2): rho_DE + p_DE comes from the background equation without
-        # subtracting matter, so c and gamma1 are exactly 0 (they were noise up to 1e-4 and the pi path aborted)
-        model = "Horndeski_freefunc3_model = 0\nHorndeskic00 = 1.1653675624178562e-07\n"
+        # subtracting matter, so c and gamma1 are exactly 0 (they were noise up to 1e-4 and the pi path aborted).
+        # Without a pi kinetic term the stability check refuses it: the test ini that skips the checks
+        model = "Horndeski_freefunc3_model = 0\nHorndeskic00 = 1.012034e-07\n"
         model += "Horndeskic01 = 0\nEFTCAMB_skip_RGR = F"
         a = np.logspace(-4, 0, 9)
         sigma8 = {}
         for dphi in ("T", "F"):
-            cp = self.read("5_hdsk_TG_1", f"{model}\nEFTCAMB_evolve_delta_phi = {dphi}")
+            cp = self.read("6_HDSK_TG_skipchecks", f"{model}\nEFTCAMB_evolve_delta_phi = {dphi}")
             res = camb.get_results(cp)
             ev = cp.EFTCAMB.get_scale_evolution(res, [0.05], a)[1][0]
             self.assertFalse(np.any(ev["EFTc"]) or np.any(ev["EFTGamma1V"]))
@@ -1097,23 +1119,23 @@ class EFTCAMBTest(unittest.TestCase):
             ("lambda = -0.1", "Horava_lambda = -0.1"),
         ):
             with self.subTest(refused=label), self.assertRaises(CAMBError):
-                camb.get_results(self.read("5_Horava_eta_3", extra))
+                camb.get_results(self.read("5_HORAVA_eta_weak", extra))
         for label, extra in (
             ("GR point", "Horava_eta = 0\nHorava_lambda = 0\nHorava_xi = 0"),
             ("lambda = 0", "Horava_lambda = 0"),
         ):
             with self.subTest(accepted=label):
-                self.assertGreater(camb.get_results(self.read("5_Horava_eta_3", extra)).get_sigma8_0(), 0)
+                self.assertGreater(camb.get_results(self.read("5_HORAVA_eta_weak", extra)).get_sigma8_0(), 0)
 
     def test_parametrization_derivatives(self):
         # analytic derivatives returned by get_eft_functions vs finite differences of the lower ones
         checks = {
-            "2_PEFT_Omega_power_1": [
+            "2_PEFT_Omega_power": [
                 ("EFTOmegaV", "EFTOmegaP"),
                 ("EFTOmegaP", "EFTOmegaPP"),
                 ("EFTOmegaPP", "EFTOmegaPPP"),
             ],
-            "2_PEFT_gamma3_exp_1": [("EFTGamma3V", "EFTGamma3P"), ("EFTGamma3P", "EFTGamma3PP")],
+            "2_PEFT_gamma3_exp": [("EFTGamma3V", "EFTGamma3P"), ("EFTGamma3P", "EFTGamma3PP")],
         }
         a = np.linspace(0.2, 0.95, 401)
         for model, pairs in checks.items():
@@ -1126,7 +1148,7 @@ class EFTCAMBTest(unittest.TestCase):
                         fd, f[high][2:-2], rtol=1e-4, atol=1e-6 * np.max(np.abs(f[high])) + 1e-10
                     )
         # Hubble derivatives of a designer and a full-mapping model: dX/dtau = a adotoa dX/da
-        for model in ("4_Des_F_R_LCDM_1", "5_quint_exponential"):
+        for model in ("4_FR_LCDM", "5_QUINT_exponential"):
             cp = self.read(model)
             _, f = cp.EFTCAMB.get_eft_functions(camb.get_results(cp), a)
             for low, high in (("adotoa", "Hdot"), ("Hdot", "Hdotdot"), ("Hdotdot", "Hdotdotdot")):
@@ -1146,14 +1168,14 @@ class EFTCAMBTest(unittest.TestCase):
                 cp, {"EFTflag": 1, "PureEFTmodel": 1, "EFTCAMB_turn_on_time": -0.1}, print_header=False
             )
         with self.assertRaises(CAMBValueError):
-            camb.read_ini(self.fast_ini("2_PEFT_Omega_const_1", "EFTOmega0 = 0.0l"))
+            camb.read_ini(self.fast_ini("2_PEFT_Omega_const", "EFTOmega0 = 0.0l"))
         with self.assertRaises(CAMBError):
-            camb.get_results(self.read("5_Kmouflage_1", "massive_neutrinos = 1\nomnuh2 = 0.0006"))
+            camb.get_results(self.read("5_KMOUFLAGE", "massive_neutrinos = 1\nomnuh2 = 0.0006"))
         with self.assertRaises(CAMBError):
-            camb.get_results(self.read("2_PEFT_Omega_const_1", "omk = -0.05"))
+            camb.get_results(self.read("2_PEFT_Omega_const", "omk = -0.05"))
         with self.assertRaises(CAMBError):
-            camb.get_results(self.read("2_PEFT_Omega_const_1", "EFTCAMB_evolve_metric_h = T"))
-        cp = self.read("2_PEFT_wDE_wCDM_1")
+            camb.get_results(self.read("2_PEFT_Omega_const", "EFTCAMB_evolve_metric_h = T"))
+        cp = self.read("2_PEFT_wDE_wCDM_noOmega")
         with self.assertRaises(CAMBValueError):
             cp.set_dark_energy(w=-0.7, dark_energy_model="ppf")
         # GR results have no EFTCAMB model to evaluate
@@ -1161,11 +1183,11 @@ class EFTCAMBTest(unittest.TestCase):
         with self.assertRaises(CAMBValueError):
             res.Params.EFTCAMB.get_eft_functions(res, [0.5, 1.0])
         # the interpreter is still usable
-        self.assertGreater(camb.get_results(self.read("2_PEFT_Omega_const_1")).get_sigma8_0(), 0)
+        self.assertGreater(camb.get_results(self.read("2_PEFT_Omega_const")).get_sigma8_0(), 0)
 
     def test_beyond_today_refused(self):
         # EFT results stop today (a = 1): requests with z < 0, a > 1 or eta > tau0 are refused
-        res = camb.get_results(self.read("2_PEFT_wDE_wCDM_1"))
+        res = camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega"))
         eft = res.Params.EFTCAMB
         requests = {
             "hubble_parameter": lambda: res.hubble_parameter(-0.1),
@@ -1201,7 +1223,7 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertGreater(camb.get_background(camb.set_params(H0=67.0)).hubble_parameter(-0.1), 0)
         # a = 1 through conformal times: conformal_time(z = 0) of RPH with 6000-point tables (the former default)
         # exceeds tau0 by ~2e-8 for this array
-        cp = self.read("3_RPH_KT_lin_1", "model_background_num_points = 6000")
+        cp = self.read("3_RPH_KT_lin", "model_background_num_points = 6000")
         res = camb.get_results(cp)
         a = np.array([0.05, 0.1, 0.3, 0.6, 1.0])
         self.assertGreater(res.conformal_time(1 / a - 1)[-1], res.tau0)
@@ -1210,7 +1232,7 @@ class EFTCAMBTest(unittest.TestCase):
 
     def test_wDE_prior(self):
         # the phenomenological prior w_DE <= -1/3 is off by default and refuses with its own message when selected
-        for model in ("2_PEFT_wDE_wCDM_1", "4_Des_mc5e_wCDM_1"):
+        for model in ("2_PEFT_wDE_wCDM_noOmega", "4_MC_wCDM"):
             with self.subTest(model=model):
                 cp = self.read(model, "EFTw0 = -0.3")
                 self.assertFalse(cp.EFTCAMB.EFT_wDE_prior)
@@ -1238,15 +1260,15 @@ class EFTCAMBTest(unittest.TestCase):
         # a pi field with no kinetic term (A = 0) and a sourced equation is refused, not set to zero
         no_kinetic = "PureEFTmodelGamma1 = 0"
         with self.assertRaisesRegex(CAMBError, r"no kinetic term \(A = 0\) at a ="):
-            camb.get_results(self.read("2_PEFT_gamma3_lin_1", no_kinetic))
+            camb.get_results(self.read("2_PEFT_gamma3_powerH", no_kinetic))
         # without the stability check the evolution refuses it
         with self.assertRaisesRegex(CAMBError, r"no kinetic term \(A = 0\) but a sourced equation"):
-            camb.get_results(self.read("2_PEFT_gamma3_lin_1", no_kinetic + "\nEFTCAMB_skip_stability = T"))
+            camb.get_results(self.read("2_PEFT_gamma3_powerH", no_kinetic + "\nEFTCAMB_skip_stability = T"))
         # with a kinetic term the model runs
-        self.assertGreater(camb.get_results(self.read("2_PEFT_gamma3_lin_1")).get_sigma8_0(), 0)
+        self.assertGreater(camb.get_results(self.read("2_PEFT_gamma3_powerH")).get_sigma8_0(), 0)
         # GR has no pi kinetic term either, and an empty pi equation: pi = 0 (here evolved, skipping the return to GR)
-        sigma8 = camb.get_results(self.read("2_PEFT_wDE_LCDM_1")).get_sigma8_0()
-        sigma8_evolved = camb.get_results(self.read("2_PEFT_wDE_LCDM_1", "EFTCAMB_skip_RGR = T")).get_sigma8_0()
+        sigma8 = camb.get_results(self.read("2_PEFT_wDE_LCDM")).get_sigma8_0()
+        sigma8_evolved = camb.get_results(self.read("2_PEFT_wDE_LCDM", "EFTCAMB_skip_RGR = T")).get_sigma8_0()
         self.assertAlmostEqual(sigma8_evolved / sigma8, 1, delta=1e-4)
 
     def test_rph_alphaM_feedback(self):
@@ -1255,7 +1277,7 @@ class EFTCAMBTest(unittest.TestCase):
         # (at the default feedback level: the fast settings switch the feedback off)
         ini = os.path.join(self.tmp, "rph_alphaM.ini")
         with open(ini, "w") as f:
-            f.write(f"DEFAULT({os.path.join(PARAMS, '3_RPH_MB_OmegaDE_1.ini')})\n")
+            f.write(f"DEFAULT({os.path.join(PARAMS, '3_RPH_MK_ODE.ini')})\n")
             f.write("RPHalphaMmodel = 1\nRPHalphaM0 = 0.01\nRPHalphaMmodel_ODE = 0\n")
         code = (
             f"import camb; cp = camb.read_ini({ini!r}); cp.EFTCAMB.feedback(print_params=True); print('process alive')"
@@ -1276,24 +1298,20 @@ class EFTCAMBTest(unittest.TestCase):
         # RPH reads H, its derivatives and rho_DE from linearly interpolated tables: with 6000 points the GR point (all
         # alpha = 0, EFT never on) was off the Pure EFT LCDM by TT 9.8e-6, sigma8 1.9e-6; the 60000-point default 1e-7
         tt = lambda res: res.get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"][2:, 0]
-        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM_1"))
-        res = camb.get_results(self.read("3_RPH_KT_lin_1", "RPHkineticitymodel = 0\nRPHtensormodel = 0"))
+        lcdm = camb.get_results(self.read("2_PEFT_wDE_LCDM"))
+        res = camb.get_results(self.read("3_RPH_KT_lin", "RPHkineticitymodel = 0\nRPHtensormodel = 0"))
         self.assertGreater(res.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1)
         np.testing.assert_allclose(tt(res), tt(lcdm), rtol=1e-6)
         self.assertAlmostEqual(res.get_sigma8_0() / lcdm.get_sigma8_0(), 1, delta=2e-7)
 
     def test_rph_wde_normalisation(self):
-        # RPH with w_DE != -1: rho_DE(a = 1) = 3 H0^2 Omega_DE, so H(z = 0) = H0, with both integration branches
+        # RPH with w_DE != -1: rho_DE(a = 1) = 3 H0^2 Omega_DE, so H(z = 0) = H0
         z = np.array([0.0, 0.5, 2.0, 10.0])
         for wde in ("RPHwDE = 1\nRPHw0 = -0.9", "RPHwDE = 2\nRPHw0 = -0.9\nRPHwa = 0.1"):
             with self.subTest(wde=wde):
-                cp = self.read("3_RPH_MK_const_1", wde)
+                cp = self.read("3_RPH_MK_const", wde)
                 h = camb.get_background(cp).hubble_parameter(z)
                 self.assertAlmostEqual(h[0] / cp.H0, 1, delta=1e-9)
-                h_today = camb.get_background(
-                    self.read("3_RPH_MK_const_1", wde + "\nRPHintegratefromtoday = T")
-                ).hubble_parameter(z)
-                np.testing.assert_allclose(h, h_today, rtol=1e-9)
 
     def theta_ini(self, model, theta_line):
         # the model ini with hubble removed from its DEFAULT chain and a theta input instead
@@ -1322,16 +1340,16 @@ class EFTCAMBTest(unittest.TestCase):
             with self.subTest(shooting=extra):
                 for key in ("thetastar", "cosmomc_theta"):
                     with self.assertRaisesRegex(CAMBValueError, "H0 .* is set by the EFT background"):
-                        camb.read_ini(self.theta_ini("5_hdsk_TG_1", f"{extra}\n{key} = 0.0104"))
-                cp = self.read("5_hdsk_TG_1", f"EFTCAMB_feedback_level = 0\n{extra}")
+                        camb.read_ini(self.theta_ini("6_HDSK_TG_skipchecks", f"{extra}\n{key} = 0.0104"))
+                cp = self.read("6_HDSK_TG_skipchecks", f"EFTCAMB_feedback_level = 0\n{extra}")
                 with self.assertRaisesRegex(CAMBValueError, "set by the EFT background"):
                     cp.set_cosmology(H0=None, thetastar=0.0104, ombh2=cp.ombh2, omch2=cp.omch2)
                 with self.assertRaisesRegex(CAMBValueError, "set by the EFT background"):
                     cp.set_H0_for_theta(0.0104, cosmomc_approx=True)
         # other EFT models keep the theta -> H0 solve on both paths
-        cp = camb.read_ini(self.theta_ini("4_Des_F_R_LCDM_1", "thetastar = 0.0104"))
+        cp = camb.read_ini(self.theta_ini("4_FR_LCDM", "thetastar = 0.0104"))
         self.assertAlmostEqual(camb.get_background(cp).get_derived_params()["thetastar"] / 1.04, 1, delta=1e-5)
-        cp = self.read("4_Des_F_R_LCDM_1")
+        cp = self.read("4_FR_LCDM")
         cp.set_H0_for_theta(0.0104)
         self.assertAlmostEqual(camb.get_background(cp).get_derived_params()["thetastar"] / 1.04, 1, delta=1e-5)
 
@@ -1346,7 +1364,7 @@ class EFTCAMBTest(unittest.TestCase):
         cl_gr = camb.get_results(gr).get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"][2:]
         np.testing.assert_allclose(cl_gr[:, :3], cl_plain[:, :3], rtol=1e-10)
         # the shipped GR test model runs through EFTCAMB with EFTflag = 0
-        res = camb.get_results(self.read("1_EFT_GR"))
+        res = camb.get_results(self.read("1_GR"))
         self.assertEqual(res.Params.EFTCAMB.EFTflag, 0)
 
     def test_test_inis_keys_read(self):
