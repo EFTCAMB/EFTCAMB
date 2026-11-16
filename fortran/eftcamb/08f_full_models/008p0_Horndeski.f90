@@ -2297,8 +2297,8 @@
             call ThermalNuBackground%rho_P(a*params_cache%nu_masses(nu_i), grhonu, gpinu)
             grhonu_tot = grhonu_tot + grhormass_t*grhonu ! 8\pi G_N \rho_mnu a^2: massive neutrino background density
             gpinu_tot = gpinu_tot + grhormass_t*gpinu  ! 8\pi G_N P_mnu a^2   : massive neutrino background pressure
-            grhonudot = ThermalNuBackground%drho(a*params_cache%nu_masses(nu_i), adotoa)
-            grhonudot_tot = grhonudot_tot + grhormass_t*(grhonudot - 4._dl*adotoa*grhonu)
+            ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+            grhonudot_tot = grhonudot_tot - 3._dl*adotoa*grhormass_t*(grhonu + gpinu)
             gpinudot = ThermalNuBackground%pidot(a*params_cache%nu_masses(nu_i), adotoa, gpinu)
             gpinudot_tot = gpinudot_tot + grhormass_t*(gpinudot - 4._dl*adotoa*gpinu)
         end do
@@ -2489,8 +2489,8 @@
                 ! 8\pi G_N \rho_mnu a^2: massive neutrino background density
                 grhonu_tot = grhonu_tot + grhormass_t*grhonu
                 gpinu_tot = gpinu_tot + grhormass_t*gpinu  ! 8\pi G_N P_mnu a^2   : massive neutrino background pressure
-                grhonudot = ThermalNuBackground%drho(a*params_cache%nu_masses(nu_i), adotoa)
-                grhonudot_tot = grhonudot_tot + grhormass_t*(grhonudot - 4._dl*adotoa*grhonu)
+                ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+                grhonudot_tot = grhonudot_tot - 3._dl*adotoa*grhormass_t*(grhonu + gpinu)
                 gpinudot = ThermalNuBackground%pidot(a*params_cache%nu_masses(nu_i), adotoa, gpinu)
                 gpinudot_tot = gpinudot_tot + grhormass_t*(gpinudot - 4._dl*adotoa*gpinu)
                 gpinudotdot = &

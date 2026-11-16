@@ -820,9 +820,8 @@
             call ThermalNuBackground%rho_P(a*params_cache%nu_masses(nu_i), grhonu, gpinu)
             eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*grhonu
             eft_cache%gpinu_tot = eft_cache%gpinu_tot + grhormass_t*gpinu
-            eft_cache%grhonudot_tot = eft_cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(a*params_cache%nu_masses(nu_i), eft_cache%adotoa) - &
-                4._dl*eft_cache%adotoa*grhonu)
+            ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+            eft_cache%grhonudot_tot = eft_cache%grhonudot_tot - 3._dl*eft_cache%adotoa*grhormass_t*(grhonu + gpinu)
             eft_cache%gpinudot_tot = eft_cache%gpinudot_tot + &
                 grhormass_t*(ThermalNuBackground%pidot(a*params_cache%nu_masses(nu_i), eft_cache%adotoa, gpinu) - &
                 4._dl*eft_cache%adotoa*gpinu)
@@ -850,9 +849,8 @@
             call ThermalNuBackground%rho_P(a*params_cache%nu_masses(nu_i), grhonu, gpinu)
             eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*grhonu
             eft_cache%gpinu_tot = eft_cache%gpinu_tot + grhormass_t*gpinu
-            eft_cache%grhonudot_tot = eft_cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(a*params_cache%nu_masses(nu_i), eft_cache%adotoa) - &
-                4._dl*eft_cache%adotoa*grhonu)
+            ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+            eft_cache%grhonudot_tot = eft_cache%grhonudot_tot - 3._dl*eft_cache%adotoa*grhormass_t*(grhonu + gpinu)
             gpinudot = ThermalNuBackground%pidot(a*params_cache%nu_masses(nu_i), eft_cache%adotoa, gpinu)
             eft_cache%gpinudot_tot = eft_cache%gpinudot_tot + grhormass_t*(gpinudot &
                 - 4._dl*eft_cache%adotoa*gpinu)

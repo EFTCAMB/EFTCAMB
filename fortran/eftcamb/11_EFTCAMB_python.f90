@@ -873,8 +873,8 @@
                         cache%gpinu_tot = cache%gpinu_tot + grhormass_t*gpnu_i
                         cache%gpinudot_tot = cache%gpinudot_tot + &
                             grhormass_t*(ThermalNuBackground%pidot(am, adotoa, gpnu_i) - 4._dl*adotoa*gpnu_i)
-                        cache%grhonudot_tot = cache%grhonudot_tot + &
-                            grhormass_t*(ThermalNuBackground%drho(am, adotoa) - 4._dl*adotoa*grhonu_i)
+                        ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+                        cache%grhonudot_tot = cache%grhonudot_tot - 3._dl*adotoa*grhormass_t*(grhonu_i + gpnu_i)
                     end do
                 end if
                 cache%gpresdotm_t = -4._dl*adotoa*grhorad/3._dl + cache%gpinudot_tot

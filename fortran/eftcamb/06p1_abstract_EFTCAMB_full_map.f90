@@ -291,9 +291,8 @@
         do nu_i = 1, temp_par_cache%Nu_mass_eigenstates
             grhormass_t = temp_par_cache%grhormass(nu_i)/a2
             call ThermalNuBackground%rho_P(temp_a*temp_par_cache%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
-            temp_cache%grhonudot_tot = temp_cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(temp_a*temp_par_cache%nu_masses(nu_i), adotoa) - &
-                4._dl*adotoa*EFT_grhonu)
+            ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+            temp_cache%grhonudot_tot = temp_cache%grhonudot_tot - 3._dl*adotoa*grhormass_t*(EFT_grhonu + EFT_gpinu)
             temp_cache%gpinudot_tot = temp_cache%gpinudot_tot + &
                 grhormass_t*(ThermalNuBackground%pidot(temp_a*temp_par_cache%nu_masses(nu_i), adotoa, EFT_gpinu) - &
                 4._dl*adotoa*EFT_gpinu)

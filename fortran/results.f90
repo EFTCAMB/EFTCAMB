@@ -1563,8 +1563,8 @@
             am = a*this%nu_masses(nu_i)
             call ThermalNuBackground%rho_P(am, grhonu, gpinu)
             gpinudot = ThermalNuBackground%pidot(am, adotoa, gpinu)
-            cache%grhonudot_tot = cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(am, adotoa) - 4._dl*adotoa*grhonu)
+            ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+            cache%grhonudot_tot = cache%grhonudot_tot - 3._dl*adotoa*grhormass_t*(grhonu + gpinu)
             cache%gpinudot_tot = cache%gpinudot_tot + grhormass_t*(gpinudot - 4._dl*adotoa*gpinu)
             if (pass == 2) cache%gpinudotdot_tot = cache%gpinudotdot_tot - &
                 4._dl*adotoa*grhormass_t*(gpinudot - 4._dl*adotoa*gpinu) + &
