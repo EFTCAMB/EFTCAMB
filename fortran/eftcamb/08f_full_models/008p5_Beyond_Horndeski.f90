@@ -213,6 +213,7 @@
     real(dl) :: H2, H_0, grhom, grhorad, epsilon, h, w_DE, H2_LCDM
     integer  :: j, ind, i
     real(dl) :: grho_tot, Ptil, dPtil, ddPtil
+    real(dl) :: x1_lcdm(2), tol_lcdm(2)
     integer, parameter :: max_bisection_steps = 100
 
     grhom = params_cache%grhob + params_cache%grhoc
@@ -248,17 +249,44 @@
     if (self%LCDM_background .or. &
         self%bHor_x10*1.d-16 == -2._dl*OmegaDE_0/ &
         (OmegaRad_0/exp(self%x_initial)**4 + OmegaM_0/exp(self%x_initial)**3 + OmegaDE_0)) then
-        ! In this case x2=-1.5 x1 and then x1_i= -2 * Omega_DE_i
-        self%bHor_x10 = &
-            -2._dl*OmegaDE_0/(OmegaRad_0/exp(self%x_initial)**4 + OmegaM_0/exp(self%x_initial)**3 + OmegaDE_0)
-        self%bHor_x20 = -1.5*self%bHor_x10
+        ! In this case x2=-1.5 x1 and then x1_i= -2 * Omega_DE_i. Omega_DE_i takes every species at a_ini from
+        ! background_matter (the massive neutrinos, radiation-like there, were missing: H0 off by 5%), and the
+        ! amplitude is then shot on (secant) until Omega_DE today is recovered (H0 was off by 0.26% without them).
+        call self%background_matter(params_cache, exp(self%x_initial), grho_tot, Ptil, dPtil, ddPtil)
+        H2_LCDM = 3._dl*params_cache%h0_Mpc**2*OmegaDE_0
+        x1_lcdm(1) = -2._dl*H2_LCDM/(H2_LCDM + grho_tot)
+        self%bHor_x10 = x1_lcdm(1)
+        self%bHor_x20 = -1.5_dl*self%bHor_x10
+        if (.not. solved(tol_lcdm(1))) return
+        tol = tol_lcdm(1)
+        ! Omega_DE today scales almost linearly with the amplitude: first step x1/(1 - tol), then secant steps
+        x1_lcdm(2) = x1_lcdm(1)/(1._dl - tol_lcdm(1))
+        i = 1
+        do while (abs(tol) > 1.d-10)
+            self%bHor_x10 = x1_lcdm(2)
+            self%bHor_x20 = -1.5_dl*self%bHor_x10
+            if (.not. solved(tol_lcdm(2))) return
+            tol = tol_lcdm(2)
+            i = i + 1
+            if (abs(tol) <= 1.d-10) exit
+            if (i > max_bisection_steps .or. tol_lcdm(2) == tol_lcdm(1)) then
+                call GlobalError('EFTCAMB: the Beyond Horndeski LCDM initial conditions did not recover Omega_DE', &
+                    error_unsupported_params)
+                success = .false.
+                return
+            end if
+            x2_i = x1_lcdm(2) - tol_lcdm(2)*(x1_lcdm(2) - x1_lcdm(1))/(tol_lcdm(2) - tol_lcdm(1))
+            x1_lcdm(1) = x1_lcdm(2)
+            tol_lcdm(1) = tol_lcdm(2)
+            x1_lcdm(2) = x2_i
+        end do
         if (feedback_level > 0) then
-            write(*, *)  '   x1 initial   =   -2 *Omega_DE initial   =   ', self%bHor_x10
-            write(*, *)  '   x2 initial   =    3 *Omega_DE initial   =   ', self%bHor_x20
-            write(*, *)  '   x3 initial   =    0'
-            write(*, *)  '   x4 initial   =    0'
+            write(*, '(a,ES13.5)') '    x1 initial   = -2 Omega_DE initial = ', self%bHor_x10
+            write(*, '(a,ES13.5)') '    x2 initial   =  3 Omega_DE initial = ', self%bHor_x20
+            write(*, '(a)')        '    x3 initial   = 0'
+            write(*, '(a)')        '    x4 initial   = 0'
+            write(*, '(a,ES10.2,a,I3,a)') '    Omega_DE today recovered to ', abs(tol), ' (', i, ' background solutions)'
         end if
-        if (.not. solved(tol)) return
     else
         self%bHor_x20 = -1.5*self%bHor_x10*1.d-16
         x2_i = self%bHor_x20

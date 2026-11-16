@@ -544,6 +544,19 @@ class EFTCAMBTest(unittest.TestCase):
         with self.assertRaisesRegex(CAMBError, "Beyond Horndeski background integration failed"):
             camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega", model + "-100.0"))
 
+    def test_beyond_horndeski_lcdm(self):
+        # want_LCDM: x1 = -2 Omega_DE at a_ini with every species (massive neutrinos included), then shot on Omega_DE
+        # today. H(z = 0) missed H0 by 5% with massive neutrinos and by 0.26% without; with w_DE = -1 and c_s^2 = 0 the
+        # model is GR
+        for nu in ("0.0", "0.01"):
+            with self.subTest(omnuh2=nu):
+                cp = self.read("5_BH_LCDM", f"omnuh2 = {nu}\nIntTolBoost = 2")
+                res = camb.get_results(cp)
+                self.assertAlmostEqual(res.hubble_parameter(0.0) / cp.H0, 1, delta=1e-9)
+                gr = camb.get_results(self.read("5_BH_LCDM", f"omnuh2 = {nu}\nIntTolBoost = 2\nEFTflag = 0"))
+                cl, cl_gr = (r.get_cmb_power_spectra(CMB_unit="muK")["total"][2:500, :2] for r in (res, gr))
+                np.testing.assert_allclose(cl, cl_gr, rtol=2e-5)
+
     def test_ade_flatness(self):
         # ADE closes flatness with the continuity integral for the input p (the p = 1 closed form gave H(z = 0) 2.5% off
         # for p = 1/2, w_f = 0)
