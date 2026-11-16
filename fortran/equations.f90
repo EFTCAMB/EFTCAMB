@@ -1554,11 +1554,15 @@
     ! dgq = a^2 kappa q (heat flux)
     integer nu_i
     real(dl) grhormass_t, rhonu, qnu, clxnu, grhonu_t, gpnu_t, pnu
+    ! EFTCAMB MOD START: compatibility with massive neutrinos
+    real(dl) dpnu, pinu
+    ! EFTCAMB MOD END.
 
     ! EFTCAMB MOD START: compatibility with massive neutrinos
     if (present(dgp)) then
         dgp = 0._dl
     end if
+    dpnu = 0._dl
     ! EFTCAMB MOD END.
 
     do nu_i = 1, CP%Nu_mass_eigenstates
@@ -1570,9 +1574,21 @@
         if (EV%MassiveNuApprox(nu_i)) then
             clxnu = y(EV%nu_ix(nu_i))
             qnu = y(EV%nu_ix(nu_i) + 2)
+            ! EFTCAMB MOD START: compatibility with massive neutrinos: the approximate scheme evolves delta p/rho
+            dpnu = y(EV%nu_ix(nu_i) + 1)
+            ! EFTCAMB MOD END.
         else
             ! Integrate over q
-            call Nu_Integrate_L01(EV, y, a, nu_i, clxnu, qnu)
+            ! EFTCAMB MOD START: compatibility with massive neutrinos: the exact delta p (not (p/rho) delta rho)
+            if (present(dgp)) then
+                call Nu_Integrate_L012(EV, y, a, nu_i, clxnu, qnu, dpnu, pinu)
+                dpnu = dpnu/rhonu
+            else
+                call Nu_Integrate_L01(EV, y, a, nu_i, clxnu, qnu)
+            end if
+            ! Original code:
+            ! call Nu_Integrate_L01(EV, y, a, nu_i, clxnu, qnu)
+            ! EFTCAMB MOD END.
             ! clxnu_here = rhonu*clxnu, qnu_here = qnu*rhonu
             qnu = qnu/rhonu
             clxnu = clxnu/rhonu
@@ -1588,7 +1604,7 @@
 
         ! EFTCAMB MOD START: compatibility with massive neutrinos
         if (present(dgp)) then
-            dgp = dgp + gpnu_t*clxnu
+            dgp = dgp + grhonu_t*dpnu
         end if
         ! EFTCAMB MOD END.
 
