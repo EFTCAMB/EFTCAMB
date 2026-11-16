@@ -45,8 +45,9 @@ deviation from GR. A new test file should follow the same rules:
 - the turn-on is the latest decade at which TT, EE, TE/sqrt(TT EE) (l <= 1400), C_l^phiphi (l <= 400) and
   P(k <= 0.1/Mpc) change by at most 1e-4 against an earlier turn-on (1e-8, or later when the model background starts
   less than two decades before it), preferring a turn-on without EFTCAMB warnings;
-- the default stability checks are on. Beyond-GLPV models (gamma6, Horava, 3+1) switch the generic ghost and gradient
-  checks off, because the code has no conditions for them; 6_HDSK_TG_skipchecks tests the skip flags;
+- the default stability checks are on. Beyond GLPV the checks use the model's own ghost and gradient conditions
+  (Horava, 3+1); a beyond-GLPV model without them (gamma6) switches the ghost and gradient checks off;
+  6_HDSK_TG_skipchecks tests the skip flags;
 - the parameter point modifies gravity as much as the checks allow;
 - every output is finite and the spectra are positive: compare_legacy first runs ``python/check_spectra.py`` on the
   new results, since numdiff accepts nan against nan and zeros against zeros.

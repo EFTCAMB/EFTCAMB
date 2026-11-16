@@ -984,23 +984,43 @@ class EFTCAMBTest(unittest.TestCase):
             "EFTflag = 3\nDesignerEFTmodel = 3\nEFTwDE = 1\nEFTw0 = -0.95\nDesigner3p1LuminalGW = T\n"
             "Designer3p1modelsigma1 = 1\nDesigner3p1sigma10 = 1.0\nDesigner3p1modelsigma1_ODE = 2\n"
             "Designer3p1sigma1_ODE0 = -0.5\nDesigner3p1modelrho1N = 0\nDesigner3p1modelrho2 = 1\nDesigner3p1rho20 = 1.0\n"
-            "EFT_ghost_stability = F\nEFT_gradient_stability = F\nEFT_additional_priors = T"
         )
         self.assertGreater(camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega", model)).get_sigma8_0(), 0)
 
     def test_3p1_dust_ghost(self):
         # with CDM the 3+1 scalar is a ghost at every k for sigma1 > 1 (alpha_L < 0): the model's own test used the
-        # vacuum conditions and accepted this one (sigma8 = 5.7e8); sigma1 < 1 still runs
+        # vacuum conditions and accepted this one (sigma8 = 5.7e8); sigma1 < 1 still runs. The model's own ghost and
+        # gradient tests replace the generic ones beyond GLPV under EFT_ghost_stability / EFT_gradient_stability:
+        # they run with the additional priors off (they ran only under EFT_additional_priors).
         model = (
             "EFTflag = 3\nDesignerEFTmodel = 3\nEFTwDE = 1\nEFTw0 = -0.95\nDesigner3p1LuminalGW = T\n"
             "Designer3p1modelsigma1 = 1\nDesigner3p1sigma10 = 1.0\nDesigner3p1modelsigma1_ODE = 2\n"
             "Designer3p1modelrho1N = 0\nDesigner3p1modelrho2 = 1\nDesigner3p1rho20 = 1.e-3\n"
-            "EFT_ghost_stability = F\nEFT_gradient_stability = F\nEFT_additional_priors = T\n"
+            "EFT_additional_priors = F\n"
         )
         with self.assertRaisesRegex(CAMBError, "theory unstable"):
             camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega", model + "Designer3p1sigma1_ODE0 = 1.e-7"))
         res = camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega", model + "Designer3p1sigma1_ODE0 = -1.e-7"))
         self.assertGreater(res.get_sigma8_0(), 0)
+        # with the generic checks off the model's own ones are off too
+        off = "EFT_ghost_stability = F\nEFT_gradient_stability = F\nDesigner3p1sigma1_ODE0 = 1.e-7"
+        self.assertGreater(camb.get_results(self.read("2_PEFT_wDE_wCDM_noOmega", model + off)).get_sigma8_0(), 0)
+
+    def test_beyond_glpv_own_conditions(self):
+        # Horava: its scalar ghost (3 lambda + 2)/lambda > 0 and gradient 0 < eta < 2 xi + 2 conditions replace the
+        # generic ones beyond GLPV, also with the additional priors off; lambda < -2/3 stays a model prior. A
+        # beyond-GLPV model without its own conditions (gamma6) is still refused by the generic checks.
+        with self.assertRaisesRegex(CAMBError, "theory unstable"):
+            camb.get_results(self.read("5_HORAVA_eta", "Horava_lambda = -0.1\nEFT_additional_priors = F"))
+        with self.assertRaisesRegex(CAMBError, "theory unstable"):
+            camb.get_results(self.read("5_HORAVA_eta", "Horava_eta = 2.5\nEFT_additional_priors = F"))
+        with self.assertRaisesRegex(CAMBError, "theory unstable"):
+            camb.get_results(
+                self.read("5_HORAVA_eta", "Horava_lambda = -1.0\nEFT_ghost_stability = F\nEFT_gradient_stability = F")
+            )
+        self.assertGreater(camb.get_results(self.read("5_HORAVA_eta")).get_sigma8_0(), 0)
+        with self.assertRaisesRegex(CAMBError, "theory unstable"):
+            camb.get_results(self.read("2_PEFT_gamma6_power", "EFT_ghost_stability = T"))
 
     def test_horndeski_coefficient_identities(self):
         # the generated Horndeski background coefficients are conformal-time derivatives of each other: checked at

@@ -157,8 +157,8 @@
     !< subroutine that computes the three derivatives wrt conformal time of H.
     procedure :: compute_H_derivs => EFTCAMBDesigner3p1ComputeHubbleDer
     ! stability procedures:
-    !< function that computes model specific stability requirements.
-    procedure :: additional_model_stability => EFTCAMBDesigner3p1AdditionalModelStability
+    !< subroutine that tests the model's own scalar ghost and gradient conditions (beyond GLPV).
+    procedure :: beyond_GLPV_stability => EFTCAMBDesigner3p1BeyondGLPVStability
     !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
     procedure :: wDE_prior => EFTCAMBDesigner3p1wDEPrior
 
@@ -1558,8 +1558,10 @@
     end subroutine EFTCAMBDesigner3p1ComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that computes model specific stability requirements.
-    function EFTCAMBDesigner3p1AdditionalModelStability(self, a, eft_par_cache, eft_cache)
+    !> Subroutine that tests the scalar ghost and gradient conditions of this beyond-GLPV model (the generic ones do not
+    !! apply): called by the stability check when EFT_ghost_stability or EFT_gradient_stability is on.
+    subroutine EFTCAMBDesigner3p1BeyondGLPVStability(self, a, eft_par_cache, eft_cache, ghost, gradient, implemented, &
+        stable)
 
     implicit none
 
@@ -1569,9 +1571,11 @@
     type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
-
-    !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
-    logical :: EFTCAMBDesigner3p1AdditionalModelStability
+    logical, intent(in)  :: ghost         !< whether to test the scalar ghost condition (EFT_ghost_stability).
+    logical, intent(in)  :: gradient      !< whether to test the scalar gradient condition (EFT_gradient_stability).
+    logical, intent(out) :: implemented   !< whether the model has its own conditions: always.
+    logical, intent(out) :: stable        !< whether the tested conditions are met.
+    logical :: test_ghost, test_gradient
 
     real(dl) :: lgkmin, lgkmax, lgk, k, k2, k4
     real(dl) :: H, Ht
@@ -1582,9 +1586,13 @@
     real(dl) :: dadt
     real(dl) :: aT, aL, aLt, aH, aHt, b3, b3t, B0, B01, B02, B03, B2, B21, B22, B23, B4, Bzz
 
-    EFTCAMBDesigner3p1AdditionalModelStability = .true.
+    implemented = .true.
+    stable = .true.
+    ! the model flags Designer3p1GhostStability and Designer3p1GradientStability select which of them run
+    test_ghost = ghost .and. self%Designer3p1GhostStability
+    test_gradient = gradient .and. self%Designer3p1GradientStability
 
-    if (self%Designer3p1GhostStability .or. self%Designer3p1GradientStability) then
+    if (test_ghost .or. test_gradient) then
 
         lgkmin = log10(self%Designer3p1Stability_kmin/a)
         lgkmax = log10(self%Designer3p1Stability_kmax/a)
@@ -1647,14 +1655,14 @@
             ! misses the alpha_L < 0 ghost below its cut-off. With pressureless matter (CDM) the scalar kinetic matrix
             ! is positive definite at every k iff sigma1 <= 1 (alpha_L >= 0) and rho2 >= 0 (b3 >= 0); this holds in
             ! the GLPV/Horndeski limit rho2 = 0 (b3 -> 0, e.g. the GR point) too, and implies Azz >= 0.
-            if (self%Designer3p1GhostStability) then
+            if (test_ghost) then
                 if (aL < 0._dl .or. b3 < 0._dl) then
-                    EFTCAMBDesigner3p1AdditionalModelStability = .false.
+                    stable = .false.
                     return
                 end if
             end if
             ! custom gradient stability for this beyond GLPV model
-            if (self%Designer3p1GradientStability) then
+            if (test_gradient) then
                 B01 = 72._dl*(1._dl + aL)*(aHt*(1._dl + aL) - aLt*(1._dl + aH))
                 B02 = 72._dl*(1._dl + aL)**2*(aH - aT)
                 B03 = -72._dl*(1._dl + aL)**2*(1._dl + aH)
@@ -1670,7 +1678,7 @@
                 ! k -> infinity, beyond the sampled k: c_s^2 -> aL (2 (1 + aH)^2 - b3 (1 + aT))/(3 b3 (1 + aL)) >= 0
                 if (b3 > 0._dl .and. 2._dl*(1._dl + aH)**2 - b3*(1._dl + aT) < 0._dl) Bzz = -1._dl
                 if (Bzz < 0._dl) then
-                    EFTCAMBDesigner3p1AdditionalModelStability = .false.
+                    stable = .false.
                     return
                 end if
             end if
@@ -1679,7 +1687,7 @@
 
     end if
 
-    end function EFTCAMBDesigner3p1AdditionalModelStability
+    end subroutine EFTCAMBDesigner3p1BeyondGLPVStability
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that tests the phenomenological prior w_DE <= -1/3, enforced when EFT_wDE_prior = T.

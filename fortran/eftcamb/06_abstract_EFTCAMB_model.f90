@@ -138,6 +138,8 @@
     ! stability procedures:
     !< function that computes model specific stability requirements.
     procedure :: additional_model_stability => EFTCAMBModelAdditionalModelStability
+    !< subroutine that tests the model's own scalar ghost and gradient conditions, for models beyond GLPV.
+    procedure :: beyond_GLPV_stability => EFTCAMBModelBeyondGLPVStability
     !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
     procedure :: wDE_prior => EFTCAMBModelwDEPrior
     !< function that returns the scale factor where the model background solution starts (0: everywhere).
@@ -1456,6 +1458,30 @@
     EFTCAMBModelAdditionalModelStability = .true.
 
     end function EFTCAMBModelAdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that tests the model's own scalar ghost and gradient conditions. The generic conditions of the
+    !! stability check extend up to GLPV: beyond it the check uses these instead (when EFT_ghost_stability or
+    !! EFT_gradient_stability is on), and refuses the models that have none. The default has none.
+    subroutine EFTCAMBModelBeyondGLPVStability(self, a, eft_par_cache, eft_cache, ghost, gradient, implemented, stable)
+
+    implicit none
+
+    class(EFTCAMB_model)                          :: self          !< the base class
+    real(dl), intent(in)                          :: a             !< the input scale factor.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+    logical, intent(in)                           :: ghost         !< whether to test the scalar ghost condition.
+    logical, intent(in)                           :: gradient      !< whether to test the scalar gradient condition.
+    logical, intent(out)                          :: implemented   !< whether the model has its own conditions.
+    logical, intent(out)                          :: stable        !< whether the tested conditions are met.
+
+    implemented = .false.
+    stable = .true.
+
+    end subroutine EFTCAMBModelBeyondGLPVStability
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that tests the phenomenological prior w_DE <= -1/3, enforced when EFT_wDE_prior = T.

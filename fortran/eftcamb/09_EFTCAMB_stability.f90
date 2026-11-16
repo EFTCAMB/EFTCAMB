@@ -246,6 +246,7 @@
     real(dl), external :: dtauda
     character(len=160) :: message
     real(dl) :: A_sign, A_margin, A_touch, a_zero, eom_G00, eom_G00_scale
+    logical  :: beyond_GLPV, own_conditions, own_stable
 
     ! Stability check initialization
     EFTTestStability = .true.
@@ -441,14 +442,30 @@
 
     end if
 
+    ! 5)-6) the generic scalar ghost and gradient conditions below extend up to GLPV. Beyond it (up to roundoff,
+    ! domain_eps, not up to the physical floor thr: gamma6 and gamma3 + gamma4 enter the dispersion relation times
+    ! (k/(aH))^2 ~ 1e9) a model with its own scalar conditions (Horava, 3+1) is tested with them instead, whatever
+    ! EFT_additional_priors; any other model beyond GLPV is refused. The positive gravitational constant and the
+    ! tensor conditions are generic.
+    beyond_GLPV = abs(eft_cache%EFTGamma6V) > domain_eps*(1._dl + abs(eft_cache%EFTOmegaV)) .or. &
+        abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
+        domain_eps*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))
+    own_conditions = .false.
+    own_stable = .true.
+    if (input_EFTCAMB%EFT_ghost_stability .or. input_EFTCAMB%EFT_gradient_stability) then
+        call input_EFTCAMB%model%beyond_GLPV_stability(a, params_cache, eft_cache, input_EFTCAMB%EFT_ghost_stability, &
+            input_EFTCAMB%EFT_gradient_stability, own_conditions, own_stable)
+        if (own_conditions .and. .not. own_stable) then
+            EFTTestStability = .false.
+            if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a,E11.4)') &
+                '   Physical instability: the model specific ghost or gradient condition fails at a =', a
+        end if
+    end if
+
     ! 5) enforce ghost viability:
     if (input_EFTCAMB%EFT_ghost_stability) then
 
-        ! the present conditions extend up to Horndeski. Enforce that up to roundoff (domain_eps), not up to the
-        ! physical floor thr: gamma6 and gamma3 + gamma4 enter the dispersion relation times (k/(aH))^2 ~ 1e9
-        if (abs(eft_cache%EFTGamma6V) > domain_eps*(1._dl + abs(eft_cache%EFTOmegaV)) .or. &
-            abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
-            domain_eps*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
+        if (beyond_GLPV .and. .not. own_conditions) then
             if (input_EFTCAMB%EFTCAMB_feedback_level > 0) then
                 write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
                 write(*, '(a)') '      It will be added in a future release.'
@@ -465,8 +482,8 @@
                 '(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl + eft_cache%EFTOmegaV
         end if
 
-        ! 2- Ghost condition:
-        if (eft_cache%EFT_kinetic < -thr*kinetic_scale) then
+        ! 2- Ghost condition (up to GLPV):
+        if (.not. beyond_GLPV .and. eft_cache%EFT_kinetic < -thr*kinetic_scale) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: ghost instability. Kinetic term = ', eft_cache%EFT_kinetic
@@ -485,10 +502,7 @@
     ! 6) enforce gradient viability:
     if (input_EFTCAMB%EFT_gradient_stability) then
 
-        ! the present conditions extend up to Horndeski. Enforce that up to roundoff (domain_eps), as above:
-        if (abs(eft_cache%EFTGamma6V) > domain_eps*(1._dl + abs(eft_cache%EFTOmegaV)) .or. &
-            abs(eft_cache%EFTGamma3V + eft_cache%EFTGamma4V) > &
-            domain_eps*(1._dl + abs(eft_cache%EFTGamma3V) + abs(eft_cache%EFTGamma4V))) then
+        if (beyond_GLPV .and. .not. own_conditions) then
             if (input_EFTCAMB%EFTCAMB_feedback_level > 0) then
                 write(*, '(a)') '   EFTCAMB WARNING: stability for model beyond GLPV has not been worked out.'
                 write(*, '(a)') '      It will be added in a future release.'
@@ -505,8 +519,8 @@
                 '(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl + eft_cache%EFTOmegaV
         end if
 
-        ! 2- Gradient instability:
-        if (eft_cache%EFT_gradient < -thr*gradient_scale) then
+        ! 2- Gradient instability (up to GLPV):
+        if (.not. beyond_GLPV .and. eft_cache%EFT_gradient < -thr*gradient_scale) then
             EFTTestStability = .false.
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: gradient instability. Gradient term = ', eft_cache%EFT_gradient
