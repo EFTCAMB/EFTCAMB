@@ -4033,6 +4033,8 @@
                 quadrupole_source = (5.0d0/8.0d0)*(3*polter*ddvisibility + 6*polterdot*dvisibility &
                     + (k**2*polter + 3*polterddot)*visibility)/k**2
             else if (CP%EFTCAMB%EFTflag /= 0 .and. EV%EFTCAMBactive) then
+                ! pointwise: a jump of the potentials at the turn-on (model not GR there) would add a delta function
+                ! to this term, which is not included (see the turn-on samples in SetTimeSteps, results.f90)
                 ISW = exptau*EFTISW/k
                 monopole_source = (-etak/(k*EV%Kf(1)) + EFTLensing/k + clxg/4)*visibility
                 doppler = ((sigma + vb)*dvisibility + (EFTsigmadot + vbdot)*visibility)/k

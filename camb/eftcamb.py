@@ -340,7 +340,7 @@ class EFTCAMB(F2003Class):
             c_bool,
             (
                 "Output, set by the code at every run: whether the return to GR moved the perturbation turn-on later "
-                "than requested (the model is then GR before it and the fine time sampling around the turn-on is "
+                "than requested (the model is then GR before it and the source samples straddling the turn-on are "
                 "skipped)."
             ),
         ),

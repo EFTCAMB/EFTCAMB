@@ -50,9 +50,9 @@ feedback_level = 0
 # inis (self-consistent base cosmology, turn-on converged at k <= 0.1/Mpc); relative tolerance 1e-5
 REFERENCE = {
     "2_PEFT_Omega_const": (0.046356075586693565, [1.468437963e02, 4.634768026e00, 1.360919682e-01]),
-    "4_FR_LCDM": (1.0360215217278423, [4.358225276e01, 1.655523866e00, 6.699599430e-02]),
-    "3_RPH_KT_lin": (0.6781749795945762, [4.618116061e01, 1.653259939e00, 6.679294218e-02]),
-    "5_QUINT_exponential": (0.664748598354237, [4.695580401e01, 1.668400245e00, 6.667436777e-02]),
+    "4_FR_LCDM": (1.0360214875401301, [4.358216201e01, 1.655519291e00, 6.699598795e-02]),
+    "3_RPH_KT_lin": (0.6781750924849668, [4.617707393e01, 1.653317207e00, 6.679220206e-02]),
+    "5_QUINT_exponential": (0.664748598354237, [4.695561280e01, 1.668397468e00, 6.667436349e-02]),
 }
 
 
@@ -605,9 +605,10 @@ class EFTCAMBTest(unittest.TestCase):
         self.assertGreater(bg.Params.EFTCAMB.EFTCAMB_pert_turn_on, 1e-7)
 
     def test_turn_on_samples_rgr(self):
-        # the fine time sampling around the turn-on (where the potentials jump) is skipped when the return to GR moved
-        # the turn-on: the model is GR before it. Sampled anyway, quintessence switched on by the return to GR differed
-        # from the same model switched on at 1e-8 (no samples there) by 2.4e-4 in TT (l = 116)
+        # the source samples straddling the turn-on (where the potentials jump) are skipped when the return to GR moved
+        # the turn-on: the model is GR before it. Sampled anyway (then with a finer grid on both sides), quintessence
+        # switched on by the return to GR differed from the same model switched on at 1e-8 (no samples there) by 2.4e-4
+        # in TT (l = 116)
         cls = {}
         for skip in ("F", "T"):
             res = camb.get_results(

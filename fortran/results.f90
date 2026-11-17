@@ -3199,18 +3199,28 @@
         end if
     end if
 
-    ! EFTCAMB MOD START: sample the sources tightly around the EFT perturbation turn-on, where the potentials
-    ! jump: points straddling the turn-on and a fine grid on both sides. Not when the return to GR moved the turn-on:
-    ! the model is GR before it, nothing jumps, and the extra samples would only shift the result from GR's own
-    ! sampling (by up to 2e-4 in the C_l of quintessence)
+    ! EFTCAMB MOD START: two source samples straddling the EFT perturbation turn-on. Where the model is not GR at the
+    ! turn-on the sources jump there; the jump is part of the model (the turn-on time is a modelling choice) and is
+    ! not smoothed. The line of sight is a trapezoid sum over these time steps: without the two samples the interval
+    ! holding the jump is wrong at first order and the C_l depend on where tau_on falls on the late-time grid (for a
+    ! 25-33% jump of the potentials at a = 0.01, TT at l = 2 moved by 2e-2 with the redshift windows and scattered by
+    ! 2.5e-2 with a_on; 1e-4 and 5e-4 with the samples). The jump itself (a delta function in the ISW source
+    ! phi' + psi') is not included: the sources are evaluated pointwise on each side.
+    ! - Only after recombination: inside [taurst, taurend] the samples split CAMB's uniform recombination grid into two
+    !   ranges with different steps, and the trapezoid sum of the steep recombination source is accurate only on a
+    !   uniform grid (low-l TT moved by up to 1e-3 with nothing jumping). A jump there is integrated on the
+    !   recombination grid as it is (the same jump at a = 1.2e-3: TT at l = 2 scattered by 8e-3 with a_on).
+    ! - No finer grid around the turn-on: a model that jumps needs TimeStepBoost for low-l accuracy (the jump at
+    !   a = 0.01: TT at l = 2 moved by 1.9e-2 from TimeStepBoost 1 to 3; 2e-3 with a grid of step dtau0/10 over the
+    !   100 Mpc before the turn-on). A finer grid that starts or ends inside the recombination range has the
+    !   step-change error above.
+    ! - Not when the return to GR moved the turn-on: the model is GR before it and nothing jumps.
     if (allocated(State%CP%EFTCAMB)) then
         if (State%CP%EFTCAMB%EFTflag /= 0 .and. State%CP%WantScalars .and. &
             .not. State%CP%EFTCAMB%EFTCAMB_turn_on_from_RGR) then
             tau_on = State%DeltaTime(0._dl, State%CP%EFTCAMB%EFTCAMB_pert_turn_on)
-            if (tau_on > State%taurst .and. tau_on < State%tau0) then
-                call TimeSteps%Add_delta(max(State%taurst, tau_on - 100._dl), tau_on*(1 - 1.e-7_dl), dtau0/10)
+            if (tau_on > State%taurend .and. tau_on*(1 + 1.e-7_dl) < State%tau0) then
                 call TimeSteps%Add(tau_on*(1 - 1.e-7_dl), tau_on*(1 + 1.e-7_dl), 1)
-                call TimeSteps%Add_delta(tau_on*(1 + 1.e-7_dl), min(State%tau0, tau_on + 300._dl), dtau0/10)
             end if
         end if
     end if

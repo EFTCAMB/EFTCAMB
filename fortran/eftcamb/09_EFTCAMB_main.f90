@@ -151,7 +151,7 @@
         logical  :: EFTCAMB_write_background = .false.
         !< Output, set by the code at every run (not read from the ini): whether the return to GR moved the
         !! perturbation turn-on later than requested. The model is then GR before the turn-on (no jump there) and the
-        !! fine time sampling around the turn-on is skipped.
+        !! source samples straddling the turn-on are skipped.
         logical  :: EFTCAMB_turn_on_from_RGR = .false.
 
         ! EFTCAMB output root:
