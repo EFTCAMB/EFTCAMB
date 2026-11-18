@@ -397,8 +397,8 @@
     cs = self%cs2
 
     ! compute the EFT functions:
-    eft_cache%EFTGamma1V = 1._dl/(4._dl*h0_Mpc**2*a**2)*2._dl*eft_cache%EFTc*((cs**-1) - 1._dl)
-    eft_cache%EFTGamma1P = 1._dl/(4._dl*h0_Mpc**2)*(2._dl*eft_cache%EFTcdot/(eft_cache%adotoa*a**3))*((cs**-1) - 1._dl)
+    eft_cache%EFTGamma1V = 1._dl/(4._dl*h0_Mpc**2*a**2)*2._dl*eft_cache%EFTc*((cs**(-1)) - 1._dl)
+    eft_cache%EFTGamma1P = 1._dl/(4._dl*h0_Mpc**2)*(2._dl*eft_cache%EFTcdot/(eft_cache%adotoa*a**3))*((cs**(-1)) - 1._dl)
     eft_cache%EFTGamma2V = 0._dl
     eft_cache%EFTGamma2P = 0._dl
     eft_cache%EFTGamma3V = 0._dl

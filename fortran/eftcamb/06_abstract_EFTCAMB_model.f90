@@ -1652,7 +1652,7 @@
             one_plus_omega
 
         eft_cache%posbound2 = 0.5*(2*eft_cache%EFTGamma3V*N1/one_plus_omega + &
-            2*a*(eft_cache%Hdot*eft_cache%EFTGamma3P + a*adotoa2*eft_cache%EFTGamma3PP) + N2 + NumFactor*-N3/D1 + &
+            2*a*(eft_cache%Hdot*eft_cache%EFTGamma3P + a*adotoa2*eft_cache%EFTGamma3PP) + N2 + NumFactor*(-N3)/D1 + &
             NumFactor**2.*(-N4 - N5 + N6)/D1**2./8)
         eft_cache%tachpos = -tach_pos_num/D1
     else
