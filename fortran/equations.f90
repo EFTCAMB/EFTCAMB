@@ -27,7 +27,6 @@
             call this%CP%DarkEnergy%BackgroundDensityAndPressure(this%grhov, a, grhov_t)
         end if
         grhoa2 = grhoa2 + grhov_t*a**2
-        dtauda = sqrt(3/grhoa2)
         if (grhoa2 <= 0) then
             call GlobalError('Universe stops expanding before today (recollapse not supported)', &
                 error_unsupported_params)
@@ -2800,7 +2799,7 @@
     real(dl) dgrho_de, dgq_de, cs2_de
 
     ! EFTCAMB MOD START: some additional variables:
-    real(dl) clxq, vq, dgpnu, EFT_grhonu, EFT_gpinu, EFT_grhonudot, EFT_gpinudot, EFT_gpinudotdot, grhormass_t
+    real(dl) clxq, vq, dgpnu, EFT_grhonu, EFT_gpinu, EFT_gpinudot, grhormass_t
     real(dl) pidotdot, EFTLensing, EFTISW, EFTsigmadot, EFTsigmadotdot, EFT_Psi, EFT_Phi, EFT_PsiDot, EFT_PhiDot, &
         EFTetakdot
     real(dl) EFT_den_mu, EFT_den_sigma
@@ -2957,8 +2956,6 @@
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu = 0._dl
                 EFT_gpinu = 0._dl
-                EFT_grhonudot = 0._dl
-                EFT_gpinudot = 0._dl
                 grhormass_t = State%grhormass(nu_i)/a**2
                 call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
                 EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
@@ -2980,28 +2977,16 @@
     if (CP%EFTCAMB%EFTflag /= 0) then
         ! compute remaining quantities related to H:
         call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
-        ! compute second derivative of massive neutrino pressure:
-        EV%eft_cache%grhonu_tot = 0._dl
-        EV%eft_cache%gpinu_tot = 0._dl
-        EV%eft_cache%grhonudot_tot = 0._dl
-        EV%eft_cache%gpinudot_tot = 0._dl
+        ! compute second derivative of massive neutrino pressure (rho, p and their first derivatives are in the
+        ! cache already: p'' needs Hdot)
         EV%eft_cache%gpinudotdot_tot = 0._dl
         if (CP%Num_Nu_massive /= 0) then
             do nu_i = 1, CP%Nu_mass_eigenstates
                 EFT_grhonu = 0._dl
                 EFT_gpinu = 0._dl
-                EFT_grhonudot = 0._dl
-                EFT_gpinudot = 0._dl
                 grhormass_t = State%grhormass(nu_i)/a**2
                 call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
-                EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
-                EV%eft_cache%gpinu_tot = EV%eft_cache%gpinu_tot + grhormass_t*EFT_gpinu
                 EFT_gpinudot = ThermalNuBackground%pidot(a*State%nu_masses(nu_i), adotoa, EFT_gpinu)
-                EV%eft_cache%gpinudot_tot = EV%eft_cache%gpinudot_tot + grhormass_t*(EFT_gpinudot &
-                    - 4._dl*adotoa*EFT_gpinu)
-                ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
-                EV%eft_cache%grhonudot_tot = &
-                    EV%eft_cache%grhonudot_tot - 3._dl*adotoa*grhormass_t*(EFT_grhonu + EFT_gpinu)
                 EV%eft_cache%gpinudotdot_tot = EV%eft_cache%gpinudotdot_tot - &
                     4._dl*adotoa*grhormass_t*(EFT_gpinudot - 4._dl*adotoa*EFT_gpinu) + &
                     grhormass_t*(ThermalNuBackground%pidotdot(a*State%nu_masses(nu_i), adotoa, EV%eft_cache%Hdot, &
@@ -3126,16 +3111,7 @@
         z = +(0.5_dl*dgrho/k + etak)/adotoa
         dz = -adotoa*z - 0.5_dl*dgrho/k
     else if (CP%EFTCAMB%EFTflag /= 0 .and. EV%EFTCAMBactive) then
-        ! RSA
-
-        z = 1._dl/EV%eft_cache%EFTeomG* &
-            (EV%eft_cache%EFTeomQ*etak/adotoa + 0.5_dl*dgrho/(k*adotoa*(1._dl + EV%eft_cache%EFTOmegaV)) + &
-            EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc))
-        dz = 1._dl/EV%eft_cache%EFTeomU* &
-            (-2._dl*adotoa*z*(1._dl + EV%eft_cache%EFTeomY - 0.5_dl*EV%eft_cache%EFTeomG/EV%eft_cache%EFTeomQ) - &
-            0.5_dl*dgrho/k/(1._dl + EV%eft_cache%EFTOmegaV)/EV%eft_cache%EFTeomQ - &
-            adotoa*EV%eft_cache%EFTeomL/(k*CP%eft_par_cache%h0_Mpc)/EV%eft_cache%EFTeomQ - &
-            1.5_dl/k/(1._dl + EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
+        ! RSA: z and dz are set in both branches below
         ! dz = 1._dl/EV%eft_cache%EFTeomU*(-2._dl*adotoa*(1._dl + EV%eft_cache%EFTeomY)*z + etak - 1.5_dl/k/(1._dl + EV%eft_cache%EFTOmegaV)*EV%eft_cache%EFTeomM/CP%eft_par_cache%h0_Mpc)
 
         if (CP%EFTCAMB%EFTCAMB_evolve_delta_phi) then
@@ -3147,8 +3123,8 @@
                 metric_h_dot = (4._dl*k*etak + 2._dl*dgrho/Meff2)/(2._dl - alphaB)/adotoa + vx_source_00
                 z = 0.5_dl*metric_h_dot/k
             end if
-            ! delta pressure without radiation (RSA)
-            dp_matter = dgpnu
+            ! delta pressure without radiation (RSA); dgpnu is a^2 delta p, as in the non-RSA branch
+            dp_matter = dgpnu/a2
             ! compute delta_phi'', negelecting dgrho_rad (RSA)
             delta_phi_ddot = -2._dl*(1._dl + spi1)*adotoa*delta_phi_dot - &
                 ((1._dl + spi2)*k2 + spi3*adotoa*adotoa)*delta_phi + spih*metric_h_dot + spie*k*etak/adotoa + &
@@ -4296,7 +4272,7 @@
     real(dl) cothxor
 
     ! EFTCAMB MOD START: additional variables
-    real(dl) gpres, EFT_grhonu, EFT_gpinu, EFT_grhonudot, EFT_gpinudot, grhormass_t
+    real(dl) gpres, EFT_grhonu, EFT_gpinu, EFT_gpinudot, grhormass_t
     real(dl) ct2, Meff2, alphaM
     ! EFTCAMB MOD END.
 
@@ -4331,7 +4307,6 @@
         EV%eft_cache%grhonu_tot = 0._dl
         EV%eft_cache%gpinu_tot = 0._dl
         if (CP%Num_Nu_massive /= 0) then
-            EV%eft_cache%gpinu_tot = 0._dl
             do nu_i = 1, State%CP%Nu_mass_eigenstates
                 EFT_grhonu = 0._dl
                 EFT_gpinu = 0._dl
@@ -4359,21 +4334,15 @@
         ! store adotoa:
         adotoa = EV%eft_cache%adotoa
         if (a >= CP%EFTCAMB%EFTCAMB_pert_turn_on) then
-            ! compute massive neutrinos stuff:
-            EV%eft_cache%grhonu_tot = 0._dl
-            EV%eft_cache%gpinu_tot = 0._dl
+            ! massive neutrino rho' and p' (rho and p are in the cache from the loop above: these need adotoa)
             EV%eft_cache%grhonudot_tot = 0._dl
             EV%eft_cache%gpinudot_tot = 0._dl
             if (CP%Num_Nu_massive /= 0) then
                 do nu_i = 1, State%CP%Nu_mass_eigenstates
                     EFT_grhonu = 0._dl
                     EFT_gpinu = 0._dl
-                    EFT_grhonudot = 0._dl
-                    EFT_gpinudot = 0._dl
                     grhormass_t = State%grhormass(nu_i)/a**2
                     call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
-                    EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
-                    EV%eft_cache%gpinu_tot = EV%eft_cache%gpinu_tot + grhormass_t*EFT_gpinu
                     ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
                     EV%eft_cache%grhonudot_tot = &
                         EV%eft_cache%grhonudot_tot - 3._dl*adotoa*grhormass_t*(EFT_grhonu + EFT_gpinu)
@@ -4387,28 +4356,15 @@
                 -4._dl*adotoa*(EV%eft_cache%grhog_t + EV%eft_cache%grhor_t)/3._dl + EV%eft_cache%gpinudot_tot
             ! compute remaining quantities related to H:
             call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
-            ! compute second derivative of massive neutrino pressure:
-            EV%eft_cache%grhonu_tot = 0._dl
-            EV%eft_cache%gpinu_tot = 0._dl
-            EV%eft_cache%grhonudot_tot = 0._dl
-            EV%eft_cache%gpinudot_tot = 0._dl
+            ! second derivative of the massive neutrino pressure (the rest is in the cache: p'' needs Hdot)
             EV%eft_cache%gpinudotdot_tot = 0._dl
             if (CP%Num_Nu_massive /= 0) then
                 do nu_i = 1, State%CP%Nu_mass_eigenstates
                     EFT_grhonu = 0._dl
                     EFT_gpinu = 0._dl
-                    EFT_grhonudot = 0._dl
-                    EFT_gpinudot = 0._dl
                     grhormass_t = State%grhormass(nu_i)/a**2
                     call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
-                    EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
-                    EV%eft_cache%gpinu_tot = EV%eft_cache%gpinu_tot + grhormass_t*EFT_gpinu
-                    ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
-                    EV%eft_cache%grhonudot_tot = &
-                        EV%eft_cache%grhonudot_tot - 3._dl*adotoa*grhormass_t*(EFT_grhonu + EFT_gpinu)
                     EFT_gpinudot = ThermalNuBackground%pidot(a*State%nu_masses(nu_i), adotoa, EFT_gpinu)
-                    EV%eft_cache%gpinudot_tot = EV%eft_cache%gpinudot_tot + grhormass_t*(EFT_gpinudot &
-                        - 4._dl*adotoa*EFT_gpinu)
                     EV%eft_cache%gpinudotdot_tot = EV%eft_cache%gpinudotdot_tot - &
                         4._dl*adotoa*grhormass_t*(EFT_gpinudot - 4._dl*adotoa*EFT_gpinu) + &
                         grhormass_t*(ThermalNuBackground%pidotdot(a*State%nu_masses(nu_i), adotoa, EV%eft_cache%Hdot, &
