@@ -127,6 +127,10 @@
         end if
         return
     end if
+    if (index(trim(adjustl(S)), ' ') > 0) then
+        call this%Error('the value "' // trim(adjustl(S)) // '" contains blanks', Key)
+        return
+    end if
     status = 1
     if (verify(trim(S), '-+0123456789') == 0) read(S, *, iostat=status) value
     if (status /= 0) then
@@ -172,6 +176,10 @@
         end if
         return
     end if
+    if (index(trim(adjustl(S)), ' ') > 0) then
+        call this%Error('the value "' // trim(adjustl(S)) // '" contains blanks', Key)
+        return
+    end if
     read(S, *, iostat=status) value
     if (status /= 0) then
         value = 0.d0
@@ -212,6 +220,10 @@
         end if
         return
     end if
+    if (index(trim(adjustl(S)), ' ') > 0) then
+        call this%Error('the value "' // trim(adjustl(S)) // '" contains blanks', Key)
+        return
+    end if
     status = 1
     if (verify(trim(S), '10TF') == 0) read(S, *, iostat=status) value
     if (status /= 0) then
@@ -222,29 +234,6 @@
 
     end function EFTCAMB_python_ini_read_logical
 
-    ! ---------------------------------------------------------------------------------------------
-    !> Helper function to strip all whitespaces
-    function helper_stripspaces(string)
-    character(len=*) :: string
-    character(len=:), allocatable :: helper_stripspaces
-    integer :: stringLen
-    integer :: last, actual
-    stringLen = len (string)
-    last = 1
-    actual = 1
-    do while (actual < stringLen)
-        if (string(last:last) == ' ') then
-            actual = actual + 1
-            string(last:last) = string(actual:actual)
-            string(actual:actual) = ' '
-        else
-            last = last + 1
-            if (actual < last) &
-                actual = last
-        end if
-    end do
-    helper_stripspaces = trim(string)
-    end function
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine to initialize EFTCAMB from python
@@ -278,7 +267,9 @@
         call Ini%reset_errors()
         ! if mode == 1 append settings to the INI file
     else if (mode == 1) then
-        call Ini%AddString(trim(helper_stripspaces(f_key)), trim(helper_stripspaces(f_value)))
+        ! leading and trailing blanks only (all blanks were stripped: '0.0 5' was read as 0.05); a value with internal
+        ! blanks is refused when EFTCAMB reads it (keys it does not read, as CAMB's redshifts, also pass here)
+        call Ini%AddString(trim(adjustl(f_key)), trim(adjustl(f_value)))
     end if
 
     end subroutine initialize_EFTCAMB_from_py_read_params
@@ -520,7 +511,8 @@
 
     end subroutine EFTCAMB_python_to_c_buffer
 
-    !> Get the key and value of a parameter read at initialization (mode=1), or their number (mode=0, in index).
+    !> Get the key and value of a parameter read at initialization (mode=1), their number (mode=0, in index) or the
+    !! buffer length that holds every key and value (mode=2, in index).
     subroutine EFTCAMB_get_read_parameters_c(eftcamb_ptr, key, value, index, mode, nkey, nvalue) bind(c, &
         name='eftcamb_get_read_parameters_c')
 
@@ -534,18 +526,22 @@
     integer(c_int), intent(inout)         :: index
     integer(c_int), intent(in)            :: mode
     type(TEFTCAMB), pointer :: EFTCAMB
-    character(len=200) :: f_key, f_value
-    integer :: f_index, f_mode
 
     call c_f_pointer(eftcamb_ptr, EFTCAMB)
-    f_index = index
-    f_mode = mode
-    call get_read_parameters(EFTCAMB, f_key, f_value, f_index, f_mode)
     if (mode == 0) then
-        index = f_index
+        index = 0
+        if (allocated(EFTCAMB%read_param_keys)) index = size(EFTCAMB%read_param_keys)
+    else if (mode == 2) then
+        index = 0
+        if (allocated(EFTCAMB%read_param_keys)) &
+            index = max(len(EFTCAMB%read_param_keys), len(EFTCAMB%read_param_values))
     else
-        call EFTCAMB_python_to_c_buffer(f_key, key, nkey)
-        call EFTCAMB_python_to_c_buffer(f_value, value, nvalue)
+        call EFTCAMB_python_to_c_buffer('', key, nkey)
+        call EFTCAMB_python_to_c_buffer('', value, nvalue)
+        if (.not. allocated(EFTCAMB%read_param_keys)) return
+        if (index < 1 .or. index > size(EFTCAMB%read_param_keys)) return
+        call EFTCAMB_python_to_c_buffer(trim(EFTCAMB%read_param_keys(index)), key, nkey)
+        call EFTCAMB_python_to_c_buffer(trim(EFTCAMB%read_param_values(index)), value, nvalue)
     end if
 
     end subroutine EFTCAMB_get_read_parameters_c

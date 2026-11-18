@@ -163,8 +163,9 @@
         ! Parameters read when this object was initialized from python. Stored per object so that
         ! read_parameters returns the parameters of this object and not of the last initialization.
         ! Keep these components last: the python class maps the components above.
-        character(len=200), allocatable :: read_param_keys(:)   !< names of the parameters read at initialization.
-        character(len=200), allocatable :: read_param_values(:) !< values of the parameters read at initialization.
+        ! Stored at their full length (the longest key and value): 200-character strings cut longer values.
+        character(len=:), allocatable :: read_param_keys(:)   !< names of the parameters read at initialization.
+        character(len=:), allocatable :: read_param_values(:) !< values of the parameters read at initialization.
 
     contains
 
@@ -307,12 +308,19 @@
     class(TEFTCAMB) :: self  !< the base class
     class(TIniFile) :: Ini   !< Input ini file
 
-    integer :: i, num_read
+    integer :: i, num_read, len_key, len_value
 
     num_read = Ini%ReadValues%Count
+    len_key = 1
+    len_value = 1
+    do i = 1, num_read
+        len_key = max(len_key, len(Ini%ReadValues%Items(i)%P%Name))
+        len_value = max(len_value, len(Ini%ReadValues%Items(i)%P%Value))
+    end do
     if (allocated(self%read_param_keys)) deallocate(self%read_param_keys)
     if (allocated(self%read_param_values)) deallocate(self%read_param_values)
-    allocate(self%read_param_keys(num_read), self%read_param_values(num_read))
+    allocate(character(len=len_key) :: self%read_param_keys(num_read))
+    allocate(character(len=len_value) :: self%read_param_values(num_read))
     do i = 1, num_read
         self%read_param_keys(i) = Ini%ReadValues%Items(i)%P%Name
         self%read_param_values(i) = Ini%ReadValues%Items(i)%P%Value

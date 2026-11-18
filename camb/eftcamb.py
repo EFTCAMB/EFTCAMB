@@ -428,13 +428,20 @@ class EFTCAMB(F2003Class):
             byref(self), _key, _value, byref(num_params), byref(c_int(0)), _STRING_LENGTH_ARG, _STRING_LENGTH_ARG
         )
         num_params = num_params.value
+        # the buffer length that holds every key and value (mode 2; 0 from the module procedure, which has fixed
+        # 200-character dummies): longer values were cut to 200 characters
+        length = c_int(0)
+        EFTCAMB_get_read_parameters(
+            byref(self), _key, _value, byref(length), byref(c_int(2)), _STRING_LENGTH_ARG, _STRING_LENGTH_ARG
+        )
+        length = max(length.value, _STRING_LENGTH)
         # get the parameters:
         params = {}
         for ind in range(num_params):
             index = c_int(ind + 1)
-            _key, _value = _string_buffer(), _string_buffer()
+            _key, _value = create_string_buffer(b" " * length, length), create_string_buffer(b" " * length, length)
             EFTCAMB_get_read_parameters(
-                byref(self), _key, _value, byref(index), byref(c_int(1)), _STRING_LENGTH_ARG, _STRING_LENGTH_ARG
+                byref(self), _key, _value, byref(index), byref(c_int(1)), c_size_t(length), c_size_t(length)
             )
             params[_string_value(_key)] = _string_value(_value)
         if raw:

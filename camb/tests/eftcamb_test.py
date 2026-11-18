@@ -169,6 +169,25 @@ class EFTCAMBTest(unittest.TestCase):
 
     # ini reading and the set_params path
 
+    def test_python_ini_values(self):
+        # values passed from python lose their leading and trailing blanks only: a value with internal blanks is
+        # refused (all blanks were stripped: '0.0 5' was read as 0.05); read_parameters returns values longer than
+        # 200 characters whole (it cut them at 200)
+        ini = self.read("2_PEFT_Omega_power")  # kept: the EFTCAMB of a temporary CAMBparams reads nothing
+        eft = ini.EFTCAMB.read_parameters(raw=True)
+        cp = camb.set_params(H0=67.0)
+        with self.assertRaisesRegex(CAMBValueError, "contains blanks"):
+            cp.EFTCAMB.initialize_parameters(cp, {**eft, "EFTOmega0": "0.0 5"}, print_header=False)
+        long_value = "2." + "0" * 250
+        cp = camb.set_params(H0=67.0)
+        cp.EFTCAMB.initialize_parameters(
+            cp, {**eft, "EFTOmegaExp": long_value, "EFTOmega0": " 1.0 "}, print_header=False
+        )
+        read = cp.EFTCAMB.read_parameters(raw=True)
+        self.assertEqual(read["EFTOmegaExp"], long_value)
+        self.assertEqual(read["EFTOmega0"], "1.0")
+        self.assertEqual(cp.EFTCAMB.read_parameters()["EFTOmegaExp"], 2.0)
+
     def test_read_ini_set_params(self):
         for model in ("2_PEFT_Omega_power", "4_FR_LCDM", "5_QUINT_exponential"):
             with self.subTest(model=model):
