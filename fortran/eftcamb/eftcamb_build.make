@@ -43,15 +43,23 @@ $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.f90
 $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/*/%.f90
 	$(F90C) $(SF90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
 
+# The fixed-form .f files are the bundled Fortran 77 ODEPACK: features deleted from the standard (DO termination
+# labels, arithmetic IF, ASSIGN) and real work arrays passed as integer ones, which gfortran can silence only with -w.
+# They are compiled as legacy code without warnings (same object code), so the warnings of the EFTCAMB sources stay
+# visible. ifort already compiles everything with -W0.
+ifeq ($(COMPILER),gfortran)
+F77_LEGACY_FLAGS = -std=legacy -w
+endif
+
 %.o: $(EFTCAMB_DIR)/%.f
-	$(F90C) $(F90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
+	$(F90C) $(F90FLAGS) $(F77_LEGACY_FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
 %.o: $(EFTCAMB_DIR)/*/%.f
-	$(F90C) $(F90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
+	$(F90C) $(F90FLAGS) $(F77_LEGACY_FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
 
 $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.f
-	$(F90C) $(SF90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
+	$(F90C) $(SF90FLAGS) $(F77_LEGACY_FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
 $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/*/%.f
-	$(F90C) $(SF90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
+	$(F90C) $(SF90FLAGS) $(F77_LEGACY_FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
 
 # add the EFTCAMB files to the standard ones:
 CAMBOBJ += $(EFT_OBJ)
@@ -108,7 +116,7 @@ Debug: eftcamb_apps
 # debug at fixed k mode
 ifeq ($(MAKECMDGOALS), Debug)
 ifdef fixq
-DEBUGFLAGS += -Dfixq=$(fixq)
+DEBUGFLAGS += -Dfixq=$(fixq) -DEFTCAMB_DEBUG
 endif
 endif
 

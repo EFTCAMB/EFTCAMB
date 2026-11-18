@@ -68,8 +68,8 @@ endif
 COMMON_FFLAGS += -gen-dep=$$*.d
 
 FFLAGS = -fp-model precise -W0 -WB $(COMMON_FFLAGS)
-# EFTCAMB MOD START: EFTCAMB debug flags
-DEBUGFLAGS =  -g -check all -check noarg_temp_created -traceback -fpe2 $(COMMON_FFLAGS) -DDEBUG -mkl
+# EFTCAMB MOD START: EFTCAMB debug flags (EFTCAMB debug output: EFTCAMB_DEBUG=1 below)
+DEBUGFLAGS =  -g -check all -check noarg_temp_created -traceback -fpe2 $(COMMON_FFLAGS) -mkl
 # original code:
 #DEBUGFLAGS =  -g -check all -check noarg_temp_created -traceback -fpe0 $(COMMON_FFLAGS)
 # EFTCAMB MOD END
@@ -110,22 +110,20 @@ ifeq "$(gfortErr)" "0"
 compiler_ver = $(shell gfortran -dumpversion 2>&1)
 COMPILER = gfortran
 F90C     = gfortran
-# EFTCAMB MOD START: allow argument mismatch to compile odepack
-# lapack flags
+# EFTCAMB MOD START: allow argument mismatch to compile odepack (an error since gfortran 10, an unknown option
+# before); BLAS/LAPACK are linked (LIBLINK in Makefile_main), not compile flags
 BLASFLAG = -lblas
 LAPACK_FLAG = -llapack
-COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fallow-argument-mismatch -fmax-errors=4 -fopenmp $(BLASFLAG) $(LAPACK_FLAG)
+COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fmax-errors=4 -fopenmp
+ifeq ($(shell echo $(compiler_ver) | awk -F. '{print ($$1 >= 10)}'),1)
+COMMON_FFLAGS += -fallow-argument-mismatch
+endif
 # original code:
 #COMMON_FFLAGS = -MMD -cpp -ffree-line-length-none -fmax-errors=4 -fopenmp
 # EFTCAMB MOD END
 # Using -ffast-math causes differences between Debug and Release configurations.
-# EFTCAMB MOD START: silence warnings and define DEBUG in debug builds
-FFLAGS = -O3 -w $(COMMON_FFLAGS)
-DEBUGFLAGS = -g -fbacktrace -ffpe-trap=invalid,overflow,zero -fbounds-check $(COMMON_FFLAGS) -DDEBUG
-# original code:
-#FFLAGS = -O3 $(COMMON_FFLAGS)
-#DEBUGFLAGS = -g -fbacktrace -ffpe-trap=invalid,overflow,zero -fbounds-check $(COMMON_FFLAGS)
-# EFTCAMB MOD END
+FFLAGS = -O3 $(COMMON_FFLAGS)
+DEBUGFLAGS = -g -fbacktrace -ffpe-trap=invalid,overflow,zero -fbounds-check $(COMMON_FFLAGS)
 ifeq ($(shell uname -s),Darwin)
 SFFLAGS = -dynamiclib #-fpic
 ifneq ($(shell echo $(compiler_ver) | awk '{print ($$1 >= 14.0)}'),0)
@@ -208,6 +206,13 @@ FFLAGS += -DFISHER
 endif
 
 DEBUGFLAGS ?= $(FFLAGS)
+# EFTCAMB MOD START: EFTCAMB debug output (DebugEFTCAMB: verbose printing, one thread, the cache files of a fixq
+# run): make EFTCAMB_DEBUG=1 [Debug] [fixq=<k>]. A Debug build alone only adds the compiler checks.
+ifneq ($(EFTCAMB_DEBUG),)
+FFLAGS += -DEFTCAMB_DEBUG
+DEBUGFLAGS += -DEFTCAMB_DEBUG
+endif
+# EFTCAMB MOD END
 Debug: FFLAGS = $(DEBUGFLAGS)
 
 include ./Makefile_main

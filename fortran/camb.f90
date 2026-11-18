@@ -1221,7 +1221,7 @@
     call Ini%Read('AccuracyTarget', AccuracyTarget)
 
     ! EFTCAMB MOD START: in debug mode only use one thread
-#ifdef DEBUG
+#ifdef EFTCAMB_DEBUG
     ThreadNum = 1
 #endif
     ! EFTCAMB MOD END.

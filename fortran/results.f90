@@ -3088,7 +3088,7 @@
     ! its start and 10x finer during recombination and reionization (State%dtaurec was divided in place, again at
     ! every call, and the reionization steps by 10, which made them coarser)
     rec_refine = 1._dl
-#ifdef DEBUG
+#ifdef EFTCAMB_DEBUG
 #ifdef fixq
     call TimeSteps%Add(0.001_dl/fixq, State%taurst, nstep=1000, IsLog=.true.)
     rec_refine = 10._dl

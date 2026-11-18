@@ -41,7 +41,7 @@
     real(dl), parameter :: EFT_RGR_never_on = 1.1_dl
 
     ! Debug flag. This sintax allows for compile time decorators that look nice.
-#ifdef DEBUG
+#ifdef EFTCAMB_DEBUG
     !< EFTCAMB debug flag. This will turn on printing of many things to aid debugging the code.
     logical, parameter :: DebugEFTCAMB = .true.
 #else
