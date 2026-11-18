@@ -696,7 +696,6 @@
             ! reset the OpenMP-private evolution variables so that every k mode starts from the same state:
             call Ev%eft_cache%initialize()
             Ev%EFTCAMB_printing = .false.
-            Ev%EFTCAMB_QS = .false.
             ! initialize evolution variables:
             Ev%q_ix = q_ix
             Ev%q = q(q_ix)

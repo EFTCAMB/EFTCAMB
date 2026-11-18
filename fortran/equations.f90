@@ -193,7 +193,6 @@
         logical  :: EFTCAMBactive    ! Tells wether EFTCAMB perturbations are active or not
         ! Tells EFTCAMB to fully fill the timestep cache for debug or plotting purposes
         logical  :: EFTCAMB_printing = .false.
-        logical  :: EFTCAMB_QS = .false.        ! Tells EFTCAMB to take the QSA when applicable
         real(dl) :: EFTturnOnTime    ! EFTCAMB switch for the time at which EFT kicks in.
         type(TEFTCAMB_timestep_cache) :: eft_cache ! the EFTCAMB timestep cache.
         ! EFTCAMB MOD END
@@ -2218,7 +2217,6 @@
     nullify(EV%CustomSources)
     ! EFTCAMB MOD START: reset the EFTCAMB part of the (OpenMP-private) evolution variables for every k mode
     EV%EFTCAMB_printing = .false.
-    EV%EFTCAMB_QS = .false.
     call EV%eft_cache%initialize()
     ! EFTCAMB MOD END.
 
@@ -2604,7 +2602,6 @@
 
     ! EFTCAMB MOD START: reset the EFTCAMB part of the (OpenMP-private) evolution variables for every k mode
     eV%EFTCAMB_printing = .false.
-    eV%EFTCAMB_QS = .false.
     call eV%eft_cache%initialize()
     ! EFTCAMB MOD END.
 
