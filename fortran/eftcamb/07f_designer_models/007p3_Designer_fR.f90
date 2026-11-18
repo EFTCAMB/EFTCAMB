@@ -147,7 +147,7 @@
     ! read precision parameters
     self%designer_num_points = Ini%Read_Int('model_background_num_points', 6000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBDesignerFRReadModelSelectionFromFile
 
@@ -327,7 +327,7 @@
     logical, optional                          :: only_B0
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
     integer, intent(in)                        :: feedback_level   !< whether be noisy
-    logical :: only_B0_temp
+    logical :: only_B0_temp, today_node
 
     integer, parameter :: num_eq = 2   !<  Number of equations
 
@@ -423,41 +423,56 @@
         call output(num_eq, 1, t1, y, B0)
     end if
 
-    ! 5) solve the equations:
+    ! 5) solve the equations. B0 is B at a = 1: the table can extend past today (model_background_a_final > 1), so
+    ! the step that contains a = 1 stops there first; a node at a = 1 to roundoff is today itself.
     do i = 1, self%EFTOmega%num_points - 1
 
         ! set the time step:
         t1 = self%EFTOmega%x(i)
         t2 = self%EFTOmega%x(i + 1)
-        ! solve the system:
-        call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-            jacobian, JacobianMode)
-        ! check istate for LSODA good completion:
-        if (istate < 0) then
-            if (istate == -1) then
-                if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                istate = 1
-            else
-                success = .false.
-                if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
-                return
-            end if
+        today_node = t1 < 0._dl .and. abs(t2) <= 1.e-10_dl
+        if (t1 < 0._dl .and. t2 > 1.e-10_dl) then
+            if (.not. integrate_to(0._dl)) return
+            ! B today (this fills table entry i + 1 at a = 1; the call at t2 below overwrites it):
+            call output(num_eq, i + 1, t1, y, B0)
         end if
+        if (.not. integrate_to(t2)) return
         ! compute output EFT functions if needed:
-        if (.not. only_B0_temp) then
-            call output(num_eq, i + 1, t2, y, B0)
+        if (.not. only_B0_temp .or. today_node) then
+            call output(num_eq, i + 1, t2, y, B)
+            if (today_node) B0 = B
         end if
 
     end do
 
-    ! compute B0:
-    if (only_B0_temp) then
-        call output(num_eq, self%EFTOmega%num_points, t2, y, B0)
-    end if
-
     return
 
     contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Integrates the system from t1 to t_end (t1 is t_end on output); false if DLSODA failed.
+    logical function integrate_to(t_end)
+
+    implicit none
+
+    real(dl), intent(in) :: t_end
+
+    call DLSODA (derivs, num_eq, y, t1, t_end, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
+        jacobian, JacobianMode)
+    integrate_to = .true.
+    ! check istate for LSODA good completion:
+    if (istate < 0) then
+        if (istate == -1) then
+            if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
+            istate = 1
+        else
+            success = .false.
+            integrate_to = .false.
+            if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
+        end if
+    end if
+
+    end function integrate_to
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes y' given y for the background of designer f(R)

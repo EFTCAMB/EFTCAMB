@@ -72,6 +72,9 @@
         real(dl) :: phi_ini               !< initial value of the scalar field
         real(dl) :: phidot_ini            !< initial conformal time derivative of the scalar field
         real(dl) :: rhode_ini             !< initial energy density of the scalar field
+        ! background today (a = 1, inside the table, which can extend past it: model_background_a_final > 1):
+        real(dl) :: H_today               !< physical Hubble today (the model's H0)
+        real(dl) :: tau_today             !< conformal time today
         !< flag whether using the model specific initial condition, might not be defined for every model
         logical  :: model_specifc_ic
         logical  :: evolve_hubble         !< flag whether ingrating H' instead of applying the energy constraint
@@ -317,7 +320,7 @@
     self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 6000)
     self%a_initial = Ini%Read_Double('model_background_a_ini', 1d-14)
     self%x_initial = log(self%a_initial)
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
     self%check_rapid_evolution = Ini%Read_Logical('Horndeski_check_rapid_evolution', .true.)
     self%rapid_evolution_threshold = Ini%Read_Double('Horndeski_rapid_evolution_threshold', 1000._dl)
 
@@ -1553,7 +1556,8 @@
 
     params_cache%maxfrac_hdsk = self%maxfrac_hdsk
     params_cache%z_maxfrac_hdsk = self%z_maxfrac_hdsk
-    params_cache%h0_Mpc = self%H%y(self%H%num_points)
+    ! H0 is H at a = 1, not at the last table point (it can be past today)
+    params_cache%h0_Mpc = self%H_today
     params_cache%h0 = params_cache%h0_Mpc*c/1000._dl
     if (DebugEFTCAMB .or. feedback_level > 2) then
         call params_cache%print()
@@ -1578,7 +1582,7 @@
     j = 0
     last_dphi_tau = 0._dl
     last_dphi = 0._dl
-    tau_hdsk = self%tau%y(self%tau%num_points) ! initialize to conformal time today
+    tau_hdsk = self%tau_today ! initialize to conformal time today (a = 1, not the last table point)
     do i = 1, self%H%num_points
         a = exp(self%H%x(i))
         tau = self%tau%y(i)
@@ -1601,7 +1605,7 @@
             end if
             ! when scf perturbation off, set to some safe big value
         else
-            tau_hdsk = self%tau%y(self%tau%num_points)
+            tau_hdsk = self%tau_today
         end if
         last_dphi = dphi
         self%tau_hdsk%y(i) = max(abs(tau_hdsk), abs(1._dl/a/H*self%min_rel_timescale))
@@ -1931,13 +1935,14 @@
     integer :: num_eq   !<  Number of equations
 
     ! y = tau, phi, phi', (H)
-    real(dl), allocatable :: y(:), ydot(:)
+    real(dl), allocatable :: y(:), ydot(:), y_today(:)
 
     ! odepack quantities:
-    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2
+    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i, i0, idir
+    real(dl) :: rtol, atol, t1, t2, t_today
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
+    logical  :: today_node
 
     ! background quantities that are shared among the derivs and output routines:
     real(dl) :: a, a2, rhob_t, rhoc_t, rhor_t, rhog_t, grhonu_tot, gpinu_tot, grhonudot_tot, gpinudot_tot, &
@@ -1999,8 +2004,9 @@
         y(5) = self%phidot_ini
         y(6) = self%H_ini
     else if (self%designerV) then
-        t1 = self%H%x(self%H%num_points)
-        a = exp(t1)
+        ! the state today (a = 1)
+        t1 = 0._dl
+        a = 1._dl
         y(1) = 0._dl
         y(2) = 0._dl
         y(3) = 0._dl
@@ -2053,44 +2059,44 @@
     ! Jacobian mode: 1=fullJacobian, 2=not provided
     JacobianMode = 2
 
-    ! integrates backwards if designer
+    ! Today is a = 1: the table can extend past it (model_background_a_final > 1); a node at a = 1 to roundoff is
+    ! today itself. H and the conformal time today are stored there (H0 of the model).
     if (self%designerV) then
-        ! compute output EFT functions:
-        call output(num_eq, self%H%num_points, t1, y)
-        ! solve the equations:
-        do i = self%H%num_points, 2, -1
-            ! set the time step:
-            t1 = self%H%x(i)
-            t2 = self%H%x(i - 1)
-            ! perform one integration step
-            call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-                jacobian, JacobianMode)
-            ! check istate for LSODA good completion:
-            if (istate < 0) then
-                if (istate == -1) then
-                    if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                    istate = 1
+        ! the designer conditions hold today: integrate from a = 1 backward to the first node and forward to the last
+        i0 = 0
+        do i = 1, self%H%num_points
+            if (self%H%x(i) <= 1.e-10_dl) i0 = i
+        end do
+        t_today = 0._dl
+        if (abs(self%H%x(i0)) <= 1.e-10_dl) t_today = self%H%x(i0)
+        y_today = y
+        call derivs(num_eq, t_today, y, ydot)
+        self%H_today = H
+        self%tau_today = y(1)
+        do idir = -1, 1, 2
+            y = y_today
+            t1 = t_today
+            istate = 1
+            i = i0
+            if (idir == 1) i = i0 + 1
+            do while (i >= 1 .and. i <= self%H%num_points)
+                t2 = self%H%x(i)
+                if (t2 /= t1) then
+                    ! perform one integration step
+                    if (.not. advance(t2)) return
+                    ! compute output EFT functions if needed:
+                    call output(num_eq, i, t2, y)
+                    ! check very small or negative Meff^2 here so we do not waste time on meaningless cosmologies
+                    if (.not. meff_ok()) then
+                        if (feedback_level > 1) write(*, *) 'Theory unstable with Meff^2<0'
+                        success = .false.
+                        return
+                    end if
                 else
-                    if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
-                    success = .false.
-                    return
+                    call output(num_eq, i, t2, y)
                 end if
-            end if
-            ! LSODA might not complain about some physical error during integration
-            if (.not. success) then
-                if (feedback_level > 1) write(*, *) 'ERROR during DLSODA running: ', integration_error_message
-                success = .false.
-                return
-            end if
-            ! compute output EFT functions if needed:
-            call output(num_eq, i - 1, t2, y)
-            ! check very small or negative Meff^2 here so we do not waste time on meaningless cosmologies
-            if (self%check_Meff .and. G4 - (phi_prime/a)**2*G4x - 0.5_dl*H*(phi_prime/a)**3*G5x + &
-                0.5_dl*(phi_prime/a)**2*G5p <= 1d-3) then
-                if (feedback_level > 1) write(*, *) 'Theory unstable with Meff^2<0'
-                success = .false.
-                return
-            end if
+                i = i + idir
+            end do
         end do
     else
         ! compute output EFT functions:
@@ -2100,31 +2106,24 @@
             ! set the time step:
             t1 = self%H%x(i)
             t2 = min(self%H%x(i + 1), self%H%x_final)
+            today_node = t1 < 0._dl .and. abs(t2) <= 1.e-10_dl
+            if (t1 < 0._dl .and. t2 > 1.e-10_dl) then
+                ! today inside the step: stop there first
+                if (.not. advance(0._dl)) return
+                call derivs(num_eq, t1, y, ydot)
+                self%H_today = H
+                self%tau_today = y(1)
+            end if
             ! perform one integration step
-            call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-                jacobian, JacobianMode)
-            ! check istate for LSODA good completion:
-            if (istate < 0) then
-                if (istate == -1) then
-                    if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                    istate = 1
-                else
-                    if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
-                    success = .false.
-                    return
-                end if
-            end if
-            ! LSODA might not complain about some physical error during integration
-            if (.not. success) then
-                if (feedback_level > 1) write(*, *) 'ERROR during DLSODA running: ', integration_error_message
-                success = .false.
-                return
-            end if
+            if (.not. advance(t2)) return
             ! compute output EFT functions if needed:
             call output(num_eq, i + 1, t2, y)
+            if (today_node) then
+                self%H_today = H
+                self%tau_today = y(1)
+            end if
             ! check very small or negative Meff^2 here so we do not waste time on meaningless cosmologies
-            if (self%check_Meff .and. G4 - (phi_prime/a)**2*G4x - 0.5_dl*H*(phi_prime/a)**3*G5x + &
-                0.5_dl*(phi_prime/a)**2*G5p <= 1d-3) then
+            if (.not. meff_ok()) then
                 write(*, *) 'Theory unstable with Meff^2<0'
                 success = .false.
                 return
@@ -2135,6 +2134,49 @@
     return
 
     contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Integrates the background from t1 to t_end (t1 is t_end on output); false if the integration failed.
+    logical function advance(t_end)
+
+    implicit none
+
+    real(dl), intent(in) :: t_end
+
+    advance = .false.
+    call DLSODA (derivs, num_eq, y, t1, t_end, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
+        jacobian, JacobianMode)
+    ! check istate for LSODA good completion:
+    if (istate < 0) then
+        if (istate == -1) then
+            if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
+            istate = 1
+        else
+            if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
+            success = .false.
+            return
+        end if
+    end if
+    ! LSODA might not complain about some physical error during integration
+    if (.not. success) then
+        if (feedback_level > 1) write(*, *) 'ERROR during DLSODA running: ', integration_error_message
+        success = .false.
+        return
+    end if
+    advance = .true.
+
+    end function advance
+
+    ! ---------------------------------------------------------------------------------------------
+    !> False if Meff^2 is very small or negative at the last output (when check_Meff is set).
+    logical function meff_ok()
+
+    implicit none
+
+    meff_ok = .not. (self%check_Meff .and. G4 - (phi_prime/a)**2*G4x - 0.5_dl*H*(phi_prime/a)**3*G5x + &
+        0.5_dl*(phi_prime/a)**2*G5p <= 1d-3)
+
+    end function meff_ok
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes y' given y for the background
@@ -2813,7 +2855,8 @@
     success = .true.
 
     if (self%designerV) then
-        a = exp(self%x_final)
+        ! the designer conditions are today's (a = 1; the table can extend past it)
+        a = 1._dl
     else
         a = exp(self%x_initial)
     end if

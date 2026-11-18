@@ -139,7 +139,7 @@
     ! read precision parameters
     self%background_num_points = Ini%Read_Int('model_background_num_points', 10000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-9))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBKmouflageReadModelSelectionFromFile
 
@@ -523,8 +523,8 @@
         eps2p, eps2pp, nu_A, alpha_A, dKdchi, d2Kdchi2, d3Kdchi3, ufunc, vfunc, ufuncp, ufuncpp, vfuncp, vfuncpp, &
         eps1, p_phi, rho_phi, OmegaPhi
 
-    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2
+    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i, i0, idir
+    real(dl) :: rtol, atol, t1, t2, t_today, y_today(num_eq)
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
     real(dl) :: Unormalization, U1, K, Kp, adotoaL, HdotL, Hdot1
@@ -615,23 +615,36 @@
     ! Jacobian mode: 1=fullJacobian, 2=not provided
     JacobianMode = 2
 
-    ! store the first value of the EFT functions:
-    t1 = self%EFTOmega%x(self%EFTOmega%num_points)
-    call output(num_eq, self%EFTOmega%num_points, t1, y)
-
-    ! 4) Integrate dK/dx:
-    do i = self%EFTOmega%num_points, 2, -1
-        ! set the time step:
-        t1 = self%EFTOmega%x(i)
-        t2 = self%EFTOmega%x(i - 1)
-        call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-            jacobian, JacobianMode)
-
-        if (istate < 0) then
-            success = .false.
-            return
-        end if
-        call output(num_eq, i - 1, t2, y)
+    ! 4) Integrate dK/dx. The initial conditions hold today (a = 1): integrate from a = 1 backward to the first node
+    ! and forward to the last (the table can extend past today, model_background_a_final > 1); a node at a = 1 to
+    ! roundoff is today itself.
+    i0 = 0
+    do i = 1, self%EFTOmega%num_points
+        if (self%EFTOmega%x(i) <= 1.e-10_dl) i0 = i
+    end do
+    t_today = 0._dl
+    if (abs(self%EFTOmega%x(i0)) <= 1.e-10_dl) t_today = self%EFTOmega%x(i0)
+    y_today = y
+    do idir = -1, 1, 2
+        y = y_today
+        t1 = t_today
+        istate = 1
+        i = i0
+        if (idir == 1) i = i0 + 1
+        do while (i >= 1 .and. i <= self%EFTOmega%num_points)
+            ! set the time step:
+            t2 = self%EFTOmega%x(i)
+            if (t2 /= t1) then
+                call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+                    LIW, jacobian, JacobianMode)
+                if (istate < 0) then
+                    success = .false.
+                    return
+                end if
+            end if
+            call output(num_eq, i, t2, y)
+            i = i + idir
+        end do
     end do
 
     contains

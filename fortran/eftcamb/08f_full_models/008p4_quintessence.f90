@@ -180,7 +180,7 @@
     ! read precision parameters
     self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 11000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1.1_dl))
+    self%x_final = self%read_background_x_final(Ini, 1.1_dl, eft_error)
 
     end subroutine EFTCAMB5eReadModelSelectionFromFile
 
@@ -696,7 +696,7 @@
     logical, optional                          :: only_solve
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
     real(dl), intent(out), optional            :: omega_phi_ini !< field energy fraction at the initial time
-    logical :: only_solve_temp
+    logical :: only_solve_temp, today_node
 
     integer, parameter :: num_eq = 2   !<  Number of equations
 
@@ -800,8 +800,11 @@
         ! set the time step:
         t1 = self%EFTc%x(i)
         t2 = self%EFTc%x(i + 1)
+        ! H0^2 is H^2 at a = 1: a last node at a = 1 to roundoff (model_background_a_final = 1) is today itself (the
+        ! step that reached x = 0 exactly was never taken, and a node at -1e-16 gave no H0 at all)
+        today_node = t1 < 0._dl .and. abs(t2) <= 1.e-10_dl
         ! check if the boundary has been reached:
-        if (t1 < 0._dl .and. t2 >= 0._dl) then
+        if (t1 < 0._dl .and. t2 > 1.e-10_dl) then
             ! solve until zero:
             t2_temp = 0._dl
             call integrate(t1, t2_temp)
@@ -822,6 +825,10 @@
         if (istate < 0) then
             success = .false.
             return
+        end if
+        if (today_node) then
+            call derivs(num_eq, t2, y, ydot)
+            H02 = H2
         end if
 
         ! compute output EFT functions if needed:

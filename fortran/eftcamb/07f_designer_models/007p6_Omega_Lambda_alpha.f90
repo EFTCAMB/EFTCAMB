@@ -287,7 +287,7 @@
     ! read precision parameters
     self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 25000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-11))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBOLInitModelParametersFromFile
 
@@ -736,8 +736,8 @@
     real(dl) :: y(num_eq), ydot(num_eq)
 
     ! odepack quantities:
-    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2, B
+    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i, i0, idir
+    real(dl) :: rtol, atol, t1, t2, B, t_today
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
 
@@ -796,39 +796,52 @@
     ! Jacobian mode: 1=fullJacobian, 2=not provided
     JacobianMode = 1
 
-    ! solve only backward in time
-    if (.true.) then
-        ! store the first value of the EFT functions:
-        t1 = self%EFTc%x(self%EFTc%num_points)
-        call output(num_eq, self%EFTc%num_points, t1, y)
-        ! solve the equations:
-        do i = self%EFTc%num_points, 2, -1
+    ! the condition y = 0 holds today (a = 1): integrate from a = 1 backward to the first node and forward to the last
+    ! (the table can extend past today, model_background_a_final > 1); a node at a = 1 to roundoff is today itself
+    i0 = 0
+    do i = 1, self%EFTc%num_points
+        if (self%EFTc%x(i) <= 1.e-10_dl) i0 = i
+    end do
+    t_today = 0._dl
+    if (abs(self%EFTc%x(i0)) <= 1.e-10_dl) t_today = self%EFTc%x(i0)
+    do idir = -1, 1, 2
+        y(1) = 0._dl
+        t1 = t_today
+        istate = 1
+        i = i0
+        if (idir == 1) i = i0 + 1
+        do while (i >= 1 .and. i <= self%EFTc%num_points)
             ! set the time step:
-            t1 = self%EFTc%x(i)
-            t2 = self%EFTc%x(i - 1)
-            ! solve the system:
-            call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-                jacobian, JacobianMode)
-            ! check istate for LSODA good completion (excessive work included: the background is singular):
-            if (istate < 0) then
-                success = .false.
-                if (feedback_level > 1) write(*, '(a,I3,a,E13.4)') '   OL background: DLSODA failed with code', &
-                    istate, ' at a =', exp(t2)
-                deallocate(rwork, iwork)
-                return
+            t2 = self%EFTc%x(i)
+            if (t2 /= t1) then
+                ! solve the system:
+                call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+                    LIW, jacobian, JacobianMode)
+                ! check istate for LSODA good completion (excessive work included: the background is singular):
+                if (istate < 0) then
+                    success = .false.
+                    if (feedback_level > 1) write(*, '(a,I3,a,E13.4)') '   OL background: DLSODA failed with code', &
+                        istate, ' at a =', exp(t2)
+                    deallocate(rwork, iwork)
+                    return
+                end if
+                ! compute output EFT functions:
+                call output(num_eq, i, t2, y)
+                ! the background must exist: H^2 > 0 and a regular y equation (1 + Omega + a Omega'/2 > 0)
+                if (.not. (yGR + y(1) > 0._dl) .or. .not. (1._dl + EFTOmega + 0.5_dl*a*EFTOmegaP > 0._dl)) then
+                    success = .false.
+                    if (feedback_level > 1) write(*, '(a,E13.4)') &
+                        '   OL background does not exist (H^2 <= 0 or 1 + Omega + a Omega''/2 <= 0) at a =', exp(t2)
+                    deallocate(rwork, iwork)
+                    return
+                end if
+            else
+                ! store the value of the EFT functions today:
+                call output(num_eq, i, t2, y)
             end if
-            ! compute output EFT functions:
-            call output(num_eq, i - 1, t2, y)
-            ! the background must exist: H^2 > 0 and a regular y equation (1 + Omega + a Omega'/2 > 0)
-            if (.not. (yGR + y(1) > 0._dl) .or. .not. (1._dl + EFTOmega + 0.5_dl*a*EFTOmegaP > 0._dl)) then
-                success = .false.
-                if (feedback_level > 1) write(*, '(a,E13.4)') &
-                    '   OL background does not exist (H^2 <= 0 or 1 + Omega + a Omega''/2 <= 0) at a =', exp(t2)
-                deallocate(rwork, iwork)
-                return
-            end if
+            i = i + idir
         end do
-    end if
+    end do
     ! return:
     success = .true.
     deallocate(rwork, iwork)

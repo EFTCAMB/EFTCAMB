@@ -144,6 +144,8 @@
     procedure :: wDE_prior => EFTCAMBModelwDEPrior
     !< function that returns the scale factor where the model background solution starts (0: everywhere).
     procedure :: background_start => EFTCAMBModelBackgroundStart
+    !< function that reads model_background_a_final (the end of a model background table) and returns its log.
+    procedure :: read_background_x_final => EFTCAMBModelReadBackgroundXFinal
     !< subroutine that checks that the pi evolution is regular after the perturbation turn-on (message: '' if it is).
     procedure :: pi_evolution_check => EFTCAMBModelPiEvolutionCheck
     ! positivity bounds:
@@ -1482,6 +1484,34 @@
     stable = .true.
 
     end subroutine EFTCAMBModelBeyondGLPVStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that reads model_background_a_final, the scale factor where a model background table ends, and
+    !! returns its log. The table can extend past today: the models impose and read their conditions today at a = 1
+    !! inside it. a_final < 1 is refused (today would be outside the table).
+    function EFTCAMBModelReadBackgroundXFinal(self, Ini, a_final_default, eft_error) result(x_final)
+
+    implicit none
+
+    class(EFTCAMB_model)  :: self            !< the base class
+    class(TIniFile)       :: Ini             !< input ini file
+    real(dl), intent(in)  :: a_final_default !< the model's default a_final
+    integer               :: eft_error       !< error code: 0 all fine, 1 initialization failed
+    real(dl)              :: x_final         !< log(a_final)
+
+    real(dl) :: a_final
+
+    a_final = Ini%Read_Double('model_background_a_final', a_final_default)
+    x_final = 0._dl
+    if (.not. (a_final >= 1._dl)) then
+        call GlobalError('EFTCAMB error: model_background_a_final must be >= 1 (today, a = 1, must be inside the ' // &
+            'model background table)', error_unsupported_params)
+        eft_error = 1
+        return
+    end if
+    x_final = log(a_final)
+
+    end function EFTCAMBModelReadBackgroundXFinal
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that tests the phenomenological prior w_DE <= -1/3, enforced when EFT_wDE_prior = T.

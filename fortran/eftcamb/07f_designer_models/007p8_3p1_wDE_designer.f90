@@ -205,7 +205,7 @@
     ! read precision parameters
     self%designer_num_points = Ini%Read_Int('model_background_num_points', 6000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBDesigner3p1ReadModelSelectionFromFile
 
@@ -929,8 +929,8 @@
 
     real(dl) :: grhom0, grhor0, grhov0
 
-    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2
+    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i, i0, idir
+    real(dl) :: rtol, atol, t1, t2, t_today
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
 
@@ -981,31 +981,43 @@
     ! Jacobian mode: 1=fullJacobian, 2=not provided
     JacobianMode = 2
 
-    ! initial time:
-    t1 = self%rhov_t%x(self%designer_num_points)
-    ! store initial step:
-    call output(num_eq, self%designer_num_points, t1, y)
-    ! solve the equations:
-    do i = self%designer_num_points, 2, -1
-        ! set the time step:
-        t1 = self%rhov_t%x(i)
-        t2 = self%rhov_t%x(i - 1)
-        ! solve the system:
-        call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-            jacobian, JacobianMode)
-        ! check istate for LSODA good completion:
-        if (istate < 0) then
-            if (istate == -1) then
-                if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                istate = 1
-            else
-                success = .false.
-                write(*, *) 'DLSODA failed with code:', istate
-                return
+    ! the normalisation rhov_t/rhov_0 = 1 holds today: integrate from a = 1 backward to the first node and forward to
+    ! the last (the table can extend past today, model_background_a_final > 1); a node at a = 1 to roundoff is today
+    i0 = 0
+    do i = 1, self%designer_num_points
+        if (self%rhov_t%x(i) <= 1.e-10_dl) i0 = i
+    end do
+    t_today = 0._dl
+    if (abs(self%rhov_t%x(i0)) <= 1.e-10_dl) t_today = self%rhov_t%x(i0)
+    do idir = -1, 1, 2
+        y(1) = 1._dl
+        t1 = t_today
+        istate = 1
+        i = i0
+        if (idir == 1) i = i0 + 1
+        do while (i >= 1 .and. i <= self%designer_num_points)
+            ! set the time step:
+            t2 = self%rhov_t%x(i)
+            if (t2 /= t1) then
+                ! solve the system:
+                call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+                    LIW, jacobian, JacobianMode)
+                ! check istate for LSODA good completion:
+                if (istate < 0) then
+                    if (istate == -1) then
+                        if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
+                        istate = 1
+                    else
+                        success = .false.
+                        write(*, *) 'DLSODA failed with code:', istate
+                        return
+                    end if
+                end if
             end if
-        end if
-        ! compute output functions if needed:
-        call output(num_eq, i - 1, t2, y)
+            ! compute output functions if needed:
+            call output(num_eq, i, t2, y)
+            i = i + idir
+        end do
     end do
 
     return

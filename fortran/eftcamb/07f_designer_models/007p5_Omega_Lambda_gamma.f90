@@ -161,7 +161,7 @@
     ! read precision parameters
     self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 25000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-9))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1.1_dl))
+    self%x_final = self%read_background_x_final(Ini, 1.1_dl, eft_error)
     self%OL_Omega_min = Ini%Read_Double('OL_Omega_min', -0.95_dl)
 
     end subroutine EFTCAMBOLReadModelSelectionFromFile

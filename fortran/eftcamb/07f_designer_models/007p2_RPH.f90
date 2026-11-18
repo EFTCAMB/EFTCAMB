@@ -211,7 +211,7 @@
     ! read precision parameters
     self%designer_num_points = Ini%Read_Int('model_background_num_points', 60000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBRPHReadModelSelectionFromFile
 
@@ -1017,12 +1017,12 @@
     integer, intent(in)                        :: feedback_level   !< whether be noisy
 
     integer :: num_eq       !<  Number of equations
-    real(dl), allocatable :: y(:), ydot(:)
+    real(dl), allocatable :: y(:), ydot(:), y_today(:)
 
     real(dl) :: grhom0, grhor0, grhov0
 
-    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2
+    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i, i0, idir
+    real(dl) :: rtol, atol, t1, t2, t_today
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
 
@@ -1082,41 +1082,57 @@
     ! Jacobian mode: 1=fullJacobian, 2=not provided
     JacobianMode = 2
 
+    ! the normalisations rhov_t/rhov_0 = 1 (and 1 + RPH_M0 = Meff^2/m_0^2 when integrating from today) hold today, at
+    ! a = 1: the table can extend past it (model_background_a_final > 1); a node at a = 1 to roundoff is today itself
+    i0 = 0
+    do i = 1, self%designer_num_points
+        if (self%rhov_t%x(i) <= 1.e-10_dl) i0 = i
+    end do
+    t_today = 0._dl
+    if (abs(self%rhov_t%x(i0)) <= 1.e-10_dl) t_today = self%rhov_t%x(i0)
+
     if (self%RPHintegratefromtoday) then
-        ! initial time:
-        t1 = self%rhov_t%x(self%designer_num_points)
-        ! store initial step:
-        call output(num_eq, self%designer_num_points, t1, y)
-        ! solve the equations:
-        do i = self%designer_num_points, 2, -1
-            ! set the time step:
-            t1 = self%rhov_t%x(i)
-            t2 = self%rhov_t%x(i - 1)
-            ! solve the system:
-            call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-                jacobian, JacobianMode)
-            ! check istate for LSODA good completion:
-            if (istate < 0) then
-                if (istate == -1) then
-                    if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                    istate = 1
-                else
-                    success = .false.
-                    write(*, *) 'DLSODA failed with code:', istate
-                    return
+        ! integrate from a = 1 backward to the first node and forward to the last:
+        y_today = y
+        do idir = -1, 1, 2
+            y = y_today
+            t1 = t_today
+            istate = 1
+            i = i0
+            if (idir == 1) i = i0 + 1
+            do while (i >= 1 .and. i <= self%designer_num_points)
+                ! set the time step:
+                t2 = self%rhov_t%x(i)
+                if (t2 /= t1) then
+                    ! solve the system:
+                    call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, &
+                        iwork, LIW, jacobian, JacobianMode)
+                    ! check istate for LSODA good completion:
+                    if (istate < 0) then
+                        if (istate == -1) then
+                            if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
+                            istate = 1
+                        else
+                            success = .false.
+                            write(*, *) 'DLSODA failed with code:', istate
+                            return
+                        end if
+                    end if
                 end if
-            end if
-            ! compute output functions if needed:
-            call output(num_eq, i - 1, t2, y)
+                ! compute output functions if needed:
+                call output(num_eq, i, t2, y)
+                i = i + idir
+            end do
         end do
     else
         ! first integrate DE backward from a = 1 (rhov_t/rhov_0 = 1) to the initial time to find the initial
         ! condition. One DLSODA call over the whole range returns after iwork(6) = 100 internal steps (istate = -1)
         ! far from the end point for any w_DE /= -1, so integrate on the table grid and continue after
         ! excessive-work returns until each step is complete.
-        do i = self%designer_num_points, 2, -1
-            t1 = self%rhov_t%x(i)
-            t2 = self%rhov_t%x(i - 1)
+        t1 = t_today
+        do i = i0, 1, -1
+            t2 = self%rhov_t%x(i)
+            if (t2 == t1) cycle
             do
                 call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
                     LIW, jacobian, JacobianMode)

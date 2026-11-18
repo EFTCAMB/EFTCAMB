@@ -748,6 +748,37 @@ class EFTCAMBTest(unittest.TestCase):
             with self.subTest(extra=extra), self.assertRaisesRegex(CAMBError, message):
                 camb.get_results(self.read(model, extra))
 
+    def test_background_a_final(self):
+        # the model background tables can extend past today (model_background_a_final > 1): every model sets and reads
+        # its conditions today at a = 1 inside the table. They were set at the last table point: at a_final = 1.3, H0
+        # was off by up to 20% (Beyond Horndeski, Scaling Cubic, designer-V) and sigma8 by up to 55% (OL alpha);
+        # K-mouflage refused a_final /= 1. Quintessence (default 1.1) failed at a_final = 1. a_final < 1 is refused.
+        # What remains is the table spacing (the same number of points over a longer range): <= 1e-5 in the C_l here
+        # (3e-4 for the Horndeski EDE inis), and nothing at all when a_final keeps the spacing.
+        for model in (
+            "6_HDSK_thaw",
+            "6_HDSK_designer_V",
+            "5_BH_x30",
+            "5_SCG",
+            "4_FR_CPL",
+            "3_OLA_MK",
+            "5_KMOUFLAGE",
+            "3_RPH_wDE_CPL",
+            "4_3P1_luminal",
+            "5_QUINT_exponential",
+        ):
+            with self.subTest(model=model):
+                ref, ext = (
+                    camb.get_results(self.read(model, f"model_background_a_final = {a_final}"))
+                    for a_final in ("1.0", "1.3")
+                )
+                self.assertAlmostEqual(ext.Params.H0 / ref.Params.H0, 1, delta=1e-6)
+                self.assertAlmostEqual(ext.get_sigma8_0() / ref.get_sigma8_0(), 1, delta=1e-5)
+                cl_ref, cl_ext = (r.get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"] for r in (ref, ext))
+                np.testing.assert_allclose(cl_ext[2:600, :2], cl_ref[2:600, :2], rtol=3e-5)
+        with self.assertRaisesRegex(CAMBValueError, "model_background_a_final must be >= 1"):
+            self.read("3_OLA_MK", "model_background_a_final = 0.9")
+
     def test_extended_galileon_prior(self):
         # the empirical (S + 0.02) q < 0.5 line (a fit to the optional mass cut of arXiv:1912.07586) refused these
         # viable models; the strong-coupling prior still refuses q S > 1

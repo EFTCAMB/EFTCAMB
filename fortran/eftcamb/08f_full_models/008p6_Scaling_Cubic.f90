@@ -159,7 +159,7 @@
     ! read precision parameters
     self%designer_num_points = Ini%Read_Int('model_background_num_points', 20000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1.e-10_dl))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBScalingCubicReadModelSelectionFromFile
 
@@ -359,12 +359,10 @@
     end if
 
     if (feedback_level > 0) then
-        xj = 0._dl
-        call self%fun_x1%precompute(xj, ind, mu)
         write(*, '(a)') 'today values'
-        write(*, '(a,F8.2)') 'x1 = ', self%fun_x1%value(xj, index=ind, coeff=mu)
-        write(*, '(a,F8.2)') 'y1 = ', self%fun_y1%value(xj, index=ind, coeff=mu)
-        write(*, '(a,F8.2)') 'y2 = ', self%fun_y2%value(xj, index=ind, coeff=mu)
+        write(*, '(a,F8.2)') 'x1 = ', self%SCG_x1today
+        write(*, '(a,F8.2)') 'y1 = ', self%SCG_y1today
+        write(*, '(a,F8.2)') 'y2 = ', self%SCG_y2today
     end if
 
     if (self%debug_flag) then
@@ -417,11 +415,8 @@
 
     end if
 
-    ! store energy densities today
-    xj = 0._dl
-    call self%fun_x1%precompute(xj, ind, mu)
-    OmegaDE_0 = SCGOmegaDE(self, self%fun_x1%value(xj, index=ind, coeff=mu), &
-        self%fun_y1%value(xj, index=ind, coeff=mu), self%fun_y2%value(xj, index=ind, coeff=mu))
+    ! energy densities today, from the values today stored by the last background solution (exact at a = 1)
+    OmegaDE_0 = SCGOmegaDE(self, self%SCG_x1today, self%SCG_y1today, self%SCG_y2today)
     call SCGFluid(params_cache, 1._dl, grho_fl, gp_fl, gp_flp, gp_flpp)
     H_0 = sqrt(grho_fl/((1._dl - OmegaDE_0)*3._dl))
 
@@ -439,11 +434,6 @@
         write(*, '(a,F8.6)') 'OmegaM_0   = ', OmegaM_0
         write(*, *) '---------------------------------------------------'
     end if
-
-    ! store x values today
-    self%SCG_x1today = self%fun_x1%value(xj, index=ind, coeff=mu)
-    self%SCG_y1today = self%fun_y1%value(xj, index=ind, coeff=mu)
-    self%SCG_y2today = self%fun_y2%value(xj, index=ind, coeff=mu)
 
     end subroutine EFTCAMBScalingCubicInitBackground
 
@@ -470,6 +460,7 @@
     real(dl) :: rtol, atol, t1, t2, B
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
+    logical  :: today_node
 
     ! 1) Dark energy density today (closure, massive neutrinos included):
     OmegaDE_0 = 1._dl - params_cache%omegac - params_cache%omegab - params_cache%omegag - params_cache%omegar - &
@@ -526,12 +517,23 @@
     ! compute output EFT functions if needed:
     call output(num_eq, 1, t1, y)
 
-    ! 4) solve the equations:
+    ! 4) solve the equations. Today is a = 1: the table can extend past it (model_background_a_final > 1), so the
+    ! step that contains a = 1 stops there first; a node at a = 1 to roundoff is today itself.
     do i = 1, self%fun_x1%num_points - 1
 
         ! set the time step:
         t1 = self%fun_x1%x(i)
         t2 = self%fun_x1%x(i + 1)
+        today_node = t1 < 0._dl .and. abs(t2) <= 1.e-10_dl
+        if (t1 < 0._dl .and. t2 > 1.e-10_dl) then
+            call DLSODA (derivs, num_eq, y, t1, 0._dl, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+                LIW, jacobian, JacobianMode)
+            if (istate < 0) then
+                success = .false.
+                return
+            end if
+            call store_today()
+        end if
         ! solve the system:
         call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
             jacobian, JacobianMode)
@@ -541,13 +543,24 @@
             return
         end if
         call output(num_eq, i + 1, t2, y)
-        if (i == self%fun_x1%num_points - 1) then
-            tol = (OmegaDE_0 - SCGOmegaDE(self, y(1), y(2), y(3)))/OmegaDE_0
-        end if
+        if (today_node) call store_today()
 
     end do
 
     contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Stores the state today (a = 1): the relative Omega_DE mismatch and the x1, y1, y2 today.
+    subroutine store_today()
+
+    implicit none
+
+    tol = (OmegaDE_0 - SCGOmegaDE(self, y(1), y(2), y(3)))/OmegaDE_0
+    self%SCG_x1today = y(1)
+    self%SCG_y1today = y(2)
+    self%SCG_y2today = y(3)
+
+    end subroutine store_today
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes y' given y for the background the Scaling Cubic Galileon.
