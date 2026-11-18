@@ -2878,7 +2878,8 @@
         end do
     end if
     rho_tot = rhob_t + rhoc_t + rhor_t + rhog_t + grhonu_tot/a**2
-    pres_tot = (rhor_t + rhog_t)/3._dl + grhonu_tot/a**2
+    ! massive neutrino pressure (it was their density: phidot today of designer-V was off with massive neutrinos)
+    pres_tot = (rhor_t + rhog_t)/3._dl + gpinu_tot/a**2
 
     if (self%designerV) then
         H = params_cache%h0_Mpc
