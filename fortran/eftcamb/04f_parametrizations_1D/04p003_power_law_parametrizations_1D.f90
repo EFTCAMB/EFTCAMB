@@ -191,7 +191,13 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: PowerLawParametrized1DFirstDerivative               !< the output value
 
-    PowerLawParametrized1DFirstDerivative = self%coefficient*self%exponent*x**(self%exponent - 1._dl)
+    real(dl) :: factor
+
+    ! the k-th derivative of a power law is c n (n - 1) ... (n - k + 1) x^(n - k): zero when the falling factorial
+    ! vanishes (integer n < k), also at x = 0, where the power is infinite (0 * 0^(-1) was a NaN at phi = 0)
+    factor = self%coefficient*self%exponent
+    PowerLawParametrized1DFirstDerivative = 0._dl
+    if (factor /= 0._dl) PowerLawParametrized1DFirstDerivative = factor*x**(self%exponent - 1._dl)
 
     end function PowerLawParametrized1DFirstDerivative
 
@@ -206,8 +212,13 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: PowerLawParametrized1DSecondDerivative              !< the output value
 
-    PowerLawParametrized1DSecondDerivative = &
-        self%coefficient*self%exponent*(self%exponent - 1._dl)*x**(self%exponent - 2._dl)
+    real(dl) :: factor
+
+    ! the k-th derivative of a power law is c n (n - 1) ... (n - k + 1) x^(n - k): zero when the falling factorial
+    ! vanishes (integer n < k), also at x = 0, where the power is infinite (0 * 0^(-1) was a NaN at phi = 0)
+    factor = self%coefficient*self%exponent*(self%exponent - 1._dl)
+    PowerLawParametrized1DSecondDerivative = 0._dl
+    if (factor /= 0._dl) PowerLawParametrized1DSecondDerivative = factor*x**(self%exponent - 2._dl)
 
     end function PowerLawParametrized1DSecondDerivative
 
@@ -222,8 +233,13 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: PowerLawParametrized1DThirdDerivative               !< the output value
 
-    PowerLawParametrized1DThirdDerivative = &
-        self%coefficient*self%exponent*(self%exponent - 1._dl)*(self%exponent - 2._dl)*x**(self%exponent - 3._dl)
+    real(dl) :: factor
+
+    ! the k-th derivative of a power law is c n (n - 1) ... (n - k + 1) x^(n - k): zero when the falling factorial
+    ! vanishes (integer n < k), also at x = 0, where the power is infinite (0 * 0^(-1) was a NaN at phi = 0)
+    factor = self%coefficient*self%exponent*(self%exponent - 1._dl)*(self%exponent - 2._dl)
+    PowerLawParametrized1DThirdDerivative = 0._dl
+    if (factor /= 0._dl) PowerLawParametrized1DThirdDerivative = factor*x**(self%exponent - 3._dl)
 
     end function PowerLawParametrized1DThirdDerivative
 
@@ -238,8 +254,13 @@
     type(TEFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
     real(dl) :: PowerLawParametrized1DFourthDerivative               !< the output value
 
-    PowerLawParametrized1DFourthDerivative = self%coefficient*self%exponent*(self%exponent - 1._dl)* &
-        (self%exponent - 2._dl)*(self%exponent - 3._dl)*x**(self%exponent - 4._dl)
+    real(dl) :: factor
+
+    ! the k-th derivative of a power law is c n (n - 1) ... (n - k + 1) x^(n - k): zero when the falling factorial
+    ! vanishes (integer n < k), also at x = 0, where the power is infinite (0 * 0^(-1) was a NaN at phi = 0)
+    factor = self%coefficient*self%exponent*(self%exponent - 1._dl)*(self%exponent - 2._dl)*(self%exponent - 3._dl)
+    PowerLawParametrized1DFourthDerivative = 0._dl
+    if (factor /= 0._dl) PowerLawParametrized1DFourthDerivative = factor*x**(self%exponent - 4._dl)
 
     end function PowerLawParametrized1DFourthDerivative
 

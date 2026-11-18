@@ -249,9 +249,6 @@
         real(dl) :: dphi            !< the derivative of the scalar field phi wrt conformal time
         real(dl) :: ddphi           !< the second derivative of the scalar field phi wrt conformal time
         real(dl) :: dddphi          !< the third derivative of the scalar field phi wrt conformal time
-        ! 5e) scalar field time scale
-        !< the conformal time difference between two nearby points of phi=0, estimation of the field evolution timescale if it is oscillating
-        real(dl) :: dtau_hdsk
         ! 6) other background quantities:
         !< the value of the effective density of the Q field. Refer to the Numerical Notes for the definition.
         real(dl) :: grhoq
@@ -510,7 +507,6 @@
     self%ddphi = 0._dl
     self%dddphi = 0._dl
     ! 5e) scalar field time scale
-    self%dtau_hdsk = 0._dl
     ! 6) other background quantities:
     self%grhoq = 0._dl
     self%gpresq = 0._dl
@@ -695,7 +691,6 @@
     HaveNan = check(HaveNan, self%dphi, 'dphi' )
     HaveNan = check(HaveNan, self%ddphi, 'ddphi' )
     HaveNan = check(HaveNan, self%dddphi, 'dddphi' )
-    HaveNan = check(HaveNan, self%dtau_hdsk, 'dtau_hdsk' )
     HaveNan = check(HaveNan, self%grhoq, 'grhoq' )
     HaveNan = check(HaveNan, self%gpresq, 'gpresq' )
     HaveNan = check(HaveNan, self%grhodotq, 'grhodotq' )

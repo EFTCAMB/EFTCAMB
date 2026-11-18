@@ -902,11 +902,6 @@ class EFTCAMB_timestep_cache(F2003Class):
         ("dphi", c_double),  # the derivative of the scalar field phi wrt conformal time
         ("ddphi", c_double),  # the second derivative of the scalar field phi wrt conformal time
         ("dddphi", c_double),  # the third derivative of the scalar field phi wrt conformal time
-        # 5e) scalar field time scale
-        (
-            "dtau_hdsk",
-            c_double,
-        ),  # the conformal time difference between two nearby points of phi=0, estimation of the field evolution timescale if it is oscillating
         # 6) other background quantities:
         (
             "grhoq",

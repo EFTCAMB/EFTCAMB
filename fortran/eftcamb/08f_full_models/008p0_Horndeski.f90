@@ -74,7 +74,6 @@
         real(dl) :: rhode_ini             !< initial energy density of the scalar field
         ! background today (a = 1, inside the table, which can extend past it: model_background_a_final > 1):
         real(dl) :: H_today               !< physical Hubble today (the model's H0)
-        real(dl) :: tau_today             !< conformal time today
         !< flag whether using the model specific initial condition, might not be defined for every model
         logical  :: model_specifc_ic
         logical  :: evolve_hubble         !< flag whether ingrating H' instead of applying the energy constraint
@@ -109,7 +108,6 @@
         type(equispaced_linear_interpolate_function_1D) :: dphi           !< conformal time derivative of phi
         type(equispaced_linear_interpolate_function_1D) :: ddphi          !< second conformal time derivative of phi
         type(equispaced_linear_interpolate_function_1D) :: dddphi         !< third conformal time derivative of phi
-        type(equispaced_linear_interpolate_function_1D) :: tau_hdsk       !< time scale of the horndeski field
 
         ! the EFT functions, TODO: implement analytic derivatives
         type(equispaced_linear_interpolate_function_1D) :: EFTlambda      !< (*) The EFT function Lambda.
@@ -192,8 +190,6 @@
         real(dl) :: a_pertcutoff_before
         !< Turnoff scalar field perturbation after this time, minus means do not turn off
         real(dl) :: a_pertcutoff_after
-        !< Lowerbound of horndeski field timescale relative to Hubble time scale
-        real(dl) :: min_rel_timescale
         !< friction term to dynamically turn off scalar field perturbation
         real(dl) :: hubble_friction
         !< flag whether check the scalar field evolves much faster than cosmological time scale H. While there might be rare cases where one wants to track fast evolution of the field, commonly rapid evolution is physically unwanted and can be even due singularity in the kinetic matrix. Default is true
@@ -303,6 +299,11 @@
     ! read IC flag:
     self%model_specifc_ic = Ini%Read_Logical('Horndeski_model_specific_ic', .false.)
     ! read hubble evolution flag
+    ! With evolve_hubble the Hubble constraint is restored by a friction term proportional to a (5 a times the
+    ! constraint residual), weak at early times: a background that starts too early can keep errors in the early EFT
+    ! functions that the stability check reads as an instability near its start (6_HDSK_evolve_hubble is refused
+    ! from model_background_a_ini = 1e-14, gradient term -1e-8 at a ~ 3e-10, and runs from 1e-12). Start the
+    ! background later, or impose the constraint (Horndeski_evolve_hubble = F).
     self%evolve_hubble = Ini%Read_Logical('Horndeski_evolve_hubble', .true.)
     ! read shooting flag
     self%is_shooting = Ini%Read_Logical('Horndeski_shooting', .false.)
@@ -313,7 +314,6 @@
     ! read perturbation turn off flags
     self%a_pertcutoff_after = Ini%Read_Double('Horndeski_a_pertcutoff_after', -1._dl)
     self%a_pertcutoff_before = Ini%Read_Double('Horndeski_a_pertcutoff_before', -1._dl)
-    self%min_rel_timescale = Ini%Read_Double('Horndeski_min_rel_timescale', 1d-5)
     self%hubble_friction = Ini%Read_Double('Horndeski_hubble_friction', 5._dl)
 
     ! read precision parameters
@@ -1275,7 +1275,6 @@
         eft_cache%dphi = 0._dl
         eft_cache%ddphi = 0._dl
         eft_cache%dddphi = 0._dl
-        eft_cache%dtau_hdsk = 1._dl/eft_par_cache%h0_Mpc
     else
         x = log(a)
         ! All the EFT functions are sampled on the same time grid.
@@ -1294,7 +1293,6 @@
         eft_cache%dphi = self%dphi%value(x, index=ind, coeff=mu)
         eft_cache%ddphi = self%ddphi%value(x, index=ind, coeff=mu)
         eft_cache%dddphi = self%dddphi%value(x, index=ind, coeff=mu)
-        eft_cache%dtau_hdsk = self%tau_hdsk%value(x, index=ind, coeff=mu)
     end if
 
     ! if ((abs(a-1._dl) < 0.001) .or. (abs(a*10._dl-1._dl) < 0.01) .or. (abs(a*1.d2-1._dl) < 0.01) .or. (abs(a*1.d3-1._dl) < 0.01) .or. (abs(a*1.d4-1._dl) < 0.01) .or. (abs(a*1.d5-1._dl) < 0.01)) then
@@ -1441,8 +1439,8 @@
     logical, intent(out) :: success        !< wether the background initialization succeded or not
     character(len=*), intent(in), optional :: outroot        !< the output root for the debug files
 
-    integer  :: i, j, error_flag
-    real(dl) :: phi, dphi, ddphi, dddphi, last_dphi, last_dphi_tau, tau, tau_hdsk, x, a, H, adotoa, Hdot, Hdotdot, &
+    integer  :: i, error_flag
+    real(dl) :: phi, dphi, ddphi, dddphi, last_dphi, tau, x, a, H, adotoa, Hdot, Hdotdot, &
         cHdot, cHdotdot, rhov, presv, rhovdot, presvdot, rhom, presm, rhomdot, presmdot, tmp
     real(dl) :: RPH_PM_V, RPH_AT_V, RPH_PM_P, RPH_AT_P, RPH_PM_PP, RPH_AT_PP, RPH_PM_PPP, RPH_AT_PPP, RPH_AK_V, &
         RPH_AB_V, RPH_AK_P, RPH_AB_P
@@ -1484,7 +1482,6 @@
     call self%dphi%initialize      (self%interpolation_num_points, self%x_initial, self%x_final)
     call self%ddphi%initialize      (self%interpolation_num_points, self%x_initial, self%x_final)
     call self%dddphi%initialize      (self%interpolation_num_points, self%x_initial, self%x_final)
-    call self%tau_hdsk%initialize      (self%interpolation_num_points, self%x_initial, self%x_final)
 
     call self%EFTc%initialize      (self%interpolation_num_points, self%x_initial, self%x_final)
     call self%EFTlambda%initialize (self%interpolation_num_points, self%x_initial, self%x_final)
@@ -1577,38 +1574,26 @@
     ! stop here if no further output are required
     if (self%is_shooting) return
 
-    ! first loop to find dphi sign switching time, oscillation time scale and alphaB crossing 2
+    ! first loop to report the dphi sign changes and the alphaB = 2 crossings (feedback > 2)
     last_alphaB = 0._dl
-    j = 0
-    last_dphi_tau = 0._dl
     last_dphi = 0._dl
-    tau_hdsk = self%tau_today ! initialize to conformal time today (a = 1, not the last table point)
     do i = 1, self%H%num_points
         a = exp(self%H%x(i))
         tau = self%tau%y(i)
-        H = self%H%y(i)
         dphi = self%dphi%y(i)
-        ! only update tau_hdsk when scf perturbation is on and away from initial point
+        ! only while the scalar field perturbation is on and away from the initial point
         if ((a < self%a_pertcutoff_after .or. self%a_pertcutoff_after < 0) .and. a > self%a_pertcutoff_before .and. &
             tau > 0.1_dl) then
-            if (dphi*last_dphi < 0._dl) then
-                ! we rely on a_pertcutoff_before to avoid relaxation period to the true background solution
-                tau_hdsk = tau - last_dphi_tau
-                last_dphi_tau = tau
-                if (feedback_level > 2) then
-                    write(*, *) "phidot changing sign detected at z=", 1._dl/a - 1, "tau=", tau
-                    if (.not. self%evolve_delta_phi) then
-                        write(*, *) "pi equations are singular when phidot crosses 0. Consider setting " // &
-                            "EFTCAMB_evolve_delta_phi = T for this model."
-                    end if
+            ! we rely on a_pertcutoff_before to avoid relaxation period to the true background solution
+            if (dphi*last_dphi < 0._dl .and. feedback_level > 2) then
+                write(*, *) "phidot changing sign detected at z=", 1._dl/a - 1, "tau=", tau
+                if (.not. self%evolve_delta_phi) then
+                    write(*, *) "pi equations are singular when phidot crosses 0. Consider setting " // &
+                        "EFTCAMB_evolve_delta_phi = T for this model."
                 end if
             end if
-            ! when scf perturbation off, set to some safe big value
-        else
-            tau_hdsk = self%tau_today
         end if
         last_dphi = dphi
-        self%tau_hdsk%y(i) = max(abs(tau_hdsk), abs(1._dl/a/H*self%min_rel_timescale))
         ! check alphaB crossing 2
         if ((last_alphaB - 2._dl)*(self%EFTalphaB%y(i) - 2._dl) <= 0._dl .and. (.not. self%evolve_metric_h) .and. &
             self%evolve_delta_phi .and. feedback_level > 2) then
@@ -2060,7 +2045,7 @@
     JacobianMode = 2
 
     ! Today is a = 1: the table can extend past it (model_background_a_final > 1); a node at a = 1 to roundoff is
-    ! today itself. H and the conformal time today are stored there (H0 of the model).
+    ! today itself. H today is stored there (H0 of the model).
     if (self%designerV) then
         ! the designer conditions hold today: integrate from a = 1 backward to the first node and forward to the last
         i0 = 0
@@ -2072,7 +2057,6 @@
         y_today = y
         call derivs(num_eq, t_today, y, ydot)
         self%H_today = H
-        self%tau_today = y(1)
         do idir = -1, 1, 2
             y = y_today
             t1 = t_today
@@ -2108,11 +2092,10 @@
             t2 = min(self%H%x(i + 1), self%H%x_final)
             today_node = t1 < 0._dl .and. abs(t2) <= 1.e-10_dl
             if (t1 < 0._dl .and. t2 > 1.e-10_dl) then
-                ! today inside the step: stop there first
+                ! today inside the step: stop there first for H today
                 if (.not. advance(0._dl)) return
                 call derivs(num_eq, t1, y, ydot)
                 self%H_today = H
-                self%tau_today = y(1)
             end if
             ! perform one integration step
             if (.not. advance(t2)) return
@@ -2120,7 +2103,6 @@
             call output(num_eq, i + 1, t2, y)
             if (today_node) then
                 self%H_today = H
-                self%tau_today = y(1)
             end if
             ! check very small or negative Meff^2 here so we do not waste time on meaningless cosmologies
             if (.not. meff_ok()) then
