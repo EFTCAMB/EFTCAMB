@@ -1000,11 +1000,13 @@ class EFTCAMBTest(unittest.TestCase):
         mu1, scalaron = self.fR_mass("EFTB0 = 1e-2\nEFT_mass_stability_method = 2", a)
         np.testing.assert_allclose(mu1, scalaron, rtol=1e-4)
         hilltop = "n = 1\nm = 8\nEFT_mass_stability = T\nEFT_mass_stability_rate = 3\nEFT_mass_stability_method = "
-        with self.assertRaisesRegex(CAMBError, "theory unstable"):
+        # the refusal names the failed condition and where (it read 'theory unstable' only)
+        tachyonic = r"theory unstable \(tachyonic mass \(EFT_mass_stability\) at a = *[0-9.]+E[+-][0-9]+\)"
+        with self.assertRaisesRegex(CAMBError, tachyonic):
             camb.get_results(self.read("5_QUINT_axion", hilltop + "1"))
         self.assertGreater(camb.get_results(self.read("5_QUINT_axion", hilltop + "2")).get_sigma8_0(), 0)
         tachyon = "EFTB0 = -1e-4\nEFT_additional_priors = F\nEFT_mass_stability = T\nEFT_mass_stability_method = 2"
-        with self.assertRaisesRegex(CAMBError, "theory unstable"):
+        with self.assertRaisesRegex(CAMBError, tachyonic):
             camb.get_results(self.read("4_FR_LCDM", tachyon))
         with self.assertRaisesRegex(CAMBValueError, "invalid EFT_mass_stability_method"):
             self.read("5_QUINT_axion", "EFT_mass_stability_method = 3")

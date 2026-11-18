@@ -734,16 +734,19 @@
 
             if (.not. this%CP%EFTCAMB%EFTCAMB_skip_stability) then
 
-                ! 4) compute wether the theory is stable or not:
+                ! 4) compute wether the theory is stable or not. The k-dependent conditions (the pi kinetic term,
+                ! the mathematical ghost and mass conditions) are tested up to k_max = 10/Mpc, whatever the k of
+                ! the run: a condition that fails only above it is not seen (near-GLPV crossovers with
+                ! |gamma3 + gamma4| or |gamma6| <~ 1e-11), one that fails only above the run's largest k refuses it.
                 k_max = 10._dl
                 call EFTCAMB_Stability_Check(success, this%CP%EFTCAMB, this%CP%eft_par_cache, &
-                    this%CP%EFTCAMB%EFTCAMB_stability_time, 1._dl, k_max)
+                    this%CP%EFTCAMB%EFTCAMB_stability_time, 1._dl, k_max, eft_message)
                 if (.not. success) then
-                    ! keep the message of an error raised during the check:
+                    ! keep the message of an error raised during the check; otherwise name the failed condition:
                     if (global_error_flag == 0) then
-                        call GlobalError('EFTCAMB: theory unstable', 1)
+                        call GlobalError('EFTCAMB: theory unstable (' // trim(eft_message) // ')', 1)
                     else if (len_trim(global_error_message) == 0) then
-                        global_error_message = 'EFTCAMB: theory unstable'
+                        global_error_message = 'EFTCAMB: theory unstable (' // trim(eft_message) // ')'
                     end if
                     if (present(error)) error = global_error_flag
                     ! 5) final feedback:

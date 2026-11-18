@@ -54,13 +54,15 @@
     !< c_s^2 above which the stability check warns that the pi equation is stiff: it oscillates at the rate c_s k and
     !! the run time grows about as c_s (test inis: 1.5x the GR time at c_s^2 = 5e2, 6x at 4e4, 15x at 2e5).
     real(dl), parameter :: EFT_stiff_cs2 = 1.e4_dl
+    !< the first condition that failed in the last call of EFTTestStability (for the refusal message).
+    character(len=120), save :: EFT_instability_reason = ''
 
     contains
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that tests the stability of a theory in a time range.
     !! To ensure best time coverage scans with three different strategies.
-    subroutine EFTCAMB_Stability_Check(success, input_EFTCAMB, params_cache, astart, aend, k_max)
+    subroutine EFTCAMB_Stability_Check(success, input_EFTCAMB, params_cache, astart, aend, k_max, reason)
 
     implicit none
 
@@ -72,12 +74,14 @@
     real(dl), intent(in)    :: astart          !< Initial scale factor.
     real(dl), intent(in)    :: aend            !< Final scale factor.
     real(dl), intent(inout) :: k_max           !< the input maximum k mode at which stability is computed.
+    !< on failure, the first condition that failed and the scale factor (for the refusal message).
+    character(len=*), intent(out), optional :: reason
 
     ! parameters of the stability sampler:
     integer, parameter :: indMax = 1000    ! Number of points sampled.
     real(dl), parameter :: LogSamplingScale = -10._dl ! Where to start with the log sampling
 
-    real(dl) :: Atest, y, cs2_max, a_cs2_max
+    real(dl) :: Atest, y, cs2_max, a_cs2_max, a_fail
     integer  :: ind
     type(TEFTCAMB_timestep_cache) :: eft_cache
 
@@ -112,6 +116,8 @@
 
     ! 1) stability code:
     success = .true.
+    a_fail = 0._dl
+    if (present(reason)) reason = ''
     ! the largest scalar sound speed after the perturbation turn-on (a stiff pi equation: reported below)
     cs2_max = 0._dl
     a_cs2_max = 0._dl
@@ -124,6 +130,7 @@
             success = EFTTestStability(Atest, k_max, input_EFTCAMB, params_cache, eft_cache)
             if (success) call track_sound_speed(Atest)
             if (.not. success) then
+                a_fail = Atest
                 if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
                     write(*, *)
                     write(*, '(a,E14.4)') '   Instability detected at a =', Atest
@@ -142,6 +149,7 @@
             success = EFTTestStability(Atest, k_max, input_EFTCAMB, params_cache, eft_cache)
             if (success) call track_sound_speed(Atest)
             if (.not. success) then
+                a_fail = Atest
                 if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
                     write(*, *)
                     write(*, '(a,E14.4)') '   Instability detected at a =', Atest
@@ -160,6 +168,7 @@
             success = EFTTestStability(Atest, k_max, input_EFTCAMB, params_cache, eft_cache)
             if (success) call track_sound_speed(Atest)
             if (.not. success) then
+                a_fail = Atest
                 if (input_EFTCAMB%EFTCAMB_feedback_level > 2) then
                     write(*, *)
                     write(*, '(a,E14.4)') '   Instability detected at a =', Atest
@@ -172,6 +181,11 @@
     ! debug close cache files:
     if (DebugEFTCAMB) then
         call eft_cache%close_cache_files()
+    end if
+
+    ! the failed condition and where, for the refusal message:
+    if (present(reason) .and. .not. success) then
+        write(reason, '(a,a,es10.3)') trim(EFT_instability_reason), ' at a =', a_fail
     end if
 
     ! 2) final feedback:
@@ -252,6 +266,7 @@
     EFTTestStability = .true.
     ! reset the time-step cache:
     call eft_cache%initialize()
+    EFT_instability_reason = ''
     ! fill it:
     call EFTStabilityComputation(a, input_EFTCAMB, input_EFTCAMB%model, params_cache, eft_cache)
     ! protect against k_max too small:
@@ -266,7 +281,7 @@
     ! 0) dtauda should be finite:
     test_dtauda = input_EFTCAMB%model%compute_dtauda(a, params_cache, eft_cache)
     if (test_dtauda > huge(test_dtauda) .or. IsNaN(test_dtauda)) then
-        EFTTestStability = .false.
+        call fail('dtauda is not finite')
         if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a)') '   Model dtauda is Nan'
         return
     end if
@@ -274,7 +289,7 @@
     ! 1) everything inside the parameter cache should not be a NaN:
     call params_cache%is_nan(EFT_HaveNan_parameter)
     if (EFT_HaveNan_parameter) then
-        EFTTestStability = .false.
+        call fail('NaN in the parameter cache')
         if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a)') '   Model has Nan in the parameter cache'
         return
     end if
@@ -282,7 +297,7 @@
     ! 2) everything inside the time-step cache should not be a NaN:
     call eft_cache%is_nan(EFT_HaveNan_timestep, input_EFTCAMB%EFTCAMB_feedback_level)
     if (EFT_HaveNan_timestep) then
-        EFTTestStability = .false.
+        call fail('NaN in the time-step cache')
         if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a)') '   Model has Nan in the timestep cache'
         return
     end if
@@ -319,7 +334,7 @@
         if (A_sign == 0._dl) then
             if (.not. EFTCAMBReturnToGR_is_GR(a_zero, input_EFTCAMB%model, params_cache, &
                 input_EFTCAMB%EFTCAMB_GR_threshold)) then
-                EFTTestStability = .false.
+                call fail('no pi kinetic term')
                 if (A_touch <= 1.e-10_dl) then
                     write(message, '(a,es10.3,a)') 'EFTCAMB: the pi kinetic term vanishes (A = 0) at a =', a_zero, &
                         ' (e.g. w_DE touching -1): EFTCAMB cannot evolve through it'
@@ -348,7 +363,7 @@
             abs(a*params_cache%h0_Mpc*eft_cache%EFTGamma2V/eft_cache%adotoa) + 3._dl*abs(eft_cache%EFTGamma3V) + &
             abs(eft_cache%EFTGamma4V)
         if (eom_G00 <= max(thr, 1.e-12_dl)*eom_G00_scale) then
-            EFTTestStability = .false.
+            call fail('degenerate 00 Einstein constraint (alpha_B = 2)')
             write(message, '(a,es10.3,a)') 'EFTCAMB: the 00 Einstein constraint does not determine h'' at a =', a, &
                 ' (alpha_B = 2 crossing): EFTCAMB cannot evolve through it'
             call GlobalError(trim(message), 1)
@@ -366,7 +381,7 @@
         !    consistency of the pi field equation.
         !    The first condition is A1/=0. Implemented by detecting sign changes in A1.
         if (eft_cache%EFTpiA1*PastA1 < 0._dl) then
-            EFTTestStability = .false.
+            call fail('mathematical ghost: A is zero in time')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a)') '   Mathematical instability: A is zero in time'
         end if
@@ -374,7 +389,7 @@
         ! The second one is the condition on k.
         if ((eft_cache%EFTpiA1 > 0 .and. eft_cache%EFTpiA1 + k_max**2*eft_cache%EFTpiA2 < 0) .or. &
             (eft_cache%EFTpiA1 < 0 .and. eft_cache%EFTpiA1 + k_max**2*eft_cache%EFTpiA2 > 0)) then
-            EFTTestStability = .false.
+            call fail('mathematical ghost: A is zero in k')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a)') '   Mathematical instability: A is zero in k'
         end if
 
@@ -383,7 +398,7 @@
         !    violate the mathematical consistency of the tensor perturbation equation.
         !    Implemented by detecting sign changes in AT.
         if (eft_cache%EFTAT*PastAT < 0._dl) then
-            EFTTestStability = .false.
+            call fail('mathematical ghost: AT is zero in time')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a)') '   Mathematical instability:  AT is zero in time'
         end if
@@ -418,7 +433,7 @@
                 temp4 = +0.5_dl*(-temp1 + sqrt(temp3))/temp2
                 temp5 = +0.5_dl*(-temp1 - sqrt(temp3))/temp2
                 if (temp4 > EFT_instability_rate .or. temp5 > EFT_instability_rate) then
-                    EFTTestStability = .false.
+                    call fail('growing exponential mode (EFT_mass_math_stability)')
                     if (input_EFTCAMB%EFTCAMB_feedback_level > 1) then
                         write(*, '(a,E11.4)')       '   Mathematical instability: growing exponential at k =', tempk
                         write(*, '(a,E11.4,E11.4)') '      Rate of instability: ', temp4, temp5
@@ -429,7 +444,7 @@
             else if (temp2 /= 0._dl) then
                 temp4 = -0.5_dl*temp1/temp2
                 if (temp4 > EFT_instability_rate) then
-                    EFTTestStability = .false.
+                    call fail('growing exponential mode (EFT_mass_math_stability)')
                     if (input_EFTCAMB%EFTCAMB_feedback_level > 1) then
                         write(*, '(a,E11.4)')       '   Mathematical instability: growing exponential at k =', tempk
                         write(*, '(a,E11.4,E11.4)') '      Rate of instability: ', temp4
@@ -456,7 +471,7 @@
         call input_EFTCAMB%model%beyond_GLPV_stability(a, params_cache, eft_cache, input_EFTCAMB%EFT_ghost_stability, &
             input_EFTCAMB%EFT_gradient_stability, own_conditions, own_stable)
         if (own_conditions .and. .not. own_stable) then
-            EFTTestStability = .false.
+            call fail('model specific ghost or gradient condition')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a,E11.4)') &
                 '   Physical instability: the model specific ghost or gradient condition fails at a =', a
         end if
@@ -471,27 +486,27 @@
                 write(*, '(a)') '      It will be added in a future release.'
                 write(*, '(a)') '      If you want to run this model disable EFT_ghost_stability.'
             end if
-            EFTTestStability = .false.
+            call fail('beyond GLPV without ghost conditions (EFT_ghost_stability)')
             return
         end if
 
         ! 1- Positive gravitational constant:
         if (1._dl + eft_cache%EFTOmegaV <= -thr*(1._dl + abs(eft_cache%EFTOmegaV))) then
-            EFTTestStability = .false.
+            call fail('negative gravitational constant')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl + eft_cache%EFTOmegaV
         end if
 
         ! 2- Ghost condition (up to GLPV):
         if (.not. beyond_GLPV .and. eft_cache%EFT_kinetic < -thr*kinetic_scale) then
-            EFTTestStability = .false.
+            call fail('ghost instability')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: ghost instability. Kinetic term = ', eft_cache%EFT_kinetic
         end if
 
         ! 3- No tensor ghosts:
         if (eft_cache%EFTAT < -thr*(1._dl + abs(eft_cache%EFTOmegaV) + abs(eft_cache%EFTGamma4V))) then
-            EFTTestStability = .false.
+            call fail('tensor ghost instability')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: tensor ghost instability. Tensor kinetic term = ', &
                 eft_cache%EFTAT
@@ -508,27 +523,27 @@
                 write(*, '(a)') '      It will be added in a future release.'
                 write(*, '(a)') '      If you want to run this model disable EFT_gradient_stability.'
             end if
-            EFTTestStability = .false.
+            call fail('beyond GLPV without gradient conditions (EFT_gradient_stability)')
             return
         end if
 
         ! 1- Positive gravitational constant:
         if (1._dl + eft_cache%EFTOmegaV <= -thr*(1._dl + abs(eft_cache%EFTOmegaV))) then
-            EFTTestStability = .false.
+            call fail('negative gravitational constant')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: negative gravitational constant = ', 1._dl + eft_cache%EFTOmegaV
         end if
 
         ! 2- Gradient instability (up to GLPV):
         if (.not. beyond_GLPV .and. eft_cache%EFT_gradient < -thr*gradient_scale) then
-            EFTTestStability = .false.
+            call fail('gradient instability')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: gradient instability. Gradient term = ', eft_cache%EFT_gradient
         end if
 
         ! 3- No tensor gradient:
         if (eft_cache%EFTDT < -thr*(1._dl + abs(eft_cache%EFTOmegaV))) then
-            EFTTestStability = .false.
+            call fail('tensor gradient instability')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a,E11.4)') '   Physical instability: tensor gradient instability. Tensor gradient term = ', &
                 eft_cache%EFTDT
@@ -558,7 +573,7 @@
                     -(input_EFTCAMB%EFT_mass_stability_rate*eft_cache%adotoa/a)**2
             end if
             if (mass_unstable) then
-                EFTTestStability = .false.
+                call fail('tachyonic mass (EFT_mass_stability)')
                 if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a,2E12.4)') &
                     '   Physical instability: tachyonic mass, mu_1/H^2, mu_2/H^2 = ', &
                     eft_cache%EFT_mu1*(a/eft_cache%adotoa)**2, eft_cache%EFT_mu2*(a/eft_cache%adotoa)**2
@@ -583,7 +598,7 @@
     ! 8) enforce model specific priors:
     if (input_EFTCAMB%EFT_additional_priors) then
         if (.not. input_EFTCAMB%model%additional_model_stability(a, params_cache, eft_cache)) then
-            EFTTestStability = .false.
+            call fail('model specific prior (EFT_additional_priors)')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, &
                 '(a)') '   Model specific stability criteria are not met'
         end if
@@ -592,7 +607,7 @@
     ! 8b) optional phenomenological prior w_DE <= -1/3, with its own refusal message:
     if (input_EFTCAMB%EFT_wDE_prior) then
         if (.not. input_EFTCAMB%model%wDE_prior(a, params_cache, eft_cache)) then
-            EFTTestStability = .false.
+            call fail('w_DE > -1/3 (EFT_wDE_prior)')
             write(message, '(a,es10.3,a)') 'EFTCAMB: w_DE > -1/3 at a =', a, ', refused by EFT_wDE_prior'
             call GlobalError(trim(message), 1)
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a,es10.3)') &
@@ -604,7 +619,7 @@
     ! works up to Horndeski
     if (input_EFTCAMB%EFT_positivity_bounds) then
         if ((eft_cache%posbound1 < 0._dl) .or. (eft_cache%posbound2 < 0._dl)) then
-            EFTTestStability = .false.
+            call fail('positivity bounds')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a)') ' Positivity bounds are violated'
         end if
     end if
@@ -613,10 +628,23 @@
     ! works up to Horndeski
     if (input_EFTCAMB%EFT_minkowski_limit) then
         if ((-eft_cache%ghostpos <= 0) .or. (-eft_cache%tachpos < 0)) then
-            EFTTestStability = .false.
+            call fail('no healthy Minkowski limit')
             if (input_EFTCAMB%EFTCAMB_feedback_level > 1) write(*, '(a)') 'Healthy Minkowski limit does not exist'
         end if
     end if
+
+
+    contains
+
+    !> Marks the theory unstable and records the first reason (it goes into the error message, with a).
+    subroutine fail(reason)
+
+    character(len=*), intent(in) :: reason
+
+    EFTTestStability = .false.
+    if (len_trim(EFT_instability_reason) == 0) EFT_instability_reason = reason
+
+    end subroutine fail
 
     end function EFTTestStability
 
