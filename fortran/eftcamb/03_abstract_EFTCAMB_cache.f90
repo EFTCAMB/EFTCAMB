@@ -47,6 +47,8 @@
     character(*), parameter :: cache_output_format = 'es19.10e3'
 
     ! define debug file
+    !< whether the debug cache files are open: the dump writes only then (it wrote to unopened units before)
+    logical, save :: cache_files_open = .false.
     type(TTextFile) :: file_FRW
     type(TTextFile) :: file_BDens
     type(TTextFile) :: file_BPres
@@ -877,6 +879,8 @@
         'gamma ', 'QS_mu', 'QS_sigma', 'QS_mu_gen', 'QS_sigma_gen', 'delta_DE_eff '
     write(file_Posbounds%unit, '(14a)') '#', 'a ', 'tau ', 'k ', 'posbound1 ', 'posbound2 ', 'ghostpos ', 'tachpos'
 
+    cache_files_open = .true.
+
     contains
 
     ! Temporary subroutine that tests wether a cache file is open.
@@ -906,6 +910,7 @@
 
     class(TEFTCAMB_timestep_cache) :: self !< the base class.
 
+    cache_files_open = .false.
     ! test wether the files can be closed:
     call test_close(file_FRW%unit)
     call test_close(file_BDens%unit)
@@ -973,6 +978,8 @@
     implicit none
 
     class(TEFTCAMB_timestep_cache) :: self !< the base class.
+
+    if (.not. cache_files_open) return
 
     ! write the background expansion history:
     write(file_FRW%unit, '(12' // cache_output_format // ')')  self%a, self%tau, self%k, self%adotoa, self%Hdot, &

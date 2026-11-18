@@ -3077,30 +3077,31 @@
     ! Sources
     integer ix, i, nwindow, L_limb
     real(dl) keff, win_end, TimeSampleBoost, delta
-    ! EFTCAMB MOD START: EFT perturbation turn-on time
-    real(dl) tau_on
+    ! EFTCAMB MOD START: EFT perturbation turn-on time, debug refinement of the recombination steps
+    real(dl) tau_on, rec_refine
     ! EFTCAMB MOD END.
 
     TimeSampleBoost = State%CP%Accuracy%AccuracyBoost*State%CP%Accuracy%TimeStepBoost
     call TimeSteps%Init()
 
-    ! EFTCAMB MOD START: print out perturbation evolution in debug mode for longer time
+    ! EFTCAMB MOD START: debug runs sample the sources before recombination too; a fixq run (one k mode) also from
+    ! its start and 10x finer during recombination and reionization (State%dtaurec was divided in place, again at
+    ! every call, and the reionization steps by 10, which made them coarser)
+    rec_refine = 1._dl
 #ifdef DEBUG
 #ifdef fixq
     call TimeSteps%Add(0.001_dl/fixq, State%taurst, nstep=1000, IsLog=.true.)
-    State%dtaurec = State%dtaurec/10._dl
+    rec_refine = 10._dl
 #endif
-#ifdef fixq_array
-    call TimeSteps%Add(0.001_dl/minval(fixq_array), State%taurst, nstep=1000, IsLog=.true.)
-    State%dtaurec = State%dtaurec/10._dl
-#endif
-#if  defined (fixq)  || !defined (fixq_array)
     call TimeSteps%Add(State%taurst/1000._dl, State%taurst, nstep=100, IsLog=.true.)
-#endif
 #endif
     ! EFTCAMB MOD END.
 
-    call TimeSteps%Add_delta(State%taurst, State%taurend, State%dtaurec)
+    ! EFTCAMB MOD START: finer in a fixq debug run
+    call TimeSteps%Add_delta(State%taurst, State%taurend, State%dtaurec/rec_refine)
+    ! original code:
+    ! call TimeSteps%Add_delta(State%taurst, State%taurend, State%dtaurec)
+    ! EFTCAMB MOD END.
 
     ! Calculating the timesteps after recombination
     if (State%CP%WantTensors) then
@@ -3113,15 +3114,8 @@
         !  if (CP%AccurateBB) dtau0=dtau0/3 !Need to get C_Phi accurate on small scales
     end if
 
-    ! EFTCAMB MOD START: in debug mode add more points
-#ifdef DEBUG
-#ifdef fixq
-    dtau0 = dtau0/10._dl
-#endif
-#ifdef fixq_array
-    dtau0 = dtau0/10._dl
-#endif
-#endif
+    ! EFTCAMB MOD START: finer late-time steps in a fixq debug run (rec_refine = 1 otherwise)
+    dtau0 = dtau0/rec_refine
     ! EFTCAMB MOD END.
 
     call TimeSteps%Add_delta(State%taurend, State%tau0, dtau0)
@@ -3179,14 +3173,7 @@
     if (State%CP%Reion%Reionization) then
         nri0 = int(State%reion_n_steps*TimeSampleBoost)
         ! EFTCAMB MOD START: denser grid for fixq
-#ifdef DEBUG
-#ifdef fixq
-        nri0 = nri0/10._dl
-#endif
-#ifdef fixq_array
-        nri0 = nri0/10._dl
-#endif
-#endif
+        nri0 = int(nri0*rec_refine)
         ! EFTCAMB MOD END.
         ! Steps while reionization going from zero to maximum
         call TimeSteps%Add(State%reion_tau_start, State%reion_tau_complete, nri0)

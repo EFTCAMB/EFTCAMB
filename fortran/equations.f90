@@ -2044,8 +2044,9 @@
         ! check the cache:
         call EV%eft_cache%is_nan(IsNaN, 10)
         if (IsNaN) then
-            write(*, '(a)') 'Model has Nan in the timestep cache'
-            stop
+            ! an error, not a stop (which also ended the python session)
+            call GlobalError('EFTCAMB debug: NaN in the time-step cache', error_evolution)
+            return
         end if
         ! dump the cache to file:
         if (CP%EFTCAMB%EFTflag /= 0) then

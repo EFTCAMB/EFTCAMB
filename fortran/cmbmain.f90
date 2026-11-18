@@ -106,12 +106,10 @@
 
     integer :: l_smooth_sample = 3000 ! assume transfer functions effectively small for q*DMt0>2*l_smooth_sample
 
-    ! # EFTCAMB MOD START: flags for the latest ifort
+    ! # EFTCAMB MOD START: debug output of one k mode: build with -Dfixq=<k> (and the EFTCAMB debug define) to write
+    ! the scalar evolution at k to the cache files; the run then ends with an error
 #ifndef fixq
     real(dl) :: fixq = 0._dl ! Debug output of one q
-#endif
-#ifndef fixq_array
-    real(dl), parameter, dimension(1) :: fixq_array = [0._dl]
 #endif
     ! # EFTCAMB MOD END.
 
@@ -144,12 +142,6 @@
     type(TTimer) :: Timer
     real(dl) starttime
     type(ClTransferData), pointer :: ThisCT
-
-    ! EFTCAMB MOD START: some quantities:
-    real(dl) :: k_start, k_end
-    integer  :: i
-    real(dl), dimension(:), allocatable :: temp_fixq_array
-    ! EFTCAMB MOD END.
 
     WantLateTime = CP%DoLensing .or. State%num_redshiftwindows > 0 .or. CP%CustomSources%num_custom_sources > 0
 
@@ -195,35 +187,14 @@
         call SetkValuesForSources
     end if
 
-    ! EFTCAMB MOD START: fix k array if wanted:
-    if (DebugEFTCAMB) then
-        if (fixq == 0._dl .and. any(fixq_array /= 0._dl)) then
-            ! allocate the q array:
-            allocate(temp_fixq_array, source=fixq_array)
-            ! reset q values:
-            call ThisSources%Evolve_q%Init()
-            ! loop over fixq array:
-            do i = 1, size(temp_fixq_array) - 1
-                k_start = temp_fixq_array(i)
-                k_end = temp_fixq_array(i + 1)
-                ! call Ranges_Add( ThisSources%Evolve_q, k_start, k_end)!, nstep=1, IsLog=.False.)
-                ! call ThisCT%q%Add(ThisSources%Evolve_q, k_start, k_end)
-            end do
-            call ThisSources%Evolve_q%GetArray(.false.)
-            ! some feedback:
-            write(*, *) 'EFTCAMB printing evolution of scalar variables at k ='
-            call ThisSources%Evolve_q%Write()
-        end if
-    end if
-    ! EFTCAMB MOD END.
-
     if (CP%WantTransfer) call InitTransfer
 
     ! ***note that !$ is the prefix for conditional multi-processor compilation***
     !$ if (ThreadNum /= 0) call OMP_SET_NUM_THREADS(ThreadNum)
 
-    ! EFTCAMB MOD START: open files for EFTCAMB debug structure
-    if (DebugEFTCAMB) then
+    ! EFTCAMB MOD START: open files for EFTCAMB debug structure (one k mode only: the dumps of all the threads
+    ! interleaved into ~5 GB per model)
+    if (DebugEFTCAMB .and. fixq /= 0._dl) then
         if (CP%WantScalars) then
             call EV%eft_cache%open_cache_files(CP%EFTCAMB%outroot)
         end if
@@ -258,11 +229,10 @@
     end if ! WantCls
 
     ! EFTCAMB MOD START: close files for EFTCAMB debug structure
-    if (DebugEFTCAMB) then
+    if (DebugEFTCAMB .and. fixq /= 0._dl) then
         if (CP%WantScalars) then
             call EV%eft_cache%close_cache_files()
         end if
-        if (.not. all(fixq_array == 0._dl)) stop
     end if
     ! EFTCAMB MOD END.
 
@@ -1127,8 +1097,9 @@
     tau = taustart
     ind = 1
 
-    ! EFTCAMB MOD START: debug one k mode
+    ! EFTCAMB MOD START: debug one k mode (every source k is set to fixq: only the first evolves and writes it)
     if (fixq /= 0._dl) then
+        if (EV%q_ix /= 1) return
 
         if (DebugEFTCAMB) then
             write(*, *) 'EFTCAMB printing evolution of scalar variables at k =', fixq
@@ -1146,11 +1117,9 @@
             call output(EV, y, j, tau, sources, CP%CustomSources%num_custom_sources)
         end do
 
-        if (DebugEFTCAMB) then
-            call EV%eft_cache%close_cache_files()
-        end if
-
-        stop
+        ! end the run (a stop also ended the python session); the files are closed after the k loop
+        call GlobalError('EFTCAMB debug: evolution at k = fixq written, the run ends here', error_evolution)
+        return
 
     end if
     ! EFTCAMB MOD END.
@@ -1327,11 +1296,7 @@
     atol = base_tol/exp(CP%Accuracy%AccuracyBoost*CP%Accuracy%IntTolBoost - 1)
 
     ! EFTCAMB MOD START: this seems to create some problems. It should be safe to turn it off.
-    if (CP%EFTCAMB%EFTflag /= 0) then
-        if (CP%Transfer%high_precision) atol = atol
-    else
-        if (CP%Transfer%high_precision) atol = atol/100
-    end if
+    if (CP%EFTCAMB%EFTflag == 0 .and. CP%Transfer%high_precision) atol = atol/100
     ! Original CAMB code:
     ! if (CP%Transfer%high_precision) atol = atol/100
     ! EFTCAMB MOD END.

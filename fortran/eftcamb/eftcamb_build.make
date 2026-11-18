@@ -110,9 +110,6 @@ ifeq ($(MAKECMDGOALS), Debug)
 ifdef fixq
 DEBUGFLAGS += -Dfixq=$(fixq)
 endif
-ifdef fixq_array
-DEBUGFLAGS += -D'fixq_array=$(fixq_array)'
-endif
 endif
 
 # PROFILER: this requires a special target
