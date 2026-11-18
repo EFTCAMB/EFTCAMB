@@ -798,6 +798,20 @@ class EFTCAMBTest(unittest.TestCase):
         with self.assertRaisesRegex(CAMBValueError, "model_background_a_final must be >= 1"):
             self.read("3_OLA_MK", "model_background_a_final = 0.9")
 
+    def test_designer_v_use_background(self):
+        # designer-V moves the zero of its time tables (conformal and cosmic time, sound horizon) from today to the
+        # initial time: the shift subtracted the first entry in place, so only that entry moved and
+        # EFTCAMB_use_background = T stopped the run (spline out of range). The tables then came from the backward
+        # integration from today, conformal time 0.09 Mpc off (tau0 6.8e-6, TT 1.7e-4); they are now a forward
+        # quadrature on the solved background: tau0 2.5e-8, TT/EE <= 8.2e-7
+        tau0, cl = {}, {}
+        for use_background in ("F", "T"):
+            res = camb.get_results(self.read("6_HDSK_designer_V", f"EFTCAMB_use_background = {use_background}"))
+            tau0[use_background] = res.tau0
+            cl[use_background] = res.get_cmb_power_spectra(CMB_unit="muK", raw_cl=True)["total"][2:600, :2]
+        self.assertAlmostEqual(tau0["T"] / tau0["F"], 1, delta=1e-7)
+        np.testing.assert_allclose(cl["T"], cl["F"], rtol=5e-6)
+
     def test_extended_galileon_prior(self):
         # the empirical (S + 0.02) q < 0.5 line (a fit to the optional mass cut of arXiv:1912.07586) refused these
         # viable models; the strong-coupling prior still refuses q S > 1

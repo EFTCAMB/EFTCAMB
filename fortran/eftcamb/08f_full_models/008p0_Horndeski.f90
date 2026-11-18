@@ -1449,7 +1449,7 @@
     real(dl) :: G2, G2p, G2x, G2pp, G2px, G2xx, G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, &
         G3pxx, G3xxx, G4, G4p, G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, &
         G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx
-    real(dl) :: last_alphaB
+    real(dl) :: last_alphaB, R_fac, R, dlnH, f(3), df(3), f_last(3), df_last(3), step(3)
     real(dl) :: x_min, delta_x, mu
     real(dl) :: fx_cp1, fx_ch1, fx_cs1, fx_cp2, fx_ch2, fx_cs2, fx_cs1r, fx_d1, fx_d2, fx_d3, fx_d4, fx_d5
     real(dl) :: fx_cp1p, fx_ch1p, fx_cs1p, fx_cs1pr, fx_nrm, fx_nrmdot, fx_rpv, fx_rpvdot
@@ -1560,14 +1560,39 @@
         call params_cache%print()
     end if
 
-    ! if designer, need to move the zero point of conformal time, cosmic time and sound horizon from today to the intial time
+    ! if designer, conformal time, cosmic time and sound horizon are recomputed forward from the initial time, from
+    ! their radiation-era values there, by quadrature on the solved background. The solver integrates the designer
+    ! background from today (a = 1), where they are tau - tau0 etc.: the relative tolerance on |tau - tau0| ~ tau0
+    ! allows ~1e-6 Mpc per step, and the early-time steps put tau 0.09 Mpc off (r_drag 3.5e-4, TT 1.7e-4 with
+    ! EFTCAMB_use_background = T). The rule is the trapezoid with the end point derivative correction (error
+    ! h^5 f''''/720 per step), the derivatives from H' = dH/dtau; R is the baryon loading of the sound speed.
     if (self%designerV) then
-        H = self%H%y(1)
-        a = self%a_initial
+        R_fac = 0.75_dl*params_cache%grhob/params_cache%grhog
         do i = 1, self%H%num_points
-            self%tau%y(i) = self%tau%y(i) - self%tau%y(1) + 1._dl/a/H
-            self%t_cosmic%y(i) = self%t_cosmic%y(i) - self%t_cosmic%y(1) + 0.5_dl/H
-            self%r_sound%y(i) = self%r_sound%y(i) - self%r_sound%y(1) + sqrt(3._dl)/a/H
+            a = exp(self%H%x(i))
+            H = self%H%y(i)
+            dlnH = self%dH%y(i)/(a*H*H)
+            R = R_fac*a
+            ! d/d ln a of tau, t and r_s, and their derivatives:
+            f(1) = 1._dl/(a*H)
+            f(2) = 1._dl/H
+            f(3) = f(1)/sqrt(3._dl*(1._dl + R))
+            df(1) = -f(1)*(1._dl + dlnH)
+            df(2) = -f(2)*dlnH
+            df(3) = df(1)/sqrt(3._dl*(1._dl + R)) - 0.5_dl*f(3)*R/(1._dl + R)
+            if (i == 1) then
+                self%tau%y(1) = f(1)
+                self%t_cosmic%y(1) = 0.5_dl*f(2)
+                self%r_sound%y(1) = f(1)/sqrt(3._dl)
+            else
+                delta_x = self%H%x(i) - self%H%x(i - 1)
+                step = 0.5_dl*delta_x*(f_last + f) + delta_x**2/12._dl*(df_last - df)
+                self%tau%y(i) = self%tau%y(i - 1) + step(1)
+                self%t_cosmic%y(i) = self%t_cosmic%y(i - 1) + step(2)
+                self%r_sound%y(i) = self%r_sound%y(i - 1) + step(3)
+            end if
+            f_last = f
+            df_last = df
         end do
     end if
 
@@ -1989,7 +2014,7 @@
         y(5) = self%phidot_ini
         y(6) = self%H_ini
     else if (self%designerV) then
-        ! the state today (a = 1)
+        ! the state today (a = 1); the time variables are relative to today here, InitBackground recomputes them
         t1 = 0._dl
         a = 1._dl
         y(1) = 0._dl
