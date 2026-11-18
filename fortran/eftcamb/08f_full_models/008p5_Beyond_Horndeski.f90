@@ -246,9 +246,10 @@
 
     ! Initial values of x2 used in the bisection algorithm
 
-    if (self%LCDM_background .or. &
-        self%bHor_x10*1.d-16 == -2._dl*OmegaDE_0/ &
-        (OmegaRad_0/exp(self%x_initial)**4 + OmegaM_0/exp(self%x_initial)**3 + OmegaDE_0)) then
+    ! The LCDM initial conditions are chosen by want_LCDM only. They used to be chosen also when x10*1e-16 was equal,
+    ! to the last bit, to -2 Omega_DE_i computed here: no typed input does that, and this branch stores an unscaled
+    ! x10, which the background solver (y(1)) reads unscaled only with want_LCDM.
+    if (self%LCDM_background) then
         ! In this case x2=-1.5 x1 and then x1_i= -2 * Omega_DE_i. Omega_DE_i takes every species at a_ini from
         ! background_matter (the massive neutrinos, radiation-like there, were missing: H0 off by 5%), and the
         ! amplitude is then shot on (secant) until Omega_DE today is recovered (H0 was off by 0.26% without them).
