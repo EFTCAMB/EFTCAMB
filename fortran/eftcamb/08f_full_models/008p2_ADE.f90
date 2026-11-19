@@ -13,11 +13,14 @@
 !
 ! ----------------------------------------------------------------------------------------
 
-!> @file 008p5_ADE.f90
-!! This file contains the implementation of the Acoustic Dark Energy model discussed in
+!> @file 008p2_ADE.f90
+!! This file contains the implementation of the Acoustic Dark Energy (ADE) model of arXiv:1905.12618 (Lin, Benevento,
+!! Hu, Raveri): a dark-energy fluid with 1 + w_ADE = (1 + w_f)/(1 + (a_c/a)^(3(1 + w_f)/p))^p, which makes up the
+!! fraction f_ac of the total density at a_c = 10^Log_ac, and rest-frame sound speed squared cs2. Parameters cs2,
+!! Log_ac, f_ac, p, wf; the default p = 1 differs from the p = 1/2 of the paper.
 
 ! ----------------------------------------------------------------------------------------
-!> This module contains
+!> This module contains the Acoustic Dark Energy model (see the file header).
 
 !> @author Giampaolo Benevento, Marco Raveri
 
@@ -60,7 +63,6 @@
         !< The interpolated function c (and derivatives).
         type(equispaced_linear_interpolate_function_1D) :: EFTc
         !< The interpolated function gamma1 (and derivatives).
-        type(equispaced_linear_interpolate_function_1D) :: EFTgamma1
 
         ! some designer parameters:
         !< Number of points sampled by the designer code.
@@ -133,7 +135,7 @@
     ! read precision parameters
     self%background_num_points = Ini%Read_Int('model_background_num_points', 15000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-10))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBADEReadModelSelectionFromFile
 
@@ -361,6 +363,14 @@
     eft_cache%EFTLambda = self%EFTLambda%value(x, index=ind, coeff=mu)
     eft_cache%EFTcdot = self%EFTc%first_derivative(x, index=ind, coeff=mu)
     eft_cache%EFTLambdadot = self%EFTLambda%first_derivative(x, index=ind, coeff=mu)
+    ! without ADE (f_ac = 0) the model is LCDM: the exact GR values, not the interpolated tables (their 1e-8 error in
+    ! Lambda switched the perturbations on, and with c = 0 the pi field has no kinetic term, which is refused):
+    if (self%f_ac == 0._dl) then
+        eft_cache%EFTc = 0._dl
+        eft_cache%EFTcdot = 0._dl
+        eft_cache%EFTLambda = -eft_par_cache%grhov*a**2
+        eft_cache%EFTLambdadot = 0._dl
+    end if
 
     end subroutine EFTCAMBADEBackgroundEFTFunctions
 
@@ -387,8 +397,8 @@
     cs = self%cs2
 
     ! compute the EFT functions:
-    eft_cache%EFTGamma1V = 1._dl/(4._dl*h0_Mpc**2*a**2)*2._dl*eft_cache%EFTc*((cs**-1) - 1._dl)
-    eft_cache%EFTGamma1P = 1._dl/(4._dl*h0_Mpc**2)*(2._dl*eft_cache%EFTcdot/(eft_cache%adotoa*a**3))*((cs**-1) - 1._dl)
+    eft_cache%EFTGamma1V = 1._dl/(4._dl*h0_Mpc**2*a**2)*2._dl*eft_cache%EFTc*((cs**(-1)) - 1._dl)
+    eft_cache%EFTGamma1P = 1._dl/(4._dl*h0_Mpc**2)*(2._dl*eft_cache%EFTcdot/(eft_cache%adotoa*a**3))*((cs**(-1)) - 1._dl)
     eft_cache%EFTGamma2V = 0._dl
     eft_cache%EFTGamma2P = 0._dl
     eft_cache%EFTGamma3V = 0._dl
@@ -416,6 +426,19 @@
     logical, intent(out) :: success        !< wether the background initialization succeded or not
     character(len=*), intent(in), optional :: outroot        !< the output root for the debug files
 
+    ! the background is defined for 0 <= f_ac < 1 (f_ac = 0 is LCDM: no ADE) and p > 0 (the transition exponent
+    ! 3(1 + w_f)/p of 1 + w_ADE), whatever the priors:
+    if (self%f_ac < 0._dl .or. self%f_ac >= 1._dl) then
+        call GlobalError('EFTCAMB error: ADE background undefined for f_ac outside [0, 1)', error_unsupported_params)
+        success = .false.
+        return
+    end if
+    if (.not. self%p > 0._dl) then
+        call GlobalError('EFTCAMB error: ADE background undefined for p <= 0', error_unsupported_params)
+        success = .false.
+        return
+    end if
+
     ! some feedback:
     if (feedback_level > 0) then
         write(*, '(a)') "***************************************************************"
@@ -426,7 +449,6 @@
     ! initialize interpolating functions:
     call self%EFTLambda%initialize (self%background_num_points, self%x_initial, self%x_final)
     call self%EFTc%initialize      (self%background_num_points, self%x_initial, self%x_final)
-    call self%EFTgamma1%initialize (self%background_num_points, self%x_initial, self%x_final)
 
     ! debug code to print all background quantities:
     if (DebugEFTCAMB) then
@@ -459,10 +481,10 @@
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
 
     integer  :: i, nu_i
-    real(dl) :: wf, ac, grho_ac, grho_ADE, grho_ADEp, wADE, wADE_p
+    real(dl) :: wf, ac, grho_ac, grho_ADE, grho_ADEp, wADE, wADE_p, onepw, rhoADE_ratio_today, fratio
     real(dl) :: grhom, grhorad, grhov, wADEtot, wADEtot_first, omegac, k, cs, cs_p
-    real(dl) :: a, adotoa, Hdot, Hdotdot, adotoaLCDM, h0_Mpc, grhormass_t, rhonu_tot, presnu_tot, rhonu, presnu, &
-        adotoaNoNu, grhormass_ac, rhonu_ac, presnu_ac, presnudot, presnudotdot, presnudot_tot, presnudotdot_tot
+    real(dl) :: a, adotoa, Hdot, h0_Mpc, grhormass_t, rhonu_tot, presnu_tot, rhonu, presnu, grhormass_ac, rhonu_ac, &
+        presnu_ac
 
     integer  :: limit, iord(100), last, key, ier, neval
     real(dl) :: rtol, atol, t1, t2, result, alist(100), blist(100), rlist(100), elist(100), abserr
@@ -499,20 +521,29 @@
         end do
     end if
 
-    grho_ac = (self%f_ac/(1._dl - self%f_ac))*(grhorad/ac**4 + grhom/ac**3 + params_cache%grhov + rhonu_ac/ac**2)
-
-    ! ensures flatness (very small correction)
-    grhov = 3._dl*params_cache%h0_Mpc**2 - 2._dl*grho_ac/(1._dl + (1._dl/ac)**(3._dl + 3._dl*self%wf)) - grhorad - &
-        grhom - rhonu_tot
-
-    h0_Mpc = params_cache%h0_Mpc
-
     ! 2) Initialize dqage:
     ! set-up the relative and absolute tollerances:
     rtol = 1.d-12
     atol = 1.d-16
     key = 2
     limit = 100
+
+    ! 3) Close flatness: rho_ADE(1)/rho_ADE(a_c) = exp(-3 int_{a_c}^1 (1+w) dln a) for the input p, with the same
+    ! quadrature as the table (arXiv:1905.12618 eq. 1; the former closed form 2/(1 + a_c^-3(1+w_f)) holds for p = 1
+    ! only). f_ac = rho_ADE(a_c)/rho_tot(a_c), with rho_tot including the cosmological constant that makes the universe
+    ! flat today, grhov = 3 H0^2 - rho_rad - rho_m - rho_nu - rho_ADE(1): a linear system for grho_ac, solved exactly.
+    call dqage(integrand, ac, 1._dl, atol, rtol, key, limit, result, abserr, neval, ier, alist, blist, rlist, elist, &
+        iord, last)
+    rhoADE_ratio_today = exp(-3._dl*result)
+    fratio = self%f_ac/(1._dl - self%f_ac)
+    grhov = 3._dl*params_cache%h0_Mpc**2 - grhorad - grhom - rhonu_tot
+    grho_ac = fratio*(grhorad/ac**4 + grhom/ac**3 + rhonu_ac/ac**2 + grhov)/(1._dl + fratio*rhoADE_ratio_today)
+    grhov = grhov - rhoADE_ratio_today*grho_ac
+    ! without ADE (f_ac = 0, the LCDM limit) the background is LCDM with the cosmological constant of CAMB (the closure
+    ! above recomputes it with the model's own neutrino integral); the EFT functions are then exactly the GR ones:
+    if (self%f_ac == 0._dl) grhov = params_cache%grhov
+
+    h0_Mpc = params_cache%h0_Mpc
 
     t1 = self%EFTLambda%x(1)
     call output(1, t1)
@@ -539,7 +570,7 @@
     end function integrand
 
     ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the derivative of K w.r.t. x at the time x
+    !> Subroutine that computes the ADE background (w_ADE, rho_ADE, H) at x = ln a.
     subroutine derivs(x)
 
     implicit none
@@ -549,7 +580,9 @@
     ! 1) convert x in a:
     a = exp(x)
 
-    wADE = (self%wf + 1._dl)/(1._dl + (ac/a)**((3._dl + 3._dl*self%wf)/self%p))**self%p - 1._dl
+    ! 1 + w_ADE is evaluated directly: 1 + (onepw - 1) is exactly 0 for onepw < 5.55e-17 (deep before a_c)
+    onepw = (self%wf + 1._dl)/(1._dl + (ac/a)**((3._dl + 3._dl*self%wf)/self%p))**self%p
+    wADE = onepw - 1._dl
 
     wADE_p = (1._dl/a)*3._dl*(1._dl + self%wf)**2*(ac/a)**(3._dl*(1._dl + self%wf)/self%p)/ &
         (1._dl + (ac/a)**(3._dl*(1._dl + self%wf)/self%p))**(1 + self%p)
@@ -576,62 +609,15 @@
         end do
     end if
 
-    adotoaNoNu = sqrt(grhorad/(3._dl*a**2) + grhom/(3._dl*a) + grhov*a**2/3._dl + grho_ADE*a**2/3._dl)
     adotoa = sqrt(grhorad/(3._dl*a**2) + grhom/(3._dl*a) + grhov*a**2/3._dl + grho_ADE*a**2/3._dl + rhonu_tot/3._dl)
-    adotoaLCDM = sqrt(grhorad/(3._dl*a**2) + grhom/(3._dl*a) + grhov*a**2/3._dl + rhonu_tot/3._dl)
 
+    ! (only for the debug output)
     Hdot = -adotoa**2/2._dl - (grhorad/(3._dl*a**2) - grhov*a**2 + wADE*grho_ADE*a**2 + presnu_tot)/2._dl
-
-    rhonu_tot = 0._dl
-    presnu_tot = 0._dl
-    presnudot_tot = 0._dl
-    presnudotdot_tot = 0._dl
-    if (params_cache%Num_Nu_Massive /= 0) then
-        do nu_i = 1, params_cache%Nu_mass_eigenstates
-            rhonu = 0._dl
-            presnu = 0._dl
-            presnudot = 0._dl
-            presnudotdot = 0._dl
-            grhormass_t = params_cache%grhormass(nu_i)/a**2
-            call ThermalNuBackground%rho_P(a*params_cache%nu_masses(nu_i), rhonu, presnu)
-            presnudot = ThermalNuBackground%pidot(a*params_cache%nu_masses(nu_i), adotoa, presnu)
-            presnudotdot = ThermalNuBackground%pidotdot(a*params_cache%nu_masses(nu_i), adotoa, Hdot, presnu, presnudot)
-
-            rhonu_tot = rhonu_tot + grhormass_t*rhonu
-            presnu_tot = presnu_tot + grhormass_t*presnu
-            rhonu_tot = rhonu_tot + grhormass_t*rhonu
-            presnu_tot = presnu_tot + grhormass_t*presnu
-            presnudot_tot = presnudot_tot + grhormass_t*(presnudot - 4._dl*adotoa*presnu)
-            presnudotdot_tot = presnudotdot_tot + grhormass_t*(presnudotdot &
-                - 8._dl*adotoa*presnudot + 4._dl*presnu*(+4._dl*adotoa**2 - Hdot))
-        end do
-    end if
-
-    Hdotdot = (grhom/a)*adotoa*(1._dl/6._dl) + (grhorad/a**2)*adotoa*(2._dl/3._dl) + &
-        (grho_ADE*a**2)*adotoa*(1._dl/6._dl + wADE + 1.5_dl*wADE**2 - 0.5_dl*a*wADE_p) + &
-        (grhov*a**2)*adotoa*2._dl/3._dl + adotoa*rhonu_tot/6._dl - adotoa*presnu_tot/2._dl - 0.5_dl*presnudot_tot
 
     cs = self%cs2
     cs_p = 0
 
     end subroutine
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the Jacobian of the system. Now a dummy function.
-    !! Implementing it might increase performances.
-    subroutine jacobian(num_eq, x, y, ml, mu, pd, nrowpd)
-
-    implicit none
-
-    integer                     :: num_eq !< number of components of the Jacobian
-    integer                     :: ml     !< ignored
-    integer                     :: mu     !< ignored
-    integer                     :: nrowpd !< ignored
-    real(dl)                    :: x      !< time at which the Jacobian is computed
-    real(dl), dimension(num_eq) :: y      !< input status of the system
-    real(dl), dimension(nrowpd, num_eq) :: pd    !< output Jacobian
-
-    end subroutine jacobian
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that takes the solution of the JBD equations and computes additional quantities
@@ -653,19 +639,16 @@
     ! NB: The Planck mass is included in grhom
 
     self%EFTLambda%y(ind) = wADE*grho_ADE*a**2 - grhov*a**2
-    self%EFTLambda%yp(ind) = a**2*grho_ADE*adotoa*(a*wADE_p - 3._dl*wADE*(1._dl + wADE))
+    self%EFTLambda%yp(ind) = a**2*grho_ADE*adotoa*(a*wADE_p - 3._dl*wADE*onepw)
 
-    self%EFTc%y(ind) = 0.5_dl*a**2*(grho_ADE)*(1._dl + wADE)
-    self%EFTc%yp(ind) = (grho_ADE)*adotoa*(-3._dl*(wADE + 1._dl)**2 + a*wADE_p)*a**2/2._dl
-
-    self%EFTgamma1%y(ind) = 1._dl/(4._dl*h0_Mpc**2*a**2)*2._dl*self%EFTc%y(ind)*((cs**-1) - 1._dl)
-    self%EFTgamma1%yp(ind) = 1._dl/(4._dl*h0_Mpc**2)*2._dl*self%EFTc%yp(ind)/(adotoa*a**3)*((cs**-1) - 1._dl)
+    self%EFTc%y(ind) = 0.5_dl*a**2*(grho_ADE)*onepw
+    self%EFTc%yp(ind) = (grho_ADE)*adotoa*(-3._dl*onepw**2 + a*wADE_p)*a**2/2._dl
 
     ! write debug quantities:
     if (DebugEFTCAMB) then
         inquire(unit=file_debug_1%unit, opened=is_open)
         if (is_open) then
-            write(file_debug_1%unit, '(20E15.5)') a, wADE + 1, wADE_p, grho_ADE*a**2/(3._dl*adotoa**2), grho_ADE, &
+            write(file_debug_1%unit, '(20E15.5)') a, onepw, wADE_p, grho_ADE*a**2/(3._dl*adotoa**2), grho_ADE, &
                 adotoa, Hdot, rhonu_tot*a**2/(3*adotoa**2), rhonu_ac
         end if
         inquire(unit=file_debug_2%unit, opened=is_open)
@@ -695,20 +678,24 @@
 
     EFTCAMBADEAdditionalModelStability = .true.
 
+    ! the priors of the model (EFT_additional_priors); its undefined domain (f_ac outside [0, 1), p <= 0) is refused
+    ! by the background initialization. The original checks only printed a message ('Chose an appropriate value for
+    ! parameter ...') and refused f_ac = 0, the LCDM limit:
     if (self%Log_ac > 0.0_dl) then
-        print*, 'Chose an appropriate value for parameter Log(a_c)'
+        call GlobalError('EFTCAMB: ADE prior not met: Log_ac > 0, a_c after today (EFT_additional_priors)', 1)
         EFTCAMBADEAdditionalModelStability = .false.
         return
     end if
 
     if (self%wf < 0.0_dl) then
-        print*, 'Chose an appropriate value for parameter wf'
+        call GlobalError('EFTCAMB: ADE prior not met: wf < 0 (EFT_additional_priors)', 1)
         EFTCAMBADEAdditionalModelStability = .false.
         return
     end if
 
-    if (self%f_ac >= 1.0_dl .or. self%f_ac <= 0.0_dl) then
-        print*, 'Chose an appropriate value for parameter f_ac'
+    ! c_s^2 < 0 is a gradient instability of the ADE fluid (it ran as 'stable' and failed in the integrator):
+    if (self%cs2 < 0.0_dl) then
+        call GlobalError('EFTCAMB: ADE prior not met: cs2 < 0, gradient instability (EFT_additional_priors)', 1)
         EFTCAMBADEAdditionalModelStability = .false.
         return
     end if

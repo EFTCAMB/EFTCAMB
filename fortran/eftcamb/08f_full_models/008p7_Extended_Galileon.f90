@@ -13,13 +13,12 @@
 !
 ! ----------------------------------------------------------------------------------------
 
-!> @file 10p5_Extended_Galileon.f90
-!! This file contains the definition of the Extended Galileon model.
-!! Please refer to the numerical notes for details.
+!> @file 008p7_Extended_Galileon.f90
+!! This file contains the definition of the Extended Galileon model on its tracker solution: parameters S and q, with
+!! B = S q (arXiv:1912.07586; the strong-coupling prior follows arXiv:1811.10885 and arXiv:1912.07586).
 
 ! ----------------------------------------------------------------------------------------
-!> This module contains the definition of the Extended Galileon model.
-!! Please refer to the numerical notes for details.
+!> This module contains the definition of the Extended Galileon model (see the file header for the references).
 
 !> @author Luis Atayde, Noemi Frusciante, Simone Peirone
 
@@ -43,6 +42,14 @@
 
     public EFTCAMB_Extended_Galileon
 
+    !> per-thread cache of the last tracker solution, which is solved several times per derivs call at the same a:
+    !! its inputs (a, S, the background parameters and up to extgal_nu massive-neutrino eigenstates, each one on its
+    !! own), then adotoa and the three derivatives of ln E. With more eigenstates the tracker is always solved.
+    integer, parameter :: extgal_nu = 5
+    logical, save      :: extgal_valid = .false.
+    real(dl), save     :: extgal_key(10 + 2*extgal_nu), extgal_out(4)
+    !$OMP THREADPRIVATE(extgal_valid, extgal_key, extgal_out)
+
     ! ----------------------------------------------------------------------------------------
     !> This is the type that contains the definition of the Extended Galileon model.
     type, extends (EFTCAMB_full_model) :: EFTCAMB_Extended_Galileon
@@ -50,8 +57,6 @@
         ! the model parameters:
         real(dl) :: ExtendedGalileon_B      !< Extended Galileon model parameter \f$B\f$
         real(dl) :: ExtendedGalileon_q      !< Extended Galileon model parameter \f$q\f$
-        !< Extended Galileon background parameter \f$\xi\f$ deriving from the tracker solution
-        real(dl) :: csi
         real(dl) :: S
 
     contains
@@ -180,18 +185,13 @@
     logical, optional                :: print_params !< optional flag that decised whether to print numerical values
     !! of the parameters.
 
-    ! print general model informations:
-    if (self%ExtendedGalileon_B /= 0._dl) then
-
-        write(*, *)
-        write(*, '(a,a)')       '   Model              =', self%name
-        write(*, '(a,I3)')      '   Number of params   =', self%parameter_number
-        write(*, '(a,F12.6)')   '                xi    =', self%csi
-        write(*, '(a,F12.6)')   '                B     =', self%ExtendedGalileon_B
-        write(*, '(a,F12.6)')   '                q     =', self%ExtendedGalileon_q
-        write(*, '(a,F12.6)')   '                S     =', self%S
-
-    end if
+    ! print general model informations (for every model; xi, a field that was never set, is not printed):
+    write(*, *)
+    write(*, '(a,a)')       '   Model              =', self%name
+    write(*, '(a,I3)')      '   Number of params   =', self%parameter_number
+    write(*, '(a,F12.6)')   '                B     =', self%ExtendedGalileon_B
+    write(*, '(a,F12.6)')   '                q     =', self%ExtendedGalileon_q
+    write(*, '(a,F12.6)')   '                S     =', self%S
 
     end subroutine EFTCAMBExtendedGalileonFeedback
 
@@ -502,7 +502,9 @@
 
     real(dl) :: S, Om_phi, Om, Om_p, Om_pp, Om_ppp, rho, rho_p, rho_pp, rho_ppp, p, p_p, p_pp
     real(dl) :: rhonu, pnu, dpnu, ddpnu, am, Om_m, Om_r, u, u_lo, u_hi, g, dg, du, W2, V, den
-    integer  :: nu_i, iter
+    real(dl) :: key(10 + 2*extgal_nu)
+    integer  :: nu_i, iter, nnu
+    logical  :: use_cache
 
     adotoa = 0._dl
     up = 0._dl
@@ -511,6 +513,27 @@
     if (a <= 0._dl) return
     S = self%S
     Om_phi = eft_par_cache%omegav
+
+    ! 0) the last solution of this thread is returned if every input is the same:
+    nnu = 0
+    if (eft_par_cache%Num_Nu_Massive /= 0) nnu = eft_par_cache%Nu_mass_eigenstates
+    use_cache = nnu <= extgal_nu
+    if (use_cache) then
+        key = 0._dl
+        key(1:10) = [a, S, Om_phi, eft_par_cache%h0_Mpc, eft_par_cache%omegab, eft_par_cache%omegac, &
+            eft_par_cache%omegag, eft_par_cache%omegar, real(eft_par_cache%Num_Nu_Massive, dl), real(nnu, dl)]
+        key(11:10 + nnu) = eft_par_cache%nu_masses(1:nnu)
+        key(11 + extgal_nu:10 + extgal_nu + nnu) = eft_par_cache%grhormass(1:nnu)
+        if (extgal_valid) then
+            if (all(key == extgal_key)) then
+                adotoa = extgal_out(1)
+                up = extgal_out(2)
+                upp = extgal_out(3)
+                uppp = extgal_out(4)
+                return
+            end if
+        end if
+    end if
 
     ! 1) Omega_tot(N) = rho/(3 H0^2) and its derivatives wrt N. Massive neutrinos: rho' = -3 (rho + p).
     rho = 0._dl
@@ -572,6 +595,12 @@
     upp = (Om_pp - 4._dl*up**2*W2 + S**2*up**2*V)/den
     uppp = (Om_ppp - 12._dl*up*upp*W2 - 8._dl*up**3*W2 + 3._dl*S**2*up*upp*V - S**3*up**3*V)/den
 
+    if (use_cache) then
+        extgal_key = key
+        extgal_out = [adotoa, up, upp, uppp]
+        extgal_valid = .true.
+    end if
+
     end subroutine ExtGalTracker
 
     ! ---------------------------------------------------------------------------------------------
@@ -592,12 +621,19 @@
 
     EFTCAMBExtendedGalileonAdditionalModelStability = .true.
 
-    ! mass condition
-    if ((self%S + 0.02_dl)*self%ExtendedGalileon_q < 0.5_dl) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
+    ! mass condition: (S + 0.02) q < 0.5 is an empirical fit to the optional beta = 1 mass boundary of
+    ! arXiv:1912.07586 Fig. 2, not a viability condition. It refused 31 of 46 viable grid points (most of the
+    ! data-preferred region, and S = 0 for q < 25), so it is off: the tachyonic (mass) condition is left to the
+    ! general mass check. The original line:
+    ! if ((self%S + 0.02_dl)*self%ExtendedGalileon_q < 0.5_dl) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
 
-    ! Strong Coupling
-    if ((self%ExtendedGalileon_q*self%S - 1.)/(2.*self%ExtendedGalileon_q*(1. + self%S/2.)) > &
-        0.) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
+    ! No strong coupling at early times (arXiv:1811.10885 sec. 3, arXiv:1912.07586 sec. III B): the exponent of
+    ! Q_s ~ Omega_phi^((q S - 1)/(q (2 + S))) must not be positive. No ghost (S > 0) and no gradient instability
+    ! (q (3 + 2 S) >= 1) are enforced by the general stability checks.
+    ! The boundary q S = 1 is allowed: compare with a 1e-12 tolerance (with fused multiply-add q S - 1 is 5.6e-17 for
+    ! (S, q) = (0.1, 10), which refused it).
+    if ((self%ExtendedGalileon_q*self%S - 1._dl)/(2._dl*self%ExtendedGalileon_q*(1._dl + self%S/2._dl)) > &
+        1.e-12_dl) EFTCAMBExtendedGalileonAdditionalModelStability = .false.
 
     end function EFTCAMBExtendedGalileonAdditionalModelStability
 

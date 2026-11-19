@@ -116,8 +116,10 @@
     procedure :: compute_H_derivs => EFTCAMBDesignerFRComputeHubbleDer
 
     ! stability procedures:
-    !< function that computes model specific stability requirements.
+    !< function that computes model specific stability requirements: f_RR > 0 (EFT_additional_priors).
     procedure :: additional_model_stability => EFTCAMBDesignerFRAdditionalModelStability
+    !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
+    procedure :: wDE_prior => EFTCAMBDesignerFRwDEPrior
 
     end type EFTCAMB_fR_designer
 
@@ -145,7 +147,7 @@
     ! read precision parameters
     self%designer_num_points = Ini%Read_Int('model_background_num_points', 6000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBDesignerFRReadModelSelectionFromFile
 
@@ -301,6 +303,7 @@
 
     ! call boundary conditions lookup:
     call self%find_initial_conditions(params_cache, feedback_level, A_ini, success)
+    if (.not. success) return
 
     ! solve the background equations and store the solution:
     call self%solve_designer_equations(params_cache, A_ini, B0, only_B0=.false., success=success, &
@@ -324,11 +327,11 @@
     logical, optional                          :: only_B0
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
     integer, intent(in)                        :: feedback_level   !< whether be noisy
-    logical :: only_B0_temp
+    logical :: only_B0_temp, today_node
 
     integer, parameter :: num_eq = 2   !<  Number of equations
 
-    real(dl) :: Omegam_EFT, Omegavac_EFT, OmegaMassiveNu_EFT, OmegaGamma_EFT, OmegaNu_EFT
+    real(dl) :: Omegam_EFT, Omegavac_EFT, OmegaGamma_EFT, OmegaNu_EFT
     real(dl) :: Omegarad_EFT, EquivalenceScale_fR, Ratio_fR, Initial_B_fR, Initial_C_fR
     real(dl) :: PPlus, yPlus, CoeffA_Part, yStar, x
 
@@ -340,19 +343,22 @@
     integer, allocatable :: iwork(:)
 
     ! digedt the input:
+    success = .true.
     only_B0_temp = .false.
     if (present(only_B0)) only_B0_temp = only_B0
 
     ! 1) Cosmological parameters:
     Omegam_EFT = params_cache%omegab + params_cache%omegac
     Omegavac_EFT = params_cache%omegav
-    OmegaMassiveNu_EFT = params_cache%omegan
     OmegaGamma_EFT = params_cache%omegag
     OmegaNu_EFT = params_cache%omegar
 
     Omegarad_EFT = OmegaGamma_EFT + OmegaNu_EFT
 
-    EquivalenceScale_fR = (Omegarad_EFT + OmegaMassiveNu_EFT)/Omegam_EFT
+    ! a_eq of the growing-mode solution at a_ini: massive neutrinos are relativistic there (a_ini << 1e-4), so they
+    ! count with their radiation-like density grhormass, as in CAMB's z_eq (today's omegan was 2e3x too large)
+    EquivalenceScale_fR = (params_cache%grhog + params_cache%grhornomass + &
+        sum(params_cache%grhormass(1:params_cache%Nu_mass_eigenstates)))/(params_cache%grhob + params_cache%grhoc)
     Ratio_fR = EquivalenceScale_fR/exp(self%x_initial)
 
     ! 2) Growing mode solution:
@@ -417,41 +423,56 @@
         call output(num_eq, 1, t1, y, B0)
     end if
 
-    ! 5) solve the equations:
+    ! 5) solve the equations. B0 is B at a = 1: the table can extend past today (model_background_a_final > 1), so
+    ! the step that contains a = 1 stops there first; a node at a = 1 to roundoff is today itself.
     do i = 1, self%EFTOmega%num_points - 1
 
         ! set the time step:
         t1 = self%EFTOmega%x(i)
         t2 = self%EFTOmega%x(i + 1)
-        ! solve the system:
-        call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-            jacobian, JacobianMode)
-        ! check istate for LSODA good completion:
-        if (istate < 0) then
-            if (istate == -1) then
-                if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                istate = 1
-            else
-                success = .false.
-                if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
-                return
-            end if
+        today_node = t1 < 0._dl .and. abs(t2) <= 1.e-10_dl
+        if (t1 < 0._dl .and. t2 > 1.e-10_dl) then
+            if (.not. integrate_to(0._dl)) return
+            ! B today (this fills table entry i + 1 at a = 1; the call at t2 below overwrites it):
+            call output(num_eq, i + 1, t1, y, B0)
         end if
+        if (.not. integrate_to(t2)) return
         ! compute output EFT functions if needed:
-        if (.not. only_B0_temp) then
-            call output(num_eq, i + 1, t2, y, B0)
+        if (.not. only_B0_temp .or. today_node) then
+            call output(num_eq, i + 1, t2, y, B)
+            if (today_node) B0 = B
         end if
 
     end do
 
-    ! compute B0:
-    if (only_B0_temp) then
-        call output(num_eq, self%EFTOmega%num_points, t2, y, B0)
-    end if
-
     return
 
     contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Integrates the system from t1 to t_end (t1 is t_end on output); false if DLSODA failed.
+    logical function integrate_to(t_end)
+
+    implicit none
+
+    real(dl), intent(in) :: t_end
+
+    call DLSODA (derivs, num_eq, y, t1, t_end, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
+        jacobian, JacobianMode)
+    integrate_to = .true.
+    ! check istate for LSODA good completion:
+    if (istate < 0) then
+        if (istate == -1) then
+            if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
+            istate = 1
+        else
+            success = .false.
+            integrate_to = .false.
+            if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
+        end if
+    end if
+
+    end function integrate_to
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes y' given y for the background of designer f(R)
@@ -730,7 +751,9 @@
         + 12._dl*EFunction**2*(EFunPrime2*(-2._dl*Edepp + 4._dl*Edep - ydot(1)) &
         + EFunPrime*(-8._dl*Edepp + 16._dl*Edep + ydot(1))) &
         + 3._dl*EFunPrime**2*(EFunPrime*(ydot(1) - 4._dl*(6._dl*Ede + y(1))) - EFunPrime2*(6._dl*Ede + y(1))))
-    self%EFTLambda%y(ind) = 0.5_dl*params_cache%h0_Mpc**2*(y(1) - f_sub_R*Ricci)*exp(x)**2
+    ! tabulate Lambda/m0^2, not Lambda a^2/m0^2 = O(a^2): the linear interpolation of the a^2 factor on the x grid has
+    ! a relative error up to cosh(dx) - 1 = 4.7e-6, which the return-to-GR test reads as a deviation from LCDM.
+    self%EFTLambda%y(ind) = 0.5_dl*params_cache%h0_Mpc**2*(y(1) - f_sub_R*Ricci)
     self%EFTLambda%yp(ind) = &
         -1.5_dl*params_cache%h0_Mpc**3*sqrt(EFunction)*(exp(x)**4*self%EFTOmega%yp(ind)*(4._dl*EFunction + EFunPrime))
 
@@ -827,6 +850,7 @@
     end do
     if ((BTemp1 - self%B0)*(BTemp3 - self%B0) < 0 .and. (BTemp2 - self%B0)*(BTemp4 - self%B0) < 0) then
         if (feedback_level > 1) write(*, '(a)') '   FAILURE as the root seems to be on both sides'
+        success = .false.
         return
     end if
 
@@ -845,19 +869,22 @@
         end if
     else
         if (feedback_level > 1) write(*, '(a)') '   FAILURE the root was not on the right side nor the left one...'
+        success = .false.
         return
     end if
 
     if (feedback_level > 1) write(*, '(a,E13.4)') '   initial condition A  = ', realAp
 
-    ! 8) Check if the result found is compatible with the requested one. This is required only for debug.
+    ! 8) Check that the result found reproduces the requested B0:
     BTemp1 = DesFR_BfuncA(realAp)
     if (feedback_level > 1) then
         write(*, '(a,E13.4)') '   B0 found = ', BTemp1
         write(*, '(a,E13.4)') '   B0 given = ', self%B0
     end if
 
-    if (abs(BTemp1 - self%B0)/abs(self%B0) > 0.1_dl .and. abs(BTemp1 - self%B0) > 1.d-8 .and. .false.) then
+    ! the B0 shooting is ill-conditioned when the growing mode must cancel a large particular solution
+    ! (w_DE >~ -0.8): refuse a model whose B0 differs from the requested one
+    if (abs(BTemp1 - self%B0) > 1.d-4*abs(self%B0) + 1.d-12) then
         if (feedback_level > 1) write(*, &
             '(a)')  '   FAILURE designer code unable to find appropriate initial conditions'
         success = .false.
@@ -1042,7 +1069,7 @@
     eft_cache%EFTOmegaPP = self%EFTOmega%second_derivative(x, index=ind, coeff=mu)
     eft_cache%EFTOmegaPPP = self%EFTOmega%third_derivative(x, index=ind, coeff=mu)
     eft_cache%EFTc = 0._dl
-    eft_cache%EFTLambda = self%EFTLambda%value(x, index=ind, coeff=mu)
+    eft_cache%EFTLambda = a*a*self%EFTLambda%value(x, index=ind, coeff=mu)
     eft_cache%EFTcdot = 0._dl
     eft_cache%EFTLambdadot = self%EFTLambda%first_derivative(x, index=ind, coeff=mu)
 
@@ -1162,7 +1189,31 @@
     end subroutine EFTCAMBDesignerFRComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that computes model specific stability requirements.
+    !> Function that tests the phenomenological prior w_DE <= -1/3, enforced when EFT_wDE_prior = T.
+    function EFTCAMBDesignerFRwDEPrior(self, a, eft_par_cache, eft_cache)
+
+    implicit none
+
+    class(EFTCAMB_fR_designer) :: self          !< the base class
+    real(dl), intent(in)       :: a             !< the input scale factor.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+
+    logical :: EFTCAMBDesignerFRwDEPrior !< true if w_DE <= -1/3 at a.
+
+    EFTCAMBDesignerFRwDEPrior = .true.
+    if (self%DesfRwDE%value(a) > -1._dl/3._dl) EFTCAMBDesignerFRwDEPrior = .false.
+
+    end function EFTCAMBDesignerFRwDEPrior
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that computes the model specific stability requirements, enforced when EFT_additional_priors = T
+    !! at every a from EFTCAMB_stability_time on (before the turn-on too): no tachyonic scalaron, f_RR > 0
+    !! (arXiv:0709.0296 Sec. II.B, condition 1; the B < 0 branch of astro-ph/0610532 is unstable). B0 < 0 and a
+    !! constant w_DE < -1 violate it. The sign of f_RR itself is tested, not that of B: B tracks f_RR only while
+    !! R' < 0, and any f_RR < 0 is unstable (the tachyonic rate grows as |B|^(-1/2) when B -> 0^-).
     function EFTCAMBDesignerFRAdditionalModelStability(self, a, eft_par_cache, eft_cache)
 
     implicit none
@@ -1174,11 +1225,20 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
-    logical :: EFTCAMBDesignerFRAdditionalModelStability
+    logical :: EFTCAMBDesignerFRAdditionalModelStability !< true if the model specific criteria are met.
+    character(len=200) :: message
 
     EFTCAMBDesignerFRAdditionalModelStability = .true.
-    if (self%DesfRwDE%value(a) > -1._dl/3._dl) EFTCAMBDesignerFRAdditionalModelStability = .false.
+    ! f_RR = dOmega/dR = Omega'/R' (Omega = f_R). With R = 6 (H' + H^2)/a^2 in conformal time,
+    ! R' = 6 (H'' - 2 H^3)/a^2 and Omega' = a H dOmega/da, so f_RR < 0 <=> dOmega/da (H'' - 2 H^3) < 0.
+    ! Only the roundoff of a dOmega/da is ignored: it is <= 4e-17 for LCDM (B0 = 0), whose sign is noise.
+    if (eft_cache%EFTOmegaP*(eft_cache%Hdotdot - 2._dl*eft_cache%adotoa**3) < 0._dl .and. &
+        abs(a*eft_cache%EFTOmegaP) > 1.e-14_dl*(1._dl + abs(eft_cache%EFTOmegaV))) then
+        EFTCAMBDesignerFRAdditionalModelStability = .false.
+        write(message, '(a,es10.3,a)') 'EFTCAMB: f(R) with f_RR < 0 (tachyonic scalaron) at a =', a, &
+            ', refused by the f(R) prior (EFT_additional_priors; EFTCAMB_stability_time sets where it starts)'
+        call GlobalError(trim(message), 1)
+    end if
 
     end function EFTCAMBDesignerFRAdditionalModelStability
 

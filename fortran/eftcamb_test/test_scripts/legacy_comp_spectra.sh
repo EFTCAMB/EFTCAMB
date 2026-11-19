@@ -49,6 +49,12 @@ printf "********************************************\n${Color_Off}"
 
 printf "\n"
 
+# sanity check of the new spectra (numdiff accepts nan against nan and zeros against zeros):
+printf "  Sanity check of the new spectra:\n"
+python $TEST_PYTHON_DIR/check_spectra.py $PATH_TO_DATA_2
+SANITY=$?
+printf "\n"
+
 # test diagnostic:
 FAILED_TEST=()
 FAILURE_REASON=()
@@ -144,8 +150,12 @@ else
   printf " All test successfully passed.\n\n"
 fi
 
+if [ "$SANITY" -ne 0 ]; then
+  printf " Sanity check failed: nan, inf, all-zero or non-positive TT in the new spectra.\n\n"
+fi
+
 # return the test result:
-if [ "${#FAILED_TEST[@]}" -gt "0" ]; then
+if [ "${#FAILED_TEST[@]}" -gt "0" ] || [ "$SANITY" -ne 0 ]; then
 	exit 1
 else
 	exit 0

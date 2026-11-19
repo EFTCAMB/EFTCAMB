@@ -37,6 +37,7 @@
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_constant_parametrization_1D
     use equispaced_linear_interpolation_1D
+    use MassiveNu, only: ThermalNuBackground
 
     implicit none
 
@@ -57,6 +58,10 @@
         real(dl) :: bHor_x2today
         real(dl) :: bHor_x3today
         real(dl) :: bHor_x4today
+        !< the background solution at a_s = exp(x_initial) and its growth rates d ln x_i/d ln a there, which extend
+        !! x_i as power laws to a < a_s (stability checks and dtauda before the start of the background table):
+        real(dl) :: bHor_x_ini(4) = 0._dl
+        real(dl) :: bHor_n_ini(4) = 0._dl
 
         ! the interpolated EFT functions that come out of the background sover:
         type(equispaced_linear_interpolate_function_1D) :: fun_x1       !< The interpolated function x1
@@ -115,6 +120,8 @@
     ! stability procedures:
     !< function that computes model specific stability requirements.
     procedure :: additional_model_stability => EFTCAMBBeyondHorndeskiAdditionalModelStability
+    !< subroutine that computes the matter content of the model background, including massive neutrinos.
+    procedure :: background_matter => EFTCAMBBeyondHorndeskiMatter
 
     end type EFTCAMB_Beyond_Horndeski
 
@@ -135,7 +142,7 @@
     ! read precision parameters
     self%designer_num_points = Ini%Read_Int('model_background_num_points', 10000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1._dl/(1.5*10._dl**(5._dl) + 1._dl)))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBBeyondHorndeskiReadModelSelectionFromFile
 
@@ -205,10 +212,15 @@
     real(dl) :: aj, xj, mu, x1, x2, x3, x4, OmegaRad
     real(dl) :: H2, H_0, grhom, grhorad, epsilon, h, w_DE, H2_LCDM
     integer  :: j, ind, i
+    real(dl) :: grho_tot, Ptil, dPtil, ddPtil
+    real(dl) :: x1_lcdm(2), tol_lcdm(2)
+    integer, parameter :: max_bisection_steps = 100
 
     grhom = params_cache%grhob + params_cache%grhoc
     grhorad = params_cache%grhornomass + params_cache%grhog
     OmegaDE_0 = 1._dl - params_cache%omegac - params_cache%omegab - params_cache%omegag - params_cache%omegar
+    ! massive neutrinos are part of the matter content (background_matter):
+    OmegaDE_0 = OmegaDE_0 - params_cache%omegan
     OmegaRad_0 = params_cache%omegag + params_cache%omegar
     OmegaM_0 = params_cache%omegac + params_cache%omegab
 
@@ -229,41 +241,72 @@
     call self%fun_x3%initialize      (self%designer_num_points, self%x_initial, self%x_final)
     call self%fun_x4%initialize      (self%designer_num_points, self%x_initial, self%x_final)
 
-    ! SP: check omegav
-    if (params_cache%omegav < 0.3_dl) then
-        success = .false.
-        return
-    end if
+    ! there is no Omega_v >= 0.3 cut (not part of the model): a model without an x2_i that recovers Omega_DE is
+    ! refused by the bisection below with its own error.
 
     ! Initial values of x2 used in the bisection algorithm
 
-    if (self%LCDM_background .or. &
-        self%bHor_x10*1.d-16 == -2._dl*OmegaDE_0/ &
-        (OmegaRad_0/exp(self%x_initial)**4 + OmegaM_0/exp(self%x_initial)**3 + OmegaDE_0)) then
-        ! In this case x2=-1.5 x1 and then x1_i= -2 * Omega_DE_i
-        self%bHor_x10 = &
-            -2._dl*OmegaDE_0/(OmegaRad_0/exp(self%x_initial)**4 + OmegaM_0/exp(self%x_initial)**3 + OmegaDE_0)
-        self%bHor_x20 = -1.5*self%bHor_x10
+    ! The LCDM initial conditions are chosen by want_LCDM only. They used to be chosen also when x10*1e-16 was equal,
+    ! to the last bit, to -2 Omega_DE_i computed here: no typed input does that, and this branch stores an unscaled
+    ! x10, which the background solver (y(1)) reads unscaled only with want_LCDM.
+    if (self%LCDM_background) then
+        ! In this case x2=-1.5 x1 and then x1_i= -2 * Omega_DE_i. Omega_DE_i takes every species at a_ini from
+        ! background_matter (the massive neutrinos, radiation-like there, were missing: H0 off by 5%), and the
+        ! amplitude is then shot on (secant) until Omega_DE today is recovered (H0 was off by 0.26% without them).
+        call self%background_matter(params_cache, exp(self%x_initial), grho_tot, Ptil, dPtil, ddPtil)
+        H2_LCDM = 3._dl*params_cache%h0_Mpc**2*OmegaDE_0
+        x1_lcdm(1) = -2._dl*H2_LCDM/(H2_LCDM + grho_tot)
+        self%bHor_x10 = x1_lcdm(1)
+        self%bHor_x20 = -1.5_dl*self%bHor_x10
+        if (.not. solved(tol_lcdm(1))) return
+        tol = tol_lcdm(1)
+        ! Omega_DE today scales almost linearly with the amplitude: first step x1/(1 - tol), then secant steps
+        x1_lcdm(2) = x1_lcdm(1)/(1._dl - tol_lcdm(1))
+        i = 1
+        do while (abs(tol) > 1.d-10)
+            self%bHor_x10 = x1_lcdm(2)
+            self%bHor_x20 = -1.5_dl*self%bHor_x10
+            if (.not. solved(tol_lcdm(2))) return
+            tol = tol_lcdm(2)
+            i = i + 1
+            if (abs(tol) <= 1.d-10) exit
+            if (i > max_bisection_steps .or. tol_lcdm(2) == tol_lcdm(1)) then
+                call GlobalError('EFTCAMB: the Beyond Horndeski LCDM initial conditions did not recover Omega_DE', &
+                    error_unsupported_params)
+                success = .false.
+                return
+            end if
+            x2_i = x1_lcdm(2) - tol_lcdm(2)*(x1_lcdm(2) - x1_lcdm(1))/(tol_lcdm(2) - tol_lcdm(1))
+            x1_lcdm(1) = x1_lcdm(2)
+            tol_lcdm(1) = tol_lcdm(2)
+            x1_lcdm(2) = x2_i
+        end do
         if (feedback_level > 0) then
-            write(*, *)  '   x1 initial   =   -2 *Omega_DE initial   =   ', self%bHor_x10
-            write(*, *)  '   x2 initial   =    3 *Omega_DE initial   =   ', self%bHor_x20
-            write(*, *)  '   x3 initial   =    0'
-            write(*, *)  '   x4 initial   =    0'
+            write(*, '(a,ES13.5)') '    x1 initial   = -2 Omega_DE initial = ', self%bHor_x10
+            write(*, '(a,ES13.5)') '    x2 initial   =  3 Omega_DE initial = ', self%bHor_x20
+            write(*, '(a)')        '    x3 initial   = 0'
+            write(*, '(a)')        '    x4 initial   = 0'
+            write(*, '(a,ES10.2,a,I3,a)') '    Omega_DE today recovered to ', abs(tol), ' (', i, ' background solutions)'
         end if
-        call self%solve_background(params_cache, tol, success=success)
     else
         self%bHor_x20 = -1.5*self%bHor_x10*1.d-16
         x2_i = self%bHor_x20
         x2_il = 0._dl
         x2_ir = 10._dl*x2_i*(abs(self%bHor_x10*1.d-16/ &
             (-2._dl*OmegaDE_0/(OmegaRad_0/exp(self%x_initial)**4 + OmegaM_0/exp(self%x_initial)**3 + OmegaDE_0))))
-        call self%solve_background(params_cache, tol, success=success)
+        if (.not. solved(tol)) return
         i = 0
         do while (abs(tol) > 1.d-6)
+            if (i >= max_bisection_steps) then
+                call GlobalError('EFTCAMB: the Beyond Horndeski bisection for the initial x2_i did not converge', &
+                    error_unsupported_params)
+                success = .false.
+                return
+            end if
             self%bHor_x20 = x2_ir
-            call self%solve_background(params_cache, tol_r, success=success)
+            if (.not. solved(tol_r)) return
             self%bHor_x20 = x2_il
-            call self%solve_background(params_cache, tol_l, success=success)
+            if (.not. solved(tol_l)) return
             if (sign(1._dl, tol_r) == sign(1._dl, tol_l)) then
                 if (feedback_level > 1) then
                     if (sign(1._dl, tol_r) < 0._dl) then
@@ -294,7 +337,7 @@
                 end if
             end if
             self%bHor_x20 = x2_i
-            call self%solve_background(params_cache, tol, success=success)
+            if (.not. solved(tol)) return
             i = i + 1
         end do
         if (feedback_level > 0) then
@@ -308,20 +351,19 @@
         end if
     end if
     if (feedback_level > 0) then
-        xj = 0._dl
-        call self%fun_x1%precompute(xj, ind, mu)
         write(*, '(a)') 'today values'
-        write(*, '(a,F11.8)') 'x1 = ', self%fun_x1%value(xj, index=ind, coeff=mu)
-        write(*, '(a,F10.8)') 'x2 = ', self%fun_x2%value(xj, index=ind, coeff=mu)
-        write(*, '(a,F10.8)') 'x3 = ', self%fun_x3%value(xj, index=ind, coeff=mu)
-        write(*, '(a,F10.8)') 'x4 = ', self%fun_x4%value(xj, index=ind, coeff=mu)
+        write(*, '(a,F11.8)') 'x1 = ', self%bHor_x1today
+        write(*, '(a,F10.8)') 'x2 = ', self%bHor_x2today
+        write(*, '(a,F10.8)') 'x3 = ', self%bHor_x3today
+        write(*, '(a,F10.8)') 'x4 = ', self%bHor_x4today
     end if
     if (self%debug_flag) then
         xj = 0._dl
         call self%fun_x1%precompute(xj, ind, mu)
         OmegaDE_0 = self%fun_x1%value(xj, index=ind, coeff=mu) + self%fun_x2%value(xj, index=ind, coeff=mu) + &
             self%fun_x3%value(xj, index=ind, coeff=mu) + self%fun_x4%value(xj, index=ind, coeff=mu)
-        H_0 = sqrt((grhorad + grhom)/((1._dl - OmegaDE_0)*3._dl))
+        call self%background_matter(params_cache, 1._dl, grho_tot, Ptil, dPtil, ddPtil)
+        H_0 = sqrt(grho_tot/((1._dl - OmegaDE_0)*3._dl))
         OmegaRad_0 = grhorad/(3._dl*H_0**2)
         open(unit=111, action='write', file='evolution_x1.dat')
         open(unit=222, action='write', file='evolution_x2.dat')
@@ -344,9 +386,10 @@
             x4 = self%fun_x4%value(xj, index=ind, coeff=mu)
             OmegaDE = self%fun_x1%value(xj, index=ind, coeff=mu) + self%fun_x2%value(xj, index=ind, coeff=mu) + &
                 self%fun_x3%value(xj, index=ind, coeff=mu) + self%fun_x4%value(xj, index=ind, coeff=mu)
-            H2 = (grhorad/aj**4 + grhom/aj**3)/((1._dl - OmegaDE)*3._dl)
-            H2_LCDM = (grhorad/aj**4 + grhom/aj**3)/((1._dl - OmegaDE_0)*3._dl)
-            OmegaRad = (grhorad/aj**4)/(3._dl*(H2))
+            call self%background_matter(params_cache, aj, grho_tot, Ptil, dPtil, ddPtil)
+            H2 = grho_tot/((1._dl - OmegaDE)*3._dl)
+            H2_LCDM = grho_tot/((1._dl - OmegaDE_0)*3._dl)
+            OmegaRad = Ptil/H2
             epsilon = -((20._dl*(3._dl*x1 + 2._dl*x2) - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - &
                 x4*(36._dl*x1 + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))/ &
                 (5._dl*x3**2._dl + 20._dl*(x1 + 2._dl*x2 + x3) + 4._dl*(6._dl - x1 - 2._dl*x2 + 3._dl*x3)*x4 + &
@@ -370,14 +413,10 @@
 
     end if
 
-    ! store energy densities today
-    xj = 0._dl
-
-    call self%fun_x1%precompute(xj, ind, mu)
-
-    OmegaDE_0 = self%fun_x1%value(xj, index=ind, coeff=mu) + self%fun_x2%value(xj, index=ind, coeff=mu) + &
-        self%fun_x3%value(xj, index=ind, coeff=mu) + self%fun_x4%value(xj, index=ind, coeff=mu)
-    H_0 = sqrt((grhorad + grhom)/((1._dl - OmegaDE_0)*3._dl))
+    ! energy densities today, from the x_i today stored by the last background solution (exact at a = 1)
+    OmegaDE_0 = self%bHor_x1today + self%bHor_x2today + self%bHor_x3today + self%bHor_x4today
+    call self%background_matter(params_cache, 1._dl, grho_tot, Ptil, dPtil, ddPtil)
+    H_0 = sqrt(grho_tot/((1._dl - OmegaDE_0)*3._dl))
     OmegaM_0 = grhom/(3._dl*H_0**2)
     OmegaRad_0 = grhorad/(3._dl*H_0**2)
 
@@ -392,17 +431,28 @@
         write(*, *) '---------------------------------------------------'
     end if
 
-    ! store x values today
-    self%bHor_x1today = self%fun_x1%value(xj, index=ind, coeff=mu)
-    self%bHor_x2today = self%fun_x2%value(xj, index=ind, coeff=mu)
-    self%bHor_x3today = self%fun_x3%value(xj, index=ind, coeff=mu)
-    self%bHor_x4today = self%fun_x4%value(xj, index=ind, coeff=mu)
+    contains
+
+    !> solves the background for the current x2_i; on a solver failure or a NaN tolerance (tol was undefined then and
+    !! the bisection could report success) raises an error and returns false.
+    logical function solved(tol_out)
+    real(dl), intent(out) :: tol_out
+    call self%solve_background(params_cache, tol_out, success=success)
+    solved = success .and. .not. IsNaN(tol_out)
+    if (.not. solved) then
+        success = .false.
+        call GlobalError('EFTCAMB: the Beyond Horndeski background integration failed (ODE solver error or NaN) ' // &
+            'for the initial x1..x4', error_unsupported_params)
+    end if
+    end function solved
 
     end subroutine EFTCAMBBeyondHorndeskiInitBackground
 
     ! ---------------------------------------------------------------------------------------------
 
     subroutine EFTCAMBBeyondHorndeskiSolveBackground(self, params_cache, tol, success)
+
+    use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan
 
     implicit none
 
@@ -423,11 +473,16 @@
     real(dl) :: rtol, atol, t1, t2, B
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
+    logical  :: today_node
+
+    success = .true.
 
     ! 1) Cosmological densities:
     grhom = params_cache%grhob + params_cache%grhoc
     grhorad = params_cache%grhornomass + params_cache%grhog
     OmegaDE_0 = 1._dl - params_cache%omegac - params_cache%omegab - params_cache%omegag - params_cache%omegar
+    ! massive neutrinos are part of the matter content (background_matter):
+    OmegaDE_0 = OmegaDE_0 - params_cache%omegan
 
     if (self%LCDM_background) then
         ! 2) Set initial conditions to reproduce LCDM bacground
@@ -445,7 +500,13 @@
         y(4) = self%bHor_x40*1.d-6
     end if
 
-    ydot = 0._dl
+    ! tol is the relative Omega_DE mismatch today: NaN until the integration reaches a = 1
+    tol = ieee_value(tol, ieee_quiet_nan)
+    ! the initial state and its growth rates d ln x_i/d ln a = ydot/y (the power laws used for a < a_s):
+    call derivs(num_eq, x, y, ydot)
+    self%bHor_x_ini = y
+    self%bHor_n_ini = 0._dl
+    where (y /= 0._dl) self%bHor_n_ini = ydot/y
     ! 3) Initialize DLSODA:
     ! set-up the relative and absolute tollerances:
     itol = 1
@@ -487,12 +548,23 @@
     ! compute output EFT functions if needed:
     call output(num_eq, 1, t1, y)
 
-    ! 4) solve the equations:
+    ! 4) solve the equations. Today is a = 1: the table can extend past it (model_background_a_final > 1), so the
+    ! step that contains a = 1 stops there first; a node at a = 1 to roundoff is today itself.
     do i = 1, self%fun_x1%num_points - 1
 
         ! set the time step:
         t1 = self%fun_x1%x(i)
         t2 = self%fun_x1%x(i + 1)
+        today_node = t1 < 0._dl .and. abs(t2) <= 1.e-10_dl
+        if (t1 < 0._dl .and. t2 > 1.e-10_dl) then
+            call DLSODA (derivs, num_eq, y, t1, 0._dl, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+                LIW, jacobian, JacobianMode)
+            if (istate < 0) then
+                success = .false.
+                return
+            end if
+            call store_today()
+        end if
         ! solve the system:
         call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
             jacobian, JacobianMode)
@@ -502,13 +574,25 @@
             return
         end if
         call output(num_eq, i + 1, t2, y)
-        if (i == self%fun_x1%num_points - 1) then
-            tol = (OmegaDE_0 - (y(1) + y(2) + y(3) + y(4)))/OmegaDE_0
-        end if
+        if (today_node) call store_today()
 
     end do
 
     contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Stores the state today (a = 1): the relative Omega_DE mismatch and the x_i today.
+    subroutine store_today()
+
+    implicit none
+
+    tol = (OmegaDE_0 - (y(1) + y(2) + y(3) + y(4)))/OmegaDE_0
+    self%bHor_x1today = y(1)
+    self%bHor_x2today = y(2)
+    self%bHor_x3today = y(3)
+    self%bHor_x4today = y(4)
+
+    end subroutine store_today
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes y' given y for the background of designer f(R)
@@ -522,12 +606,14 @@
     real(dl), intent(out), dimension(num_eq) :: ydot   !< value of the derivative at time x
 
     real(dl) :: qs, epsilon_phi, h, H2, OmegaRad
+    real(dl) :: grho_tot, Ptil, dPtil, ddPtil
 
     ! 1) compute the functionals entering the ODEs
 
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/((1._dl - y(1) - y(2) - y(3) - y(4))*3._dl)
+    call self%background_matter(params_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
+    H2 = grho_tot/((1._dl - y(1) - y(2) - y(3) - y(4))*3._dl)
 
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
+    OmegaRad = Ptil/H2
 
     qs = 5._dl*y(3)**2._dl + 20._dl*(y(1) + 2._dl*y(2) + y(3)) + 4._dl*(6._dl - y(1) - 2._dl*y(2) + 3._dl*y(3))*y(4) &
         + 8._dl*y(4)**2._dl
@@ -588,6 +674,7 @@
         OmegaRadprimeprime
 
     real(dl) :: a, H2, adotoa, Hdot, temp
+    real(dl) :: grho_tot, Ptil, dPtil, ddPtil
 
     a = exp(x)
 
@@ -606,15 +693,18 @@
     x4p = ydot(4)
 
     if (x < self%x_initial) then
-        x1 = self%bHor_x10*1.d-16*(a/exp(self%x_initial))**(14._dl/3._dl)
-        x2 = self%bHor_x20*(a/exp(self%x_initial))**(16._dl/3._dl)
-        x3 = self%bHor_x30*1.d-9*(a/exp(self%x_initial))**(3._dl)
-        x4 = self%bHor_x40*1.d-6*(a/exp(self%x_initial))**(4._dl/3._dl)
+        ! before the background table: power laws with the growth rates of the solution at a_s (the fixed
+        ! exponents 14/3, 16/3, 3, 4/3 hold only on the x4-dominated attractor; for x4 = 0 they are 3, 2, 1/2)
+        x1 = self%bHor_x_ini(1)*(a/exp(self%x_initial))**self%bHor_n_ini(1)
+        x2 = self%bHor_x_ini(2)*(a/exp(self%x_initial))**self%bHor_n_ini(2)
+        x3 = self%bHor_x_ini(3)*(a/exp(self%x_initial))**self%bHor_n_ini(3)
+        x4 = self%bHor_x_ini(4)*(a/exp(self%x_initial))**self%bHor_n_ini(4)
     end if
 
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/((1._dl - x1 - x2 - x3 - x4)*3._dl)
+    call self%background_matter(params_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
+    H2 = grho_tot/((1._dl - x1 - x2 - x3 - x4)*3._dl)
 
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
+    OmegaRad = Ptil/H2
 
     ! 3) compute the functionals entering the ODEs
 
@@ -634,7 +724,7 @@
         x4p = 4._dl*x4*epsilon
     end if
 
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
+    OmegaRadprime = dPtil/H2 - 2._dl*h*OmegaRad
 
     hprime = ((15._dl*x3**2._dl + 12._dl*x4**2._dl + 10._dl*(x1 + 2._dl*x2)*(3._dl + 3._dl*x1 + x2 + OmegaRad) + &
         10._dl*x3*(3._dl + 6._dl*x1 + 3._dl*x2 + OmegaRad) + &
@@ -663,7 +753,7 @@
     x2pp = 2._dl*(x2p*(2._dl*epsilon - h) + x2*(2._dl*epsilon_p - hprime))
     x3pp = x3p*(3._dl*epsilon - h) + x3*(3._dl*epsilon_p - hprime)
     x4pp = 4._dl*(x4p*epsilon + x4*epsilon_p)
-    OmegaRadprimeprime = -2._dl*OmegaRadprime*(2._dl + h) - 2._dl*OmegaRad*hprime
+    OmegaRadprimeprime = ddPtil/H2 - 2._dl*h*dPtil/H2 - 2._dl*hprime*OmegaRad - 2._dl*h*OmegaRadprime
 
     epsilon_pp = (-2._dl*(60._dl*x1 + 40._dl*x2 - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - &
         x4*(36._dl*x1 + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))* &
@@ -911,6 +1001,7 @@
     real(dl) :: x1, x2, x3, x4, x1p, x2p, x3p, x4p, x1pp, x2pp, x4pp, x3pp, x3ppp, x4ppp, qs, qsprime
     real(dl) :: OmegaRad, OmegaRadprime, h, hprime, hpprime, grhom, grhorad, H2, qspprime
     real(dl) :: epsilon, epsilon_p, epsilon_pp, OmegaRadprimeprime, EFTcdot, EFTLAMBDAdot, EFTc, EFTLAMBDA
+    real(dl) :: grho_tot, Ptil, dPtil, ddPtil
 
     if (a == 0._dl) return
 
@@ -926,14 +1017,17 @@
     x4 = self%fun_x4%value(x, index=ind, coeff=mu)
 
     if (x < self%x_initial) then
-        x1 = self%bHor_x10*1.d-16*(a/exp(self%x_initial))**(14._dl/3._dl)
-        x2 = self%bHor_x20*(a/exp(self%x_initial))**(16._dl/3._dl)
-        x3 = self%bHor_x30*1.d-9*(a/exp(self%x_initial))**(3._dl)
-        x4 = self%bHor_x40*1.d-6*(a/exp(self%x_initial))**(4._dl/3._dl)
+        ! before the background table: power laws with the growth rates of the solution at a_s (the fixed
+        ! exponents 14/3, 16/3, 3, 4/3 hold only on the x4-dominated attractor; for x4 = 0 they are 3, 2, 1/2)
+        x1 = self%bHor_x_ini(1)*(a/exp(self%x_initial))**self%bHor_n_ini(1)
+        x2 = self%bHor_x_ini(2)*(a/exp(self%x_initial))**self%bHor_n_ini(2)
+        x3 = self%bHor_x_ini(3)*(a/exp(self%x_initial))**self%bHor_n_ini(3)
+        x4 = self%bHor_x_ini(4)*(a/exp(self%x_initial))**self%bHor_n_ini(4)
     end if
 
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/((1._dl - x1 - x2 - x3 - x4)*3._dl)
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
+    call self%background_matter(eft_par_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
+    H2 = grho_tot/((1._dl - x1 - x2 - x3 - x4)*3._dl)
+    OmegaRad = Ptil/H2
 
     epsilon = -((20._dl*(3._dl*x1 + 2._dl*x2) - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - x4*(36._dl*x1 &
         + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))/(5._dl*x3**2._dl + 20._dl*(x1 + 2._dl*x2 + x3) + 4._dl*(6._dl &
@@ -949,7 +1043,7 @@
     x3p = x3*(3._dl*epsilon - h)
     x4p = 4._dl*x4*epsilon
 
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
+    OmegaRadprime = dPtil/H2 - 2._dl*h*OmegaRad
 
     hprime = ((15._dl*x3**2._dl + 12._dl*x4**2._dl + 10._dl*(x1 + 2._dl*x2)*(3._dl + 3._dl*x1 + x2 + OmegaRad) + &
         10._dl*x3*(3._dl + 6._dl*x1 + 3._dl*x2 + OmegaRad) + &
@@ -978,7 +1072,7 @@
     x2pp = 2._dl*(x2p*(2._dl*epsilon - h) + x2*(2._dl*epsilon_p - hprime))
     x3pp = x3p*(3._dl*epsilon - h) + x3*(3._dl*epsilon_p - hprime)
     x4pp = 4._dl*(x4p*epsilon + x4*epsilon_p)
-    OmegaRadprimeprime = -2._dl*OmegaRadprime*(2._dl + h) - 2._dl*OmegaRad*hprime
+    OmegaRadprimeprime = ddPtil/H2 - 2._dl*h*dPtil/H2 - 2._dl*hprime*OmegaRad - 2._dl*h*OmegaRadprime
 
     epsilon_pp = (-2._dl*(60._dl*x1 + 40._dl*x2 - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - &
         x4*(36._dl*x1 + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))* &
@@ -1032,12 +1126,14 @@
         (1._dl/10._dl)*(5._dl*(3._dl*x1p + x2p - epsilon*x3p - epsilon_p*x3) - 8._dl*epsilon_p*x4 - &
         x4p*(3._dl + 8._dl*epsilon)) + (x1p + x2p + x3p + x4p)*3._dl/2._dl)
 
+    ! Lambda/(m0^2 H^2) = 3 x1 + x2 - eps x3 + (16 eps^2 + 4 eps h + 4 eps') x4/5 (arXiv:1905.11364): the x4 term
+    ! below is 3 x4/5 (it was 6 x4/5, a spurious + 3 x4/5 H^2 that broke both Friedmann equations)
     eft_cache%EFTLambda = eft_cache%adotoa**2.* &
-        ((3._dl + h)*x4p/5._dl + 6._dl*x4/5._dl - x4p/5._dl + x4pp/5._dl + 3._dl*x1 + x2 - epsilon*x3 - &
+        ((3._dl + h)*x4p/5._dl + 3._dl*x4/5._dl - x4p/5._dl + x4pp/5._dl + 3._dl*x1 + x2 - epsilon*x3 - &
         (3._dl + 8._dl*epsilon)*x4/5._dl)
 
     eft_cache%EFTLambdadot = eft_cache%EFTLambda*(2._dl*eft_cache%Hdot/eft_cache%adotoa - 2._dl*eft_cache%adotoa) + &
-        eft_cache%adotoa**3*((3._dl + h)*x4pp/5._dl + hprime*x4p/5._dl + 6._dl*x4p/5._dl - x4pp/5._dl + x4ppp/5._dl + &
+        eft_cache%adotoa**3*((3._dl + h)*x4pp/5._dl + hprime*x4p/5._dl + 3._dl*x4p/5._dl - x4pp/5._dl + x4ppp/5._dl + &
         3._dl*x1p + x2p - epsilon_p*x3 - epsilon*x3p - (3._dl + 8._dl*epsilon)*x4p/5._dl - 8._dl*epsilon_p*x4/5._dl)
 
     if (x4 == 0._dl) then
@@ -1059,8 +1155,8 @@
             2._dl*qs**2._dl*(x3*(6._dl*x1pp + 3._dl*x2pp + OmegaRadprimeprime) + &
             (x1 + 2._dl*x2)*(3._dl*x1pp + x2pp + OmegaRadprimeprime) + &
             (3._dl*x1 + x2 + OmegaRad + 3._dl)*(x1pp + 2._dl*x2pp) + 2._dl*x3p*(6*x1p + 3._dl*x2p + OmegaRadprime) + &
-            2._dl*(x1p + 2._dl*x2p)*(3._dl*x1p + x2p + OmegaRad) + x3pp*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + &
-            3._dl*x3*x3p)))
+            2._dl*(x1p + 2._dl*x2p)*(3._dl*x1p + x2p + OmegaRadprime) + &
+            x3pp*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + 3._dl*(x3p**2 + x3*x3pp))))
 
         x3ppp = -x3*(hpprime - 3._dl*epsilon_pp) - 2._dl*x3p*(hprime - 3._dl*epsilon_p) - (h - 3._dl*epsilon)*x3pp
 
@@ -1068,7 +1164,7 @@
             (-5._dl*eft_cache%adotoa**2._dl*eft_cache%Hdot* &
             (x3*hprime + x3p*h - 2._dl*h*x3 - 9._dl*x1p - 3._dl*x2p - 2._dl*x3p + x3pp + 18._dl*x1 + 6._dl*x2) + &
             eft_cache%adotoa**4._dl*(-x3*hpprime + 4._dl*x3*hprime - 2._dl*hprime*x3p + 4._dl*h*x3p - h*x3pp - &
-            4._dl*h*x3 - 36._dl*x1p - 12._dl*x2p - 4._dl*x3p + 9._dl*x2pp + 3._dl*x2pp + 4._dl*x3pp + 36._dl*x1 + &
+            4._dl*h*x3 - 36._dl*x1p - 12._dl*x2p - 4._dl*x3p + 9._dl*x1pp + 3._dl*x2pp + 4._dl*x3pp + 36._dl*x1 + &
             12._dl*x2 - x3ppp) + 2._dl*eft_cache%adotoa*eft_cache%Hdotdot*(-h*x3 - x3p + 9._dl*x1 + 3._dl*x2) + &
             2._dl*eft_cache%Hdot**2._dl*(-h*x3 - x3p + 9._dl*x1 + 3._dl*x2))
     end if
@@ -1091,6 +1187,7 @@
     real(dl) :: x1, x2, x3, x4, x1p, x2p, x3p, x4p, x1pp, x2pp, x4pp, x3pp, x3ppp, x4ppp, OmegaRad, OmegaRadprime
     real(dl) :: grhom, grhorad, H2, epsilon, epsilon_p, epsilon_pp, OmegaRadprimeprime
     real(dl) :: mu, x, h, hprime, hpprime, qs, qsprime, qspprime, Hdotdotdot
+    real(dl) :: grho_tot, Ptil, dPtil, ddPtil
     integer  :: ind
 
     x = log(a)
@@ -1104,14 +1201,17 @@
     x4 = self%fun_x4%value(x, index=ind, coeff=mu)
 
     if (x < self%x_initial) then
-        x1 = self%bHor_x10*1.d-16*(a/exp(self%x_initial))**(14._dl/3._dl)
-        x2 = self%bHor_x20*(a/exp(self%x_initial))**(16._dl/3._dl)
-        x3 = self%bHor_x30*1.d-9*(a/exp(self%x_initial))**(3._dl)
-        x4 = self%bHor_x40*1.d-6*(a/exp(self%x_initial))**(4._dl/3._dl)
+        ! before the background table: power laws with the growth rates of the solution at a_s (the fixed
+        ! exponents 14/3, 16/3, 3, 4/3 hold only on the x4-dominated attractor; for x4 = 0 they are 3, 2, 1/2)
+        x1 = self%bHor_x_ini(1)*(a/exp(self%x_initial))**self%bHor_n_ini(1)
+        x2 = self%bHor_x_ini(2)*(a/exp(self%x_initial))**self%bHor_n_ini(2)
+        x3 = self%bHor_x_ini(3)*(a/exp(self%x_initial))**self%bHor_n_ini(3)
+        x4 = self%bHor_x_ini(4)*(a/exp(self%x_initial))**self%bHor_n_ini(4)
     end if
 
-    H2 = (grhorad/exp(x)**4 + grhom/exp(x)**3)/((1._dl - x1 - x2 - x3 - x4)*3._dl)
-    OmegaRad = (grhorad/exp(x)**4)/(3._dl*(H2))
+    call self%background_matter(eft_par_cache, exp(x), grho_tot, Ptil, dPtil, ddPtil)
+    H2 = grho_tot/((1._dl - x1 - x2 - x3 - x4)*3._dl)
+    OmegaRad = Ptil/H2
 
     epsilon = -((20._dl*(3._dl*x1 + 2._dl*x2) - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - &
         x4*(36._dl*x1 + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))/ &
@@ -1127,7 +1227,7 @@
     x3p = x3*(3._dl*epsilon - h)
     x4p = 4._dl*x4*epsilon
 
-    OmegaRadprime = -2._dl*OmegaRad*(2._dl + h)
+    OmegaRadprime = dPtil/H2 - 2._dl*h*OmegaRad
 
     hprime = ((15._dl*x3**2._dl + 12._dl*x4**2._dl + 10._dl*(x1 + 2._dl*x2)*(3._dl + 3._dl*x1 + x2 + OmegaRad) + &
         10._dl*x3*(3._dl + 6._dl*x1 + 3._dl*x2 + OmegaRad) + &
@@ -1156,7 +1256,7 @@
     x2pp = 2._dl*(x2p*(2._dl*epsilon - h) + x2*(2._dl*epsilon_p - hprime))
     x3pp = x3p*(3._dl*epsilon - h) + x3*(3._dl*epsilon_p - hprime)
     x4pp = 4._dl*(x4p*epsilon + x4*epsilon_p)
-    OmegaRadprimeprime = -2._dl*OmegaRadprime*(2._dl + h) - 2._dl*OmegaRad*hprime
+    OmegaRadprimeprime = ddPtil/H2 - 2._dl*h*dPtil/H2 - 2._dl*hprime*OmegaRad - 2._dl*h*OmegaRadprime
 
     epsilon_pp = (-2._dl*(60._dl*x1 + 40._dl*x2 - 5._dl*x3*(-3._dl + 3._dl*x1 + x2 + OmegaRad) - &
         x4*(36._dl*x1 + 16._dl*x2 + 3._dl*x3 + 8._dl*OmegaRad))* &
@@ -1220,8 +1320,8 @@
             2._dl*qs**2._dl*(x3*(6._dl*x1pp + 3._dl*x2pp + OmegaRadprimeprime) + &
             (x1 + 2._dl*x2)*(3._dl*x1pp + x2pp + OmegaRadprimeprime) + &
             (3._dl*x1 + x2 + OmegaRad + 3._dl)*(x1pp + 2._dl*x2pp) + 2._dl*x3p*(6*x1p + 3._dl*x2p + OmegaRadprime) + &
-            2._dl*(x1p + 2._dl*x2p)*(3._dl*x1p + x2p + OmegaRad) + x3pp*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + &
-            3._dl*x3*x3p)))
+            2._dl*(x1p + 2._dl*x2p)*(3._dl*x1p + x2p + OmegaRadprime) + &
+            x3pp*(6._dl*x1 + 3._dl*x2 + OmegaRad + 3._dl) + 3._dl*(x3p**2 + x3*x3pp))))
 
         x3ppp = -x3*(hpprime - 3._dl*epsilon_pp) - 2._dl*x3p*(hprime - 3._dl*epsilon_p) - (h - 3._dl*epsilon)*x3pp
         Hdotdotdot = eft_cache%adotoa**4*(hpprime + 7._dl*(1._dl + h)*hprime + 6._dl*(1._dl + h)**3)
@@ -1237,7 +1337,7 @@
             eft_cache%adotoa**2._dl*Hdotdotdot*x3 + &
             eft_cache%adotoa**4._dl*eft_cache%Hdot*(-11._dl*x3 + 12._dl*x3p - 3._dl*x3pp) + &
             eft_cache%adotoa**6._dl*(6._dl*x3 - 11._dl*x3p + 6._dl*x3pp - x3ppp) - &
-            eft_cache%Hdot**3._dl*x3)/(a**4._dl*eft_par_cache%h0_Mpc*eft_cache%adotoa**5._dl)
+            3._dl*eft_cache%Hdot**3._dl*x3)/(a**4._dl*eft_par_cache%h0_Mpc*eft_cache%adotoa**5._dl)
 
     end if
 
@@ -1272,5 +1372,44 @@
     EFTCAMBBeyondHorndeskiAdditionalModelStability = .true.
 
     end function EFTCAMBBeyondHorndeskiAdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that computes the matter content of the model background: 8 pi G rho, 8 pi G P and the first two
+    !! N = log(a) derivatives of 8 pi G P (cosmic, i.e. without a^2), including massive neutrinos. Matter enters the
+    !! closure H^2 = 8 pi G rho/(3 (1 - sum x_i)) and the equations through Pi = P/(m0^2 H^2) (arXiv:1905.11364
+    !! eqs. 3.6-3.10), so that the model H equals the CAMB H, which includes massive neutrinos.
+    subroutine EFTCAMBBeyondHorndeskiMatter(self, params_cache, a, grho, Ptil, dPtil, ddPtil)
+
+    implicit none
+
+    class(EFTCAMB_Beyond_Horndeski)            :: self          !< the base class
+    type(TEFTCAMB_parameter_cache), intent(in) :: params_cache  !< the EFTCAMB parameter cache
+    real(dl), intent(in)                       :: a             !< the scale factor
+    !< 8 pi G rho, 8 pi G P and the first two log(a) derivatives of 8 pi G P (cosmic, without a^2)
+    real(dl), intent(out)                      :: grho, Ptil, dPtil, ddPtil
+
+    real(dl) :: grhorad, grhom, rhonu, pnu, am, dP1, dP2
+    integer  :: nu_i
+
+    grhom = params_cache%grhob + params_cache%grhoc
+    grhorad = params_cache%grhornomass + params_cache%grhog
+    grho = grhorad/a**4 + grhom/a**3
+    Ptil = grhorad/(3._dl*a**4)
+    dPtil = -4._dl*Ptil
+    ddPtil = 16._dl*Ptil
+    if (params_cache%Num_Nu_Massive /= 0) then
+        do nu_i = 1, params_cache%Nu_mass_eigenstates
+            am = a*params_cache%nu_masses(nu_i)
+            call ThermalNuBackground%rho_P(am, rhonu, pnu)
+            dP1 = ThermalNuBackground%pidot(am, 1._dl, pnu)
+            dP2 = ThermalNuBackground%pidotdot(am, 1._dl, 0._dl, pnu, dP1)
+            grho = grho + params_cache%grhormass(nu_i)*rhonu/a**4
+            Ptil = Ptil + params_cache%grhormass(nu_i)*pnu/a**4
+            dPtil = dPtil + params_cache%grhormass(nu_i)*(dP1 - 4._dl*pnu)/a**4
+            ddPtil = ddPtil + params_cache%grhormass(nu_i)*(dP2 - 8._dl*dP1 + 16._dl*pnu)/a**4
+        end do
+    end if
+
+    end subroutine EFTCAMBBeyondHorndeskiMatter
 
     end module EFTCAMB_full_Beyond_Horndeski

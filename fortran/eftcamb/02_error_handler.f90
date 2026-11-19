@@ -30,7 +30,7 @@
     ! ----------------------------------------------------------------------------------------
     ! Internal definitions:
     interface
-    subroutine abort() bind(c, name="abort")
+    subroutine c_abort() bind(c, name="abort")
     end subroutine
     end interface
 
@@ -55,8 +55,9 @@
         write(*, *) 'EFTCAMB error:'
         write(*, *) error_message
     end if
-    ! call abort function that prints traceback infos when compiled in debug mode:
-    call abort()
+    ! call the C abort function (its own Fortran name: abort is also a gfortran intrinsic), which prints
+    ! traceback infos when compiled in debug mode:
+    call c_abort()
 
     end subroutine EFTCAMB_error
 

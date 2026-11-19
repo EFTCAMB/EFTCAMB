@@ -49,10 +49,11 @@
         logical  :: HoravaSolarSystem
         !! Notice that when this is used the parameter Horava_xi is ignored.
 
-        ! the model parameters:
-        real(dl) :: Horava_eta      !< first Horava model parameter.
-        real(dl) :: Horava_xi       !< second Horava model parameter.
-        real(dl) :: Horava_lambda   !< third Horava model parameter.
+        ! the model parameters, deviations from GR (all zero is GR) in the notation of arXiv:1508.01787:
+        real(dl) :: Horava_eta      !< eta of arXiv:1508.01787 (GR: 0).
+        !< xi - 1 of arXiv:1508.01787 (GR: xi = 1); the solar-system class is xi - 1 = eta/2.
+        real(dl) :: Horava_xi
+        real(dl) :: Horava_lambda   !< lambda - 1 of arXiv:1508.01787 (GR: lambda = 1).
 
     contains
 
@@ -92,6 +93,8 @@
     ! stability procedures:
     !< function that computes model specific stability requirements.
     procedure :: additional_model_stability => EFTCAMBHoravaAdditionalModelStability
+    !< subroutine that tests the model's own scalar ghost and gradient conditions (beyond GLPV).
+    procedure :: beyond_GLPV_stability => EFTCAMBHoravaBeyondGLPVStability
 
     end type EFTCAMB_Horava
 
@@ -286,11 +289,11 @@
         return
     end if
     if (i == 2) then
-        latexname = '\lambda_{\rm Ho\v rava}'
+        latexname = '\lambda_{\rm Ho\v rava} - 1'
         return
     end if
     if (i == 3 .and. .not. self%HoravaSolarSystem) then
-        latexname = '\xi_{\rm Ho\v rava}'
+        latexname = '\xi_{\rm Ho\v rava} - 1'
         return
     end if
 
@@ -520,14 +523,49 @@
 
     EFTCAMBHoravaAdditionalModelStability = .true.
 
-    if (self%Horava_lambda > -2._dl/3._dl .and. self%Horava_lambda < 0._dl) then
-        EFTCAMBHoravaAdditionalModelStability = .false.
-    end if
-    if (self%Horava_eta < 0._dl .or. self%Horava_eta > 2._dl*self%Horava_xi + 2._dl) then
+    ! GR point: every EFT function vanishes.
+    if (self%Horava_lambda == 0._dl .and. self%Horava_xi == 0._dl .and. self%Horava_eta == 0._dl) return
+    ! the scalar ghost and gradient conditions of arXiv:1508.01787 are in EFTCAMBHoravaBeyondGLPVStability. The
+    ! lambda < -2/3 branch has G_cosmo/G_N = (2 + 2 xi - eta)/(3 lambda + 2) <= 0: no expanding background (code
+    ! variables lambda = lambda_p - 1, xi = xi_p - 1).
+    if (self%Horava_lambda < -2._dl/3._dl) then
         EFTCAMBHoravaAdditionalModelStability = .false.
     end if
 
     end function EFTCAMBHoravaAdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that tests the scalar ghost and gradient conditions of Horava gravity (beyond GLPV: the generic ones
+    !! do not apply): called by the stability check when EFT_ghost_stability or EFT_gradient_stability is on.
+    subroutine EFTCAMBHoravaBeyondGLPVStability(self, a, eft_par_cache, eft_cache, ghost, gradient, implemented, stable)
+
+    implicit none
+
+    class(EFTCAMB_Horava) :: self          !< the base class
+    real(dl), intent(in)  :: a             !< the input scale factor.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+    logical, intent(in)  :: ghost         !< whether to test the scalar ghost condition (EFT_ghost_stability).
+    logical, intent(in)  :: gradient      !< whether to test the scalar gradient condition (EFT_gradient_stability).
+    logical, intent(out) :: implemented   !< whether the model has its own conditions: always.
+    logical, intent(out) :: stable        !< whether the tested conditions are met.
+
+    implemented = .true.
+    stable = .true.
+
+    ! GR point: every EFT function vanishes.
+    if (self%Horava_lambda == 0._dl .and. self%Horava_xi == 0._dl .and. self%Horava_eta == 0._dl) return
+    ! arXiv:1508.01787 Sec. 2.4 (code variables lambda = lambda_p - 1, xi = xi_p - 1): the scalar has no ghost for
+    ! (3 lambda + 2)/lambda > 0, and then c_s^2 > 0 for 0 < eta < 2 xi + 2 (also A_T, D_T > 0, tested generically).
+    ! lambda = 0 (c_s^2 = 0) is kept; lambda < -2/3 is refused by the model prior (no expanding background).
+    ! eta = 0 makes pi auxiliary (A = B = 0) and eta = 2 xi + 2 makes 1/(16 pi G_H) = m0^2/(2 + 2 xi - eta) infinite.
+    if (ghost .and. self%Horava_lambda < 0._dl .and. self%Horava_lambda >= -2._dl/3._dl) stable = .false.
+    if (gradient .and. (self%Horava_eta <= 0._dl .or. self%Horava_eta >= 2._dl*self%Horava_xi + 2._dl)) &
+        stable = .false.
+
+    end subroutine EFTCAMBHoravaBeyondGLPVStability
 
     ! ---------------------------------------------------------------------------------------------
 

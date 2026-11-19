@@ -822,6 +822,9 @@
         end if
     end do
     !$OMP END PARALLEL DO
+    ! EFTCAMB MOD START: warnings of the EFT initial conditions raised in the k loop, in a fixed order.
+    call EFTCAMB_IC_print_warnings()
+    ! EFTCAMB MOD END.
     this%CP%WantTensors = want_tensors
     this%CP%WantVectors = want_vectors
     if (ncustomsources > 0) State%CP%CustomSources = Old

@@ -13,12 +13,21 @@
 !
 ! ----------------------------------------------------------------------------------------
 
-!> @file 008p3_quintessence.f90
+!> @file 008p4_quintessence.f90
 !! This file contains the definition of the Quintessence full mapping model.
 
 
 ! ----------------------------------------------------------------------------------------
-!> This module contains the definition of the Quintessence full mapping model.
+!> This module contains the definition of the Quintessence full mapping model: a minimally coupled scalar field phi
+!! (in units of the reduced Planck mass) with potential V(phi) = U P(phi), P the function selected by potential_model
+!! with its own parameters (e.g. its amplitude V0). Conventions:
+!! - the potential unit is U = 3 H0^2 (1 - Omega_c - Omega_b - Omega_nu)/(8 pi G), which does not subtract photons and
+!!   massless neutrinos: the LCDM point (a constant P, potential_model = 1) is V0 = Omega_v/(1 - Omega_c - Omega_b -
+!!   Omega_nu), e.g. 0.999895 for the test parameters, not 1 (V0 = 1 has no background solution);
+!! - phidot_ini is dphi/d ln a at a_ini (with drag_initial_conditions = F);
+!! - drag_initial_conditions = T sets dphi/d ln a at a_ini from d^2phi/d ln a^2 = 0 (the field dragged by the Hubble
+!!   friction): in the radiation era this is 5x the attractor velocity, to which the solution relaxes;
+!! - phi_ini is found by shooting on H0, within [field_min, field_max].
 
 !> @author Marco Raveri
 
@@ -61,10 +70,10 @@
     type, extends (EFTCAMB_full_model) :: EFTCAMB_5e
 
         ! 5e theory parameters:
-        real(dl) :: phidot_ini      !< initial value of the quintessence kinetic term.
-        !< bounds on the initial value of the field, minimum value. Useful for periodic potentials. Default to +10^10
+        real(dl) :: phidot_ini      !< initial value of the field velocity dphi/d ln a.
+        !< bounds on the initial value of the field, minimum value. Useful for periodic potentials. Default to -10^10
         real(dl) :: field_min
-        !< bounds on the initial value of the field, maximum value. Useful for periodic potentials. Default to -10^10
+        !< bounds on the initial value of the field, maximum value. Useful for periodic potentials. Default to +10^10
         real(dl) :: field_max
 
         ! scalar field potential model selection flag:
@@ -73,7 +82,8 @@
         logical  :: drag_initial_conditions !< Flag to select Hubble dragged initial conditions.
 
         ! the scalar field potential in case we need it:
-        class(parametrized_function_1D), allocatable :: potential   !< The JBD scalar field potential.
+        !< The quintessence potential P(phi), in units of U (see the module header).
+        class(parametrized_function_1D), allocatable :: potential
 
         ! the interpolated EFT functions that come out of the background solver:
         !< The interpolated function Lambda (and derivatives).
@@ -170,7 +180,7 @@
     ! read precision parameters
     self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 11000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1.1_dl))
+    self%x_final = self%read_background_x_final(Ini, 1.1_dl, eft_error)
 
     end subroutine EFTCAMB5eReadModelSelectionFromFile
 
@@ -492,7 +502,7 @@
     call self%EFTc%precompute(x, ind, mu)
 
     eft_cache%EFTc = self%EFTc%value(x, index=ind, coeff=mu)
-    eft_cache%EFTLambda = self%EFTLambda%value(x, index=ind, coeff=mu)
+    eft_cache%EFTLambda = a*a*self%EFTLambda%value(x, index=ind, coeff=mu)
     eft_cache%EFTcdot = self%EFTc%first_derivative(x, index=ind, coeff=mu)
     eft_cache%EFTLambdadot = self%EFTLambda%first_derivative(x, index=ind, coeff=mu)
     eft_cache%EFTOmegaV = 0._dl
@@ -669,7 +679,8 @@
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that solves the 5e background equations.
-    subroutine EFTCAMB5eSolveBackgroundEquations(self, params_cache, phi_ini, phidot_ini, H02, only_solve, success)
+    subroutine EFTCAMB5eSolveBackgroundEquations(self, params_cache, phi_ini, phidot_ini, H02, only_solve, success, &
+        omega_phi_ini)
 
     implicit none
 
@@ -684,7 +695,8 @@
     !< logical flag that tells the code wether to compute only the solution or also the EFT functions.
     logical, optional                          :: only_solve
     logical, intent(out)                       :: success       !< whether the calculation ended correctly or not
-    logical :: only_solve_temp
+    real(dl), intent(out), optional            :: omega_phi_ini !< field energy fraction at the initial time
+    logical :: only_solve_temp, today_node
 
     integer, parameter :: num_eq = 2   !<  Number of equations
 
@@ -692,9 +704,11 @@
 
     ! odepack quantities:
     integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2, t2_temp, B
+    real(dl) :: rtol, atol(2), t1, t2, t2_temp, B
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
+    !< DLSODA calls that continue one integration interval after an excess-work return (1000 steps each):
+    integer, parameter :: max_continuations = 100
 
     ! background quantities that are shared among the derivs and output routines:
     real(dl) :: a, a2, grhob_t, grhoc_t, grhor_t, grhog_t, grhonu_tot, gpinu_tot
@@ -717,6 +731,8 @@
 
     ! Set initial conditions:
     y(1) = phi_ini
+    ! derivs reads y(2): define it before the drag initial condition, which needs only the matter densities
+    y(2) = 0._dl
     ! compute drag initial conditions:
     if (self%drag_initial_conditions) then
         ! call derivs to compute everything:
@@ -727,15 +743,21 @@
     else
         y(2) = phidot_ini
     end if
+    if (present(omega_phi_ini)) then
+        call derivs(num_eq, t1, y, ydot)
+        omega_phi_ini = 1._dl - grho_matter/(3._dl*H2)
+    end if
 
     ! now set output vaue:
     H02 = 0._dl
 
     ! Initialize DLSODA:
-    ! set-up the relative and absolute tollerances:
-    itol = 1
+    ! set-up the relative and absolute tollerances: one absolute tolerance per component, since dphi/dN is 1e-28..1e-9
+    ! before a ~ 1e-3 in thawing models (an absolute 1e-14 left it as solver noise, 541x off at a < 1e-6)
+    itol = 2
     rtol = 1.d-10
-    atol = 1.d-14
+    atol(1) = 1.d-14
+    atol(2) = 1.d-35
     ! initialize task to do:
     itask = 1
     istate = 1
@@ -778,39 +800,35 @@
         ! set the time step:
         t1 = self%EFTc%x(i)
         t2 = self%EFTc%x(i + 1)
+        ! H0^2 is H^2 at a = 1: a last node at a = 1 to roundoff (model_background_a_final = 1) is today itself (the
+        ! step that reached x = 0 exactly was never taken, and a node at -1e-16 gave no H0 at all)
+        today_node = t1 < 0._dl .and. abs(t2) <= 1.e-10_dl
         ! check if the boundary has been reached:
-        if (t1 < 0._dl .and. t2 >= 0._dl) then
+        if (t1 < 0._dl .and. t2 > 1.e-10_dl) then
             ! solve until zero:
             t2_temp = 0._dl
-            call DLSODA (derivs, num_eq, y, t1, t2_temp, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
-                LIW, jacobian, JacobianMode)
+            call integrate(t1, t2_temp)
             ! check istate for LSODA good completion:
             if (istate < 0) then
-                if (istate == -1) then
-                    istate = 1
-                else
-                    success = .false.
-                    return
-                end if
+                success = .false.
+                return
             end if
             ! save H0:
             call derivs(num_eq, t2_temp, y, ydot)
             H02 = H2
             ! solve until t2:
-            call DLSODA (derivs, num_eq, y, t2_temp, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
-                LIW, jacobian, JacobianMode)
+            call integrate(t2_temp, t2)
         else
-            call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-                jacobian, JacobianMode)
+            call integrate(t1, t2)
         end if
         ! check istate for LSODA good completion:
         if (istate < 0) then
-            if (istate == -1) then
-                istate = 1
-            else
-                success = .false.
-                return
-            end if
+            success = .false.
+            return
+        end if
+        if (today_node) then
+            call derivs(num_eq, t2, y, ydot)
+            H02 = H2
         end if
 
         ! compute output EFT functions if needed:
@@ -835,6 +853,31 @@
     return
 
     contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that integrates the system from t_start to t_end with DLSODA. An excess-work return (istate = -1)
+    !! stops at an intermediate time: the same integration is continued (istate = 2), at most max_continuations
+    !! times (a restart with istate = 1 stored the solution of that earlier time at t_end).
+    subroutine integrate(t_start, t_end)
+
+    implicit none
+
+    real(dl), intent(inout) :: t_start !< initial time, the time reached on output
+    real(dl), intent(in)    :: t_end   !< final time
+
+    integer :: n_continue
+
+    call DLSODA(derivs, num_eq, y, t_start, t_end, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
+        jacobian, JacobianMode)
+    n_continue = 0
+    do while (istate == -1 .and. n_continue < max_continuations)
+        istate = 2
+        call DLSODA(derivs, num_eq, y, t_start, t_end, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+            LIW, jacobian, JacobianMode)
+        n_continue = n_continue + 1
+    end do
+
+    end subroutine integrate
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes y' given y for the background of 5e
@@ -920,13 +963,13 @@
     PV = self%quintessence_potential(phi, deriv=1)
     PPV = self%quintessence_potential(phi, deriv=2)
 
-    ! compute the Jacobian:
+    ! compute the Jacobian, pd(i, j) = d ydot(i)/d y(j) (ODEPACK convention):
     pd(1, 1) = 0._dl
-    pd(2, 1) = 1._dl
-    pd(1, 2) = (v**2 - 6._dl)*V0/4._dl/(grho_matter + V0*Vphi)**2*( &
+    pd(1, 2) = 1._dl
+    pd(2, 1) = (v**2 - 6._dl)*V0/4._dl/(grho_matter + V0*Vphi)**2*( &
         +v*PV*(grho_matter + gpres_matter) - 2._dl*V0*PV**2 &
         + 2._dl*PPV*(grho_matter + V0*Vphi))
-    pd(2, 2) = 1._dl/4._dl/(grho_matter + V0*Vphi)*( &
+    pd(2, 2) = -1._dl/4._dl/(grho_matter + V0*Vphi)*( &
         -6._dl*(v**2 - 2._dl)*V0*Vphi - 4._dl*v*V0*PV &
         + 3._dl*(v**2 - 2._dl)*(gpres_matter - grho_matter))
 
@@ -953,8 +996,10 @@
     phi_prime_prime = ydot(2)
 
     ! 2) compute the EFT functions:
-    self%EFTLambda%y(ind) = 0.5_dl*H2*phi_prime**2 - &
-        3._dl*(1._dl - omega_m)*params_cache%h0_Mpc**2*a2*self%quintessence_potential(phi, deriv=0)
+    ! tabulate Lambda/m0^2, not Lambda a^2/m0^2 = O(a^2) (as designer f(R), P18): the linear interpolation of the a^2
+    ! factor on the ln a grid tripped the return-to-GR Lambda test at the LCDM point, which was then refused
+    self%EFTLambda%y(ind) = (0.5_dl*H2*phi_prime**2 - &
+        3._dl*(1._dl - omega_m)*params_cache%h0_Mpc**2*a2*self%quintessence_potential(phi, deriv=0))/a2
     self%EFTc%y(ind) = 0.5_dl*H2*phi_prime**2
     ! we have to safeguard against H2 < 0
     if (H2 > 0._dl) then
@@ -1027,105 +1072,105 @@
     real(dl), intent(out) :: phi_ini
     logical, intent(out)  :: success        !< whether the calculation ended correctly or not
 
-    real(dl) :: H0_wanted, H0_temp_1, H0_temp_2, phi_temp, tol, min_field, min_search, phi_exp
-    integer  :: ind, num_search
+    real(dl) :: H0_wanted, tol, min_field, min_search, phi_exp, phi_a, phi_b, f_a, f_b, bound, H0_found
+    integer  :: ind, num_search, side
+    logical  :: root_ok
 
     success = .false.
+    phi_ini = 0._dl
 
-    ! absolute tollerance in the H0 solution:
+    ! absolute tolerance on the field value in the root finder (zbrent x tolerance):
     tol = 1.d-12
     ! other algorithm variables:
     min_field = 1.d-16
     min_search = 1.d-10
-    num_search = 20
+    num_search = 60
     ! copy the desired value, notice that we are solving for the squared Hubble constant:
     H0_wanted = params_cache%h0_Mpc**2
 
-    ! 2) look for the root on the positive side:
-    phi_temp = min_field
-    H0_temp_1 = helperH0(phi_temp)
-
-    ! do we already have the solution:
-    if (abs(H0_temp_1 - H0_wanted) <= tol) then
-        phi_ini = phi_temp
-        success = .true.
-        return
-    end if
-    ! bracket the root:
-    do ind = 1, num_search
-        phi_exp = log10(min_search) + real(ind - 1)/real(num_search - 1)*(log10(self%field_max) - log10(min_search))
-        phi_temp = 10._dl**phi_exp
-        H0_temp_2 = helperH0(phi_temp)
-        if ((H0_temp_1 - H0_wanted)*(H0_temp_2 - H0_wanted) <= 0._dl) exit
+    ! scan each side of the field axis outwards on a log grid and bracket the root between adjacent points
+    ! where the background exists (finite H0^2); points where the background fails are skipped. Only a physical
+    ! root is returned (see physical_root); otherwise the scan goes on.
+    do side = 1, 2
+        if (side == 1) then
+            phi_a = min_field
+            bound = self%field_max
+        else
+            phi_a = -min_field
+            bound = abs(self%field_min)
+        end if
+        f_a = helperH0(phi_a) - H0_wanted
+        if (is_finite(f_a) .and. abs(f_a) <= 1.d-10*H0_wanted) then
+            if (physical_root(phi_a)) then
+                phi_ini = phi_a
+                success = .true.
+                exit
+            end if
+        end if
+        do ind = 1, num_search
+            phi_exp = log10(min_search) + real(ind - 1)/real(num_search - 1)*(log10(bound) - log10(min_search))
+            phi_b = sign(10._dl**phi_exp, phi_a)
+            f_b = helperH0(phi_b) - H0_wanted
+            if (is_finite(f_a) .and. is_finite(f_b) .and. f_a*f_b <= 0._dl) then
+                phi_ini = zbrent(helperH0, phi_a, phi_b, tol, H0_wanted, root_ok)
+                if (root_ok) root_ok = physical_root(phi_ini)
+                if (root_ok) then
+                    success = .true.
+                    exit
+                end if
+            end if
+            phi_a = phi_b
+            f_a = f_b
+        end do
+        if (success) exit
+        if (feedback_level > 1) then
+            if (side == 1) write(*, '(a)') '   right side solution not found'
+            if (side == 2) write(*, '(a)') '   left side solution not found'
+        end if
     end do
-    ! call the root finder:
-    phi_ini = zbrent(helperH0, min_field, phi_temp, tol, H0_wanted, success)
-    if (success) then
-        if (feedback_level > 2) then
-            write(*, *) '  H0 given:', sqrt(H0_wanted)*(c/1000._dl)
-            write(*, *) '  H0 found:', sqrt(helperH0(phi_ini))*(c/1000._dl)
-        end if
-        return
-    else if (.not. success) then
-        if (feedback_level > 1) write(*, '(a)') '   right side solution not found'
-    end if
 
-    ! 3) look for the root on the negative side:
-    phi_temp = -min_field
-    H0_temp_1 = helperH0(phi_temp)
-    ! do we already have the solution:
-    if (abs(H0_temp_1 - H0_wanted) <= tol) then
-        phi_ini = phi_temp
-        success = .true.
-        return
+    if (success .and. feedback_level > 2) then
+        H0_found = helperH0(phi_ini)
+        write(*, *) '  H0 given:', sqrt(H0_wanted)*(c/1000._dl)
+        write(*, *) '  H0 found:', sqrt(abs(H0_found))*(c/1000._dl)
     end if
-    ! bracket the root:
-    do ind = 1, num_search
-        phi_exp = &
-            log10(min_search) + real(ind - 1)/real(num_search - 1)*(log10(abs(self%field_min)) - log10(min_search))
-        phi_temp = -10._dl**phi_exp
-        H0_temp_2 = helperH0(phi_temp)
-        if ((H0_temp_1 - H0_wanted)*(H0_temp_2 - H0_wanted) <= 0._dl) exit
-    end do
-    ! call the root finder:
-    phi_ini = zbrent(helperH0, -min_field, phi_temp, tol, H0_wanted, success)
-    if (success) then
-        if (feedback_level > 2) then
-            write(*, *) 'H0 given:', sqrt(H0_wanted)*(c/1000._dl)
-            write(*, *) 'H0 found:', sqrt(helperH0(phi_ini))*(c/1000._dl)
-        end if
-        return
-    else if (.not. success) then
-        if (feedback_level > 1) write(*, '(a)') '   left side solution not found'
-    end if
-
-    ! 4) look in between:
-    phi_ini = zbrent(helperH0, -min_field, +min_field, tol, H0_wanted, success)
-    if (success) then
-        if (feedback_level > 2) then
-            write(*, *) 'H0 given:', sqrt(H0_wanted)*(c/1000._dl)
-            write(*, *) 'H0 found:', sqrt(helperH0(phi_ini))*(c/1000._dl)
-        end if
-        return
-    else if (.not. success) then
-        if (feedback_level > 1) write(*, '(a)') '   center solution not found'
-    end if
-
-    ! 5) in case of failure:
-    if (.not. success) then
-        if (feedback_level > 1) write(*, '(a)') '   initial condition not found'
-        return
-    end if
+    if (.not. success .and. feedback_level > 1) write(*, '(a)') '   initial condition not found'
 
     contains
 
-    ! small interface function to feed the root finder:
-    function helperH0(phi_ini)
+    ! small interface function to feed the root finder (own success flag, NaN when the background fails):
+    function helperH0(phi_temp)
     implicit none
-    real(dl) :: phi_ini, helperH0
-    call self%solve_background_equations(params_cache, phi_ini, phidot_ini=self%phidot_ini, H02=helperH0, &
-        only_solve=.true., success=success)
+    real(dl) :: phi_temp, helperH0
+    logical  :: ok
+    call self%solve_background_equations(params_cache, phi_temp, phidot_ini=self%phidot_ini, H02=helperH0, &
+        only_solve=.true., success=ok)
+    if (.not. ok .or. .not. (helperH0 > 0._dl)) helperH0 = double_NaN
     end function helperH0
+
+    ! a root is physical if its background exists and reproduces H0, and the field is subdominant at the initial
+    ! time, Omega_phi(a_ini) < 1/2, as the initial conditions (drag included) assume. This rejects, e.g., the
+    ! scaling-attractor branch of a steep exponential, which matches H0 with no radiation or matter era.
+    logical function physical_root(phi_temp)
+    implicit none
+    real(dl), intent(in) :: phi_temp
+    real(dl) :: H02_temp, omega_ini
+    logical  :: ok
+    call self%solve_background_equations(params_cache, phi_temp, phidot_ini=self%phidot_ini, H02=H02_temp, &
+        only_solve=.true., success=ok, omega_phi_ini=omega_ini)
+    physical_root = ok .and. is_finite(H02_temp) .and. abs(H02_temp/H0_wanted - 1._dl) <= 1.d-8
+    if (physical_root .and. .not. (omega_ini < 0.5_dl)) then
+        physical_root = .false.
+        if (feedback_level > 0) write(*, '(a,ES11.4,a,ES10.3)') '   H0 root at phi_ini =', phi_temp, &
+            ' rejected: Omega_phi(a_ini) =', omega_ini
+    end if
+    end function physical_root
+
+    logical function is_finite(x)
+    implicit none
+    real(dl), intent(in) :: x
+    is_finite = (x == x) .and. (abs(x) <= huge(x))
+    end function is_finite
 
     end subroutine EFTCAMB5eFindInitialConditions
 

@@ -45,8 +45,11 @@
     real(dl), parameter :: EFT_IC_max_dlnden = 10._dl
     !< ... or if the relative error of the finite-difference derivative exceeds this value.
     real(dl), parameter :: EFT_IC_max_relerr = 0.1_dl
-    !< warnings already printed:
-    logical, save :: EFT_IC_warned(4) = .false.
+    !< warnings raised in the OpenMP k loop and not printed yet, their text, and warnings already printed (each is
+    !! printed at most once per session, after the loop, by EFTCAMB_IC_print_warnings):
+    logical, save :: EFT_IC_raised(4) = .false.
+    character(len=256), save :: EFT_IC_message(4) = ''
+    logical, save :: EFT_IC_printed(4) = .false.
 
     contains
 
@@ -70,234 +73,21 @@
 
     integer  :: nu_i, ic_type
 
-    k = EV%k_buf
-    k2 = EV%k2_buf
-
-    ! Get background scale factor, sound speed and ionisation fraction.
-    if (EV%TightCoupling) then
-        call EV%ThermoData%Values(tau, a, cs2, opacity, dopacity)
-    else
-        call EV%ThermoData%Values(tau, a, cs2, opacity)
-    end if
-
-    ! copy variables:
-    etak = y(ix_etak) ! conformal time
-    clxc = y(ix_clxc) ! cdm density perturbations
-    clxb = y(ix_clxb) ! baryons density perturbations
-    vb = y(ix_vb) ! baryons velocity perturbations
-    ! process:
-    a2 = a*a
-    ! compute background densities of different species
-    grhob_t = State%grhob/a         ! 8\pi G_N \rho_b a^2: baryons background density
-    grhoc_t = State%grhoc/a         ! 8\pi G_N \rho_{cdm} a^2: cold dark matter background density
-    grhor_t = State%grhornomass/a2  ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
-    grhog_t = State%grhog/a2        ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
-    grhov_t = 0._dl
-
-    ! start computing background total pressure and total density:
-    gpres = 0._dl
-    grho_matter = grhob_t + grhoc_t
-    ! start computing total density and velocity perturbations:
-    dgrho_matter = grhob_t*clxb + grhoc_t*clxc ! 8\pi G_N \sum(rho_i*clx_i) a^2   : total density perturbation
-    dgq = grhob_t*vb                 ! 8\pi G_N \sum(rho_i+p_i)*v_i a^2 : total velocity perturbation
-    ! add massive neutrinos to both background and perturbations:
-
-    dgpnu = 0._dl
-    if (State%CP%Num_Nu_massive > 0) then
-        call MassiveNuVars(EV, y, a, grho_matter, gpres, dgrho_matter, dgq, wnu_arr, dgp=dgpnu)
-    end if
-
-    ! add radiation, massless neutrinos and Lambda to total background density:
-    grho = grho_matter + grhor_t + grhog_t + grhov_t
-
-    ! compute gpres: add radiation and massless neutrinos to massive neutrinos
-    gpres = gpres + (grhog_t + grhor_t)/3._dl
-    ! initialize the cache:
-    call EV%eft_cache%initialize()
-    ! start to fill the cache:
-    EV%eft_cache%a = a
-    EV%eft_cache%tau = tau
-    EV%eft_cache%k = k
-    EV%eft_cache%grhom_t = grho
-    EV%eft_cache%gpresm_t = gpres
-    EV%eft_cache%grhob_t = grhob_t
-    EV%eft_cache%grhoc_t = grhoc_t
-    EV%eft_cache%grhor_t = grhor_t
-    EV%eft_cache%grhog_t = grhog_t
-    ! compute the other things:
-    select type (model => CP%EFTCAMB%model)
-        ! compute the background and the background EFT functions.
-    class is (EFTCAMB_full_model)
-        ! background for full models. Here the expansion history is computed from the
-        ! EFT functions. Hence compute them first and then compute the expansion history.
-        call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
-        call CP%EFTCAMB%model%compute_adotoa(a, CP%eft_par_cache, EV%eft_cache)
-    class is (EFTCAMB_designer_model)
-        ! background for designer models. Here the expansion history is parametrized
-        ! and does not depend on the EFT functions. Hence compute first the expansion history
-        ! and then the EFT functions.
-        call CP%EFTCAMB%model%compute_adotoa(a, CP%eft_par_cache, EV%eft_cache)
-    end select
-    ! store adotoa:
-    adotoa = EV%eft_cache%adotoa
-    ! compute massive neutrinos stuff:
-    ! Massive neutrinos mod:
-    EV%eft_cache%grhonu_tot = 0._dl
-    EV%eft_cache%gpinu_tot = 0._dl
-    EV%eft_cache%grhonudot_tot = 0._dl
-    EV%eft_cache%gpinudot_tot = 0._dl
-    if (CP%Num_Nu_massive /= 0) then
-        do nu_i = 1, CP%Nu_mass_eigenstates
-            EFT_grhonu = 0._dl
-            EFT_gpinu = 0._dl
-            EFT_grhonudot = 0._dl
-            EFT_gpinudot = 0._dl
-            EFT_gpinudotdot = 0._dl
-            grhormass_t = State%grhormass(nu_i)/a**2
-            call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
-            EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
-            EV%eft_cache%gpinu_tot = EV%eft_cache%gpinu_tot + grhormass_t*EFT_gpinu
-            EV%eft_cache%grhonudot_tot = EV%eft_cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(a*State%nu_masses(nu_i), adotoa) - 4._dl*adotoa*EFT_grhonu)
-            EV%eft_cache%gpinudot_tot = EV%eft_cache%gpinudot_tot + &
-                grhormass_t*(ThermalNuBackground%pidot(a*State%nu_masses(nu_i), adotoa, EFT_gpinu) - &
-                4._dl*adotoa*EFT_gpinu)
-            EV%eft_cache%gpinudotdot_tot = 0._dl
-        end do
-    end if
-    ! compute pressure dot:
-    EV%eft_cache%gpresdotm_t = -4._dl*adotoa*(grhog_t + grhor_t)/3._dl + EV%eft_cache%gpinudot_tot
-    ! compute remaining quantities related to H:
-    call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
-    ! compute second derivative of massive neutrino pressure
-    EV%eft_cache%grhonu_tot = 0._dl
-    EV%eft_cache%gpinu_tot = 0._dl
-    EV%eft_cache%grhonudot_tot = 0._dl
-    EV%eft_cache%gpinudot_tot = 0._dl
-    EV%eft_cache%gpinudotdot_tot = 0._dl
-    if (CP%Num_Nu_massive /= 0) then
-        do nu_i = 1, CP%Nu_mass_eigenstates
-            EFT_grhonu = 0._dl
-            EFT_gpinu = 0._dl
-            EFT_grhonudot = 0._dl
-            EFT_gpinudot = 0._dl
-            grhormass_t = State%grhormass(nu_i)/a**2
-            call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
-            EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
-            EV%eft_cache%gpinu_tot = EV%eft_cache%gpinu_tot + grhormass_t*EFT_gpinu
-            EFT_gpinudot = ThermalNuBackground%pidot(a*State%nu_masses(nu_i), adotoa, EFT_gpinu)
-            EV%eft_cache%gpinudot_tot = EV%eft_cache%gpinudot_tot + grhormass_t*(EFT_gpinudot &
-                - 4._dl*adotoa*EFT_gpinu)
-            EV%eft_cache%grhonudot_tot = EV%eft_cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(a*State%nu_masses(nu_i), adotoa) - 4._dl*adotoa*EFT_grhonu)
-            EV%eft_cache%gpinudotdot_tot = EV%eft_cache%gpinudotdot_tot - &
-                4._dl*adotoa*grhormass_t*(EFT_gpinudot - 4._dl*adotoa*EFT_gpinu) + &
-                grhormass_t*(ThermalNuBackground%pidotdot(a*State%nu_masses(nu_i), adotoa, EV%eft_cache%Hdot, &
-                EFT_gpinu, EFT_gpinudot) - 4._dl*EV%eft_cache%Hdot*EFT_gpinu - 4._dl*adotoa*EFT_gpinudot)
-        end do
-    end if
-    ! compute pressure ddot:
-    EV%eft_cache%gpresdotdotm_t = -(4._dl/3._dl)*EV%eft_cache%Hdot*(grhog_t + grhor_t) + &
-        (16._dl/3._dl)*(grhog_t + grhor_t)*adotoa**2 + EV%eft_cache%gpinudotdot_tot
-    ! compute remaining quantities related to H:
-    call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
-    ! store:
-    adotdota = EV%eft_cache%Hdot + EV%eft_cache%adotoa**2
-    ! compute backgrond EFT functions if model is designer:
-    select type (model => CP%EFTCAMB%model)
-    class is (EFTCAMB_designer_model)
-        call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
-    end select
-    ! compute all other background stuff:
-    call CP%EFTCAMB%model%compute_rhoQPQ(a, CP%eft_par_cache, EV%eft_cache)
-    ! compute second order EFT functions:
-    call CP%EFTCAMB%model%compute_secondorder_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
-    !
-    cothxor = 1._dl/tau
-
-    ! define total density perturbations:
-    dgrho = dgrho_matter
-
-    ! compute z and zdot in GR:
-    z = (0.5_dl*dgrho/k + etak)/adotoa
-    dz = -2._dl*adotoa*z + etak
-
-    if (EV%no_nu_multpoles) then
-        ! RSA approximation of arXiv:1104.2933, dropping opactity terms in the velocity
-        ! Approximate total density variables with just matter terms
-        clxr = -4*dz/k
-        qr = -4._dl/3*z
-    else
-        ! Massless neutrinos
-        clxr = y(EV%r_ix)
-        qr = y(EV%r_ix + 1)
-    end if
-
-    if (EV%no_phot_multpoles) then
-        if (.not. EV%no_nu_multpoles) then
-            clxg = -4*dz/k - 4/k*opacity*(vb + z)
-            qg = -4._dl/3*z
-        else
-            clxg = clxr - 4/k*opacity*(vb + z)
-            qg = qr
-        end if
-    else
-        ! Photons
-        clxg = y(EV%g_ix)
-        qg = y(EV%g_ix + 1)
-    end if
-
-    ! add radiation to total density and velocity perturbations:
-    dgrho = dgrho + grhog_t*clxg + grhor_t*clxr ! 8\pi G_N \sum(rho_i*clx_i) a^2   : total density perturbation
-    dgq = dgq + grhog_t*qg + grhor_t*qr   ! 8\pi G_N \sum(rho_i+p_i)*v_i a^2 : total velocity perturbation
-
-    ! recompute z and zdot in GR:
-    z = (0.5_dl*dgrho/k + etak)/adotoa
-    dz = -2._dl*adotoa*z + etak
-
-    ! complete the cache:
-    EV%eft_cache%z = z
-    EV%eft_cache%dz = dz
-    EV%eft_cache%clxg = clxg
-    EV%eft_cache%clxr = clxr
-    EV%eft_cache%dgpnu = dgpnu
-    EV%eft_cache%dgrho = dgrho
-    EV%eft_cache%dgq = dgq
-
-    ! compute pi field equation factors:
-    call CP%EFTCAMB%model%compute_pi_factors(a, CP%eft_par_cache, EV%eft_cache)
+    ! fill the cache (background, GR metric and matter perturbations, pi factors) at tau:
+    call EFT_IC_fill_cache(tau, y)
 
     Omega0 = EV%eft_cache%EFTOmegaV
     Gamma10 = EV%eft_cache%EFTGamma1V
     Gamma20 = EV%eft_cache%EFTGamma2V
     Gamma30 = EV%eft_cache%EFTGamma3V
 
-    if (EV%eft_cache%EFTGamma1V /= 0._dl .or. EV%eft_cache%EFTGamma2V /= 0._dl .or. &
-        EV%eft_cache%EFTGamma3V /= 0._dl .or. EV%eft_cache%EFTGamma4V /= 0._dl .or. &
-        EV%eft_cache%EFTGamma5V /= 0._dl .or. EV%eft_cache%EFTGamma6V /= 0._dl) then
-
-        EFTpiEdot = 0._dl
-
-    else
-
-        EFTpiEdot = (EV%eft_cache%EFTcdot + &
-            0.75_dl*(2._dl*EV%eft_cache%adotoa*EV%eft_cache%Hdot*a*a*EV%eft_cache%EFTOmegaP**2/ &
-            (1._dl + EV%eft_cache%EFTOmegaV) + &
-            2._dl*EV%eft_cache%adotoa**3*a**3*EV%eft_cache%EFTOmegaP*EV%eft_cache%EFTOmegaPP/ &
-            (1._dl + EV%eft_cache%EFTOmegaV) - &
-            a**3*EV%eft_cache%adotoa**3*EV%eft_cache%EFTOmegaP**3/(1._dl + EV%eft_cache%EFTOmegaV)**2))*k* &
-            EV%eft_cache%z + (EV%eft_cache%EFTc + &
-            0.75_dl*EV%eft_cache%adotoa**2*(a*a*EV%eft_cache%EFTOmegaP**2)/(1._dl + EV%eft_cache%EFTOmegaV))*k* &
-            EV%eft_cache%dz + 2._dl*EV%eft_cache%adotoa*EV%eft_cache%EFTpiE + &
-            (-EV%eft_cache%dgrho + (EV%eft_cache%grhog_t*EV%eft_cache%clxg + EV%eft_cache%grhor_t*EV%eft_cache%clxr))/ &
-            4._dl*(+a*EV%eft_cache%adotoa**2*EV%eft_cache%EFTOmegaP + a*EV%eft_cache%Hdot*EV%eft_cache%EFTOmegaP + &
-            a*a*EV%eft_cache%adotoa**2*EV%eft_cache%EFTOmegaPP - &
-            a*a*EV%eft_cache%adotoa**2*EV%eft_cache%EFTOmegaP**2/(1._dl + EV%eft_cache%EFTOmegaV))/ &
-            (1._dl + EV%eft_cache%EFTOmegaV) - &
-            EV%eft_cache%adotoa/4._dl*a*EV%eft_cache%EFTOmegaP/(1._dl + EV%eft_cache%EFTOmegaV)* &
-            (EV%eft_cache%grhob_t*(-k*(EV%eft_cache%z + vb) - 3._dl*EV%eft_cache%adotoa*clxb) + &
-            EV%eft_cache%grhoc_t*(-k*EV%eft_cache%z - 3._dl*EV%eft_cache%adotoa*clxc))
-
+    ! E' = dE/dtau for the pi' initial condition (arXiv:1405.3590 v3 Sec. Initial Conditions), for every
+    ! model: central difference of E on the state propagated with the GR equations (the equations that
+    ! evolved it up to the turn-on). The cache is then refilled at tau.
+    EFTpiEdot = 0._dl
+    if (.not. CP%EFTCAMB%EFTCAMB_evolve_delta_phi) then
+        EFTpiEdot = EFT_IC_numerical_Edot()
+        call EFT_IC_fill_cache(tau, y)
     end if
 
     if (CP%EFTCAMB%EFTCAMB_evolve_delta_phi) then
@@ -412,6 +202,241 @@
 
     contains
 
+    !> fills EV%eft_cache (background, GR z and dz, matter perturbations, pi factors) at time tau_in for the
+    !! state y_in (EV, k and the local variables of the host are shared).
+    subroutine EFT_IC_fill_cache(tau_in, y_in)
+    real(dl), intent(in) :: tau_in
+    real(dl), intent(in) :: y_in(EV%nvar)
+
+    call fill(tau_in, y_in)
+
+    end subroutine EFT_IC_fill_cache
+
+    subroutine fill(tau, y)
+    real(dl), intent(in) :: tau
+    real(dl), intent(in) :: y(EV%nvar)
+
+    k = EV%k_buf
+    k2 = EV%k2_buf
+
+    ! Get background scale factor, sound speed and ionisation fraction.
+    if (EV%TightCoupling) then
+        call EV%ThermoData%Values(tau, a, cs2, opacity, dopacity)
+    else
+        call EV%ThermoData%Values(tau, a, cs2, opacity)
+    end if
+
+    ! copy variables:
+    etak = y(ix_etak) ! conformal time
+    clxc = y(ix_clxc) ! cdm density perturbations
+    clxb = y(ix_clxb) ! baryons density perturbations
+    vb = y(ix_vb) ! baryons velocity perturbations
+    ! process:
+    a2 = a*a
+    ! compute background densities of different species
+    grhob_t = State%grhob/a         ! 8\pi G_N \rho_b a^2: baryons background density
+    grhoc_t = State%grhoc/a         ! 8\pi G_N \rho_{cdm} a^2: cold dark matter background density
+    grhor_t = State%grhornomass/a2  ! 8\pi G_N \rho_{\nu} a^2: massless neutrinos background density
+    grhog_t = State%grhog/a2        ! 8\pi G_N \rho_{\gamma} a^2: radiation background density
+    grhov_t = 0._dl
+
+    ! start computing background total pressure and total density:
+    gpres = 0._dl
+    grho_matter = grhob_t + grhoc_t
+    ! start computing total density and velocity perturbations:
+    dgrho_matter = grhob_t*clxb + grhoc_t*clxc ! 8\pi G_N \sum(rho_i*clx_i) a^2   : total density perturbation
+    dgq = grhob_t*vb                 ! 8\pi G_N \sum(rho_i+p_i)*v_i a^2 : total velocity perturbation
+    ! add massive neutrinos to both background and perturbations:
+
+    dgpnu = 0._dl
+    if (State%CP%Num_Nu_massive > 0) then
+        call MassiveNuVars(EV, y, a, grho_matter, gpres, dgrho_matter, dgq, wnu_arr, dgp=dgpnu)
+    end if
+
+    ! add radiation, massless neutrinos and Lambda to total background density:
+    grho = grho_matter + grhor_t + grhog_t + grhov_t
+
+    ! compute gpres: add radiation and massless neutrinos to massive neutrinos
+    gpres = gpres + (grhog_t + grhor_t)/3._dl
+    ! initialize the cache:
+    call EV%eft_cache%initialize()
+    ! start to fill the cache:
+    EV%eft_cache%a = a
+    EV%eft_cache%tau = tau
+    EV%eft_cache%k = k
+    EV%eft_cache%grhom_t = grho
+    EV%eft_cache%gpresm_t = gpres
+    EV%eft_cache%grhob_t = grhob_t
+    EV%eft_cache%grhoc_t = grhoc_t
+    EV%eft_cache%grhor_t = grhor_t
+    EV%eft_cache%grhog_t = grhog_t
+    ! compute the other things:
+    select type (model => CP%EFTCAMB%model)
+        ! compute the background and the background EFT functions.
+    class is (EFTCAMB_full_model)
+        ! background for full models. Here the expansion history is computed from the
+        ! EFT functions. Hence compute them first and then compute the expansion history.
+        call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
+        call CP%EFTCAMB%model%compute_adotoa(a, CP%eft_par_cache, EV%eft_cache)
+    class is (EFTCAMB_designer_model)
+        ! background for designer models. Here the expansion history is parametrized
+        ! and does not depend on the EFT functions. Hence compute first the expansion history
+        ! and then the EFT functions.
+        call CP%EFTCAMB%model%compute_adotoa(a, CP%eft_par_cache, EV%eft_cache)
+    end select
+    ! store adotoa:
+    adotoa = EV%eft_cache%adotoa
+    ! compute massive neutrinos stuff:
+    ! Massive neutrinos mod:
+    EV%eft_cache%grhonu_tot = 0._dl
+    EV%eft_cache%gpinu_tot = 0._dl
+    EV%eft_cache%grhonudot_tot = 0._dl
+    EV%eft_cache%gpinudot_tot = 0._dl
+    if (CP%Num_Nu_massive /= 0) then
+        do nu_i = 1, CP%Nu_mass_eigenstates
+            EFT_grhonu = 0._dl
+            EFT_gpinu = 0._dl
+            EFT_grhonudot = 0._dl
+            EFT_gpinudot = 0._dl
+            EFT_gpinudotdot = 0._dl
+            grhormass_t = State%grhormass(nu_i)/a**2
+            call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
+            EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
+            EV%eft_cache%gpinu_tot = EV%eft_cache%gpinu_tot + grhormass_t*EFT_gpinu
+            ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+            EV%eft_cache%grhonudot_tot = EV%eft_cache%grhonudot_tot - 3._dl*adotoa*grhormass_t*(EFT_grhonu + EFT_gpinu)
+            EV%eft_cache%gpinudot_tot = EV%eft_cache%gpinudot_tot + &
+                grhormass_t*(ThermalNuBackground%pidot(a*State%nu_masses(nu_i), adotoa, EFT_gpinu) - &
+                4._dl*adotoa*EFT_gpinu)
+            EV%eft_cache%gpinudotdot_tot = 0._dl
+        end do
+    end if
+    ! compute pressure dot:
+    EV%eft_cache%gpresdotm_t = -4._dl*adotoa*(grhog_t + grhor_t)/3._dl + EV%eft_cache%gpinudot_tot
+    ! compute remaining quantities related to H:
+    call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
+    ! compute second derivative of massive neutrino pressure
+    EV%eft_cache%grhonu_tot = 0._dl
+    EV%eft_cache%gpinu_tot = 0._dl
+    EV%eft_cache%grhonudot_tot = 0._dl
+    EV%eft_cache%gpinudot_tot = 0._dl
+    EV%eft_cache%gpinudotdot_tot = 0._dl
+    if (CP%Num_Nu_massive /= 0) then
+        do nu_i = 1, CP%Nu_mass_eigenstates
+            EFT_grhonu = 0._dl
+            EFT_gpinu = 0._dl
+            EFT_grhonudot = 0._dl
+            EFT_gpinudot = 0._dl
+            grhormass_t = State%grhormass(nu_i)/a**2
+            call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
+            EV%eft_cache%grhonu_tot = EV%eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
+            EV%eft_cache%gpinu_tot = EV%eft_cache%gpinu_tot + grhormass_t*EFT_gpinu
+            EFT_gpinudot = ThermalNuBackground%pidot(a*State%nu_masses(nu_i), adotoa, EFT_gpinu)
+            EV%eft_cache%gpinudot_tot = EV%eft_cache%gpinudot_tot + grhormass_t*(EFT_gpinudot &
+                - 4._dl*adotoa*EFT_gpinu)
+            ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+            EV%eft_cache%grhonudot_tot = EV%eft_cache%grhonudot_tot - 3._dl*adotoa*grhormass_t*(EFT_grhonu + EFT_gpinu)
+            EV%eft_cache%gpinudotdot_tot = EV%eft_cache%gpinudotdot_tot - &
+                4._dl*adotoa*grhormass_t*(EFT_gpinudot - 4._dl*adotoa*EFT_gpinu) + &
+                grhormass_t*(ThermalNuBackground%pidotdot(a*State%nu_masses(nu_i), adotoa, EV%eft_cache%Hdot, &
+                EFT_gpinu, EFT_gpinudot) - 4._dl*EV%eft_cache%Hdot*EFT_gpinu - 4._dl*adotoa*EFT_gpinudot)
+        end do
+    end if
+    ! compute pressure ddot:
+    EV%eft_cache%gpresdotdotm_t = -(4._dl/3._dl)*EV%eft_cache%Hdot*(grhog_t + grhor_t) + &
+        (16._dl/3._dl)*(grhog_t + grhor_t)*adotoa**2 + EV%eft_cache%gpinudotdot_tot
+    ! compute remaining quantities related to H:
+    call CP%EFTCAMB%model%compute_H_derivs(a, CP%eft_par_cache, EV%eft_cache)
+    ! store:
+    adotdota = EV%eft_cache%Hdot + EV%eft_cache%adotoa**2
+    ! compute backgrond EFT functions if model is designer:
+    select type (model => CP%EFTCAMB%model)
+    class is (EFTCAMB_designer_model)
+        call CP%EFTCAMB%model%compute_background_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
+    end select
+    ! compute all other background stuff:
+    call CP%EFTCAMB%model%compute_rhoQPQ(a, CP%eft_par_cache, EV%eft_cache)
+    ! compute second order EFT functions:
+    call CP%EFTCAMB%model%compute_secondorder_EFT_functions(a, CP%eft_par_cache, EV%eft_cache)
+    !
+    cothxor = 1._dl/tau
+
+    ! define total density perturbations:
+    dgrho = dgrho_matter
+
+    ! compute z and zdot in GR:
+    z = (0.5_dl*dgrho/k + etak)/adotoa
+    dz = -2._dl*adotoa*z + etak
+
+    if (EV%no_nu_multpoles) then
+        ! RSA approximation of arXiv:1104.2933, dropping opactity terms in the velocity
+        ! Approximate total density variables with just matter terms
+        clxr = -4*dz/k
+        qr = -4._dl/3*z
+    else
+        ! Massless neutrinos
+        clxr = y(EV%r_ix)
+        qr = y(EV%r_ix + 1)
+    end if
+
+    if (EV%no_phot_multpoles) then
+        if (.not. EV%no_nu_multpoles) then
+            clxg = -4*dz/k - 4/k*opacity*(vb + z)
+            qg = -4._dl/3*z
+        else
+            clxg = clxr - 4/k*opacity*(vb + z)
+            qg = qr
+        end if
+    else
+        ! Photons
+        clxg = y(EV%g_ix)
+        qg = y(EV%g_ix + 1)
+    end if
+
+    ! add radiation to total density and velocity perturbations:
+    dgrho = dgrho + grhog_t*clxg + grhor_t*clxr ! 8\pi G_N \sum(rho_i*clx_i) a^2   : total density perturbation
+    dgq = dgq + grhog_t*qg + grhor_t*qr   ! 8\pi G_N \sum(rho_i+p_i)*v_i a^2 : total velocity perturbation
+
+    ! recompute z and zdot in GR:
+    z = (0.5_dl*dgrho/k + etak)/adotoa
+    dz = -2._dl*adotoa*z + etak
+
+    ! complete the cache:
+    EV%eft_cache%z = z
+    EV%eft_cache%dz = dz
+    EV%eft_cache%clxg = clxg
+    EV%eft_cache%clxr = clxr
+    EV%eft_cache%dgpnu = dgpnu
+    EV%eft_cache%dgrho = dgrho
+    EV%eft_cache%dgq = dgq
+
+    ! compute pi field equation factors:
+    call CP%EFTCAMB%model%compute_pi_factors(a, CP%eft_par_cache, EV%eft_cache)
+
+    end subroutine fill
+
+    !> dE/dtau at the turn-on: E on the GR-propagated state y +- dtau y'_GR at tau +- dtau.
+    function EFT_IC_numerical_Edot() result(Edot)
+    real(dl) :: Edot
+    type(EvolutionVars) :: EVg
+    real(dl) :: yg(EV%nvar), ypg(EV%nvar), dtau, taug, Ep, Em
+
+    EVg = EV
+    EVg%EFTCAMBactive = .false.
+    EVg%EFTCAMB_printing = .false.
+    yg = y
+    ypg = 0._dl
+    taug = tau
+    call derivs(EVg, EVg%ScalEqsToPropagate, taug, yg, ypg)
+    dtau = min(1.e-4_dl*tau, 1.e-2_dl/EV%k_buf)
+    call EFT_IC_fill_cache(tau + dtau, y + dtau*ypg)
+    Ep = EV%eft_cache%EFTpiE
+    call EFT_IC_fill_cache(tau - dtau, y - dtau*ypg)
+    Em = EV%eft_cache%EFTpiE
+    Edot = (Ep - Em)/(2._dl*dtau)
+
+    end function EFT_IC_numerical_Edot
+
     !> the denominator C + k^2 D1 + k^4 D2 of the attractor solution at scale factor temp_a.
     function EFTpiDenFunction_helper(temp_a)
     real(dl) :: temp_a, EFTpiDenFunction_helper
@@ -421,24 +446,46 @@
     end subroutine EFTCAMBInitialConditions
 
     ! ----------------------------------------------------------------------------------------
-    !> Subroutine that prints, once per session and only if feedback_level > 0, a warning of the initial
-    !! conditions calculator (called from the OpenMP k loop).
+    !> Subroutine that raises a warning of the initial conditions calculator (called from the OpenMP k loop). It is
+    !! printed after the loop by EFTCAMB_IC_print_warnings: printing it here would give an order of the warnings that
+    !! depends on the threads.
     subroutine EFTCAMB_IC_warning(id, message)
 
     implicit none
 
-    integer, intent(in)      :: id       !< the index of the warning
+    integer, intent(in)      :: id       !< the index of the warning (the order in which they are printed)
     character(*), intent(in) :: message  !< the warning
 
-    if (EFT_IC_warned(id)) return
+    if (EFT_IC_raised(id) .or. EFT_IC_printed(id)) return
     !$OMP CRITICAL(EFTCAMB_IC_warning_lock)
-    if (.not. EFT_IC_warned(id)) then
-        EFT_IC_warned(id) = .true.
-        if (CP%EFTCAMB%EFTCAMB_feedback_level > 0) write(*, '(a)') message
+    if (.not. EFT_IC_raised(id)) then
+        EFT_IC_message(id) = message
+        EFT_IC_raised(id) = .true.
     end if
     !$OMP END CRITICAL(EFTCAMB_IC_warning_lock)
 
     end subroutine EFTCAMB_IC_warning
+
+    ! ----------------------------------------------------------------------------------------
+    !> Subroutine that prints the warnings of the initial conditions raised in an OpenMP k loop, in the order of their
+    !! index: each at most once per session and only if feedback_level > 0. Called after every k loop that sets the
+    !! initial conditions (outside parallel regions).
+    module subroutine EFTCAMB_IC_print_warnings()
+
+    implicit none
+
+    integer :: id
+
+    do id = 1, size(EFT_IC_raised)
+        if (EFT_IC_raised(id)) then
+            if (.not. EFT_IC_printed(id) .and. CP%EFTCAMB%EFTCAMB_feedback_level > 0) &
+                write(*, '(a)') trim(EFT_IC_message(id))
+            EFT_IC_printed(id) = .true.
+            EFT_IC_raised(id) = .false.
+        end if
+    end do
+
+    end subroutine EFTCAMB_IC_print_warnings
 
     ! ----------------------------------------------------------------------------------------
     !> Function that computes the pi field coefficient C at a given time and scale.
@@ -531,8 +578,8 @@
             call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
             eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
             eft_cache%gpinu_tot = eft_cache%gpinu_tot + grhormass_t*EFT_gpinu
-            eft_cache%grhonudot_tot = eft_cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(a*State%nu_masses(nu_i), adotoa) - 4._dl*adotoa*EFT_grhonu)
+            ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+            eft_cache%grhonudot_tot = eft_cache%grhonudot_tot - 3._dl*adotoa*grhormass_t*(EFT_grhonu + EFT_gpinu)
             eft_cache%gpinudot_tot = eft_cache%gpinudot_tot + &
                 grhormass_t*(ThermalNuBackground%pidot(a*State%nu_masses(nu_i), adotoa, EFT_gpinu) - &
                 4._dl*adotoa*EFT_gpinu)
@@ -653,8 +700,8 @@
             call ThermalNuBackground%rho_P(a*State%nu_masses(nu_i), EFT_grhonu, EFT_gpinu)
             eft_cache%grhonu_tot = eft_cache%grhonu_tot + grhormass_t*EFT_grhonu
             eft_cache%gpinu_tot = eft_cache%gpinu_tot + grhormass_t*EFT_gpinu
-            eft_cache%grhonudot_tot = eft_cache%grhonudot_tot + &
-                grhormass_t*(ThermalNuBackground%drho(a*State%nu_masses(nu_i), adotoa) - 4._dl*adotoa*EFT_grhonu)
+            ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+            eft_cache%grhonudot_tot = eft_cache%grhonudot_tot - 3._dl*adotoa*grhormass_t*(EFT_grhonu + EFT_gpinu)
             eft_cache%gpinudot_tot = eft_cache%gpinudot_tot + &
                 grhormass_t*(ThermalNuBackground%pidot(a*State%nu_masses(nu_i), adotoa, EFT_gpinu) - &
                 4._dl*adotoa*EFT_gpinu)

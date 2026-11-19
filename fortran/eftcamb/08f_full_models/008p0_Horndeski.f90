@@ -39,546 +39,12 @@
     use EFTCAMB_abstract_parametrizations_1D
     use EFTCAMB_parametrizations_1D
     use MassiveNu
-    use iso_c_binding
+    ! coefficients of the background and perturbation equations (generated code):
+    use EFTCAMB_Horndeski_coefficients
+    use EFTCAMB_Horndeski_perturbation_coefficients
 
     implicit none
 
-    interface
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the energy constraint E3 H^3 + E2 H^2 + E1 H + E0 = 0
-    subroutine horndeski_hubble_coefficients(a, dphi, rhotot, G2, G2p, G2x, G2pp, G2px, G2xx, G2ppp, G2ppx, G2pxx, &
-        G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4, G4p, G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, &
-        G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, &
-        G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, E0, E1, E2, E3) bind(c)
-    use iso_c_binding, only: c_double
-    implicit none
-
-    real(c_double), value :: a      !<- the scale factor
-    real(c_double), value :: dphi   !<- conformal time derivative of the scalar field
-    real(c_double), value :: rhotot !<- \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: G2     !<- Horndeski Lagrangian function \f$ G2 \f$
-    real(c_double), value :: G2p    !<- Horndeski Lagrangian function \f$ G2_\phi \f$
-    real(c_double), value :: G2x    !<- Horndeski Lagrangian function \f$ G2_X \f$
-    real(c_double), value :: G2pp
-    real(c_double), value :: G2px
-    real(c_double), value :: G2xx
-    real(c_double), value :: G2ppp
-    real(c_double), value :: G2ppx
-    real(c_double), value :: G2pxx
-    real(c_double), value :: G2xxx
-    real(c_double), value :: G3p
-    real(c_double), value :: G3x
-    real(c_double), value :: G3pp
-    real(c_double), value :: G3px
-    real(c_double), value :: G3xx
-    real(c_double), value :: G3ppp
-    real(c_double), value :: G3ppx
-    real(c_double), value :: G3pxx
-    real(c_double), value :: G3xxx
-    real(c_double), value :: G4
-    real(c_double), value :: G4p
-    real(c_double), value :: G4x
-    real(c_double), value :: G4pp
-    real(c_double), value :: G4px
-    real(c_double), value :: G4xx
-    real(c_double), value :: G4ppp
-    real(c_double), value :: G4ppx
-    real(c_double), value :: G4pxx
-    real(c_double), value :: G4xxx
-    real(c_double), value :: G4pppp
-    real(c_double), value :: G4pppx
-    real(c_double), value :: G4ppxx
-    real(c_double), value :: G4pxxx
-    real(c_double), value :: G4xxxx
-    real(c_double), value :: G5
-    real(c_double), value :: G5p
-    real(c_double), value :: G5x
-    real(c_double), value :: G5pp
-    real(c_double), value :: G5px
-    real(c_double), value :: G5xx
-    real(c_double), value :: G5ppp
-    real(c_double), value :: G5ppx
-    real(c_double), value :: G5pxx
-    real(c_double), value :: G5xxx
-    real(c_double), value :: G5pppp
-    real(c_double), value :: G5pppx
-    real(c_double), value :: G5ppxx
-    real(c_double), value :: G5pxxx
-    real(c_double), value :: G5xxxx
-
-    real(c_double) :: E0
-    real(c_double) :: E1
-    real(c_double) :: E2
-    real(c_double) :: E3
-
-    end subroutine horndeski_hubble_coefficients
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the EFT functions alpha_i and a few derivatives
-    subroutine horndeski_eft_alphas(a, H, dH, ddH, dphi, ddphi, dddphi, G2, G2p, G2x, G2pp, G2px, G2xx, G2ppp, G2ppx, &
-        G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4, G4p, G4x, G4pp, G4px, G4xx, G4ppp, &
-        G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, &
-        G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, alphaM, dalphaM, alphaB, dalphaB, alphaK, dalphaK, &
-        alphaT, dalphaT, M, dM, ddM) bind(c)
-    use iso_c_binding, only: c_double
-    implicit none
-
-    real(c_double), value :: a      !<- the scale factor
-    real(c_double), value :: H      !<- the physcial Hubble parameter
-    real(c_double), value :: dH     !<- conformal time derivative of the physical Hubble
-    real(c_double), value :: ddH    !<- second conformal time derivative of the physical Hubble
-    real(c_double), value :: dphi   !<- conformal time derivative of the scalar field
-    real(c_double), value :: ddphi  !<- double conformal time derivative of the scalar field
-    real(c_double), value :: dddphi !<- third conformal time derivative of the scalar field
-    real(c_double), value :: G2     !<- Horndeski Lagrangian function \f$ G2 \f$
-    real(c_double), value :: G2p    !<- Horndeski Lagrangian function \f$ G2_\phi \f$
-    real(c_double), value :: G2x    !<- Horndeski Lagrangian function \f$ G2_X \f$
-    real(c_double), value :: G2pp
-    real(c_double), value :: G2px
-    real(c_double), value :: G2xx
-    real(c_double), value :: G2ppp
-    real(c_double), value :: G2ppx
-    real(c_double), value :: G2pxx
-    real(c_double), value :: G2xxx
-    real(c_double), value :: G3p
-    real(c_double), value :: G3x
-    real(c_double), value :: G3pp
-    real(c_double), value :: G3px
-    real(c_double), value :: G3xx
-    real(c_double), value :: G3ppp
-    real(c_double), value :: G3ppx
-    real(c_double), value :: G3pxx
-    real(c_double), value :: G3xxx
-    real(c_double), value :: G4
-    real(c_double), value :: G4p
-    real(c_double), value :: G4x
-    real(c_double), value :: G4pp
-    real(c_double), value :: G4px
-    real(c_double), value :: G4xx
-    real(c_double), value :: G4ppp
-    real(c_double), value :: G4ppx
-    real(c_double), value :: G4pxx
-    real(c_double), value :: G4xxx
-    real(c_double), value :: G4pppp
-    real(c_double), value :: G4pppx
-    real(c_double), value :: G4ppxx
-    real(c_double), value :: G4pxxx
-    real(c_double), value :: G4xxxx
-    real(c_double), value :: G5
-    real(c_double), value :: G5p
-    real(c_double), value :: G5x
-    real(c_double), value :: G5pp
-    real(c_double), value :: G5px
-    real(c_double), value :: G5xx
-    real(c_double), value :: G5ppp
-    real(c_double), value :: G5ppx
-    real(c_double), value :: G5pxx
-    real(c_double), value :: G5xxx
-    real(c_double), value :: G5pppp
-    real(c_double), value :: G5pppx
-    real(c_double), value :: G5ppxx
-    real(c_double), value :: G5pxxx
-    real(c_double), value :: G5xxxx
-
-    real(c_double) :: alphaM          !<- The EFT function alpha_M
-    real(c_double) :: dalphaM         !<- conformal time of the EFT function alpha_M
-    real(c_double) :: alphaB          !<- The EFT function alpha_B
-    real(c_double) :: dalphaB         !<- conformal time of the EFT function alpha_B
-    real(c_double) :: alphaK          !<- The EFT function alpha_K
-    real(c_double) :: dalphaK         !<- conformal time of the EFT function alpha_K
-    real(c_double) :: alphaT          !<- The EFT function alpha_T
-    real(c_double) :: dalphaT         !<- conformal time of the EFT function alpha_T
-    real(c_double) :: M               !<- The effective planck mass squared
-    real(c_double) :: dM              !<- conformal time of the effective planck mass squared
-    real(c_double) :: ddM             !<- second conformal time of the effective planck mass squared
-
-    end subroutine horndeski_eft_alphas
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the background EoM coefficients
-    subroutine horndeski_backeq_coefficients(a, H, dphi, rptot, G2, G2p, G2x, G2pp, G2px, G2xx, G2ppp, G2ppx, G2pxx, &
-        G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4, G4p, G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, &
-        G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, &
-        G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, cp_1, ch_1, cs_1, cp_2, ch_2, cs_2) bind(c)
-    use iso_c_binding, only: c_double
-    implicit none
-
-    real(c_double), value :: a      !<- the scale factor
-    real(c_double), value :: H      !<- the physcial Hubble parameter
-    real(c_double), value :: dphi   !<- conformal time derivative of the scalar field
-    real(c_double), value :: rptot  !<- \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: G2     !<- Horndeski Lagrangian function \f$ G2 \f$
-    real(c_double), value :: G2p    !<- Horndeski Lagrangian function \f$ G2_\phi \f$
-    real(c_double), value :: G2x    !<- Horndeski Lagrangian function \f$ G2_X \f$
-    real(c_double), value :: G2pp
-    real(c_double), value :: G2px
-    real(c_double), value :: G2xx
-    real(c_double), value :: G2ppp
-    real(c_double), value :: G2ppx
-    real(c_double), value :: G2pxx
-    real(c_double), value :: G2xxx
-    real(c_double), value :: G3p
-    real(c_double), value :: G3x
-    real(c_double), value :: G3pp
-    real(c_double), value :: G3px
-    real(c_double), value :: G3xx
-    real(c_double), value :: G3ppp
-    real(c_double), value :: G3ppx
-    real(c_double), value :: G3pxx
-    real(c_double), value :: G3xxx
-    real(c_double), value :: G4
-    real(c_double), value :: G4p
-    real(c_double), value :: G4x
-    real(c_double), value :: G4pp
-    real(c_double), value :: G4px
-    real(c_double), value :: G4xx
-    real(c_double), value :: G4ppp
-    real(c_double), value :: G4ppx
-    real(c_double), value :: G4pxx
-    real(c_double), value :: G4xxx
-    real(c_double), value :: G4pppp
-    real(c_double), value :: G4pppx
-    real(c_double), value :: G4ppxx
-    real(c_double), value :: G4pxxx
-    real(c_double), value :: G4xxxx
-    real(c_double), value :: G5
-    real(c_double), value :: G5p
-    real(c_double), value :: G5x
-    real(c_double), value :: G5pp
-    real(c_double), value :: G5px
-    real(c_double), value :: G5xx
-    real(c_double), value :: G5ppp
-    real(c_double), value :: G5ppx
-    real(c_double), value :: G5pxx
-    real(c_double), value :: G5xxx
-    real(c_double), value :: G5pppp
-    real(c_double), value :: G5pppx
-    real(c_double), value :: G5ppxx
-    real(c_double), value :: G5pxxx
-    real(c_double), value :: G5xxxx
-
-    real(c_double) :: cp_1   !<- EoM cp_i * phi'' + ch_i * H' + cs_i = 0, i=1,2
-    real(c_double) :: ch_1
-    real(c_double) :: cs_1
-    real(c_double) :: cp_2
-    real(c_double) :: ch_2
-    real(c_double) :: cs_2
-
-    end subroutine horndeski_backeq_coefficients
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the conformal time derivative of background EoM coefficients
-    subroutine horndeski_backeq_coefficients_p(a, H, dH, dphi, ddphi, rptot, drptot, G2, G2p, G2x, G2pp, G2px, G2xx, &
-        G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4, G4p, G4x, G4pp, G4px, &
-        G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, &
-        G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, cp_1p, ch_1p, cs_1p, cp_2p, ch_2p, &
-        cs_2p) bind(c)
-    use iso_c_binding, only: c_double
-    implicit none
-
-    real(c_double), value :: a      !<- the scale factor
-    real(c_double), value :: H      !<- the physcial Hubble parameter
-    real(c_double), value :: dH     !<- conformal time derivative of the physical Hubble
-    real(c_double), value :: dphi   !<- conformal time derivative of the scalar field
-    real(c_double), value :: ddphi  !<- double conformal time derivative of the scalar field
-    real(c_double), value :: rptot  !<- \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: drptot !<- conformal time derivative of \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: G2     !<- Horndeski Lagrangian function \f$ G2 \f$
-    real(c_double), value :: G2p    !<- Horndeski Lagrangian function \f$ G2_\phi \f$
-    real(c_double), value :: G2x    !<- Horndeski Lagrangian function \f$ G2_X \f$
-    real(c_double), value :: G2pp
-    real(c_double), value :: G2px
-    real(c_double), value :: G2xx
-    real(c_double), value :: G2ppp
-    real(c_double), value :: G2ppx
-    real(c_double), value :: G2pxx
-    real(c_double), value :: G2xxx
-    real(c_double), value :: G3p
-    real(c_double), value :: G3x
-    real(c_double), value :: G3pp
-    real(c_double), value :: G3px
-    real(c_double), value :: G3xx
-    real(c_double), value :: G3ppp
-    real(c_double), value :: G3ppx
-    real(c_double), value :: G3pxx
-    real(c_double), value :: G3xxx
-    real(c_double), value :: G4
-    real(c_double), value :: G4p
-    real(c_double), value :: G4x
-    real(c_double), value :: G4pp
-    real(c_double), value :: G4px
-    real(c_double), value :: G4xx
-    real(c_double), value :: G4ppp
-    real(c_double), value :: G4ppx
-    real(c_double), value :: G4pxx
-    real(c_double), value :: G4xxx
-    real(c_double), value :: G4pppp
-    real(c_double), value :: G4pppx
-    real(c_double), value :: G4ppxx
-    real(c_double), value :: G4pxxx
-    real(c_double), value :: G4xxxx
-    real(c_double), value :: G5
-    real(c_double), value :: G5p
-    real(c_double), value :: G5x
-    real(c_double), value :: G5pp
-    real(c_double), value :: G5px
-    real(c_double), value :: G5xx
-    real(c_double), value :: G5ppp
-    real(c_double), value :: G5ppx
-    real(c_double), value :: G5pxx
-    real(c_double), value :: G5xxx
-    real(c_double), value :: G5pppp
-    real(c_double), value :: G5pppx
-    real(c_double), value :: G5ppxx
-    real(c_double), value :: G5pxxx
-    real(c_double), value :: G5xxxx
-
-    real(c_double) :: cp_1p          !<- EoM cp_i * phi'' + ch_i * H' + cs_i = 0, i=1,2
-    real(c_double) :: ch_1p
-    real(c_double) :: cs_1p
-    real(c_double) :: cp_2p
-    real(c_double) :: ch_2p
-    real(c_double) :: cs_2p
-
-    end subroutine horndeski_backeq_coefficients_p
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the designer background EoM coefficients
-    subroutine horndeski_designereq_coefficients(a, H, dH, ddH, dphi, rptot, drptot, G2, G2p, G2x, G2pp, G2px, G2xx, &
-        G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4, G4p, G4x, G4pp, G4px, &
-        G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, &
-        G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, d0, d1, d2) bind(c)
-    use iso_c_binding, only: c_double
-    implicit none
-
-    real(c_double), value :: a      !<- the scale factor
-    real(c_double), value :: H      !<- the physcial Hubble parameter
-    real(c_double), value :: dH     !<- conformal time derivative of the physical Hubble
-    real(c_double), value :: ddH    !<- second conformal time derivative of the physical Hubble
-    real(c_double), value :: dphi   !<- conformal time derivative of the scalar field
-    real(c_double), value :: rptot  !<- \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: drptot !<- conformal time derivative of \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: G2     !<- Horndeski Lagrangian function \f$ G2 \f$
-    real(c_double), value :: G2p    !<- Horndeski Lagrangian function \f$ G2_\phi \f$
-    real(c_double), value :: G2x    !<- Horndeski Lagrangian function \f$ G2_X \f$
-    real(c_double), value :: G2pp
-    real(c_double), value :: G2px
-    real(c_double), value :: G2xx
-    real(c_double), value :: G2ppp
-    real(c_double), value :: G2ppx
-    real(c_double), value :: G2pxx
-    real(c_double), value :: G2xxx
-    real(c_double), value :: G3p
-    real(c_double), value :: G3x
-    real(c_double), value :: G3pp
-    real(c_double), value :: G3px
-    real(c_double), value :: G3xx
-    real(c_double), value :: G3ppp
-    real(c_double), value :: G3ppx
-    real(c_double), value :: G3pxx
-    real(c_double), value :: G3xxx
-    real(c_double), value :: G4
-    real(c_double), value :: G4p
-    real(c_double), value :: G4x
-    real(c_double), value :: G4pp
-    real(c_double), value :: G4px
-    real(c_double), value :: G4xx
-    real(c_double), value :: G4ppp
-    real(c_double), value :: G4ppx
-    real(c_double), value :: G4pxx
-    real(c_double), value :: G4xxx
-    real(c_double), value :: G4pppp
-    real(c_double), value :: G4pppx
-    real(c_double), value :: G4ppxx
-    real(c_double), value :: G4pxxx
-    real(c_double), value :: G4xxxx
-    real(c_double), value :: G5
-    real(c_double), value :: G5p
-    real(c_double), value :: G5x
-    real(c_double), value :: G5pp
-    real(c_double), value :: G5px
-    real(c_double), value :: G5xx
-    real(c_double), value :: G5ppp
-    real(c_double), value :: G5ppx
-    real(c_double), value :: G5pxx
-    real(c_double), value :: G5xxx
-    real(c_double), value :: G5pppp
-    real(c_double), value :: G5pppx
-    real(c_double), value :: G5ppxx
-    real(c_double), value :: G5pxxx
-    real(c_double), value :: G5xxxx
-
-    real(c_double) :: d0            !<- EoM d2*ddphi^2 + d1*ddphi + d0 = 0
-    real(c_double) :: d1
-    real(c_double) :: d2
-
-    end subroutine horndeski_designereq_coefficients
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the derived designer background EoM coefficients
-    subroutine horndeski_designereq_coefficients_p(a, H, dH, ddH, dddH, dphi, ddphi, rptot, drptot, ddrptot, G2, G2p, &
-        G2x, G2pp, G2px, G2xx, G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4, &
-        G4p, G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, G5p, G5x, &
-        G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, dp0, dp1) bind(c)
-    use iso_c_binding, only: c_double
-    implicit none
-
-    real(c_double), value :: a      !<- the scale factor
-    real(c_double), value :: H      !<- the physcial Hubble parameter
-    real(c_double), value :: dH     !<- conformal time derivative of the physical Hubble
-    real(c_double), value :: ddH    !<- second conformal time derivative of the physical Hubble
-    real(c_double), value :: dddH    !<- third conformal time derivative of the physical Hubble
-    real(c_double), value :: dphi   !<- conformal time derivative of the scalar field
-    real(c_double), value :: ddphi  !<- second conformal time derivative of the scalar field
-    real(c_double), value :: rptot  !<- \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: drptot !<- conformal time derivative of \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: ddrptot !<- second conformal time derivative of \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: G2     !<- Horndeski Lagrangian function \f$ G2 \f$
-    real(c_double), value :: G2p    !<- Horndeski Lagrangian function \f$ G2_\phi \f$
-    real(c_double), value :: G2x    !<- Horndeski Lagrangian function \f$ G2_X \f$
-    real(c_double), value :: G2pp
-    real(c_double), value :: G2px
-    real(c_double), value :: G2xx
-    real(c_double), value :: G2ppp
-    real(c_double), value :: G2ppx
-    real(c_double), value :: G2pxx
-    real(c_double), value :: G2xxx
-    real(c_double), value :: G3p
-    real(c_double), value :: G3x
-    real(c_double), value :: G3pp
-    real(c_double), value :: G3px
-    real(c_double), value :: G3xx
-    real(c_double), value :: G3ppp
-    real(c_double), value :: G3ppx
-    real(c_double), value :: G3pxx
-    real(c_double), value :: G3xxx
-    real(c_double), value :: G4
-    real(c_double), value :: G4p
-    real(c_double), value :: G4x
-    real(c_double), value :: G4pp
-    real(c_double), value :: G4px
-    real(c_double), value :: G4xx
-    real(c_double), value :: G4ppp
-    real(c_double), value :: G4ppx
-    real(c_double), value :: G4pxx
-    real(c_double), value :: G4xxx
-    real(c_double), value :: G4pppp
-    real(c_double), value :: G4pppx
-    real(c_double), value :: G4ppxx
-    real(c_double), value :: G4pxxx
-    real(c_double), value :: G4xxxx
-    real(c_double), value :: G5
-    real(c_double), value :: G5p
-    real(c_double), value :: G5x
-    real(c_double), value :: G5pp
-    real(c_double), value :: G5px
-    real(c_double), value :: G5xx
-    real(c_double), value :: G5ppp
-    real(c_double), value :: G5ppx
-    real(c_double), value :: G5pxx
-    real(c_double), value :: G5xxx
-    real(c_double), value :: G5pppp
-    real(c_double), value :: G5pppx
-    real(c_double), value :: G5ppxx
-    real(c_double), value :: G5pxxx
-    real(c_double), value :: G5xxxx
-
-    real(c_double) :: dp0            !<- EoM dp1*dddphi + dp1 = 0
-    real(c_double) :: dp1
-
-    end subroutine horndeski_designereq_coefficients_p
-
-    ! ---------------------------------------------------------------------------------------------
-    !> Subroutine that computes the coefficients of perturbation equations to linear order in phidot
-    subroutine horndeski_perturbeq_coefficients(a, H, dH, ddH, dphi, ddphi, dddphi, rptot, drptot, G2, G2p, G2x, G2pp, &
-        G2px, G2xx, G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4, G4p, G4x, &
-        G4pp, G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, G5p, G5x, G5pp, &
-        G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, spi1, spi2, spi3, spih, spie, &
-        spim, s00, s00k, s00p, s0i, s0ip, sii, siik, siip, siipp, sij, sijdot) bind(c)
-    use iso_c_binding, only: c_double
-    implicit none
-
-    real(c_double), value :: a      !<- the scale factor
-    real(c_double), value :: H      !<- the physcial Hubble parameter
-    real(c_double), value :: dH     !<- conformal time derivative of the physcial Hubble parameter
-    real(c_double), value :: ddH    !<- second conformal time derivative of the physcial Hubble parameter
-    real(c_double), value :: dphi   !<- conformal time derivative of the scalar field
-    real(c_double), value :: ddphi  !<- second conformal time derivative of the scalar field
-    real(c_double), value :: dddphi !<- third conformal time derivative of the scalar field
-    real(c_double), value :: rptot  !<- \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: drptot !<- conformal time derivative of \f$ \rho_{matter} + p_{matter} \f$
-    real(c_double), value :: G2     !<- Horndeski Lagrangian function \f$ G2 \f$
-    real(c_double), value :: G2p    !<- Horndeski Lagrangian function \f$ G2_\phi \f$
-    real(c_double), value :: G2x    !<- Horndeski Lagrangian function \f$ G2_X \f$
-    real(c_double), value :: G2pp
-    real(c_double), value :: G2px
-    real(c_double), value :: G2xx
-    real(c_double), value :: G2ppp
-    real(c_double), value :: G2ppx
-    real(c_double), value :: G2pxx
-    real(c_double), value :: G2xxx
-    real(c_double), value :: G3p
-    real(c_double), value :: G3x
-    real(c_double), value :: G3pp
-    real(c_double), value :: G3px
-    real(c_double), value :: G3xx
-    real(c_double), value :: G3ppp
-    real(c_double), value :: G3ppx
-    real(c_double), value :: G3pxx
-    real(c_double), value :: G3xxx
-    real(c_double), value :: G4
-    real(c_double), value :: G4p
-    real(c_double), value :: G4x
-    real(c_double), value :: G4pp
-    real(c_double), value :: G4px
-    real(c_double), value :: G4xx
-    real(c_double), value :: G4ppp
-    real(c_double), value :: G4ppx
-    real(c_double), value :: G4pxx
-    real(c_double), value :: G4xxx
-    real(c_double), value :: G4pppp
-    real(c_double), value :: G4pppx
-    real(c_double), value :: G4ppxx
-    real(c_double), value :: G4pxxx
-    real(c_double), value :: G4xxxx
-    real(c_double), value :: G5
-    real(c_double), value :: G5p
-    real(c_double), value :: G5x
-    real(c_double), value :: G5pp
-    real(c_double), value :: G5px
-    real(c_double), value :: G5xx
-    real(c_double), value :: G5ppp
-    real(c_double), value :: G5ppx
-    real(c_double), value :: G5pxx
-    real(c_double), value :: G5xxx
-    real(c_double), value :: G5pppp
-    real(c_double), value :: G5pppx
-    real(c_double), value :: G5ppxx
-    real(c_double), value :: G5pxxx
-    real(c_double), value :: G5xxxx
-
-    real(c_double) :: spi1
-    real(c_double) :: spi2
-    real(c_double) :: spi3
-    real(c_double) :: spih
-    real(c_double) :: spie
-    real(c_double) :: spim
-    real(c_double) :: s00
-    real(c_double) :: s00k
-    real(c_double) :: s00p
-    real(c_double) :: s0i
-    real(c_double) :: s0ip
-    real(c_double) :: sii
-    real(c_double) :: siik
-    real(c_double) :: siip
-    real(c_double) :: siipp
-    real(c_double) :: sij
-    real(c_double) :: sijdot
-
-    end subroutine horndeski_perturbeq_coefficients
-
-    end interface
 
     private
 
@@ -606,6 +72,8 @@
         real(dl) :: phi_ini               !< initial value of the scalar field
         real(dl) :: phidot_ini            !< initial conformal time derivative of the scalar field
         real(dl) :: rhode_ini             !< initial energy density of the scalar field
+        ! background today (a = 1, inside the table, which can extend past it: model_background_a_final > 1):
+        real(dl) :: H_today               !< physical Hubble today (the model's H0)
         !< flag whether using the model specific initial condition, might not be defined for every model
         logical  :: model_specifc_ic
         logical  :: evolve_hubble         !< flag whether ingrating H' instead of applying the energy constraint
@@ -640,7 +108,6 @@
         type(equispaced_linear_interpolate_function_1D) :: dphi           !< conformal time derivative of phi
         type(equispaced_linear_interpolate_function_1D) :: ddphi          !< second conformal time derivative of phi
         type(equispaced_linear_interpolate_function_1D) :: dddphi         !< third conformal time derivative of phi
-        type(equispaced_linear_interpolate_function_1D) :: tau_hdsk       !< time scale of the horndeski field
 
         ! the EFT functions, TODO: implement analytic derivatives
         type(equispaced_linear_interpolate_function_1D) :: EFTlambda      !< (*) The EFT function Lambda.
@@ -723,8 +190,6 @@
         real(dl) :: a_pertcutoff_before
         !< Turnoff scalar field perturbation after this time, minus means do not turn off
         real(dl) :: a_pertcutoff_after
-        !< Lowerbound of horndeski field timescale relative to Hubble time scale
-        real(dl) :: min_rel_timescale
         !< friction term to dynamically turn off scalar field perturbation
         real(dl) :: hubble_friction
         !< flag whether check the scalar field evolves much faster than cosmological time scale H. While there might be rare cases where one wants to track fast evolution of the field, commonly rapid evolution is physically unwanted and can be even due singularity in the kinetic matrix. Default is true
@@ -789,6 +254,12 @@
     !< subroutine that checks whether the theory satisfies the Minkowski positivity bounds
     procedure :: horndeski_check_positivity => EFTCAMBHdskCheckPositivity
 
+    ! perturbations:
+    !< subroutine that refuses the pi path where phi' changes sign after the turn-on.
+    procedure :: pi_evolution_check => EFTCAMBHdskPiEvolutionCheck
+    !< the alpha-basis outputs are computed with the EFT functions (EFTCAMBHdskSecondOrderEFTFunctions): nothing to do.
+    procedure :: compute_alpha_functions => EFTCAMBHdskComputeAlphaFunctions
+
     end type
 
     ! ---------------------------------------------------------------------------------------------
@@ -828,6 +299,11 @@
     ! read IC flag:
     self%model_specifc_ic = Ini%Read_Logical('Horndeski_model_specific_ic', .false.)
     ! read hubble evolution flag
+    ! With evolve_hubble the Hubble constraint is restored by a friction term proportional to a (5 a times the
+    ! constraint residual), weak at early times: a background that starts too early can keep errors in the early EFT
+    ! functions that the stability check reads as an instability near its start (6_HDSK_evolve_hubble is refused
+    ! from model_background_a_ini = 1e-14, gradient term -1e-8 at a ~ 3e-10, and runs from 1e-12). Start the
+    ! background later, or impose the constraint (Horndeski_evolve_hubble = F).
     self%evolve_hubble = Ini%Read_Logical('Horndeski_evolve_hubble', .true.)
     ! read shooting flag
     self%is_shooting = Ini%Read_Logical('Horndeski_shooting', .false.)
@@ -838,14 +314,13 @@
     ! read perturbation turn off flags
     self%a_pertcutoff_after = Ini%Read_Double('Horndeski_a_pertcutoff_after', -1._dl)
     self%a_pertcutoff_before = Ini%Read_Double('Horndeski_a_pertcutoff_before', -1._dl)
-    self%min_rel_timescale = Ini%Read_Double('Horndeski_min_rel_timescale', 1d-5)
     self%hubble_friction = Ini%Read_Double('Horndeski_hubble_friction', 5._dl)
 
     ! read precision parameters
     self%interpolation_num_points = Ini%Read_Int('model_background_num_points', 6000)
     self%a_initial = Ini%Read_Double('model_background_a_ini', 1d-14)
     self%x_initial = log(self%a_initial)
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
     self%check_rapid_evolution = Ini%Read_Logical('Horndeski_check_rapid_evolution', .true.)
     self%rapid_evolution_threshold = Ini%Read_Double('Horndeski_rapid_evolution_threshold', 1000._dl)
 
@@ -1301,7 +776,7 @@
     !< optional flag that decised whether to print numerical values of the parameters.
     logical, optional   :: print_params
 
-    integer :: i, num_params_model, num_params_temp
+    integer :: i, num_params_model
 
     ! 0) general feedback
     write(*, *)
@@ -1318,26 +793,12 @@
     write(*, '(a26,F12.6)') 'Max DE energy fraction =  ', self%maxfrac_hdsk
     write(*, '(a26,F12.6)') 'Max DE energy fraction z =', self%z_maxfrac_hdsk
 
-    num_params_temp = 2
-
     ! 1) w_DE feedback
-    num_params_temp = num_params_temp + self%wDE%parameter_number
     if (self%designerV) then
         call self%wDE%feedback()
     end if
 
     ! 2) free Horndeski function feedback if used
-    num_params_temp = num_params_temp + self%free_c0%parameter_number
-    num_params_temp = num_params_temp + self%free_c1%parameter_number
-    num_params_temp = num_params_temp + self%free_c2%parameter_number
-    num_params_temp = num_params_temp + self%free_c3%parameter_number
-    num_params_temp = num_params_temp + self%free_c4%parameter_number
-    num_params_temp = num_params_temp + self%free_c5%parameter_number
-    num_params_temp = num_params_temp + self%free_c6%parameter_number
-    num_params_temp = num_params_temp + self%free_c7%parameter_number
-    num_params_temp = num_params_temp + self%free_c8%parameter_number
-    num_params_temp = num_params_temp + self%free_c9%parameter_number
-    num_params_temp = num_params_temp + self%free_c10%parameter_number
     select case (self%model)
     case(7, 8)
         call self%free_c0%feedback()
@@ -1375,7 +836,7 @@
     write(*, *)
     if (num_params_model > 0) then
         do i = 1, num_params_model
-            write(*, *) '   Horndeski parameter #', i, ' = ', self%model_params(i + num_params_temp)
+            write(*, *) '   Horndeski parameter #', i, ' = ', self%model_params(i)
         end do
     end if
 
@@ -1814,7 +1275,6 @@
         eft_cache%dphi = 0._dl
         eft_cache%ddphi = 0._dl
         eft_cache%dddphi = 0._dl
-        eft_cache%dtau_hdsk = 1._dl/eft_par_cache%h0_Mpc
     else
         x = log(a)
         ! All the EFT functions are sampled on the same time grid.
@@ -1833,7 +1293,6 @@
         eft_cache%dphi = self%dphi%value(x, index=ind, coeff=mu)
         eft_cache%ddphi = self%ddphi%value(x, index=ind, coeff=mu)
         eft_cache%dddphi = self%dddphi%value(x, index=ind, coeff=mu)
-        eft_cache%dtau_hdsk = self%tau_hdsk%value(x, index=ind, coeff=mu)
     end if
 
     ! if ((abs(a-1._dl) < 0.001) .or. (abs(a*10._dl-1._dl) < 0.01) .or. (abs(a*1.d2-1._dl) < 0.01) .or. (abs(a*1.d3-1._dl) < 0.01) .or. (abs(a*1.d4-1._dl) < 0.01) .or. (abs(a*1.d5-1._dl) < 0.01)) then
@@ -1980,8 +1439,8 @@
     logical, intent(out) :: success        !< wether the background initialization succeded or not
     character(len=*), intent(in), optional :: outroot        !< the output root for the debug files
 
-    integer  :: i, j, error_flag
-    real(dl) :: phi, dphi, ddphi, dddphi, last_dphi, last_dphi_tau, tau, tau_hdsk, x, a, H, adotoa, Hdot, Hdotdot, &
+    integer  :: i, error_flag
+    real(dl) :: phi, dphi, ddphi, dddphi, last_dphi, tau, x, a, H, adotoa, Hdot, Hdotdot, &
         cHdot, cHdotdot, rhov, presv, rhovdot, presvdot, rhom, presm, rhomdot, presmdot, tmp
     real(dl) :: RPH_PM_V, RPH_AT_V, RPH_PM_P, RPH_AT_P, RPH_PM_PP, RPH_AT_PP, RPH_PM_PPP, RPH_AT_PPP, RPH_AK_V, &
         RPH_AB_V, RPH_AK_P, RPH_AB_P
@@ -1990,8 +1449,10 @@
     real(dl) :: G2, G2p, G2x, G2pp, G2px, G2xx, G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, &
         G3pxx, G3xxx, G4, G4p, G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, &
         G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx
-    real(dl) :: last_alphaB
+    real(dl) :: last_alphaB, R_fac, R, dlnH, f(3), df(3), f_last(3), df_last(3), step(3)
     real(dl) :: x_min, delta_x, mu
+    real(dl) :: fx_cp1, fx_ch1, fx_cs1, fx_cp2, fx_ch2, fx_cs2, fx_cs1r, fx_d1, fx_d2, fx_d3, fx_d4, fx_d5
+    real(dl) :: fx_cp1p, fx_ch1p, fx_cs1p, fx_cs1pr, fx_nrm, fx_nrmdot, fx_rpv, fx_rpvdot
     integer  :: ind
 
     ! some feedback:
@@ -2021,7 +1482,6 @@
     call self%dphi%initialize      (self%interpolation_num_points, self%x_initial, self%x_final)
     call self%ddphi%initialize      (self%interpolation_num_points, self%x_initial, self%x_final)
     call self%dddphi%initialize      (self%interpolation_num_points, self%x_initial, self%x_final)
-    call self%tau_hdsk%initialize      (self%interpolation_num_points, self%x_initial, self%x_final)
 
     call self%EFTc%initialize      (self%interpolation_num_points, self%x_initial, self%x_final)
     call self%EFTlambda%initialize (self%interpolation_num_points, self%x_initial, self%x_final)
@@ -2093,63 +1553,77 @@
 
     params_cache%maxfrac_hdsk = self%maxfrac_hdsk
     params_cache%z_maxfrac_hdsk = self%z_maxfrac_hdsk
-    params_cache%h0_Mpc = self%H%y(self%H%num_points)
+    ! H0 is H at a = 1, not at the last table point (it can be past today)
+    params_cache%h0_Mpc = self%H_today
     params_cache%h0 = params_cache%h0_Mpc*c/1000._dl
     if (DebugEFTCAMB .or. feedback_level > 2) then
         call params_cache%print()
     end if
 
-    ! if designer, need to move the zero point of conformal time, cosmic time and sound horizon from today to the intial time
+    ! if designer, conformal time, cosmic time and sound horizon are recomputed forward from the initial time, from
+    ! their radiation-era values there, by quadrature on the solved background. The solver integrates the designer
+    ! background from today (a = 1), where they are tau - tau0 etc.: the relative tolerance on |tau - tau0| ~ tau0
+    ! allows ~1e-6 Mpc per step, and the early-time steps put tau 0.09 Mpc off (r_drag 3.5e-4, TT 1.7e-4 with
+    ! EFTCAMB_use_background = T). The rule is the trapezoid with the end point derivative correction (error
+    ! h^5 f''''/720 per step), the derivatives from H' = dH/dtau; R is the baryon loading of the sound speed.
     if (self%designerV) then
-        H = self%H%y(1)
-        a = self%a_initial
+        R_fac = 0.75_dl*params_cache%grhob/params_cache%grhog
         do i = 1, self%H%num_points
-            self%tau%y(i) = self%tau%y(i) - self%tau%y(1) + 1._dl/a/H
-            self%t_cosmic%y(i) = self%t_cosmic%y(i) - self%t_cosmic%y(1) + 0.5_dl/H
-            self%r_sound%y(i) = self%r_sound%y(i) - self%r_sound%y(1) + sqrt(3._dl)/a/H
+            a = exp(self%H%x(i))
+            H = self%H%y(i)
+            dlnH = self%dH%y(i)/(a*H*H)
+            R = R_fac*a
+            ! d/d ln a of tau, t and r_s, and their derivatives:
+            f(1) = 1._dl/(a*H)
+            f(2) = 1._dl/H
+            f(3) = f(1)/sqrt(3._dl*(1._dl + R))
+            df(1) = -f(1)*(1._dl + dlnH)
+            df(2) = -f(2)*dlnH
+            df(3) = df(1)/sqrt(3._dl*(1._dl + R)) - 0.5_dl*f(3)*R/(1._dl + R)
+            if (i == 1) then
+                self%tau%y(1) = f(1)
+                self%t_cosmic%y(1) = 0.5_dl*f(2)
+                self%r_sound%y(1) = f(1)/sqrt(3._dl)
+            else
+                delta_x = self%H%x(i) - self%H%x(i - 1)
+                step = 0.5_dl*delta_x*(f_last + f) + delta_x**2/12._dl*(df_last - df)
+                self%tau%y(i) = self%tau%y(i - 1) + step(1)
+                self%t_cosmic%y(i) = self%t_cosmic%y(i - 1) + step(2)
+                self%r_sound%y(i) = self%r_sound%y(i - 1) + step(3)
+            end if
+            f_last = f
+            df_last = df
         end do
     end if
 
     ! stop here if no further output are required
     if (self%is_shooting) return
 
-    ! first loop to find dphi sign switching time, oscillation time scale and alphaB crossing 2
+    ! first loop to report the dphi sign changes and the alphaB = 2 crossings (feedback > 2)
     last_alphaB = 0._dl
-    j = 0
-    last_dphi_tau = 0._dl
     last_dphi = 0._dl
-    tau_hdsk = self%tau%y(self%tau%num_points) ! initialize to conformal time today
     do i = 1, self%H%num_points
         a = exp(self%H%x(i))
         tau = self%tau%y(i)
-        H = self%H%y(i)
         dphi = self%dphi%y(i)
-        ! only update tau_hdsk when scf perturbation is on and away from initial point
+        ! only while the scalar field perturbation is on and away from the initial point
         if ((a < self%a_pertcutoff_after .or. self%a_pertcutoff_after < 0) .and. a > self%a_pertcutoff_before .and. &
             tau > 0.1_dl) then
-            if (dphi*last_dphi < 0._dl) then
-                ! we rely on a_pertcutoff_before to avoid relaxation period to the true background solution
-                tau_hdsk = tau - last_dphi_tau
-                last_dphi_tau = tau
-                if (feedback_level > 2) then
-                    write(*, *) "phidot changing sign detected at z=", 1._dl/a - 1, "tau=", tau
-                    if (.not. self%evolve_delta_phi) then
-                        write(*, *) "pi equations are singular when phidot crosses 0. Consider setting " // &
-                            "EFTCAMB_evolve_delta_phi = T for this model."
-                    end if
+            ! we rely on a_pertcutoff_before to avoid relaxation period to the true background solution
+            if (dphi*last_dphi < 0._dl .and. feedback_level > 2) then
+                write(*, *) "phidot changing sign detected at z=", 1._dl/a - 1, "tau=", tau
+                if (.not. self%evolve_delta_phi) then
+                    write(*, *) "pi equations are singular when phidot crosses 0. Consider setting " // &
+                        "EFTCAMB_evolve_delta_phi = T for this model."
                 end if
             end if
-            ! when scf perturbation off, set to some safe big value
-        else
-            tau_hdsk = self%tau%y(self%tau%num_points)
         end if
         last_dphi = dphi
-        self%tau_hdsk%y(i) = max(abs(tau_hdsk), abs(1._dl/a/H*self%min_rel_timescale))
         ! check alphaB crossing 2
         if ((last_alphaB - 2._dl)*(self%EFTalphaB%y(i) - 2._dl) <= 0._dl .and. (.not. self%evolve_metric_h) .and. &
             self%evolve_delta_phi .and. feedback_level > 2) then
             write(*, *) "alphaB crossing 2 detected at z=", 1._dl/a - 1, "tau=", tau
-            write(*, *) "h'' constraint is numerically unstable here. Consider setting EFTCAMB_evolve_metric_h = T."
+            write(*, *) "The 00 constraint does not determine h' at the crossing: the stability check refuses it."
         end if
         last_alphaB = self%EFTalphaB%y(i)
     end do
@@ -2219,54 +1693,6 @@
         ! 1.5) A convention difference between the eftcamb alpha_B and 1404.3713? A strange issue or not?
         RPH_AB_V = -0.5_dl*RPH_AB_V
         RPH_AB_P = -0.5_dl*RPH_AB_P
-
-        ! 2) compute the EFT functions:
-        ! NOTE: we abuse notation and store directly the a (or conformal time for Lambda and c) derivative to yp, ypp, yppp. NOT wrt x!
-        self%EFTomega%y(i) = RPH_PM_V + RPH_AT_V*(1._dl + RPH_PM_V)
-        self%EFTomega%yp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_P + (1._dl + RPH_AT_V)*RPH_PM_P
-        self%EFTomega%ypp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_PP + 2._dl*RPH_PM_P*RPH_AT_P + (1._dl + RPH_AT_V)*RPH_PM_PP
-        self%EFTomega%yppp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_PPP + 3._dl*RPH_PM_PP*RPH_AT_P + 3._dl*RPH_PM_P*RPH_AT_PP &
-            + (1._dl + RPH_AT_V)*RPH_PM_PPP
-        self%EFTc%y(i) = (adotoa**2 - cHdot)*(self%EFTomega%y(i) + 0.5_dl*a*self%EFTomega%yp(i)) &
-            - 0.5_dl*(a*adotoa)**2*self%EFTomega%ypp(i) &
-            + 0.5_dl*a*a*(rhov + presv)
-        self%EFTlambda%y(i) = -self%EFTomega%y(i)*(2._dl*cHdot + adotoa**2) &
-            - a*self%EFTomega%yp(i)*(2._dl*adotoa**2 + cHdot) &
-            - (a*adotoa)**2*self%EFTomega%ypp(i) &
-            + a*a*presv
-        self%EFTc%yp(i) = +0.5_dl*a*a*(rhovdot + presvdot) &
-            - self%EFTomega%y(i)*(cHdotdot - 4._dl*adotoa*cHdot + 2._dl*adotoa**3) &
-            + 0.5_dl*a*self%EFTomega%yp(i)*(-cHdotdot + adotoa*cHdot + adotoa**3) &
-            + 0.5_dl*a**2*adotoa*self%EFTomega%ypp(i)*(adotoa**2 - 3._dl*cHdot) &
-            - 0.5_dl*(a*adotoa)**3*self%EFTomega%yppp(i)
-        self%EFTlambda%yp(i) = -2._dl*self%EFTomega%y(i)*(cHdotdot - adotoa*cHdot - adotoa**3) &
-            - a*self%EFTomega%yp(i)*(+cHdotdot + 5._dl*adotoa*cHdot - adotoa**3) &
-            - a**2*self%EFTomega%ypp(i)*adotoa*(+2._dl*adotoa**2 + 3._dl*cHdot) &
-            - (a*adotoa)**3*self%EFTomega%yppp(i) &
-            + a*a*presvdot
-        self%EFTgamma1%y(i) = 0.25_dl*(RPH_AK_V*(1._dl + RPH_PM_V)*adotoa**2 &
-            - 2._dl*self%EFTc%y(i))/(params_cache%h0_Mpc**2*a**2)
-        self%EFTgamma1%yp(i) = -0.5_dl*(RPH_AK_V*(1._dl + RPH_PM_V)*adotoa**2 &
-            - 2._dl*self%EFTc%y(i))/(params_cache%h0_Mpc**2*a**3) &
-            + 0.25_dl*(RPH_AK_P*(1._dl + RPH_PM_V)*adotoa**2 &
-            + RPH_AK_V*RPH_PM_P*adotoa**2 &
-            + 2._dl*RPH_AK_V*(1._dl + RPH_PM_V)*cHdot/a &
-            - 4._dl*self%EFTc%y(i)/a - 2._dl*self%EFTc%yp(i)/a/adotoa)/(params_cache%h0_Mpc**2*a**2)
-        self%EFTgamma2%y(i) = (+2._dl*RPH_AB_V*(1._dl + RPH_PM_V) &
-            - a*self%EFTomega%yp(i))*adotoa/(params_cache%h0_Mpc*a)
-        self%EFTgamma2%yp(i) = -(+2._dl*RPH_AB_V*(1._dl + RPH_PM_V) &
-            - a*self%EFTomega%yp(i))*adotoa/(params_cache%h0_Mpc*a**2) &
-            - (-2._dl*(1._dl + RPH_PM_V)*(RPH_AB_P*adotoa**2 &
-            + RPH_AB_V*cHdot/a) &
-            - 2._dl*RPH_AB_V*adotoa**2*RPH_PM_P &
-            + self%EFTomega%yp(i)*(adotoa**2 + cHdot) &
-            + a*adotoa**2*self%EFTomega%ypp(i))/(params_cache%h0_Mpc*a*adotoa)
-        self%EFTgamma3%y(i) = -RPH_AT_V*(1._dl + RPH_PM_V)
-        self%EFTgamma3%yp(i) = -RPH_PM_P*RPH_AT_V - (1._dl + RPH_PM_V)*RPH_AT_P
-        self%EFTgamma3%ypp(i) = -(1._dl + RPH_PM_V)*RPH_AT_PP - RPH_PM_PP*RPH_AT_V - 2._dl*RPH_PM_P*RPH_AT_P
-
-        ! write(*,*) a, self%EFTlambda%y(i), self%EFTlambda%yp(i), self%EFTc%y(i), self%EFTc%yp(i)
-        ! write(*,*) a, self%EFTgamma1%y(i), self%EFTgamma1%yp(i), self%EFTgamma2%y(i), self%EFTgamma2%yp(i), self%EFTgamma3%y(i), self%EFTgamma3%yp(i), self%EFTgamma3%ypp(i), 4._dl*self%model_params(1)*dphi/a/params_cache%h0_Mpc
 
         ! 3) compute the lagrangian functions and check positivity bounds if needed
         call self%horndeski_lagrangian_coefficients(params_cache, a, phi, 0.5_dl*(dphi/a)**2, G2, G2p, G2x, G2pp, &
@@ -2340,6 +1766,84 @@
                 return
             end if
         end if
+
+        ! rho_DE + p_DE and its conformal derivative, without subtracting matter from the total (which made the GR
+        ! limit noise): the background equation is N (sum E_i + sum P_i + rho_m + p_m) = 0 (arXiv:1105.5723);
+        ! G4 -> G4 - 1/2 removes its GR part (2 Hdot) exactly, and N is the coefficient of rho_m + p_m.
+        call horndeski_backeq_coefficients(a, H, dphi, 0._dl, G2, G2p, G2x, G2pp, G2px, G2xx, G2ppp, G2ppx, &
+            G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4 - 0.5_dl, G4p, G4x, G4pp, &
+            G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, G5p, G5x, &
+            G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, fx_cp1, &
+            fx_ch1, fx_cs1, fx_cp2, fx_ch2, fx_cs2)
+        call horndeski_backeq_coefficients(a, H, dphi, rhom + presm, G2, G2p, G2x, G2pp, G2px, G2xx, G2ppp, &
+            G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4 - 0.5_dl, G4p, &
+            G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, G4xxxx, G5, &
+            G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, G5pxxx, G5xxxx, &
+            fx_d1, fx_d2, fx_cs1r, fx_d3, fx_d4, fx_d5)
+        fx_nrm = (fx_cs1r - fx_cs1)/(rhom + presm)
+        fx_rpv = (fx_cp1*ddphi + fx_ch1*Hdot + fx_cs1)/fx_nrm
+        call horndeski_backeq_coefficients_p(a, H, Hdot, dphi, ddphi, 0._dl, 0._dl, G2, G2p, G2x, G2pp, G2px, &
+            G2xx, G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4 - &
+            0.5_dl, G4p, G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, &
+            G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, &
+            G5pxxx, G5xxxx, fx_cp1p, fx_ch1p, fx_cs1p, fx_d1, fx_d2, fx_d3)
+        call horndeski_backeq_coefficients_p(a, H, Hdot, dphi, ddphi, rhom + presm, 0._dl, G2, G2p, G2x, G2pp, &
+            G2px, G2xx, G2ppp, G2ppx, G2pxx, G2xxx, G3p, G3x, G3pp, G3px, G3xx, G3ppp, G3ppx, G3pxx, G3xxx, G4 &
+            - 0.5_dl, G4p, G4x, G4pp, G4px, G4xx, G4ppp, G4ppx, G4pxx, G4xxx, G4pppp, G4pppx, G4ppxx, G4pxxx, &
+            G4xxxx, G5, G5p, G5x, G5pp, G5px, G5xx, G5ppp, G5ppx, G5pxx, G5xxx, G5pppp, G5pppx, G5ppxx, &
+            G5pxxx, G5xxxx, fx_d1, fx_d2, fx_cs1pr, fx_d3, fx_d4, fx_d5)
+        fx_nrmdot = (fx_cs1pr - fx_cs1p)/(rhom + presm)
+        fx_rpvdot = (fx_cp1p*ddphi + fx_cp1*dddphi + fx_ch1p*Hdot + fx_ch1*Hdotdot + fx_cs1p &
+            - fx_nrmdot*fx_rpv)/fx_nrm
+
+        ! 2) compute the EFT functions:
+        ! NOTE: we abuse notation and store directly the a (or conformal time for Lambda and c) derivative to yp, ypp, yppp. NOT wrt x!
+        self%EFTomega%y(i) = RPH_PM_V + RPH_AT_V*(1._dl + RPH_PM_V)
+        self%EFTomega%yp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_P + (1._dl + RPH_AT_V)*RPH_PM_P
+        self%EFTomega%ypp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_PP + 2._dl*RPH_PM_P*RPH_AT_P + (1._dl + RPH_AT_V)*RPH_PM_PP
+        self%EFTomega%yppp(i) = (RPH_PM_V + 1.0_dl)*RPH_AT_PPP + 3._dl*RPH_PM_PP*RPH_AT_P + 3._dl*RPH_PM_P*RPH_AT_PP &
+            + (1._dl + RPH_AT_V)*RPH_PM_PPP
+        self%EFTc%y(i) = (adotoa**2 - cHdot)*(self%EFTomega%y(i) + 0.5_dl*a*self%EFTomega%yp(i)) &
+            - 0.5_dl*(a*adotoa)**2*self%EFTomega%ypp(i) &
+            + 0.5_dl*a*a*fx_rpv
+        self%EFTlambda%y(i) = -self%EFTomega%y(i)*(2._dl*cHdot + adotoa**2) &
+            - a*self%EFTomega%yp(i)*(2._dl*adotoa**2 + cHdot) &
+            - (a*adotoa)**2*self%EFTomega%ypp(i) &
+            + a*a*presv
+        self%EFTc%yp(i) = +0.5_dl*a*a*fx_rpvdot &
+            - self%EFTomega%y(i)*(cHdotdot - 4._dl*adotoa*cHdot + 2._dl*adotoa**3) &
+            + 0.5_dl*a*self%EFTomega%yp(i)*(-cHdotdot + adotoa*cHdot + adotoa**3) &
+            + 0.5_dl*a**2*adotoa*self%EFTomega%ypp(i)*(adotoa**2 - 3._dl*cHdot) &
+            - 0.5_dl*(a*adotoa)**3*self%EFTomega%yppp(i)
+        self%EFTlambda%yp(i) = -2._dl*self%EFTomega%y(i)*(cHdotdot - adotoa*cHdot - adotoa**3) &
+            - a*self%EFTomega%yp(i)*(+cHdotdot + 5._dl*adotoa*cHdot - adotoa**3) &
+            - a**2*self%EFTomega%ypp(i)*adotoa*(+2._dl*adotoa**2 + 3._dl*cHdot) &
+            - (a*adotoa)**3*self%EFTomega%yppp(i) &
+            + a*a*presvdot
+        self%EFTgamma1%y(i) = 0.25_dl*(RPH_AK_V*(1._dl + RPH_PM_V)*adotoa**2 &
+            - 2._dl*self%EFTc%y(i))/(params_cache%h0_Mpc**2*a**2)
+        self%EFTgamma1%yp(i) = -0.5_dl*(RPH_AK_V*(1._dl + RPH_PM_V)*adotoa**2 &
+            - 2._dl*self%EFTc%y(i))/(params_cache%h0_Mpc**2*a**3) &
+            + 0.25_dl*(RPH_AK_P*(1._dl + RPH_PM_V)*adotoa**2 &
+            + RPH_AK_V*RPH_PM_P*adotoa**2 &
+            + 2._dl*RPH_AK_V*(1._dl + RPH_PM_V)*cHdot/a &
+            - 4._dl*self%EFTc%y(i)/a - 2._dl*self%EFTc%yp(i)/a/adotoa)/(params_cache%h0_Mpc**2*a**2)
+        self%EFTgamma2%y(i) = (+2._dl*RPH_AB_V*(1._dl + RPH_PM_V) &
+            - a*self%EFTomega%yp(i))*adotoa/(params_cache%h0_Mpc*a)
+        self%EFTgamma2%yp(i) = -(+2._dl*RPH_AB_V*(1._dl + RPH_PM_V) &
+            - a*self%EFTomega%yp(i))*adotoa/(params_cache%h0_Mpc*a**2) &
+            - (-2._dl*(1._dl + RPH_PM_V)*(RPH_AB_P*adotoa**2 &
+            + RPH_AB_V*cHdot/a) &
+            - 2._dl*RPH_AB_V*adotoa**2*RPH_PM_P &
+            + self%EFTomega%yp(i)*(adotoa**2 + cHdot) &
+            + a*adotoa**2*self%EFTomega%ypp(i))/(params_cache%h0_Mpc*a*adotoa)
+        self%EFTgamma3%y(i) = -RPH_AT_V*(1._dl + RPH_PM_V)
+        self%EFTgamma3%yp(i) = -RPH_PM_P*RPH_AT_V - (1._dl + RPH_PM_V)*RPH_AT_P
+        self%EFTgamma3%ypp(i) = -(1._dl + RPH_PM_V)*RPH_AT_PP - RPH_PM_PP*RPH_AT_V - 2._dl*RPH_PM_P*RPH_AT_P
+
+        ! write(*,*) a, self%EFTlambda%y(i), self%EFTlambda%yp(i), self%EFTc%y(i), self%EFTc%yp(i)
+        ! write(*,*) a, self%EFTgamma1%y(i), self%EFTgamma1%yp(i), self%EFTgamma2%y(i), self%EFTgamma2%yp(i), self%EFTgamma3%y(i), self%EFTgamma3%yp(i), self%EFTgamma3%ypp(i), 4._dl*self%model_params(1)*dphi/a/params_cache%h0_Mpc
+
 
         ! if ( a>0.1 ) write(*,*) self%phi%y(i), (2._dl*G4 - 1._dl)/self%phi%y(i)**2, self%free_c0%value(self%phi%y(i))*Exp(self%phi%y(i)), self%EFTomega%y(i)/self%phi%y(i)**2
 
@@ -2441,13 +1945,14 @@
     integer :: num_eq   !<  Number of equations
 
     ! y = tau, phi, phi', (H)
-    real(dl), allocatable :: y(:), ydot(:)
+    real(dl), allocatable :: y(:), ydot(:), y_today(:)
 
     ! odepack quantities:
-    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2
+    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i, i0, idir
+    real(dl) :: rtol, atol, t1, t2, t_today
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
+    logical  :: today_node
 
     ! background quantities that are shared among the derivs and output routines:
     real(dl) :: a, a2, rhob_t, rhoc_t, rhor_t, rhog_t, grhonu_tot, gpinu_tot, grhonudot_tot, gpinudot_tot, &
@@ -2509,8 +2014,9 @@
         y(5) = self%phidot_ini
         y(6) = self%H_ini
     else if (self%designerV) then
-        t1 = self%H%x(self%H%num_points)
-        a = exp(t1)
+        ! the state today (a = 1); the time variables are relative to today here, InitBackground recomputes them
+        t1 = 0._dl
+        a = 1._dl
         y(1) = 0._dl
         y(2) = 0._dl
         y(3) = 0._dl
@@ -2563,44 +2069,43 @@
     ! Jacobian mode: 1=fullJacobian, 2=not provided
     JacobianMode = 2
 
-    ! integrates backwards if designer
+    ! Today is a = 1: the table can extend past it (model_background_a_final > 1); a node at a = 1 to roundoff is
+    ! today itself. H today is stored there (H0 of the model).
     if (self%designerV) then
-        ! compute output EFT functions:
-        call output(num_eq, self%H%num_points, t1, y)
-        ! solve the equations:
-        do i = self%H%num_points, 2, -1
-            ! set the time step:
-            t1 = self%H%x(i)
-            t2 = self%H%x(i - 1)
-            ! perform one integration step
-            call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-                jacobian, JacobianMode)
-            ! check istate for LSODA good completion:
-            if (istate < 0) then
-                if (istate == -1) then
-                    if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                    istate = 1
+        ! the designer conditions hold today: integrate from a = 1 backward to the first node and forward to the last
+        i0 = 0
+        do i = 1, self%H%num_points
+            if (self%H%x(i) <= 1.e-10_dl) i0 = i
+        end do
+        t_today = 0._dl
+        if (abs(self%H%x(i0)) <= 1.e-10_dl) t_today = self%H%x(i0)
+        y_today = y
+        call derivs(num_eq, t_today, y, ydot)
+        self%H_today = H
+        do idir = -1, 1, 2
+            y = y_today
+            t1 = t_today
+            istate = 1
+            i = i0
+            if (idir == 1) i = i0 + 1
+            do while (i >= 1 .and. i <= self%H%num_points)
+                t2 = self%H%x(i)
+                if (t2 /= t1) then
+                    ! perform one integration step
+                    if (.not. advance(t2)) return
+                    ! compute output EFT functions if needed:
+                    call output(num_eq, i, t2, y)
+                    ! check very small or negative Meff^2 here so we do not waste time on meaningless cosmologies
+                    if (.not. meff_ok()) then
+                        if (feedback_level > 1) write(*, *) 'Theory unstable with Meff^2<0'
+                        success = .false.
+                        return
+                    end if
                 else
-                    if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
-                    success = .false.
-                    return
+                    call output(num_eq, i, t2, y)
                 end if
-            end if
-            ! LSODA might not complain about some physical error during integration
-            if (.not. success) then
-                if (feedback_level > 1) write(*, *) 'ERROR during DLSODA running: ', integration_error_message
-                success = .false.
-                return
-            end if
-            ! compute output EFT functions if needed:
-            call output(num_eq, i - 1, t2, y)
-            ! check very small or negative Meff^2 here so we do not waste time on meaningless cosmologies
-            if (self%check_Meff .and. G4 - (phi_prime/a)**2*G4x - 0.5_dl*H*(phi_prime/a)**3*G5x + &
-                0.5_dl*(phi_prime/a)**2*G5p <= 1d-3) then
-                if (feedback_level > 1) write(*, *) 'Theory unstable with Meff^2<0'
-                success = .false.
-                return
-            end if
+                i = i + idir
+            end do
         end do
     else
         ! compute output EFT functions:
@@ -2610,31 +2115,22 @@
             ! set the time step:
             t1 = self%H%x(i)
             t2 = min(self%H%x(i + 1), self%H%x_final)
+            today_node = t1 < 0._dl .and. abs(t2) <= 1.e-10_dl
+            if (t1 < 0._dl .and. t2 > 1.e-10_dl) then
+                ! today inside the step: stop there first for H today
+                if (.not. advance(0._dl)) return
+                call derivs(num_eq, t1, y, ydot)
+                self%H_today = H
+            end if
             ! perform one integration step
-            call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-                jacobian, JacobianMode)
-            ! check istate for LSODA good completion:
-            if (istate < 0) then
-                if (istate == -1) then
-                    if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                    istate = 1
-                else
-                    if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
-                    success = .false.
-                    return
-                end if
-            end if
-            ! LSODA might not complain about some physical error during integration
-            if (.not. success) then
-                if (feedback_level > 1) write(*, *) 'ERROR during DLSODA running: ', integration_error_message
-                success = .false.
-                return
-            end if
+            if (.not. advance(t2)) return
             ! compute output EFT functions if needed:
             call output(num_eq, i + 1, t2, y)
+            if (today_node) then
+                self%H_today = H
+            end if
             ! check very small or negative Meff^2 here so we do not waste time on meaningless cosmologies
-            if (self%check_Meff .and. G4 - (phi_prime/a)**2*G4x - 0.5_dl*H*(phi_prime/a)**3*G5x + &
-                0.5_dl*(phi_prime/a)**2*G5p <= 1d-3) then
+            if (.not. meff_ok()) then
                 write(*, *) 'Theory unstable with Meff^2<0'
                 success = .false.
                 return
@@ -2645,6 +2141,49 @@
     return
 
     contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Integrates the background from t1 to t_end (t1 is t_end on output); false if the integration failed.
+    logical function advance(t_end)
+
+    implicit none
+
+    real(dl), intent(in) :: t_end
+
+    advance = .false.
+    call DLSODA (derivs, num_eq, y, t1, t_end, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
+        jacobian, JacobianMode)
+    ! check istate for LSODA good completion:
+    if (istate < 0) then
+        if (istate == -1) then
+            if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
+            istate = 1
+        else
+            if (feedback_level > 1) write(*, *) 'DLSODA failed with code:', istate
+            success = .false.
+            return
+        end if
+    end if
+    ! LSODA might not complain about some physical error during integration
+    if (.not. success) then
+        if (feedback_level > 1) write(*, *) 'ERROR during DLSODA running: ', integration_error_message
+        success = .false.
+        return
+    end if
+    advance = .true.
+
+    end function advance
+
+    ! ---------------------------------------------------------------------------------------------
+    !> False if Meff^2 is very small or negative at the last output (when check_Meff is set).
+    logical function meff_ok()
+
+    implicit none
+
+    meff_ok = .not. (self%check_Meff .and. G4 - (phi_prime/a)**2*G4x - 0.5_dl*H*(phi_prime/a)**3*G5x + &
+        0.5_dl*(phi_prime/a)**2*G5p <= 1d-3)
+
+    end function meff_ok
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes y' given y for the background
@@ -2807,8 +2346,8 @@
             call ThermalNuBackground%rho_P(a*params_cache%nu_masses(nu_i), grhonu, gpinu)
             grhonu_tot = grhonu_tot + grhormass_t*grhonu ! 8\pi G_N \rho_mnu a^2: massive neutrino background density
             gpinu_tot = gpinu_tot + grhormass_t*gpinu  ! 8\pi G_N P_mnu a^2   : massive neutrino background pressure
-            grhonudot = ThermalNuBackground%drho(a*params_cache%nu_masses(nu_i), adotoa)
-            grhonudot_tot = grhonudot_tot + grhormass_t*(grhonudot - 4._dl*adotoa*grhonu)
+            ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+            grhonudot_tot = grhonudot_tot - 3._dl*adotoa*grhormass_t*(grhonu + gpinu)
             gpinudot = ThermalNuBackground%pidot(a*params_cache%nu_masses(nu_i), adotoa, gpinu)
             gpinudot_tot = gpinudot_tot + grhormass_t*(gpinudot - 4._dl*adotoa*gpinu)
         end do
@@ -2999,8 +2538,8 @@
                 ! 8\pi G_N \rho_mnu a^2: massive neutrino background density
                 grhonu_tot = grhonu_tot + grhormass_t*grhonu
                 gpinu_tot = gpinu_tot + grhormass_t*gpinu  ! 8\pi G_N P_mnu a^2   : massive neutrino background pressure
-                grhonudot = ThermalNuBackground%drho(a*params_cache%nu_masses(nu_i), adotoa)
-                grhonudot_tot = grhonudot_tot + grhormass_t*(grhonudot - 4._dl*adotoa*grhonu)
+                ! continuity equation, consistent with the rho and p fits (the drho fit is not, at 1e-4: U7)
+                grhonudot_tot = grhonudot_tot - 3._dl*adotoa*grhormass_t*(grhonu + gpinu)
                 gpinudot = ThermalNuBackground%pidot(a*params_cache%nu_masses(nu_i), adotoa, gpinu)
                 gpinudot_tot = gpinudot_tot + grhormass_t*(gpinudot - 4._dl*adotoa*gpinu)
                 gpinudotdot = &
@@ -3323,7 +2862,8 @@
     success = .true.
 
     if (self%designerV) then
-        a = exp(self%x_final)
+        ! the designer conditions are today's (a = 1; the table can extend past it)
+        a = 1._dl
     else
         a = exp(self%x_initial)
     end if
@@ -3345,7 +2885,8 @@
         end do
     end if
     rho_tot = rhob_t + rhoc_t + rhor_t + rhog_t + grhonu_tot/a**2
-    pres_tot = (rhor_t + rhog_t)/3._dl + grhonu_tot/a**2
+    ! massive neutrino pressure (it was their density: phidot today of designer-V was off with massive neutrinos)
+    pres_tot = (rhor_t + rhog_t)/3._dl + gpinu_tot/a**2
 
     if (self%designerV) then
         H = params_cache%h0_Mpc
@@ -3870,5 +3411,47 @@
     end if
 
     end subroutine
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that checks the pi path (EFTCAMB_evolve_delta_phi = F): pi = delta_phi/phi' has a simple pole where
+    !! the field velocity phi' changes sign (arXiv:1404.3713 below eq. 3.16), which cannot be removed: after the turn-on
+    !! the pi evolution is then garbage (5_hdsk_TG_3: sigma8 1.77 instead of 0.903). The delta_phi path is regular.
+    subroutine EFTCAMBHdskPiEvolutionCheck(self, turn_on, message)
+
+    implicit none
+
+    class(EFTCAMB_Hdsk), intent(in) :: self      !< the base class
+    real(dl), intent(in)            :: turn_on   !< the scale factor of the perturbation turn-on.
+    character(len=*), intent(out)   :: message   !< why the pi evolution is singular ('' if it is regular).
+
+    integer :: i
+
+    message = ''
+    if (self%evolve_delta_phi) return
+    do i = 2, self%dphi%num_points
+        if (self%dphi%x(i) <= log(turn_on)) cycle
+        if (self%dphi%y(i - 1)*self%dphi%y(i) < 0._dl) then
+            write(message, '(a,es10.3,a)') 'EFTCAMB: the Horndeski field velocity changes sign at a =', &
+                exp(self%dphi%x(i)), ', where the pi evolution is singular: set EFTCAMB_evolve_delta_phi = T'
+            return
+        end if
+    end do
+
+    end subroutine EFTCAMBHdskPiEvolutionCheck
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that keeps the alpha-basis outputs that the Horndeski module computes with its EFT functions.
+    subroutine EFTCAMBHdskComputeAlphaFunctions(self, a, eft_par_cache, eft_cache)
+
+    implicit none
+
+    class(EFTCAMB_Hdsk)                           :: self          !< the base class
+    real(dl), intent(in)                          :: a             !< the input scale factor
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout)  :: eft_cache
+
+    end subroutine EFTCAMBHdskComputeAlphaFunctions
 
     end module EFTCAMB_Horndeski

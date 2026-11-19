@@ -219,7 +219,11 @@ class EFTCAMB(F2003Class):
         (
             "EFT_mass_math_stability",
             c_bool,
-            "Flag that decides whether to enforce the mathematical mass condition. This should prevent fast growing instabilities but is not fully rigorous. Use is deprecated",
+            (
+                "Flag that decides whether to enforce the mathematical mass condition. Deprecated: it rejects any "
+                "growing root of the pi equation at frozen coefficients (threshold 0) and refuses healthy models; use "
+                "EFT_mass_stability."
+            ),
         ),
         (
             "EFT_ghost_stability",
@@ -234,7 +238,10 @@ class EFTCAMB(F2003Class):
         (
             "EFT_mass_stability",
             c_bool,
-            "Flag that decides whether to enforce the physical mass condition. Works up to Horndeski.",
+            (
+                "Flag that decides whether to enforce the physical mass condition (off by default): reject a k -> 0 "
+                "mass eigenvalue of the scalar sector below -(EFT_mass_stability_rate H)^2 after the turn-on."
+            ),
         ),
         (
             "EFT_mass_stability_rate",
@@ -242,9 +249,22 @@ class EFTCAMB(F2003Class):
             "Flag that sets the rate for the mass instability in units of Hubble time.",
         ),
         (
+            "EFT_mass_stability_method",
+            c_int,
+            (
+                "Mass condition of EFT_mass_stability: 1 (default) the k -> 0 eigenvalues of arXiv:1609.03599 App. C "
+                "(corrected), 2 the normal-form mass of pi, tested where pi also grows faster than the rate."
+            ),
+        ),
+        (
             "EFT_additional_priors",
             c_bool,
             "Flag that extablishes whether to use additional priors that are related to the specific model. Each model has the possibility of implementing their own additional stability requirements.",
+        ),
+        (
+            "EFT_wDE_prior",
+            c_bool,
+            "Flag that decides whether to enforce the phenomenological prior w_DE <= -1/3 (models with a w_DE parametrization: pure EFT, mc quintessence, RPH, designer f(R), 3+1). Off by default.",
         ),
         # Positvity bounds flags
         (
@@ -278,7 +298,7 @@ class EFTCAMB(F2003Class):
         (
             "EFTCAMB_pert_turn_on",
             c_double,
-            "Smallest scale factor at which EFTCAMB evolves perturbations. Default set to a=0.01.",
+            "Smallest scale factor at which EFTCAMB evolves perturbations. Default set to a=0.01. Before it the perturbations follow the GR equations: results of models that are not GR before the turn-on depend on it (check convergence with earlier turn-on times).",
         ),
         (
             "EFTCAMB_GR_threshold",
@@ -314,6 +334,15 @@ class EFTCAMB(F2003Class):
             "EFTCAMB_write_background",
             c_bool,
             "Flag that decides whether to write the background quantities when called from an ini file.",
+        ),
+        (
+            "EFTCAMB_turn_on_from_RGR",
+            c_bool,
+            (
+                "Output, set by the code at every run: whether the return to GR moved the perturbation turn-on later "
+                "than requested (the model is then GR before it and the source samples straddling the turn-on are "
+                "skipped)."
+            ),
         ),
     )
 
@@ -399,13 +428,20 @@ class EFTCAMB(F2003Class):
             byref(self), _key, _value, byref(num_params), byref(c_int(0)), _STRING_LENGTH_ARG, _STRING_LENGTH_ARG
         )
         num_params = num_params.value
+        # the buffer length that holds every key and value (mode 2; 0 from the module procedure, which has fixed
+        # 200-character dummies): longer values were cut to 200 characters
+        length = c_int(0)
+        EFTCAMB_get_read_parameters(
+            byref(self), _key, _value, byref(length), byref(c_int(2)), _STRING_LENGTH_ARG, _STRING_LENGTH_ARG
+        )
+        length = max(length.value, _STRING_LENGTH)
         # get the parameters:
         params = {}
         for ind in range(num_params):
             index = c_int(ind + 1)
-            _key, _value = _string_buffer(), _string_buffer()
+            _key, _value = create_string_buffer(b" " * length, length), create_string_buffer(b" " * length, length)
             EFTCAMB_get_read_parameters(
-                byref(self), _key, _value, byref(index), byref(c_int(1)), _STRING_LENGTH_ARG, _STRING_LENGTH_ARG
+                byref(self), _key, _value, byref(index), byref(c_int(1)), c_size_t(length), c_size_t(length)
             )
             params[_string_value(_key)] = _string_value(_value)
         if raw:
@@ -563,6 +599,8 @@ class EFTCAMB(F2003Class):
         k = np.asfortranarray(k)
         # digest the input time array:
         times = np.asarray(np.atleast_1d(eta), dtype=np.float64)
+        # the EFT results stop today (eta = tau0):
+        camb_results._check_eft_today(eta=times)
         # the Fortran integration needs increasing times: sort them and restore the caller's order on output
         indices = np.argsort(times)
         sorted_times = np.asfortranarray(times[indices])
@@ -786,8 +824,8 @@ class EFTCAMB_timestep_cache(F2003Class):
             "EFTGamma6P",
             c_double,
         ),  # the value of the derivative wrt scale factor of Gamma 6 \f$  d \gamma_6(a) / da \f$.
-        # 5b) alternative EFT functions
-        ("alphaB", c_double),  # the value of the Horndeski function \f$ \alpha_B \f$
+        # 5b) alternative EFT functions (outputs: filled from the EFT functions for every model, or by RPH/Horndeski)
+        ("alphaB", c_double),  # the Horndeski function alpha_B, EFTCAMB convention (= -alpha_B of Bellini-Sawicki / 2)
         ("alphaBdot", c_double),  # the value of the derivative wrt conformal time of alphaB \f$ \dot{\alpha}_B \f$
         ("alphaT", c_double),  # the value of the Horndeski function \f$ \alpha_T \f$
         ("alphaTdot", c_double),  # the value of the derivative wrt conformal time of alphaT \f$ \dot{\alpha}_T \f$
@@ -871,11 +909,6 @@ class EFTCAMB_timestep_cache(F2003Class):
         ("dphi", c_double),  # the derivative of the scalar field phi wrt conformal time
         ("ddphi", c_double),  # the second derivative of the scalar field phi wrt conformal time
         ("dddphi", c_double),  # the third derivative of the scalar field phi wrt conformal time
-        # 5e) scalar field time scale
-        (
-            "dtau_hdsk",
-            c_double,
-        ),  # the conformal time difference between two nearby points of phi=0, estimation of the field evolution timescale if it is oscillating
         # 6) other background quantities:
         (
             "grhoq",
@@ -1030,15 +1063,15 @@ class EFTCAMB_timestep_cache(F2003Class):
         ),  # the value of the tensor equation coefficient D. Refer to the Numerical Notes for the definition.
         # 12) Kinetic and Gradient quantities for the stability check:
         ("EFT_kinetic", c_double),  # the value of the kinetic term. Refer to the Numerical Notes for the definition.
-        ("EFT_gradient", c_double),  # the value of the gradient term. Refer to the Numerical Notes for the definition.
+        ("EFT_gradient", c_double),  # the gradient term (numerator of c_s^2; dressed by pressureless dust in GLPV).
         (
             "EFT_mu1",
             c_double,
-        ),  # the value of the first mass eigenvalue. Refer to the Numerical Notes for the definition.
+        ),  # k -> 0 mass squared of the scalar field (cosmic time, Mpc^-2; 0 where not resolved).
         (
             "EFT_mu2",
             c_double,
-        ),  # the value of the second mass eigenvalue. Refer to the Numerical Notes for the definition.
+        ),  # k -> 0 mass eigenvalue of the matter (dust) mode (cosmic time, Mpc^-2; 0 where not resolved).
         # 13) other quantities usefull for debug purposes:
         ("Psi", c_double),  # Perturbation in the 00 component of the metric in Conformal Newtonian gauge.
         ("Phi", c_double),  # Perturbation in the space component of the metric in Conformal Newtonian gauge.
@@ -1048,12 +1081,13 @@ class EFTCAMB_timestep_cache(F2003Class):
         ("EFTLensing", c_double),  # Source for lensing effect.
         ("T_monopole", c_double),  # The effective CMB temperature monopole.
         ("T_dipole", c_double),  # The effective CMB temperature dipole.
-        ("mu", c_double),  # Effective perturbation gravitational constant. \f$ k^2\Psi/\Delta_{m} \f$
-        ("gamma", c_double),  # Ratio between the two gravitational potentials. \f$ \gamma = \Phi/\Psi \f$
-        (
-            "sigma_eft",
-            c_double,
-        ),  # Ratio between Weyl potential and matter density. \f$ \Sigma = \frac{\Phi+\Psi}{\Delta_{m}} \f$
+        # mu = -2 k^2 Psi/(a^2 rho Delta + 2 dgpi), a^2 rho Delta = dgrho + 3 adotoa dgq/k (comoving matter density),
+        # dgpi the matter anisotropic stress: 1 in GR
+        ("mu", c_double),
+        # gamma = Phi/Psi + 2 dgpi/(a^2 rho Delta + 2 dgpi): slip corrected for the matter anisotropic stress, 1 in GR
+        ("gamma", c_double),
+        # Sigma = -k^2 (Phi + Psi)/(a^2 rho Delta + dgpi): lensing (Weyl) coupling, 1 in GR
+        ("sigma_eft", c_double),
         (
             "QS_mu",
             c_double,
@@ -1070,8 +1104,10 @@ class EFTCAMB_timestep_cache(F2003Class):
             "QS_sigma_gen",
             c_double,
         ),  # Ratio between Weyl potential and matter density in the quasi-static limit. \f$ \Sigma = \frac{\Phi+\Psi}{\Delta_{m}} \f$
-        ("dgrho_Newt", c_double),  # Newtonian gauge total matter density perturbation.
-        ("delta_DE_eff", c_double),  # Syncronous gauge Dark energy fluid perturbation.
+        # comoving (gauge-invariant) matter density a^2 rho Delta = dgrho + 3 adotoa dgq/k (not the Newtonian-gauge one)
+        ("dgrho_Newt", c_double),
+        # effective DE density perturbation from the Poisson equation, -2 k^2 Phi - a^2 rho Delta (gauge invariant)
+        ("delta_DE_eff", c_double),
         # 14) LHS of positivity bounds:
         (
             "posbound1",

@@ -47,6 +47,8 @@
     character(*), parameter :: cache_output_format = 'es19.10e3'
 
     ! define debug file
+    !< whether the debug cache files are open: the dump writes only then (it wrote to unopened units before)
+    logical, save :: cache_files_open = .false.
     type(TTextFile) :: file_FRW
     type(TTextFile) :: file_BDens
     type(TTextFile) :: file_BPres
@@ -249,9 +251,6 @@
         real(dl) :: dphi            !< the derivative of the scalar field phi wrt conformal time
         real(dl) :: ddphi           !< the second derivative of the scalar field phi wrt conformal time
         real(dl) :: dddphi          !< the third derivative of the scalar field phi wrt conformal time
-        ! 5e) scalar field time scale
-        !< the conformal time difference between two nearby points of phi=0, estimation of the field evolution timescale if it is oscillating
-        real(dl) :: dtau_hdsk
         ! 6) other background quantities:
         !< the value of the effective density of the Q field. Refer to the Numerical Notes for the definition.
         real(dl) :: grhoq
@@ -343,7 +342,8 @@
         real(dl) :: EFTDT
         ! 12) Kinetic and Gradient quantities for the stability check:
         real(dl) :: EFT_kinetic   !< the value of the kinetic term. Refer to the Numerical Notes for the definition.
-        real(dl) :: EFT_gradient  !< the value of the gradient term. Refer to the Numerical Notes for the definition.
+        !< the value of the gradient term (numerator of c_s^2, dressed by pressureless dust in GLPV).
+        real(dl) :: EFT_gradient
         !< the value of the first mass eigenvalue. Refer to the Numerical Notes for the definition.
         real(dl) :: EFT_mu1
         !< the value of the second mass eigenvalue. Refer to the Numerical Notes for the definition.
@@ -357,9 +357,13 @@
         real(dl) :: EFTLensing    !< Source for lensing effect.
         real(dl) :: T_monopole    !< The effective CMB temperature monopole.
         real(dl) :: T_dipole      !< The effective CMB temperature dipole.
-        real(dl) :: mu            !< Effective perturbation gravitational constant. \f$ k^2\Psi/\Delta_{m} \f$
-        real(dl) :: gamma         !< Ratio between the two gravitational potentials. \f$ \gamma = \Phi/\Psi \f$
-        !< Ratio between Weyl potential and matter density. \f$ \Sigma = \frac{\Phi+\Psi}{\Delta_{m}} \f$
+        !< Effective gravitational coupling mu = -2 k^2 Psi/(a^2 rho Delta + 2 dgpi), with a^2 rho Delta = dgrho
+        !! + 3 adotoa dgq/k the comoving total matter density and dgpi the matter anisotropic stress: 1 in GR.
+        real(dl) :: mu
+        !< Gravitational slip corrected for the matter anisotropic stress, gamma = Phi/Psi + 2 dgpi/(a^2 rho Delta
+        !! + 2 dgpi): 1 in GR (Phi/Psi alone differs from it by 1e-4 at k = 0.003).
+        real(dl) :: gamma
+        !< Lensing (Weyl) coupling Sigma = -k^2 (Phi + Psi)/(a^2 rho Delta + dgpi): 1 in GR.
         real(dl) :: sigma_eft
         !< Effective perturbation gravitational constant in the quasi-static limit. \f$ k^2\Psi/\Delta_{m} \f$
         real(dl) :: QS_mu
@@ -369,8 +373,12 @@
         real(dl) :: QS_mu_gen
         !< Ratio between Weyl potential and matter density in the quasi-static limit. \f$ \Sigma = \frac{\Phi+\Psi}{\Delta_{m}} \f$
         real(dl) :: QS_sigma_gen
-        real(dl) :: dgrho_Newt    !< Newtonian gauge total matter density perturbation.
-        real(dl) :: delta_DE_eff  !< Syncronous gauge Dark energy fluid perturbation.
+        !< Comoving (gauge-invariant) total matter density perturbation a^2 rho Delta = dgrho + 3 adotoa dgq/k. Despite
+        !! the name it is not the Newtonian-gauge density, which differs from it by 10% at k = 0.003.
+        real(dl) :: dgrho_Newt
+        !< Effective dark-energy density perturbation from the Poisson equation, -2 k^2 Phi - a^2 rho Delta (comoving,
+        !! gauge invariant; not a synchronous-gauge quantity).
+        real(dl) :: delta_DE_eff
         ! 14) positivity bounds:
         !< The left-hand-side of the first positivity bound. See master thesis of Dani de Boe for details.
         real(dl) :: posbound1
@@ -501,7 +509,6 @@
     self%ddphi = 0._dl
     self%dddphi = 0._dl
     ! 5e) scalar field time scale
-    self%dtau_hdsk = 0._dl
     ! 6) other background quantities:
     self%grhoq = 0._dl
     self%gpresq = 0._dl
@@ -686,7 +693,6 @@
     HaveNan = check(HaveNan, self%dphi, 'dphi' )
     HaveNan = check(HaveNan, self%ddphi, 'ddphi' )
     HaveNan = check(HaveNan, self%dddphi, 'dddphi' )
-    HaveNan = check(HaveNan, self%dtau_hdsk, 'dtau_hdsk' )
     HaveNan = check(HaveNan, self%grhoq, 'grhoq' )
     HaveNan = check(HaveNan, self%gpresq, 'gpresq' )
     HaveNan = check(HaveNan, self%grhodotq, 'grhodotq' )
@@ -873,6 +879,8 @@
         'gamma ', 'QS_mu', 'QS_sigma', 'QS_mu_gen', 'QS_sigma_gen', 'delta_DE_eff '
     write(file_Posbounds%unit, '(14a)') '#', 'a ', 'tau ', 'k ', 'posbound1 ', 'posbound2 ', 'ghostpos ', 'tachpos'
 
+    cache_files_open = .true.
+
     contains
 
     ! Temporary subroutine that tests wether a cache file is open.
@@ -902,6 +910,7 @@
 
     class(TEFTCAMB_timestep_cache) :: self !< the base class.
 
+    cache_files_open = .false.
     ! test wether the files can be closed:
     call test_close(file_FRW%unit)
     call test_close(file_BDens%unit)
@@ -969,6 +978,8 @@
     implicit none
 
     class(TEFTCAMB_timestep_cache) :: self !< the base class.
+
+    if (.not. cache_files_open) return
 
     ! write the background expansion history:
     write(file_FRW%unit, '(12' // cache_output_format // ')')  self%a, self%tau, self%k, self%adotoa, self%Hdot, &

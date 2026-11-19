@@ -157,8 +157,10 @@
     !< subroutine that computes the three derivatives wrt conformal time of H.
     procedure :: compute_H_derivs => EFTCAMBDesigner3p1ComputeHubbleDer
     ! stability procedures:
-    !< function that computes model specific stability requirements.
-    procedure :: additional_model_stability => EFTCAMBDesigner3p1AdditionalModelStability
+    !< subroutine that tests the model's own scalar ghost and gradient conditions (beyond GLPV).
+    procedure :: beyond_GLPV_stability => EFTCAMBDesigner3p1BeyondGLPVStability
+    !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
+    procedure :: wDE_prior => EFTCAMBDesigner3p1wDEPrior
 
     end type EFTCAMB_full3p1_wDE
 
@@ -203,7 +205,7 @@
     ! read precision parameters
     self%designer_num_points = Ini%Read_Int('model_background_num_points', 6000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBDesigner3p1ReadModelSelectionFromFile
 
@@ -927,8 +929,8 @@
 
     real(dl) :: grhom0, grhor0, grhov0
 
-    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2
+    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i, i0, idir
+    real(dl) :: rtol, atol, t1, t2, t_today
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
 
@@ -979,31 +981,43 @@
     ! Jacobian mode: 1=fullJacobian, 2=not provided
     JacobianMode = 2
 
-    ! initial time:
-    t1 = self%rhov_t%x(self%designer_num_points)
-    ! store initial step:
-    call output(num_eq, self%designer_num_points, t1, y)
-    ! solve the equations:
-    do i = self%designer_num_points, 2, -1
-        ! set the time step:
-        t1 = self%rhov_t%x(i)
-        t2 = self%rhov_t%x(i - 1)
-        ! solve the system:
-        call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-            jacobian, JacobianMode)
-        ! check istate for LSODA good completion:
-        if (istate < 0) then
-            if (istate == -1) then
-                if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                istate = 1
-            else
-                success = .false.
-                write(*, *) 'DLSODA failed with code:', istate
-                return
+    ! the normalisation rhov_t/rhov_0 = 1 holds today: integrate from a = 1 backward to the first node and forward to
+    ! the last (the table can extend past today, model_background_a_final > 1); a node at a = 1 to roundoff is today
+    i0 = 0
+    do i = 1, self%designer_num_points
+        if (self%rhov_t%x(i) <= 1.e-10_dl) i0 = i
+    end do
+    t_today = 0._dl
+    if (abs(self%rhov_t%x(i0)) <= 1.e-10_dl) t_today = self%rhov_t%x(i0)
+    do idir = -1, 1, 2
+        y(1) = 1._dl
+        t1 = t_today
+        istate = 1
+        i = i0
+        if (idir == 1) i = i0 + 1
+        do while (i >= 1 .and. i <= self%designer_num_points)
+            ! set the time step:
+            t2 = self%rhov_t%x(i)
+            if (t2 /= t1) then
+                ! solve the system:
+                call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+                    LIW, jacobian, JacobianMode)
+                ! check istate for LSODA good completion:
+                if (istate < 0) then
+                    if (istate == -1) then
+                        if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
+                        istate = 1
+                    else
+                        success = .false.
+                        write(*, *) 'DLSODA failed with code:', istate
+                        return
+                    end if
+                end if
             end if
-        end if
-        ! compute output functions if needed:
-        call output(num_eq, i - 1, t2, y)
+            ! compute output functions if needed:
+            call output(num_eq, i, t2, y)
+            i = i + idir
+        end do
     end do
 
     return
@@ -1294,7 +1308,7 @@
     real(dl) :: Ode, dOde, d2Ode, d3Ode, d4Ode
     real(dl) :: sigma1, dsigma1, d2sigma1, d3sigma1, d4sigma1, rho1, drho1, d2rho1, d3rho1, d4rho1, rho1N, drho1N, &
         rho2, drho2
-    real(dl) :: at, dat, d2at, d3at
+    real(dl) :: at, dat, d2at, d3at, bt, dbt, d2bt, d3bt
 
     grhom = eft_cache%grhob_t + eft_cache%grhoc_t
     grhor = eft_cache%grhor_t + eft_cache%grhog_t
@@ -1430,10 +1444,16 @@
     eft_cache%EFTGamma1P = -0.5_dl*(eft_cache%EFTcdot/at)/(a*eft_par_cache%h0_Mpc)**2
     eft_cache%EFTGamma1PP = &
         -0.5_dl*(eft_cache%EFTcdotdot/at**2 - eft_cache%EFTcdot*dat/at**2)/(a*eft_par_cache%h0_Mpc)**2
-    eft_cache%EFTGamma2V = -(drho1*at)/eft_par_cache%h0_Mpc
-    eft_cache%EFTGamma2P = -(at*d2rho1 + dat*drho1)/eft_par_cache%h0_Mpc
-    eft_cache%EFTGamma2PP = -(at*d3rho1 + 2._dl*d2rho1*dat + d2at*drho1)/eft_par_cache%h0_Mpc
-    eft_cache%EFTGamma2PPP = -(3._dl*d2at*d2rho1 + at*d4rho1 + 3._dl*d3rho1*dat + d3at*drho1)/eft_par_cache%h0_Mpc
+    ! gamma2 = Mb1^3/(m0^2 H0) = -(d rho1/dt)/H0 with COSMIC time: d rho1/dt = adotoa d rho1/da = (at/a) d rho1/da
+    ! (arXiv:2508.01378 App. C: Mb1^3 = -2 rho1dot, M_Pl^2/2 = 1). bt = at/a = adotoa and its a-derivatives:
+    bt = at/a
+    dbt = dat/a - at/a**2
+    d2bt = d2at/a - 2._dl*dat/a**2 + 2._dl*at/a**3
+    d3bt = d3at/a - 3._dl*d2at/a**2 + 6._dl*dat/a**3 - 6._dl*at/a**4
+    eft_cache%EFTGamma2V = -(drho1*bt)/eft_par_cache%h0_Mpc
+    eft_cache%EFTGamma2P = -(bt*d2rho1 + dbt*drho1)/eft_par_cache%h0_Mpc
+    eft_cache%EFTGamma2PP = -(bt*d3rho1 + 2._dl*d2rho1*dbt + d2bt*drho1)/eft_par_cache%h0_Mpc
+    eft_cache%EFTGamma2PPP = -(3._dl*d2bt*d2rho1 + bt*d4rho1 + 3._dl*d3rho1*dbt + d3bt*drho1)/eft_par_cache%h0_Mpc
     eft_cache%EFTGamma3V = 1._dl/3._dl*sigma1 - rho1 + 2._dl/3._dl
     eft_cache%EFTGamma3P = 1._dl/3._dl*dsigma1 - drho1
     eft_cache%EFTGamma3PP = 1._dl/3._dl*d2sigma1 - d2rho1
@@ -1550,8 +1570,10 @@
     end subroutine EFTCAMBDesigner3p1ComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that computes model specific stability requirements.
-    function EFTCAMBDesigner3p1AdditionalModelStability(self, a, eft_par_cache, eft_cache)
+    !> Subroutine that tests the scalar ghost and gradient conditions of this beyond-GLPV model (the generic ones do not
+    !! apply): called by the stability check when EFT_ghost_stability or EFT_gradient_stability is on.
+    subroutine EFTCAMBDesigner3p1BeyondGLPVStability(self, a, eft_par_cache, eft_cache, ghost, gradient, implemented, &
+        stable)
 
     implicit none
 
@@ -1561,9 +1583,11 @@
     type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
-
-    !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
-    logical :: EFTCAMBDesigner3p1AdditionalModelStability
+    logical, intent(in)  :: ghost         !< whether to test the scalar ghost condition (EFT_ghost_stability).
+    logical, intent(in)  :: gradient      !< whether to test the scalar gradient condition (EFT_gradient_stability).
+    logical, intent(out) :: implemented   !< whether the model has its own conditions: always.
+    logical, intent(out) :: stable        !< whether the tested conditions are met.
+    logical :: test_ghost, test_gradient
 
     real(dl) :: lgkmin, lgkmax, lgk, k, k2, k4
     real(dl) :: H, Ht
@@ -1572,16 +1596,15 @@
     real(dl) :: Ode, dOde
     real(dl) :: sigma1, dsigma1, rho1, drho1, rho1N, drho1N, rho2, drho2
     real(dl) :: dadt
-    real(dl) :: aT, aL, aLt, aH, aHt, b3, b3t, B0, B01, B02, B03, B2, B21, B22, B23, B4, Azz, Bzz
+    real(dl) :: aT, aL, aLt, aH, aHt, b3, b3t, B0, B01, B02, B03, B2, B21, B22, B23, B4, Bzz
 
-    EFTCAMBDesigner3p1AdditionalModelStability = .true.
+    implemented = .true.
+    stable = .true.
+    ! the model flags Designer3p1GhostStability and Designer3p1GradientStability select which of them run
+    test_ghost = ghost .and. self%Designer3p1GhostStability
+    test_gradient = gradient .and. self%Designer3p1GradientStability
 
-    if (self%Designer3p1wDE%value(a) > -1._dl/3._dl) then
-        EFTCAMBDesigner3p1AdditionalModelStability = .false.
-        return
-    end if
-
-    if (self%Designer3p1GhostStability .or. self%Designer3p1GradientStability) then
+    if (test_ghost .or. test_gradient) then
 
         lgkmin = log10(self%Designer3p1Stability_kmin/a)
         lgkmax = log10(self%Designer3p1Stability_kmax/a)
@@ -1640,30 +1663,34 @@
             H = H/a
             Ht = Ht/a/a - H**2
 
-            ! custom ghost stability for this beyond GLPV model. Azz is proportional to b3 = rho2/sigma1: for rho2 = 0
-            ! (GLPV/Horndeski limit, e.g. the GR point) it vanishes identically and there is no extra kinetic term to
-            ! test (the scalar is tested by the general ghost condition), so the degenerate case is not a ghost.
-            if (self%Designer3p1GhostStability .and. b3 /= 0._dl) then
-                Azz = 6._dl*(1._dl + aL)*b3*k2/(6._dl*H**2*(1._dl + aL) + aL*b3*k2)
-                if (Azz <= 0._dl) then
-                    EFTCAMBDesigner3p1AdditionalModelStability = .false.
+            ! custom ghost stability for this beyond GLPV model. The vacuum A_zeta of arXiv:2508.01378 (Sec. IV-C)
+            ! misses the alpha_L < 0 ghost below its cut-off. With pressureless matter (CDM) the scalar kinetic matrix
+            ! is positive definite at every k iff sigma1 <= 1 (alpha_L >= 0) and rho2 >= 0 (b3 >= 0); this holds in
+            ! the GLPV/Horndeski limit rho2 = 0 (b3 -> 0, e.g. the GR point) too, and implies Azz >= 0.
+            if (test_ghost) then
+                if (aL < 0._dl .or. b3 < 0._dl) then
+                    stable = .false.
                     return
                 end if
             end if
             ! custom gradient stability for this beyond GLPV model
-            if (self%Designer3p1GradientStability) then
+            if (test_gradient) then
                 B01 = 72._dl*(1._dl + aL)*(aHt*(1._dl + aL) - aLt*(1._dl + aH))
                 B02 = 72._dl*(1._dl + aL)**2*(aH - aT)
                 B03 = -72._dl*(1._dl + aL)**2*(1._dl + aH)
                 B0 = (B03*Ht + B02*H**2 + B01*H)*H**2
                 B21 = 12._dl*(1._dl + aL)*(aHt*aL*b3 - (1._dl + aH)*(b3*aLt + aL*b3t))
-                B22 = 24._dl*aL*(1._dl + aL)*((1._dl + aH)**2 + b3*(1.5_dl*aH - aT))
+                ! arXiv:2508.01378 App. D (and its latest TeX) misses + b3/2 in B22: re-derived from the paper's action,
+                ! and confirmed by the de Sitter evolution to 1e-11
+                B22 = 24._dl*aL*(1._dl + aL)*((1._dl + aH)**2 + b3*(1.5_dl*aH - aT + 0.5_dl))
                 B23 = 12._dl*b3*aL*(1._dl + aL)*(1._dl + aH)
                 B2 = B23*Ht + B22*H**2 + B21*H
                 B4 = 2._dl*aL**2*b3*(2._dl*(1._dl + aH)**2 - b3*(1._dl + aT))
                 Bzz = (B0 + B2*k2 + B4*k4)/(6._dl*H**2*(1._dl + aL) + aL*b3*k2)**2
+                ! k -> infinity, beyond the sampled k: c_s^2 -> aL (2 (1 + aH)^2 - b3 (1 + aT))/(3 b3 (1 + aL)) >= 0
+                if (b3 > 0._dl .and. 2._dl*(1._dl + aH)**2 - b3*(1._dl + aT) < 0._dl) Bzz = -1._dl
                 if (Bzz < 0._dl) then
-                    EFTCAMBDesigner3p1AdditionalModelStability = .false.
+                    stable = .false.
                     return
                 end if
             end if
@@ -1672,7 +1699,27 @@
 
     end if
 
-    end function EFTCAMBDesigner3p1AdditionalModelStability
+    end subroutine EFTCAMBDesigner3p1BeyondGLPVStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that tests the phenomenological prior w_DE <= -1/3, enforced when EFT_wDE_prior = T.
+    function EFTCAMBDesigner3p1wDEPrior(self, a, eft_par_cache, eft_cache)
+
+    implicit none
+
+    class(EFTCAMB_full3p1_wDE) :: self          !< the base class
+    real(dl), intent(in)       :: a             !< the input scale factor.
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
+
+    logical :: EFTCAMBDesigner3p1wDEPrior !< true if w_DE <= -1/3 at a.
+
+    EFTCAMBDesigner3p1wDEPrior = .true.
+    if (self%Designer3p1wDE%value(a) > -1._dl/3._dl) EFTCAMBDesigner3p1wDEPrior = .false.
+
+    end function EFTCAMBDesigner3p1wDEPrior
 
     ! ---------------------------------------------------------------------------------------------
 

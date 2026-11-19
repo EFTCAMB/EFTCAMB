@@ -94,6 +94,8 @@
     !! the root of the function.
     function zbrent(func, x1, x2, tol, funcZero, succes)
 
+    use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan
+
     implicit none
 
     real(dl) :: func      !< function to find the root of
@@ -120,7 +122,9 @@
     fa = func(a) - funcZero
     fb = func(b) - funcZero
     if ((fa > 0. .and. fb > 0.) .or. (fa < 0. .and. fb < 0.)) then
+        ! not bracketing: no root (the result was left undefined)
         succes = .false.
+        zbrent = ieee_value(zbrent, ieee_quiet_nan)
         return
     end if
     c = b

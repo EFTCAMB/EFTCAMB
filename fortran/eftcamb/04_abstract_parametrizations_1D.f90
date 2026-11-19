@@ -30,7 +30,7 @@
     module EFTCAMB_abstract_parametrizations_1D
 
     use precision
-    use config, only: GlobalError, error_unsupported_params
+    use config, only: GlobalError, error_unsupported_params, FeedbackLevel
     use IniObjects
     use MpiUtils
     use EFT_def
@@ -400,6 +400,9 @@
             eft_error = 1
             return
         end if
+        ! a parameter missing from the ini is 0: say so (it was silent)
+        if (FeedbackLevel > 0 .and. .not. Ini%HasKey(trim(param_name))) write(*, '(a,a,a)') &
+            ' EFTCAMB WARNING: ', trim(param_name), ' is not set: it is 0'
         parameters(i) = Ini%Read_Double(trim(param_name), 0._dl)
     end do
     ! initialize the function parameters from the vector:

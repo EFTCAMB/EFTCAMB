@@ -68,7 +68,10 @@
         logical  :: RPHhasOmegaDE           !< Flag whether using the OmegaDE parametrization
         logical  :: RPHintegratefromtoday   !< Flag whether integrating from today or radiation era
 
-        real(dl) :: RPH_M0                  !< Modification to Planck Mass at today, 1 + M0 = Meff^2(a=1)/m_0^2
+        !< With RPHusealphaM = T, the Planck mass where the alpha_M integration starts: 1 + RPH_M0 = Meff^2/m_0^2
+        !! today if RPHintegratefromtoday = T, at the start of the background (model_background_a_ini) otherwise;
+        !! today's value then differs (constant alpha_M = 0.1, RPH_M0 = 0.1: Meff^2(a=1) = 6.94).
+        real(dl) :: RPH_M0
 
         ! the RPH functions:
         class(parametrized_function_1D), allocatable :: RPH_wDE         !< The RPH function w_DE.
@@ -109,8 +112,10 @@
         type(equispaced_linear_interpolate_function_1D) :: d4Ode
 
         ! background solver parameters:
-        !< Number of points sampled by the designer code.
-        integer  :: designer_num_points = 6000
+        !< Number of points sampled by the designer code. H, its derivatives, rho_DE and Omega_DE are linearly
+        !! interpolated tables: 6000 points left the GR point 1e-5 off LCDM (TT), 60000 leave 1e-7 at no measurable
+        !! runtime cost.
+        integer  :: designer_num_points = 60000
         real(dl) :: x_initial = log(10._dl**(-8))               !< log(a start)
         real(dl) :: x_final = 0.0_dl                          !< log(a final)
 
@@ -155,8 +160,10 @@
     !< subroutine that computes the two derivatives wrt conformal time of H.
     procedure :: compute_H_derivs => EFTCAMBRPHComputeHubbleDer
     ! stability procedures:
-    !< function that computes model specific stability requirements.
-    procedure :: additional_model_stability => EFTCAMBRPHAdditionalModelStability
+    !< function that tests the phenomenological prior w_DE <= -1/3 (EFT_wDE_prior).
+    procedure :: wDE_prior => EFTCAMBRPHwDEPrior
+    !< the alpha-basis outputs are computed with the EFT functions (EFTCAMBRPHSecondOrderEFTFunctions): nothing to do.
+    procedure :: compute_alpha_functions => EFTCAMBRPHComputeAlphaFunctions
 
     end type EFTCAMB_RPH
 
@@ -202,9 +209,9 @@
     end if
 
     ! read precision parameters
-    self%designer_num_points = Ini%Read_Int('model_background_num_points', 6000)
+    self%designer_num_points = Ini%Read_Int('model_background_num_points', 60000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-8))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBRPHReadModelSelectionFromFile
 
@@ -542,7 +549,7 @@
     if (self%RPHwDE /= 0) write(*, '(a,I3)') '   RPHwDE             =', self%RPHwDE
     if (self%RPHusealphaM) then
         if (self%RPHalphaMmodel /= 0) write(*, '(a,I3)') '   RPHalphaMmodel      =', self%RPHalphaMmodel
-        if (self%RPHalphaMmodel /= 0) write(*, '(a,I3)') '   RPH_M0              =', self%RPH_M0
+        write(*, '(a,E13.4)') '   RPH_M0              =', self%RPH_M0
     else
         if (self%RPHmassPmodel /= 0) write(*, '(a,I3)') '   RPHmassPmodel      =', self%RPHmassPmodel
     end if
@@ -1010,12 +1017,12 @@
     integer, intent(in)                        :: feedback_level   !< whether be noisy
 
     integer :: num_eq       !<  Number of equations
-    real(dl), allocatable :: y(:), ydot(:)
+    real(dl), allocatable :: y(:), ydot(:), y_today(:)
 
     real(dl) :: grhom0, grhor0, grhov0
 
-    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2
+    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i, i0, idir
+    real(dl) :: rtol, atol, t1, t2, t_today
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
 
@@ -1075,51 +1082,73 @@
     ! Jacobian mode: 1=fullJacobian, 2=not provided
     JacobianMode = 2
 
+    ! the normalisations rhov_t/rhov_0 = 1 (and 1 + RPH_M0 = Meff^2/m_0^2 when integrating from today) hold today, at
+    ! a = 1: the table can extend past it (model_background_a_final > 1); a node at a = 1 to roundoff is today itself
+    i0 = 0
+    do i = 1, self%designer_num_points
+        if (self%rhov_t%x(i) <= 1.e-10_dl) i0 = i
+    end do
+    t_today = 0._dl
+    if (abs(self%rhov_t%x(i0)) <= 1.e-10_dl) t_today = self%rhov_t%x(i0)
+
     if (self%RPHintegratefromtoday) then
-        ! initial time:
-        t1 = self%rhov_t%x(self%designer_num_points)
-        ! store initial step:
-        call output(num_eq, self%designer_num_points, t1, y)
-        ! solve the equations:
-        do i = self%designer_num_points, 2, -1
-            ! set the time step:
-            t1 = self%rhov_t%x(i)
-            t2 = self%rhov_t%x(i - 1)
-            ! solve the system:
-            call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-                jacobian, JacobianMode)
-            ! check istate for LSODA good completion:
-            if (istate < 0) then
-                if (istate == -1) then
-                    if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
-                    istate = 1
-                else
-                    success = .false.
-                    write(*, *) 'DLSODA failed with code:', istate
-                    return
+        ! integrate from a = 1 backward to the first node and forward to the last:
+        y_today = y
+        do idir = -1, 1, 2
+            y = y_today
+            t1 = t_today
+            istate = 1
+            i = i0
+            if (idir == 1) i = i0 + 1
+            do while (i >= 1 .and. i <= self%designer_num_points)
+                ! set the time step:
+                t2 = self%rhov_t%x(i)
+                if (t2 /= t1) then
+                    ! solve the system:
+                    call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, &
+                        iwork, LIW, jacobian, JacobianMode)
+                    ! check istate for LSODA good completion:
+                    if (istate < 0) then
+                        if (istate == -1) then
+                            if (feedback_level > 1) write(*, *) 'DLSODA excessive work'
+                            istate = 1
+                        else
+                            success = .false.
+                            write(*, *) 'DLSODA failed with code:', istate
+                            return
+                        end if
+                    end if
                 end if
-            end if
-            ! compute output functions if needed:
-            call output(num_eq, i - 1, t2, y)
+                ! compute output functions if needed:
+                call output(num_eq, i, t2, y)
+                i = i + idir
+            end do
         end do
     else
-        ! first integrate DE to find initial condition
-        t1 = self%rhov_t%x(1)
-        t2 = self%rhov_t%x(self%designer_num_points)
-        call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-            jacobian, JacobianMode)
-        if (istate < 0) then
-            if (istate == -1) then
-                if (feedback_level > 1) write(*, *) 'w_DE integration: DLSODA excessive work'
-                istate = 1
-            else
-                success = .false.
-                write(*, *) 'w_DE integration: DLSODA failed with code:', istate
-                return
-            end if
-        end if
-        ! set the initial condition again
-        y(1) = 1._dl/y(1) ! ensuring that rhov_t/rhov_0 = 1 at a=1
+        ! first integrate DE backward from a = 1 (rhov_t/rhov_0 = 1) to the initial time to find the initial
+        ! condition. One DLSODA call over the whole range returns after iwork(6) = 100 internal steps (istate = -1)
+        ! far from the end point for any w_DE /= -1, so integrate on the table grid and continue after
+        ! excessive-work returns until each step is complete.
+        t1 = t_today
+        do i = i0, 1, -1
+            t2 = self%rhov_t%x(i)
+            if (t2 == t1) cycle
+            do
+                call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+                    LIW, jacobian, JacobianMode)
+                if (istate == -1) then
+                    istate = 2
+                    cycle
+                else if (istate < 0) then
+                    success = .false.
+                    write(*, *) 'w_DE integration: DLSODA failed with code:', istate
+                    return
+                end if
+                exit
+            end do
+        end do
+        istate = 1
+        ! set the initial condition again: y(1) = rhov_t(a_ini)/rhov_0 from the backward integration
         if (self%RPHusealphaM) y(2) = log(1._dl + self%RPH_M0)
 
         ! reinitialize DLSODA
@@ -1905,8 +1934,8 @@
     end subroutine EFTCAMBRPHComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
-    !> Function that computes model specific stability requirements.
-    function EFTCAMBRPHAdditionalModelStability(self, a, eft_par_cache, eft_cache)
+    !> Function that tests the phenomenological prior w_DE <= -1/3, enforced when EFT_wDE_prior = T.
+    function EFTCAMBRPHwDEPrior(self, a, eft_par_cache, eft_cache)
 
     implicit none
 
@@ -1917,14 +1946,28 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
-    logical :: EFTCAMBRPHAdditionalModelStability
+    logical :: EFTCAMBRPHwDEPrior !< true if w_DE <= -1/3 at a.
 
-    EFTCAMBRPHAdditionalModelStability = .true.
-    if (self%RPH_wDE%value(a) > -1._dl/3._dl) EFTCAMBRPHAdditionalModelStability = .false.
+    EFTCAMBRPHwDEPrior = .true.
+    if (self%RPH_wDE%value(a) > -1._dl/3._dl) EFTCAMBRPHwDEPrior = .false.
 
-    end function EFTCAMBRPHAdditionalModelStability
+    end function EFTCAMBRPHwDEPrior
 
     ! ---------------------------------------------------------------------------------------------
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that keeps the alpha-basis outputs that RPH computes with its EFT functions.
+    subroutine EFTCAMBRPHComputeAlphaFunctions(self, a, eft_par_cache, eft_cache)
+
+    implicit none
+
+    class(EFTCAMB_RPH)                            :: self          !< the base class
+    real(dl), intent(in)                          :: a             !< the input scale factor
+    !< the EFTCAMB parameter cache that contains all the physical parameters.
+    type(TEFTCAMB_parameter_cache), intent(inout) :: eft_par_cache
+    !< the EFTCAMB timestep cache that contains all the physical values.
+    type(TEFTCAMB_timestep_cache), intent(inout)  :: eft_cache
+
+    end subroutine EFTCAMBRPHComputeAlphaFunctions
 
     end module EFTCAMB_Reparametrized_Horndeski

@@ -13,14 +13,19 @@
 !
 ! ----------------------------------------------------------------------------------------
 
-!> @file 10p6_Scaling_Cubic.f90
-!! This file contains the definition of the Scaling Cubic model consistent with the equations on the mathematica file.
-!! Please refer to the numerical notes for details.
+!> @file 008p6_Scaling_Cubic.f90
+!! This file contains the definition of the Scaling Cubic Galileon: L = R/2 + G2 - G3 box(phi) with
+!! G2 = X - V1 e^(-beta1 phi) - V2 e^(-beta2 phi) and G3 = A ln(X e^(lambda phi)). The background (dimensionless
+!! x1 = phidot/(sqrt(6) H), y_i = sqrt(V_i e^(-beta_i phi))/(sqrt(3) H); the radiation scaling point (a1) as initial
+!! condition) follows arXiv:1807.09800, the EFT mapping and the constraints arXiv:2112.06892 (Albuquerque, Frusciante,
+!! Martinelli). The derivation (a Mathematica notebook of the authors) is not in the repository.
 
 
 ! ----------------------------------------------------------------------------------------
-!> This module contains the definition of the Scaling Cubic model consistent with the mathematica file.
-!! Please refer to the numerical notes for details.
+!> This module contains the definition of the Scaling Cubic Galileon (see the file header for the references).
+!! The positivity bounds and the Minkowski-limit check (EFT_positivity_bounds, EFT_minkowski_limit) do not apply to
+!! this model: they test the Horndeski theory reconstructed from the EFT functions with G_i analytic at X = 0, while
+!! here G3 = A ln(X e^(lambda phi)). With either check on every model is refused at every time: keep both off.
 
 !> @author Inês Albuquerque, Noemi Frusciante
 
@@ -79,9 +84,11 @@
         type(equispaced_linear_interpolate_function_1D) :: fun_y2       !< The interpolated function y2
 
         ! some parameters for the ODE solver:
-        !< Number of points sampled by the designer code.
-        integer  :: designer_num_points = 10000
-        real(dl) :: x_initial = log(1._dl/(1.5*10._dl**(5._dl) + 1._dl))                   !< log(a start)
+        !< Number of points sampled by the designer code. The background starts at a = 1e-10, before the usual
+        !! perturbation and stability start times, where radiation dominates (arXiv:1807.09800 starts at z = 1e10);
+        !! below it the state is frozen. 20000 points keep the ln a step of the former 10000 from a = 1/(1.5e5 + 1).
+        integer  :: designer_num_points = 20000
+        real(dl) :: x_initial = log(1.e-10_dl)                                              !< log(a start)
         real(dl) :: x_final = 0._dl         !< log(a final)
 
         ! some additional parameters
@@ -129,6 +136,8 @@
     ! stability procedures:
     !< function that computes model specific stability requirements.
     procedure :: additional_model_stability => EFTCAMBScalingCubicAdditionalModelStability
+    !< function that returns the scale factor where the background table starts.
+    procedure :: background_start => EFTCAMBScalingCubicBackgroundStart
 
     end type EFTCAMB_Scaling_Cubic
 
@@ -148,9 +157,9 @@
     integer                      :: eft_error !< error code: 0 all fine, 1 initialization failed
 
     ! read precision parameters
-    self%designer_num_points = Ini%Read_Int('model_background_num_points', 10000)
-    self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1._dl/(1.5*10._dl**(5._dl) + 1._dl)))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%designer_num_points = Ini%Read_Int('model_background_num_points', 20000)
+    self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1.e-10_dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBScalingCubicReadModelSelectionFromFile
 
@@ -244,17 +253,26 @@
 
     ! self%SCG_x10 = (2._dl*sqrt(2._dl/3._dl))/(self%SCG_beta1)
     ! self%SCG_y10 = sqrt((4._dl/3._dl) + 2._dl*self%SCG_A*(self%SCG_beta1 - (4._dl/3._dl)*self%SCG_lambda))/(self%SCG_beta1)
+    ! initial conditions: the radiation scaling point (a1) of arXiv:1807.09800. It exists only if
+    ! 4/3 + 2A(beta1 - 4 lambda/3) >= 0 (eq. (acon1) with gamma = 4/3); otherwise y1_i = sqrt(negative) was NaN and
+    ! the run stopped with 'background is NaN'. Computed here, so that the parameters set through init_model_parameters
+    ! (array interface) are used as well (they never updated x1_i, y1_i).
+    if (4._dl/3._dl + 2._dl*self%SCG_A*(self%SCG_beta1 - (4._dl/3._dl)*self%SCG_lambda) < 0._dl) then
+        call GlobalError('EFTCAMB error: Scaling Cubic radiation scaling point does not exist ' // &
+            '(4/3 + 2 A (beta1 - 4 lambda/3) < 0)', error_unsupported_params)
+        success = .false.
+        return
+    end if
+    self%SCG_x10 = (2._dl*sqrt(2._dl/3._dl))/(self%SCG_beta1)
+    self%SCG_y10 = sqrt((4._dl/3._dl) + 2._dl*self%SCG_A*(self%SCG_beta1 - (4._dl/3._dl)*self%SCG_lambda))/ &
+        self%SCG_beta1
 
     ! initialize interpolating functions:
     call self%fun_x1%initialize      (self%designer_num_points, self%x_initial, self%x_final)
     call self%fun_y1%initialize      (self%designer_num_points, self%x_initial, self%x_final)
     call self%fun_y2%initialize      (self%designer_num_points, self%x_initial, self%x_final)
 
-    ! SP: check omegav
-    if (params_cache%omegav < 0.3_dl) then
-        success = .false.
-        return
-    end if
+    ! (an Omega_v >= 0.3 cut used to refuse here every model with less dark energy, without a message)
 
     ! Initial values of y2 used in the bisection algorithm
 
@@ -263,7 +281,26 @@
     y2_il = 0._dl
     y2_ir = self%SCG_y20 + (1._dl/2._dl)*self%SCG_y20
 
+    ! expand the right end of the bracket until Omega_DE today is overshot (tol < 0; tol decreases with y2_i):
+    ! the fixed bracket misses the solution for a later a_ini, a steeper second potential or a larger H0.
+    self%SCG_y20 = y2_ir
+    call self%solve_background(params_cache, tol_r, success=success)
+    j = 0
+    do while (success .and. tol_r > 0._dl .and. j < 100)
+        y2_i = y2_ir
+        y2_ir = 2._dl*y2_ir
+        self%SCG_y20 = y2_ir
+        call self%solve_background(params_cache, tol_r, success=success)
+        j = j + 1
+    end do
+    self%SCG_y20 = y2_i
+
     call self%solve_background(params_cache, tol, success=success)
+    if (IsNaN(tol)) then
+        call GlobalError('EFTCAMB error: Scaling Cubic background is NaN', error_unsupported_params)
+        success = .false.
+        return
+    end if
     i = 0
     do while (abs(tol) > 1.d-6)
         if (.not. success .or. i >= 200) then
@@ -322,12 +359,10 @@
     end if
 
     if (feedback_level > 0) then
-        xj = 0._dl
-        call self%fun_x1%precompute(xj, ind, mu)
         write(*, '(a)') 'today values'
-        write(*, '(a,F8.2)') 'x1 = ', self%fun_x1%value(xj, index=ind, coeff=mu)
-        write(*, '(a,F8.2)') 'y1 = ', self%fun_y1%value(xj, index=ind, coeff=mu)
-        write(*, '(a,F8.2)') 'y2 = ', self%fun_y2%value(xj, index=ind, coeff=mu)
+        write(*, '(a,F8.2)') 'x1 = ', self%SCG_x1today
+        write(*, '(a,F8.2)') 'y1 = ', self%SCG_y1today
+        write(*, '(a,F8.2)') 'y2 = ', self%SCG_y2today
     end if
 
     if (self%debug_flag) then
@@ -380,11 +415,8 @@
 
     end if
 
-    ! store energy densities today
-    xj = 0._dl
-    call self%fun_x1%precompute(xj, ind, mu)
-    OmegaDE_0 = SCGOmegaDE(self, self%fun_x1%value(xj, index=ind, coeff=mu), &
-        self%fun_y1%value(xj, index=ind, coeff=mu), self%fun_y2%value(xj, index=ind, coeff=mu))
+    ! energy densities today, from the values today stored by the last background solution (exact at a = 1)
+    OmegaDE_0 = SCGOmegaDE(self, self%SCG_x1today, self%SCG_y1today, self%SCG_y2today)
     call SCGFluid(params_cache, 1._dl, grho_fl, gp_fl, gp_flp, gp_flpp)
     H_0 = sqrt(grho_fl/((1._dl - OmegaDE_0)*3._dl))
 
@@ -402,11 +434,6 @@
         write(*, '(a,F8.6)') 'OmegaM_0   = ', OmegaM_0
         write(*, *) '---------------------------------------------------'
     end if
-
-    ! store x values today
-    self%SCG_x1today = self%fun_x1%value(xj, index=ind, coeff=mu)
-    self%SCG_y1today = self%fun_y1%value(xj, index=ind, coeff=mu)
-    self%SCG_y2today = self%fun_y2%value(xj, index=ind, coeff=mu)
 
     end subroutine EFTCAMBScalingCubicInitBackground
 
@@ -433,6 +460,7 @@
     real(dl) :: rtol, atol, t1, t2, B
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
+    logical  :: today_node
 
     ! 1) Dark energy density today (closure, massive neutrinos included):
     OmegaDE_0 = 1._dl - params_cache%omegac - params_cache%omegab - params_cache%omegag - params_cache%omegar - &
@@ -489,12 +517,23 @@
     ! compute output EFT functions if needed:
     call output(num_eq, 1, t1, y)
 
-    ! 4) solve the equations:
+    ! 4) solve the equations. Today is a = 1: the table can extend past it (model_background_a_final > 1), so the
+    ! step that contains a = 1 stops there first; a node at a = 1 to roundoff is today itself.
     do i = 1, self%fun_x1%num_points - 1
 
         ! set the time step:
         t1 = self%fun_x1%x(i)
         t2 = self%fun_x1%x(i + 1)
+        today_node = t1 < 0._dl .and. abs(t2) <= 1.e-10_dl
+        if (t1 < 0._dl .and. t2 > 1.e-10_dl) then
+            call DLSODA (derivs, num_eq, y, t1, 0._dl, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+                LIW, jacobian, JacobianMode)
+            if (istate < 0) then
+                success = .false.
+                return
+            end if
+            call store_today()
+        end if
         ! solve the system:
         call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
             jacobian, JacobianMode)
@@ -504,13 +543,24 @@
             return
         end if
         call output(num_eq, i + 1, t2, y)
-        if (i == self%fun_x1%num_points - 1) then
-            tol = (OmegaDE_0 - SCGOmegaDE(self, y(1), y(2), y(3)))/OmegaDE_0
-        end if
+        if (today_node) call store_today()
 
     end do
 
     contains
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Stores the state today (a = 1): the relative Omega_DE mismatch and the x1, y1, y2 today.
+    subroutine store_today()
+
+    implicit none
+
+    tol = (OmegaDE_0 - SCGOmegaDE(self, y(1), y(2), y(3)))/OmegaDE_0
+    self%SCG_x1today = y(1)
+    self%SCG_y1today = y(2)
+    self%SCG_y2today = y(3)
+
+    end subroutine store_today
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes y' given y for the background the Scaling Cubic Galileon.
@@ -882,6 +932,8 @@
     Qp = 2._dl*hprime*G + 2._dl*h*Gp + Gpp
 
     ! compute the second order EFT functions:
+    ! the factor sqrt(3/2) is right (audit: the unitary-gauge reduction of the covariant action); the gamma1 of
+    ! arXiv:2112.06892 is printed with sqrt(3/4)
     eft_cache%EFTGamma1V = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2)*G)/((a**2)*(eft_par_cache%h0_Mpc**2))
     eft_cache%EFTGamma1P = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2)*Q)/((a**3)*(eft_par_cache%h0_Mpc**2))
     eft_cache%EFTGamma1PP = (sqrt(3._dl/2._dl)*self%SCG_A*(adotoa**2)*(2._dl*h*Q + Qp - Q))/ &
@@ -1123,6 +1175,20 @@
     EFTCAMBScalingCubicAdditionalModelStability = .true.
 
     end function EFTCAMBScalingCubicAdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Function that returns the scale factor where the background table starts (model_background_a_ini): earlier
+    !! the interpolated state is frozen at its first value.
+    function EFTCAMBScalingCubicBackgroundStart(self)
+
+    implicit none
+
+    class(EFTCAMB_Scaling_Cubic), intent(in) :: self      !< the base class
+    real(dl) :: EFTCAMBScalingCubicBackgroundStart        !< the scale factor where the background table starts.
+
+    EFTCAMBScalingCubicBackgroundStart = exp(self%x_initial)
+
+    end function EFTCAMBScalingCubicBackgroundStart
 
     ! ---------------------------------------------------------------------------------------------
 

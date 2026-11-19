@@ -139,7 +139,7 @@
     ! read precision parameters
     self%background_num_points = Ini%Read_Int('model_background_num_points', 10000)
     self%x_initial = log(Ini%Read_Double('model_background_a_ini', 1d-9))
-    self%x_final = log(Ini%Read_Double('model_background_a_final', 1._dl))
+    self%x_final = self%read_background_x_final(Ini, 1._dl, eft_error)
 
     end subroutine EFTCAMBKmouflageReadModelSelectionFromFile
 
@@ -433,6 +433,7 @@
     integer, intent(in)  :: feedback_level !< level of feedback from the background code. 0=none; 1=some; 2=chatty.
     logical, intent(out) :: success        !< wether the background initialization succeded or not
     character(len=*), intent(in), optional :: outroot        !< the output root for the debug files
+    character(len=200) :: reason
 
     ! some feedback:
     if (feedback_level > 0) then
@@ -445,6 +446,32 @@
     if (params_cache%Num_Nu_Massive /= 0) then
         call GlobalError('EFTCAMB error: massive neutrinos are not implemented for K-mouflage models ' // &
             '(Num_Nu_Massive should be 0)', error_unsupported_params)
+        success = .false.
+        return
+    end if
+
+    ! parameters outside the domain where the background is defined (it was refused through a NaN dtauda):
+    reason = ''
+    if (self%m <= 1._dl) then
+        ! nu_A > 0 (A -> const at early times) and sqrt(chi) K' -> inf need m > 1
+        reason = 'm <= 1 (needs m > 1)'
+    else if (self%eps2_0 == 0._dl) then
+        reason = 'eps2_0 = 0 (the LCDM limit, 0/0 in the parametrization: use EFTflag = 0)'
+    else if (.not. self%Kmimic .and. self%eps2_0 > 0._dl) then
+        ! sign of eps2: chi > 0 with U > 0 (K-mouflage), 2 chi_0 K'_0 Omega_phi0 = eps2_0 > 0 (K-mimic)
+        reason = 'eps2_0 > 0 (K-mouflage needs eps2_0 < 0)'
+    else if (self%Kmimic .and. self%eps2_0 >= 1._dl) then
+        reason = 'eps2_0 >= 1 (K-mimic needs eps2_0 < 1)'
+    else if (self%gammaA <= 0._dl) then
+        reason = 'gammaA <= 0 (needs gammaA > 0)'
+    else if (self%gammaA*(3._dl*(self%m - 1._dl)/(2._dl*self%m - 1._dl) - self%eps2_0) <= self%eps2_0) then
+        ! A(a) = 1 + alpha_A - alpha_A [a (gamma_A+1)/(gamma_A+a)]^nu_A > 0 on (0, 1]: A(0) = 1 + alpha_A > 0, i.e.
+        ! gamma_A (nu_A - eps2_0) > eps2_0 (automatic for eps2_0 < 0)
+        reason = 'A(a -> 0) <= 0: gammaA (nu_A - eps2_0) <= eps2_0 with nu_A = 3 (m - 1)/(2 m - 1)'
+    end if
+    if (len_trim(reason) > 0) then
+        call GlobalError('EFTCAMB error: K-mouflage background undefined for ' // trim(reason), &
+            error_unsupported_params)
         success = .false.
         return
     end if
@@ -496,8 +523,8 @@
         eps2p, eps2pp, nu_A, alpha_A, dKdchi, d2Kdchi2, d3Kdchi3, ufunc, vfunc, ufuncp, ufuncpp, vfuncp, vfuncpp, &
         eps1, p_phi, rho_phi, OmegaPhi
 
-    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-    real(dl) :: rtol, atol, t1, t2
+    integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i, i0, idir
+    real(dl) :: rtol, atol, t1, t2, t_today, y_today(num_eq)
     real(dl), allocatable :: rwork(:)
     integer, allocatable :: iwork(:)
     real(dl) :: Unormalization, U1, K, Kp, adotoaL, HdotL, Hdot1
@@ -588,23 +615,36 @@
     ! Jacobian mode: 1=fullJacobian, 2=not provided
     JacobianMode = 2
 
-    ! store the first value of the EFT functions:
-    t1 = self%EFTOmega%x(self%EFTOmega%num_points)
-    call output(num_eq, self%EFTOmega%num_points, t1, y)
-
-    ! 4) Integrate dK/dx:
-    do i = self%EFTOmega%num_points, 2, -1
-        ! set the time step:
-        t1 = self%EFTOmega%x(i)
-        t2 = self%EFTOmega%x(i - 1)
-        call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, LIW, &
-            jacobian, JacobianMode)
-
-        if (istate < 0) then
-            success = .false.
-            return
-        end if
-        call output(num_eq, i - 1, t2, y)
+    ! 4) Integrate dK/dx. The initial conditions hold today (a = 1): integrate from a = 1 backward to the first node
+    ! and forward to the last (the table can extend past today, model_background_a_final > 1); a node at a = 1 to
+    ! roundoff is today itself.
+    i0 = 0
+    do i = 1, self%EFTOmega%num_points
+        if (self%EFTOmega%x(i) <= 1.e-10_dl) i0 = i
+    end do
+    t_today = 0._dl
+    if (abs(self%EFTOmega%x(i0)) <= 1.e-10_dl) t_today = self%EFTOmega%x(i0)
+    y_today = y
+    do idir = -1, 1, 2
+        y = y_today
+        t1 = t_today
+        istate = 1
+        i = i0
+        if (idir == 1) i = i0 + 1
+        do while (i >= 1 .and. i <= self%EFTOmega%num_points)
+            ! set the time step:
+            t2 = self%EFTOmega%x(i)
+            if (t2 /= t1) then
+                call DLSODA (derivs, num_eq, y, t1, t2, itol, rtol, atol, itask, istate, iopt, rwork, LRW, iwork, &
+                    LIW, jacobian, JacobianMode)
+                if (istate < 0) then
+                    success = .false.
+                    return
+                end if
+            end if
+            call output(num_eq, i, t2, y)
+            i = i + idir
+        end do
     end do
 
     contains
@@ -956,46 +996,27 @@
     !< the EFTCAMB timestep cache that contains all the physical values.
     type(TEFTCAMB_timestep_cache), intent(inout) :: eft_cache
 
-    real(dl) :: m_lim
-
     !< the return value of the stability computation. True if the model specific stability criteria are met, false otherwise.
     logical :: EFTCAMBKmouflageAdditionalModelStability
+    character(len=200) :: reason
 
-    EFTCAMBKmouflageAdditionalModelStability = .true.
-
-    m_lim = 0._dl
-
-    if (self%alphaU < 0.0_dl) then
-        EFTCAMBKmouflageAdditionalModelStability = .false.
-        return
-    end if
-
-    if (.not. self%Kmimic .and. self%gammaU < 1.0_dl) then
-        EFTCAMBKmouflageAdditionalModelStability = .false.
-        return
-    end if
-
-    if (self%m <= 1.0_dl) then
-        print*, 'Chose an appropriate value for parameter m'
-        EFTCAMBKmouflageAdditionalModelStability = .false.
-        return
-    end if
-
-    if (.not. self%Kmimic .and. self%eps2_0 > 0.0_dl) then
-        EFTCAMBKmouflageAdditionalModelStability = .false.
-        return
+    ! the priors depend on the parameters only (the parameters for which the background is undefined are refused by the
+    ! background initialization): the first failure is reported with its reason
+    reason = ''
+    if (.not. self%Kmimic .and. self%alphaU < 0.0_dl) then
+        ! U(a) parameters ([BV16] eq. U-param-def: alpha_U > 0, gamma_U >= 1); K-mimic does not use them
+        reason = 'alphaU < 0 (U(a) needs alphaU >= 0)'
+    else if (.not. self%Kmimic .and. self%gammaU < 1.0_dl) then
+        reason = 'gammaU < 1 (U(a) needs gammaU >= 1)'
     else if (self%Kmimic .and. self%eps2_0 < 0.0_dl) then
-        EFTCAMBKmouflageAdditionalModelStability = .false.
-        return
+        reason = 'eps2_0 < 0 (K-mimic needs eps2_0 > 0)'
+    else if (self%Kmimic .and. self%gammaA < self%eps2_0/(1._dl - self%eps2_0)) then
+        reason = 'gammaA < eps2_0/(1 - eps2_0) (K-mimic)'
     end if
 
-    if (.not. self%Kmimic .and. self%gammaA < 0.0_dl) then
-        EFTCAMBKmouflageAdditionalModelStability = .false.
-        return
-    else if (self%Kmimic .and. self%gammaA < self%eps2_0/(1._dl - self%eps2_0)) then
-        EFTCAMBKmouflageAdditionalModelStability = .false.
-        return
-    end if
+    EFTCAMBKmouflageAdditionalModelStability = len_trim(reason) == 0
+    if (.not. EFTCAMBKmouflageAdditionalModelStability) call GlobalError('EFTCAMB: K-mouflage prior not met: ' // &
+        trim(reason) // ' (EFT_additional_priors)', error_unsupported_params)
 
     end function EFTCAMBKmouflageAdditionalModelStability
 

@@ -79,20 +79,30 @@
         ! EFTCAMB stability flags:
         !< Flag that decides whether to enforce the mathematical ghost condition. This is less conservative than the physical requirement. Enforces the condition on both scalar and tensor sectors.
         logical  :: EFT_ghost_math_stability = .false.
-        !< Flag that decides whether to enforce the mathematical mass condition. This should prevent fast growing instabilities but is not fully rigorous. Use is deprecated.
+        !< Flag that decides whether to enforce the mathematical mass condition. Deprecated: it rejects any growing
+        !! root of the pi equation at frozen coefficients (threshold 0) and refuses healthy models;
+        !! use EFT_mass_stability.
         logical  :: EFT_mass_math_stability = .false.
         !
         !< Flag that decides whether to enforce the physical ghost condition. Works up to Horndeski.
         logical  :: EFT_ghost_stability = .true.
         !< Flag that decides whether to enforce the physical gradient condition. Works up to Horndeski.
         logical  :: EFT_gradient_stability = .true.
-        !< Flag that decides whether to enforce the physical mass condition. Works up to Horndeski.
+        !< Flag that decides whether to enforce the physical mass condition (off by default): reject a k -> 0 mass
+        !! eigenvalue of the scalar sector below -(EFT_mass_stability_rate H)^2 after the turn-on.
         logical  :: EFT_mass_stability = .false.
         !< Flag that sets the rate for the mass instability in units of Hubble time.
         real(dl) :: EFT_mass_stability_rate = 10._dl
+        !< Mass condition used by EFT_mass_stability: 1 (default) the k -> 0 eigenvalues of arXiv:1609.03599 App. C
+        !! (corrected), both tested; 2 the normal-form mass of pi (invariant under time-dependent rescalings of pi),
+        !! tested only where pi itself also grows faster than the rate.
+        integer  :: EFT_mass_stability_method = 1
         !
         !< Flag that extablishes whether to use additional priors that are related to the specific model. Each model has the possibility of implementing their own additional stability requirements.
         logical  :: EFT_additional_priors = .true.
+        !< Flag that decides whether to enforce the phenomenological prior w_DE <= -1/3 (models with a w_DE
+        !! parametrization: pure EFT, mc quintessence, RPH, designer f(R), 3+1). Off by default.
+        logical  :: EFT_wDE_prior = .false.
 
         ! Positvity bounds flags
         !< Flag that decides whether to enforce the positivity bounds. Works up to Horndeski and for EFTFLAG=1 and (Omega,Lambda)-models.
@@ -139,6 +149,10 @@
         logical  :: EFTCAMB_skip_RGR = .false.              !< Flag that decides whether skip the return to GR checks.
         !< Flag whether output background quantities when called from ini
         logical  :: EFTCAMB_write_background = .false.
+        !< Output, set by the code at every run (not read from the ini): whether the return to GR moved the
+        !! perturbation turn-on later than requested. The model is then GR before the turn-on (no jump there) and the
+        !! source samples straddling the turn-on are skipped.
+        logical  :: EFTCAMB_turn_on_from_RGR = .false.
 
         ! EFTCAMB output root:
         character(len=:), allocatable :: outroot   !< The root for auxiliary EFTCAMB output.
@@ -149,8 +163,9 @@
         ! Parameters read when this object was initialized from python. Stored per object so that
         ! read_parameters returns the parameters of this object and not of the last initialization.
         ! Keep these components last: the python class maps the components above.
-        character(len=200), allocatable :: read_param_keys(:)   !< names of the parameters read at initialization.
-        character(len=200), allocatable :: read_param_values(:) !< values of the parameters read at initialization.
+        ! Stored at their full length (the longest key and value): 200-character strings cut longer values.
+        character(len=:), allocatable :: read_param_keys(:)   !< names of the parameters read at initialization.
+        character(len=:), allocatable :: read_param_values(:) !< values of the parameters read at initialization.
 
     contains
 
@@ -224,9 +239,17 @@
     self%EFT_gradient_stability = Ini%Read_Logical('EFT_gradient_stability', .true.)
     self%EFT_mass_stability = Ini%Read_Logical('EFT_mass_stability', .false.)
     self%EFT_mass_stability_rate = Ini%Read_Double ('EFT_mass_stability_rate', 10._dl)
+    self%EFT_mass_stability_method = Ini%Read_Int('EFT_mass_stability_method', 1)
+    if (self%EFT_mass_stability_method < 1 .or. self%EFT_mass_stability_method > 2) then
+        call GlobalError('EFTCAMB error: invalid EFT_mass_stability_method, must be 1 (arXiv:1609.03599 ' // &
+            'eigenvalues) or 2 (normal-form mass of pi)', error_unsupported_params)
+        return
+    end if
 
     ! model specific priors:
     self%EFT_additional_priors = Ini%Read_Logical('EFT_additional_priors', .true.)
+    ! phenomenological prior w_DE <= -1/3:
+    self%EFT_wDE_prior = Ini%Read_Logical('EFT_wDE_prior', .false.)
 
     ! ) positivity bounds:
     self%EFT_positivity_bounds = Ini%Read_Logical('EFT_positivity_bounds', .false.)
@@ -285,12 +308,19 @@
     class(TEFTCAMB) :: self  !< the base class
     class(TIniFile) :: Ini   !< Input ini file
 
-    integer :: i, num_read
+    integer :: i, num_read, len_key, len_value
 
     num_read = Ini%ReadValues%Count
+    len_key = 1
+    len_value = 1
+    do i = 1, num_read
+        len_key = max(len_key, len(Ini%ReadValues%Items(i)%P%Name))
+        len_value = max(len_value, len(Ini%ReadValues%Items(i)%P%Value))
+    end do
     if (allocated(self%read_param_keys)) deallocate(self%read_param_keys)
     if (allocated(self%read_param_values)) deallocate(self%read_param_values)
-    allocate(self%read_param_keys(num_read), self%read_param_values(num_read))
+    allocate(character(len=len_key) :: self%read_param_keys(num_read))
+    allocate(character(len=len_value) :: self%read_param_values(num_read))
     do i = 1, num_read
         self%read_param_keys(i) = Ini%ReadValues%Items(i)%P%Name
         self%read_param_values(i) = Ini%ReadValues%Items(i)%P%Value
@@ -462,7 +492,9 @@
     write(*, *) ' Gradient stability     = ', self%EFT_gradient_stability
     write(*, *) ' Mass stability         = ', self%EFT_mass_stability
     write(*, '(a,E12.5)') '  Mass stability rate    = ', self%EFT_mass_stability_rate
+    write(*, '(a,I2)') '  Mass stability method  = ', self%EFT_mass_stability_method
     write(*, *) ' Additional priors      = ', self%EFT_additional_priors
+    write(*, *) ' w_DE <= -1/3 prior     = ', self%EFT_wDE_prior
     write(*, *) ' Positivity bounds      = ', self%EFT_positivity_bounds
     write(*, *) ' Minkowski limit      = ', self%EFT_minkowski_limit
     if (self%EFT_positivity_bounds) then

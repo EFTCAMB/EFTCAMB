@@ -315,6 +315,29 @@ class CAMBdata(F2003Class):
         if not params.ombh2:
             raise CAMBValueError("Parameter values not set")
 
+    # EFTCAMB MOD START: EFT results stop today
+    def _check_eft_today(self, z=None, a=None, eta=None):
+        """
+        Raise CAMBValueError if EFTCAMB results are requested beyond today (z < 0, a > 1 or eta > tau0).
+        The EFT background, return to GR and stability checks stop at a = 1. Plain CAMB (EFTflag = 0) is not
+        restricted. Conformal times have a looser tolerance: conformal_time(z = 0) of EFT backgrounds exceeds tau0
+        by up to ~5e-8 (relative), and today itself must stay allowed.
+        """
+        eft = self.Params.EFTCAMB
+        if eft is None or not eft.EFTflag:
+            return
+        if (
+            (z is not None and np.any(np.asarray(z) < -1e-8))
+            or (a is not None and np.any(np.asarray(a) > 1 + 1e-8))
+            or (eta is not None and np.any(np.asarray(eta) > self.tau0 * (1 + 1e-6)))
+        ):
+            raise CAMBValueError(
+                "EFTCAMB: results beyond today (a > 1, z < 0) are not supported: the EFT background, return to GR "
+                "and stability checks stop at a = 1"
+            )
+
+    # EFTCAMB MOD END
+
     def calc_background_no_thermo(self, params, do_reion=False):
         """
         Calculate the background evolution without calculating thermal or ionization history.
@@ -684,6 +707,9 @@ class CAMBdata(F2003Class):
         if unknown := set(vars).difference(model.background_names):
             raise CAMBError(f"Unknown names {unknown}; valid names are {model.background_names}")
         eta = np.ascontiguousarray(np.atleast_1d(eta), dtype=np.float64)
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(eta=eta)
+        # EFTCAMB MOD END
         outputs = np.zeros((eta.shape[0], 9))
         CAMB_BackgroundThermalEvolution(byref(self), byref(c_int(eta.shape[0])), eta, outputs)
         config.check_global_error("get_background_time_evolution")
@@ -728,6 +754,9 @@ class CAMBdata(F2003Class):
         if unknown := set(vars).difference(model.density_names):
             raise CAMBError(f"Unknown names {unknown}; valid names are {model.density_names}")
         arr = np.ascontiguousarray(np.atleast_1d(a), dtype=np.float64)
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(a=arr)
+        # EFTCAMB MOD END
         outputs = np.zeros((arr.shape[0], 8))
         self.f_GetBackgroundDensities(byref(c_int(arr.shape[0])), arr, outputs)
         indices = [model.density_names.index(var) for var in vars]
@@ -755,6 +784,9 @@ class CAMBdata(F2003Class):
             scales = np.array([a], dtype=np.float64)
         else:
             scales = np.ascontiguousarray(a, dtype=np.float64)
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(a=scales)
+        # EFTCAMB MOD END
         rho = np.zeros(scales.shape)
         w = np.zeros(scales.shape)
         self.f_DarkEnergyStressEnergy(scales, rho, w, byref(c_int(len(scales))))
@@ -1585,6 +1617,9 @@ class CAMBdata(F2003Class):
         :param z: redshift or array of redshifts
         :return: angular diameter distances, matching rank of z
         """
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(z=z)
+        # EFTCAMB MOD END
         if np.isscalar(z):
             return self.f_AngularDiameterDistance(byref(c_double(z)))
         else:
@@ -1634,6 +1669,9 @@ class CAMBdata(F2003Class):
         :return: result (scalar or array of distances between pairs of z1, z2)
         """
         z1, z2 = self._make_scalar_or_arrays(z1, z2)
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(z=(z1, z2))
+        # EFTCAMB MOD END
         if not np.isscalar(z1):
             dists = np.empty(z1.shape)
             self.f_AngularDiameterDistance2Arr(dists, z1, z2, byref(c_int(dists.shape[0])))
@@ -1658,6 +1696,9 @@ class CAMBdata(F2003Class):
         :param tol: numerical tolerance parameter
         :return: comoving radial distance (Mpc)
         """
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(z=z)
+        # EFTCAMB MOD END
         if not np.isscalar(z):
             z = np.asarray(z, dtype=np.float64)
             indices = np.argsort(z)
@@ -1706,6 +1747,9 @@ class CAMBdata(F2003Class):
             times = np.array([eta], dtype=np.float64)
         else:
             times = np.ascontiguousarray(eta, dtype=np.float64)
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(eta=times)
+        # EFTCAMB MOD END
         redshifts = np.empty(times.shape)
         self.f_RedshiftAtTimeArr(redshifts, times, byref(c_int(times.shape[0])))
         config.check_global_error("redshift_at_conformal_time")
@@ -1752,6 +1796,9 @@ class CAMBdata(F2003Class):
         :param z: redshift
         :return: H(z)
         """
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(z=z)
+        # EFTCAMB MOD END
         if not np.isscalar(z):
             z = np.ascontiguousarray(z, dtype=np.float64)
             arr = np.empty(z.shape)
@@ -1790,6 +1837,9 @@ class CAMBdata(F2003Class):
         :return: (age(a2)-age(a1))/Gigayear
         """
         a1, a2 = self._make_scalar_or_arrays(a1, a2)
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(a=(a1, a2))
+        # EFTCAMB MOD END
         if not np.isscalar(a1):
             times = np.empty(a1.shape)
             self.f_DeltaPhysicalTimeGyrArr(times, a1, a2, byref(c_int(times.shape[0])), None)
@@ -1829,6 +1879,9 @@ class CAMBdata(F2003Class):
         :return: eta(a2)-eta(a1) = chi(a1)-chi(a2) in Megaparsec
         """
         a1, a2 = self._make_scalar_or_arrays(a1, a2)
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(a=(a1, a2))
+        # EFTCAMB MOD END
         if not np.isscalar(a1):
             times = np.empty(a1.shape)
             self.f_DeltaTimeArr(times, a1, a2, byref(c_int(times.shape[0])), None)
@@ -1852,6 +1905,9 @@ class CAMBdata(F2003Class):
         :param tol: integration tolerance
         :return: eta(z)/Mpc
         """
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(z=z)
+        # EFTCAMB MOD END
         if scalar := np.isscalar(z):
             redshifts = np.array([z], dtype=np.float64)
         else:
@@ -1892,6 +1948,9 @@ class CAMBdata(F2003Class):
         :param z: redshift or array of redshifts
         :return: r_s(z)
         """
+        # EFTCAMB MOD START: EFT results stop today
+        self._check_eft_today(z=z)
+        # EFTCAMB MOD END
         if scalar := np.isscalar(z):
             redshifts = np.array([z], dtype=np.float64)
         else:

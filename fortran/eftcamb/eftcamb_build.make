@@ -20,7 +20,6 @@
 # get the eftcamb sources:
 EFTCAMB_SOURCES_FILES := $(wildcard $(EFTCAMB_DIR)/*.f90) $(wildcard $(EFTCAMB_DIR)/*/*.f90)
 EFTCAMB_SOURCES_FILES += $(wildcard $(EFTCAMB_DIR)/*.f) $(wildcard $(EFTCAMB_DIR)/*/*.f)
-EFTCAMB_CSOURCE_FILES := $(wildcard $(EFTCAMB_DIR)/*.c) $(wildcard $(EFTCAMB_DIR)/*/*.c)
 
 # replace the relevant suffix:
 EFT_TEMP_1 := $(patsubst %.f90,%,$(EFTCAMB_SOURCES_FILES))
@@ -28,20 +27,10 @@ EFT_TEMP_1 := $(patsubst %.f,%,$(EFT_TEMP_1))
 EFT_TEMP_2 := $(notdir $(EFT_TEMP_1))
 EFT_FILES  := $(addsuffix .o, $(EFT_TEMP_2))
 
-EFT_CTEMP_1 := $(patsubst %.c,%,$(EFTCAMB_CSOURCE_FILES))
-EFT_CTEMP_2 := $(notdir $(EFT_CTEMP_1))
-EFT_CFILES  := $(addsuffix .o, $(EFT_CTEMP_2))
-
 # files for eftcamb:
 #EFT_OBJ = $(addprefix $(OUTPUT_DIR)/, $(EFT_FILES))
 EFT_OBJ = $(EFT_FILES)
 EFT_SOJ = $(addprefix $(DLL_DIR)/, $(EFT_FILES))
-
-EFT_COBJ = $(EFT_CFILES)
-EFT_CSOJ = $(addprefix $(DLL_DIR)/, $(EFT_CFILES))
-
-CC = gcc
-CFLAGS = -lm -O3 -ffast-math -fPIC
 
 # how to build EFTCAMB files:
 %.o: $(EFTCAMB_DIR)/%.f90
@@ -54,32 +43,27 @@ $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.f90
 $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/*/%.f90
 	$(F90C) $(SF90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
 
+# The fixed-form .f files are the bundled Fortran 77 ODEPACK: features deleted from the standard (DO termination
+# labels, arithmetic IF, ASSIGN) and real work arrays passed as integer ones, which gfortran can silence only with -w.
+# They are compiled as legacy code without warnings (same object code), so the warnings of the EFTCAMB sources stay
+# visible. ifort already compiles everything with -W0.
+ifeq ($(COMPILER),gfortran)
+F77_LEGACY_FLAGS = -std=legacy -w
+endif
+
 %.o: $(EFTCAMB_DIR)/%.f
-	$(F90C) $(F90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
+	$(F90C) $(F90FLAGS) $(F77_LEGACY_FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
 %.o: $(EFTCAMB_DIR)/*/%.f
-	$(F90C) $(F90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
+	$(F90C) $(F90FLAGS) $(F77_LEGACY_FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
 
 $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.f
-	$(F90C) $(SF90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
+	$(F90C) $(SF90FLAGS) $(F77_LEGACY_FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
 $(DLL_DIR)/%.o: $(EFTCAMB_DIR)/*/%.f
-	$(F90C) $(SF90FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
-
-%.o: $(EFTCAMB_DIR)/%.c
-	$(CC) $(CFLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
-%.o: $(EFTCAMB_DIR)/*/%.c
-	$(CC) $(CFLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $*.o
-
-$(DLL_DIR)/%.o: $(EFTCAMB_DIR)/%.c
-	$(CC) $(CFLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
-$(DLL_DIR)/%.o: $(EFTCAMB_DIR)/*/%.c
-	$(CC) $(CFLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
+	$(F90C) $(SF90FLAGS) $(F77_LEGACY_FLAGS) $(IFLAG)"$(FORUTILS_DIR)" -c $< -o $(DLL_DIR)/$*.o
 
 # add the EFTCAMB files to the standard ones:
 CAMBOBJ += $(EFT_OBJ)
 CAMBSO  += $(EFT_SOJ)
-
-CAMBOBJ += $(EFT_COBJ)
-CAMBSO  += $(EFT_CSOJ)
 
 # EFTCAMB dependencies:
 eftcamb_dep: $(EFTCAMB_SOURCES_FILES)
@@ -132,10 +116,7 @@ Debug: eftcamb_apps
 # debug at fixed k mode
 ifeq ($(MAKECMDGOALS), Debug)
 ifdef fixq
-DEBUGFLAGS += -Dfixq=$(fixq)
-endif
-ifdef fixq_array
-DEBUGFLAGS += -D'fixq_array=$(fixq_array)'
+DEBUGFLAGS += -Dfixq=$(fixq) -DEFTCAMB_DEBUG
 endif
 endif
 
